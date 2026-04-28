@@ -88,6 +88,8 @@
 
 **Completed:** 2026-04-28
 
+**Status:** Complete ✓
+
 ### Plans
 
 - [x] 03-01-PLAN.md — Sites Module Foundation + Time Tracking (SITE-01, SITE-02, SITE-03, SITE-04)
@@ -120,7 +122,14 @@
 
 **Requirements:** FLEET-01, FLEET-02, FLEET-03, FLEET-04, FLEET-05, FLEET-06, FLEET-07
 
+**Plans:** 2 plans created
+
 **Duration Estimate:** 2-3 Wochen
+
+### Plans
+
+- [ ] 04-01-PLAN.md — Fleet Module Foundation + Vehicles & Tools CRUD (FLEET-01, FLEET-02)
+- [ ] 04-02-PLAN.md — Reservations + Calendar + QR Status (FLEET-03, FLEET-04, FLEET-05, FLEET-06, FLEET-07)
 
 ### Success Criteria
 
@@ -129,6 +138,13 @@
 3. Reservierung wird mit Baustelle verknüpft
 4. Kalender zeigt Belegung
 5. QR-Code zeigt aktuellen Status
+
+### Key Decisions
+
+- Unified reservations table for both vehicles and tools
+- ResourceType enum for polymorphic resource_id
+- Availability check with overlap detection before reservation
+- QR code shows current status + upcoming reservations
 
 ### Dependencies
 
