@@ -117,11 +117,39 @@ src/
 
 - `GET /health` - Health check
 
-### Users (requires auth)
+### IAM (requires auth)
 
+- `GET /api/v1/auth/me` - Get current user
+- `PATCH /api/v1/users/me` - Update own profile
 - `GET /api/v1/users` - List users in tenant
-- `POST /api/v1/users` - Invite user (admin only)
+- `POST /api/v1/users/invite` - Invite user (admin only)
 - `PATCH /api/v1/users/:id/role` - Update user role (admin only)
+
+### Inventory (requires auth)
+
+- `GET /api/v1/inventory/categories` - List categories
+- `POST /api/v1/inventory/categories` - Create category
+- `GET /api/v1/inventory/materials` - List materials
+- `POST /api/v1/inventory/materials` - Create material
+- `POST /api/v1/inventory/materials/:id/withdraw` - Withdraw stock
+- `POST /api/v1/inventory/materials/:id/adjust` - Adjust stock
+- `POST /api/v1/inventory/materials/:id/qr` - Generate QR code
+- `GET /api/v1/inventory/low-stock` - List low stock items
+- `GET /api/v1/inventory/orders` - List order requests
+- `POST /api/v1/inventory/orders` - Create order request
+- `POST /api/v1/inventory/orders/:id/approve` - Approve order
+
+## API Testing
+
+```bash
+# Setup test tenant
+./scripts/setup-test-data.sh
+
+# Run API tests (requires Keycloak user with tenant_id attribute)
+TEST_USER=your@email.com TEST_PASSWORD=yourpassword ./scripts/test-api.sh
+```
+
+See [docs/API-TESTING.md](docs/API-TESTING.md) for detailed setup instructions.
 
 ## Database Migrations
 

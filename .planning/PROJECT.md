@@ -14,12 +14,11 @@ Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, 
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ Multi-Tenant Auth via Keycloak — Phase 1
+- ✓ User-Management mit Rollen (Admin, Mitarbeiter) — Phase 1
 
 ### Active
 
-- [ ] Multi-Tenant Auth via Keycloak
-- [ ] User-Management mit Rollen (Admin, Mitarbeiter)
 - [ ] Material-Inventar (Platten, Kanten, Lacke, Schrauben, etc.)
 - [ ] "Letzte Packung" Warnung mit Benachrichtigung an Chef
 - [ ] Baustellen anlegen und verwalten
@@ -135,12 +134,14 @@ Vorteil: Unit Tests mit Mock-Implementierungen ohne Datenbank.
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Rust Backend | Sicherheit, Performance, 10+ Jahre Wartbarkeit | — Pending |
+| Rust Backend | Sicherheit, Performance, 10+ Jahre Wartbarkeit | ✓ Axum 0.8, SQLx 0.8 working |
 | Vite + React PWA | Einfach, schnell, Offline-Support möglich, später native App mit Capacitor | — Pending |
-| Keycloak (bestehend) | Bereits im Cluster, SSO, Multi-Tenant-ready | — Pending |
-| Modularer Monolith | Klare Trennung, später extrahierbar, keine Microservice-Komplexität | — Pending |
-| Multi-Tenant ab Tag 1 | Architektur mitdenken, nicht nachrüsten | — Pending |
+| Keycloak (bestehend) | Bereits im Cluster, SSO, Multi-Tenant-ready | ✓ JWT validation with JWKS caching working |
+| Modularer Monolith | Klare Trennung, später extrahierbar, keine Microservice-Komplexität | ✓ DDD structure established in modules/iam |
+| Multi-Tenant ab Tag 1 | Architektur mitdenken, nicht nachrüsten | ✓ TenantId in all tables, enforced in repository layer |
 | Kein RFID in V1 | Hardware nicht vorhanden, manuelle Erfassung first | — Pending |
+| SQLx runtime queries | No database during build | ✓ Working, type safety reduced but functional |
+| DDD layering | Clean architecture, testability | ✓ domain/application/infrastructure/api structure |
 
 ## Evolution
 
@@ -160,4 +161,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-28 after initialization*
+*Last updated: 2026-04-28 after Phase 1*
