@@ -2,14 +2,14 @@
 
 **Project:** Schreinerei SaaS
 **Current Phase:** 1 — Auth & IAM Foundation
-**Status:** Ready to Plan
+**Status:** Planned
 
 ---
 
 ## Progress
 
 ```
-Phase 1: ░░░░░░░░░░ 0%  Ready
+Phase 1: ██░░░░░░░░ 20%  Planned
 Phase 2: ░░░░░░░░░░ 0%  Blocked (Phase 1)
 Phase 3: ░░░░░░░░░░ 0%  Blocked (Phase 1, 2)
 Phase 4: ░░░░░░░░░░ 0%  Blocked (Phase 1, 3)
@@ -20,7 +20,14 @@ Phase 5: ░░░░░░░░░░ 0%  Blocked (Phase 1-4)
 
 **Name:** Auth & IAM Foundation
 **Goal:** Multi-Tenant Authentication mit Keycloak, User-Management, Basis-API
-**Status:** Ready to Plan
+**Status:** Planned
+
+### Plans
+
+| Plan | Status | Requirements |
+|------|--------|--------------|
+| 01-01 — Backend Foundation + Auth Middleware | Pending | AUTH-01, AUTH-02 |
+| 01-02 — IAM Module + User Management API | Pending | AUTH-03, AUTH-04, AUTH-05 |
 
 ### Requirements
 
@@ -59,4 +66,4 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 
 ## Next Action
 
-Run `/gsd-plan-phase 1` to create execution plan for Phase 1.
+Run `/gsd-execute-phase 1` to execute Phase 1 plans. Start with Plan 01-01.
