@@ -43,8 +43,12 @@ RUST_LOG=debug
 ```bash
 # Create database
 createdb schreinerei
+```
 
-# Run migrations
+Migrations run automatically on startup (only unapplied migrations).
+
+Or run manually:
+```bash
 cargo sqlx migrate run
 ```
 
