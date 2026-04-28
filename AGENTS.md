@@ -34,6 +34,34 @@ This project follows the Get Shit Done methodology for structured software devel
 - Short classes (rarely more than 200 lines)
 - SRP (Single Responsibility Principle)
 
+### Rust Module Style (2018+ Edition)
+
+Use the modern module file structure, NOT the deprecated `mod.rs` style:
+
+```
+src/
+├── module_name.rs          # Module contents (not mod.rs)
+└── module_name/
+    └── submodule.rs        # Submodule contents
+```
+
+**Avoid:**
+```
+src/
+└── module_name/
+    └── mod.rs              # Deprecated style
+```
+
+In `src/lib.rs` or `src/main.rs`, declare modules with:
+```rust
+mod module_name;
+```
+
+The module file `src/module_name.rs` can declare submodules:
+```rust
+mod submodule;  // Looks for src/module_name/submodule.rs
+```
+
 ### Tech Stack
 
 **Backend:**

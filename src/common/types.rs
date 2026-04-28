@@ -58,10 +58,11 @@ impl fmt::Display for UserId {
 }
 
 /// User role in the system
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum Role {
     Admin,
+    #[default]
     Employee,
 }
 
@@ -72,12 +73,6 @@ impl Role {
 
     pub fn is_employee(&self) -> bool {
         matches!(self, Role::Employee)
-    }
-}
-
-impl Default for Role {
-    fn default() -> Self {
-        Role::Employee
     }
 }
 
