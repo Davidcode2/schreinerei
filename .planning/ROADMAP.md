@@ -6,15 +6,17 @@
 
 ---
 
-## Phase 1: Auth & IAM Foundation
+## Phase 1: Auth & IAM Foundation ✓
 
 **Goal:** Multi-Tenant Authentication mit Keycloak, User-Management, Basis-API, Hexagonal Architecture Foundation
 
 **Requirements:** AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, ARCH-01, ARCH-03, ARCH-04, ARCH-05, ARCH-06
 
-**Plans:** 2 plans in 2 waves
+**Plans:** 2/2 plans complete
 
 **Duration Estimate:** 2-3 Wochen
+
+**Completed:** 2026-04-28
 
 ### Plans
 
@@ -43,7 +45,14 @@
 
 **Requirements:** INVT-01, INVT-02, INVT-03, INVT-04, INVT-05, INVT-06, INVT-07, ARCH-02
 
+**Plans:** 2 plans created
+
 **Duration Estimate:** 3-4 Wochen
+
+### Plans
+
+- [ ] 02-01-PLAN.md — Inventory Domain Model + Categories + Materials + Stock Management (INVT-01, INVT-02, INVT-03)
+- [ ] 02-02-PLAN.md — Domain Events + Low Stock Warnings + Order Requests + QR Codes (INVT-04, INVT-05, INVT-06, INVT-07, ARCH-02)
 
 ### Success Criteria
 
