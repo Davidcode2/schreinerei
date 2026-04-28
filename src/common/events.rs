@@ -28,6 +28,12 @@ pub enum EventType {
     StockLow,
     StockAdjusted,
     OrderRequestCreated,
+    // Sites events
+    SiteCreated,
+    SiteStatusChanged,
+    UserAssignedToSite,
+    TimeEntryCreated,
+    ActivityAdded,
 }
 
 /// A domain event representing something that happened in the domain
