@@ -38,7 +38,7 @@ async fn main() {
         .expect("Failed to create database pool");
     tracing::info!("Database pool created");
 
-    // Run migrations
+    // Run migrations (only applies unapplied migrations, tracked in _sqlx_migrations)
     run_migrations(&pool).await
         .expect("Failed to run migrations");
 
