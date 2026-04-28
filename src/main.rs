@@ -8,22 +8,15 @@ use axum::{
 use std::net::SocketAddr;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use sqlx::PgPool;
 
-mod config;
-mod common;
-mod auth;
-
-use auth::jwks::JwksClient;
-use auth::middleware::{AuthState, auth_middleware};
-use common::db::{create_pool, run_migrations};
-
-#[derive(Clone)]
-pub struct AppState {
-    config: config::AppConfig,
-    pool: PgPool,
-    jwks_client: JwksClient,
-}
+use schreinerei::{
+    auth::jwks::JwksClient,
+    auth::middleware::{AuthState, auth_middleware},
+    common::db::{create_pool, run_migrations},
+    config::AppConfig,
+    modules::iam::api::routes::create_router as iam_router,
+    AppState,
+};
 
 #[tokio::main]
 async fn main() {
@@ -37,7 +30,7 @@ async fn main() {
         .init();
 
     // Load configuration
-    let config = config::AppConfig::load();
+    let config = AppConfig::load();
     tracing::info!("Loaded configuration for server at {}:{}", config.host, config.port);
 
     // Initialize database pool
@@ -72,9 +65,10 @@ async fn main() {
         jwt_issuer: config.jwt_issuer.clone(),
     };
 
-    // Build router with auth middleware
+    // Build router with health endpoint and IAM routes
     let app = Router::new()
         .route("/health", get(health_handler))
+        .merge(iam_router())
         .layer(middleware::from_fn_with_state(auth_state, auth_middleware))
         .layer(TraceLayer::new_for_http())
         .layer(CorsLayer::permissive())

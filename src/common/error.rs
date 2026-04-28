@@ -30,6 +30,12 @@ pub enum AppError {
     Unauthorized(String),
 }
 
+impl From<String> for AppError {
+    fn from(msg: String) -> Self {
+        AppError::Validation(msg)
+    }
+}
+
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
