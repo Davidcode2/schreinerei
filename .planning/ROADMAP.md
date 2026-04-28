@@ -39,28 +39,36 @@
 
 ---
 
-## Phase 2: Inventar Management
+## Phase 2: Inventar Management ✓
 
 **Goal:** Materialverwaltung mit Bestands-Tracking, Warnungen, QR-Codes und Domain Events
 
 **Requirements:** INVT-01, INVT-02, INVT-03, INVT-04, INVT-05, INVT-06, INVT-07, ARCH-02
 
-**Plans:** 2 plans created
+**Plans:** 2/2 plans complete
 
 **Duration Estimate:** 3-4 Wochen
 
+**Completed:** 2026-04-28
+
 ### Plans
 
-- [ ] 02-01-PLAN.md — Inventory Domain Model + Categories + Materials + Stock Management (INVT-01, INVT-02, INVT-03)
-- [ ] 02-02-PLAN.md — Domain Events + Low Stock Warnings + Order Requests + QR Codes (INVT-04, INVT-05, INVT-06, INVT-07, ARCH-02)
+- [x] 02-01-PLAN.md — Inventory Domain Model + Categories + Materials + Stock Management (INVT-01, INVT-02, INVT-03)
+- [x] 02-02-PLAN.md — Domain Events + Low Stock Warnings + Order Requests + QR Codes (INVT-04, INVT-05, INVT-06, INVT-07, ARCH-02)
 
 ### Success Criteria
 
-1. Admin kann Material-Kategorien und Materialien anlegen
-2. Mitarbeiter kann Material entnehmen und Bestand wird aktualisiert
-3. "Letzte Packung" Warnung erscheint und benachrichtigt Admin
-4. QR-Code für Material kann generiert und gescannt werden
-5. Frontend zeigt Inventar-Übersicht
+1. Admin kann Material-Kategorien und Materialien anlegen ✓
+2. Mitarbeiter kann Material entnehmen und Bestand wird aktualisiert ✓
+3. "Letzte Packung" Warnung erscheint und benachrichtigt Admin ✓
+4. QR-Code für Material kann generiert und gescannt werden ✓
+5. Frontend zeigt Inventar-Übersicht ✓
+
+### Key Decisions
+
+- Domain events for inter-module communication
+- QR codes with tenant prefix
+- Event store in database for V1
 
 ### Dependencies
 
