@@ -16,6 +16,7 @@ use schreinerei::{
     config::AppConfig,
     modules::iam::api::routes::create_router as iam_router,
     modules::inventory::api::routes::create_router as inventory_router,
+    modules::sites::api::routes::create_router as sites_router,
     AppState,
 };
 
@@ -71,6 +72,7 @@ async fn main() {
         .route("/health", get(health_handler))
         .merge(iam_router())
         .merge(inventory_router())
+        .merge(sites_router())
         .layer(middleware::from_fn_with_state(auth_state, auth_middleware))
         .layer(TraceLayer::new_for_http())
         .layer(CorsLayer::permissive())

@@ -4,7 +4,7 @@ use axum::{
     response::IntoResponse,
     Json,
     Router,
-    routing::{get, post, delete, patch},
+    routing::{get, post, delete},
 };
 use serde::{Deserialize, Serialize};
 use chrono::NaiveDate;

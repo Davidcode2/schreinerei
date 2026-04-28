@@ -1,5 +1,5 @@
 use crate::common::error::AppError;
-use crate::common::types::{SiteId, UserId, SiteStatus};
+use crate::common::types::{SiteId, UserId};
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::sites::domain::{
     Site, TimeEntry, CreateSite, UpdateSite, CreateTimeEntry, AssignUser,
