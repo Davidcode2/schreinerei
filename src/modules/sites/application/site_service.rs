@@ -1,11 +1,12 @@
 use crate::common::error::AppError;
 use crate::common::types::{SiteId, UserId};
+use crate::common::events::EventType;
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::sites::domain::{
-    Site, TimeEntry, CreateSite, UpdateSite, CreateTimeEntry, AssignUser,
+    Site, TimeEntry, Activity, CreateSite, UpdateSite, CreateTimeEntry, AssignUser, CreateActivity,
     SiteCreatedPayload, SiteStatusChangedPayload, UserAssignedToSitePayload, TimeEntryCreatedPayload,
 };
-use crate::modules::sites::infrastructure::site_repository::SiteRepository;
+use crate::modules::sites::infrastructure::site_repository::{SiteRepository, DashboardSite};
 
 /// Service for site business logic
 pub struct SiteService {
@@ -201,5 +202,61 @@ impl SiteService {
         ctx: &TenantContext,
     ) -> Result<Vec<TimeEntry>, AppError> {
         self.site_repo.list_time_entries(ctx.tenant_id, None, Some(ctx.user_id)).await
+    }
+
+    // === Activity operations ===
+
+    pub async fn create_activity(
+        &self,
+        create: CreateActivity,
+        ctx: &TenantContext,
+    ) -> Result<Activity, AppError> {
+        // Validate the command
+        create.validate()?;
+
+        // Verify site exists in same tenant
+        let _site = self.get_site(create.site_id, ctx).await?;
+
+        let activity = self.site_repo
+            .create_activity(ctx.tenant_id, ctx.user_id, &create)
+            .await?;
+
+        // Publish ActivityAdded event
+        let event = crate::common::events::DomainEvent::new(
+            EventType::ActivityAdded,
+            ctx.tenant_id,
+            "Site",
+            activity.site_id.to_string(),
+            serde_json::json!({
+                "site_id": activity.site_id.to_string(),
+                "user_id": activity.user_id.to_string(),
+                "activity_type": activity.activity_type.as_str(),
+            }),
+        );
+
+        self.site_repo.publish_event(&event).await?;
+
+        Ok(activity)
+    }
+
+    pub async fn list_activities(
+        &self,
+        site_id: SiteId,
+        limit: i32,
+        ctx: &TenantContext,
+    ) -> Result<Vec<Activity>, AppError> {
+        // Verify site exists in same tenant
+        let _site = self.get_site(site_id, ctx).await?;
+
+        self.site_repo.list_activities(ctx.tenant_id, site_id, limit).await
+    }
+
+    // === Dashboard operations ===
+
+    pub async fn get_dashboard(
+        &self,
+        ctx: &TenantContext,
+    ) -> Result<Vec<DashboardSite>, AppError> {
+        self.site_repo.get_dashboard_sites(ctx.tenant_id).await
     }
 }
