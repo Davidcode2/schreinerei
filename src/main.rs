@@ -15,6 +15,7 @@ use schreinerei::{
     common::db::{create_pool, run_migrations},
     config::AppConfig,
     modules::iam::api::routes::create_router as iam_router,
+    modules::inventory::api::routes::create_router as inventory_router,
     AppState,
 };
 
@@ -69,6 +70,7 @@ async fn main() {
     let app = Router::new()
         .route("/health", get(health_handler))
         .merge(iam_router())
+        .merge(inventory_router())
         .layer(middleware::from_fn_with_state(auth_state, auth_middleware))
         .layer(TraceLayer::new_for_http())
         .layer(CorsLayer::permissive())
