@@ -2,7 +2,7 @@
 
 **Project:** Schreinerei SaaS
 **Current Phase:** 3 — Baustellen Management
-**Status:** In Progress
+**Status:** Complete ✓
 
 ---
 
@@ -11,8 +11,8 @@
 ```
 Phase 1: ██████████ 100%  Complete ✓
 Phase 2: ██████████ 100%  Complete ✓
-Phase 3: █████░░░░░ 50%   In Progress
-Phase 4: ░░░░░░░░░░ 0%    Blocked (Phase 3)
+Phase 3: ██████████ 100%  Complete ✓
+Phase 4: ░░░░░░░░░░ 0%    Ready to Plan
 Phase 5: ░░░░░░░░░░ 0%    Blocked (Phase 1-4)
 ```
 
@@ -20,33 +20,33 @@ Phase 5: ░░░░░░░░░░ 0%    Blocked (Phase 1-4)
 
 **Name:** Baustellen Management
 **Goal:** Baustellen anlegen, Mitarbeiter zuweisen, Zeit buchen, Activity Feed
-**Status:** In Progress
+**Status:** Complete ✓
 
 ### Plans
 
 | Plan | Status | Requirements |
 |------|--------|--------------|
 | 03-01-PLAN.md | ✓ Complete | SITE-01, SITE-02, SITE-03, SITE-04 |
-| 03-02-PLAN.md | Not started | SITE-05, SITE-06, SITE-07, SITE-08 |
+| 03-02-PLAN.md | ✓ Complete | SITE-05, SITE-06, SITE-07, SITE-08 |
 
 ### Requirements
 
 - [x] SITE-01: Baustelle anlegen
 - [x] SITE-02: Mitarbeiter zuweisen
 - [x] SITE-03: Zeit buchen
-- [ ] SITE-04: Activity Feed (infrastructure ready, API in 03-02)
-- [ ] SITE-05: Dashboard
-- [ ] SITE-06: Baustellen-Übersicht
-- [ ] SITE-07: Baustellen-Details
-- [ ] SITE-08: Baustellen-Abschluss
+- [x] SITE-04: Activity Feed (infrastructure in 03-01, API in 03-02)
+- [x] SITE-05: Dashboard
+- [x] SITE-06: Baustellen-Übersicht
+- [x] SITE-07: Baustellen-Details
+- [x] SITE-08: Baustellen-Abschluss
 
 ### Success Criteria
 
 1. Admin kann Baustelle mit Ort, Kunde, Zeitraum anlegen ✓
 2. Admin kann Mitarbeiter zuweisen ✓
 3. Mitarbeiter kann Arbeitszeit auf Baustelle/Werkstatt buchen ✓
-4. Activity Feed zeigt Fotos und Notizen (pending 03-02)
-5. Dashboard zeigt offene Baustellen (pending 03-02)
+4. Activity Feed zeigt Fotos und Notizen ✓
+5. Dashboard zeigt offene Baustellen ✓
 
 ---
 
@@ -55,7 +55,7 @@ Phase 5: ░░░░░░░░░░ 0%    Blocked (Phase 1-4)
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
-**Current focus:** Phase 3 — Baustellen Management
+**Current focus:** Phase 3 Complete — Ready for Phase 4
 
 ---
 
@@ -73,6 +73,7 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 - Event store in database for V1 (Phase 2)
 - Site status state machine: Planned → Active → Completed → Archived (Phase 3)
 - Nullable site_id on TimeEntry for workshop work (Phase 3)
+- Activity types: Photo (requires URL), Note (requires content), StatusChange (system-only) (Phase 3)
 
 ### Blockers/Concerns
 
@@ -83,7 +84,7 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: Phase 3 Plan 01 complete, executing Plan 02
+Stopped at: Phase 3 complete, ready for transition
 Resume file: None
 
 ---
@@ -104,9 +105,11 @@ Resume file: None
 | 2026-04-28 | Transition to Phase 3 | Ready to plan Sites Management |
 | 2026-04-28 | Phase 3 Planned | Created 03-01-PLAN.md and 03-02-PLAN.md |
 | 2026-04-28 | Plan 03-01 Complete | Sites module foundation with domain, repo, service, API |
+| 2026-04-28 | Plan 03-02 Complete | Activity Feed and Dashboard |
+| 2026-04-28 | Phase 3 Complete | Baustellen Management finished |
 
 ---
 
 ## Next Action
 
-Execute Plan 03-02: Activity Feed and Dashboard
+Transition to Phase 4: `/gsd-transition 4`

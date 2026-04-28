@@ -34,14 +34,14 @@
 
 ### Baustellen
 
-- [ ] **SITE-01**: Admin kann Baustelle anlegen (Ort, Kunde, Zeitraum)
-- [ ] **SITE-02**: Admin kann Mitarbeiter auf Baustelle zuweisen
-- [ ] **SITE-03**: Mitarbeiter kann Arbeitszeit auf Baustelle buchen
-- [ ] **SITE-04**: Mitarbeiter kann Zeit in Werkstatt buchen (Vorbereitung, CNC)
-- [ ] **SITE-05**: Mitarbeiter kann Foto/Notiz zu Baustelle hinzufügen (Activity Feed)
-- [ ] **SITE-06**: Baustelle hat Timeline mit allen Aktivitäten
-- [ ] **SITE-07**: Admin kann geschätzte Arbeitstage hinterlegen
-- [ ] **SITE-08**: Admin sieht Dashboard offener Baustellen
+- [x] **SITE-01**: Admin kann Baustelle anlegen (Ort, Kunde, Zeitraum)
+- [x] **SITE-02**: Admin kann Mitarbeiter auf Baustelle zuweisen
+- [x] **SITE-03**: Mitarbeiter kann Arbeitszeit auf Baustelle buchen
+- [x] **SITE-04**: Mitarbeiter kann Zeit in Werkstatt buchen (Vorbereitung, CNC)
+- [x] **SITE-05**: Mitarbeiter kann Foto/Notiz zu Baustelle hinzufügen (Activity Feed)
+- [x] **SITE-06**: Baustelle hat Timeline mit allen Aktivitäten
+- [x] **SITE-07**: Admin kann geschätzte Arbeitstage hinterlegen
+- [x] **SITE-08**: Admin sieht Dashboard offener Baustellen
 
 ### Fuhrpark & Werkzeuge
 
@@ -130,14 +130,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INVT-05 | Phase 2 | Pending |
 | INVT-06 | Phase 2 | Pending |
 | INVT-07 | Phase 2 | Pending |
-| SITE-01 | Phase 3 | Pending |
-| SITE-02 | Phase 3 | Pending |
-| SITE-03 | Phase 3 | Pending |
-| SITE-04 | Phase 3 | Pending |
-| SITE-05 | Phase 3 | Pending |
-| SITE-06 | Phase 3 | Pending |
-| SITE-07 | Phase 3 | Pending |
-| SITE-08 | Phase 3 | Pending |
+| SITE-01 | Phase 3 | Complete |
+| SITE-02 | Phase 3 | Complete |
+| SITE-03 | Phase 3 | Complete |
+| SITE-04 | Phase 3 | Complete |
+| SITE-05 | Phase 3 | Complete |
+| SITE-06 | Phase 3 | Complete |
+| SITE-07 | Phase 3 | Complete |
+| SITE-08 | Phase 3 | Complete |
 | FLEET-01 | Phase 4 | Pending |
 | FLEET-02 | Phase 4 | Pending |
 | FLEET-03 | Phase 4 | Pending |
