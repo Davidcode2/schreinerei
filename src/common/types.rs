@@ -96,3 +96,101 @@ impl FromStr for Role {
         }
     }
 }
+
+/// Material identifier - wraps UUID
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct MaterialId(pub Uuid);
+
+impl MaterialId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+
+    pub fn parse(s: &str) -> Result<Self, uuid::Error> {
+        Uuid::parse_str(s).map(Self)
+    }
+}
+
+impl Default for MaterialId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for MaterialId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+/// Category identifier - wraps UUID
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct CategoryId(pub Uuid);
+
+impl CategoryId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+
+    pub fn parse(s: &str) -> Result<Self, uuid::Error> {
+        Uuid::parse_str(s).map(Self)
+    }
+}
+
+impl Default for CategoryId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for CategoryId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+/// Measurement unit for materials
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Unit {
+    Piece,
+    Meter,
+    SquareMeter,
+    Liter,
+    Kilogram,
+}
+
+impl Unit {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Unit::Piece => "Stück",
+            Unit::Meter => "Meter",
+            Unit::SquareMeter => "Quadratmeter",
+            Unit::Liter => "Liter",
+            Unit::Kilogram => "Kilogramm",
+        }
+    }
+}
+
+impl fmt::Display for Unit {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl FromStr for Unit {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "stück" | "piece" | "stk" => Ok(Unit::Piece),
+            "meter" | "m" => Ok(Unit::Meter),
+            "quadratmeter" | "m²" | "sqm" | "quadrat-meter" => Ok(Unit::SquareMeter),
+            "liter" | "l" => Ok(Unit::Liter),
+            "kilogram" | "kilogramm" | "kg" => Ok(Unit::Kilogram),
+            _ => Err(format!("Unknown unit: {}", s)),
+        }
+    }
+}
