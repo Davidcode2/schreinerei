@@ -1,5 +1,5 @@
 use crate::common::error::AppError;
-use crate::common::types::{VehicleId, ToolId, ResourceStatus, ResourceType};
+use crate::common::types::{VehicleId, ToolId, ResourceType};
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::fleet::domain::{
     Vehicle, Tool, CreateVehicle, UpdateVehicle, CreateTool, UpdateTool,

@@ -4,7 +4,7 @@ use axum::{
     response::IntoResponse,
     Json,
     Router,
-    routing::{get, post, patch, delete},
+    routing::get,
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
