@@ -194,3 +194,30 @@ impl FromStr for Unit {
         }
     }
 }
+
+/// Order Request identifier - wraps UUID
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct OrderRequestId(pub Uuid);
+
+impl OrderRequestId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+
+    pub fn parse(s: &str) -> Result<Self, uuid::Error> {
+        Uuid::parse_str(s).map(Self)
+    }
+}
+
+impl Default for OrderRequestId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for OrderRequestId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
