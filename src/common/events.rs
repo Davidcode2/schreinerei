@@ -34,6 +34,13 @@ pub enum EventType {
     UserAssignedToSite,
     TimeEntryCreated,
     ActivityAdded,
+    // Fleet events
+    VehicleCreated,
+    ToolCreated,
+    ReservationCreated,
+    ReservationUpdated,
+    ReservationCancelled,
+    ResourceStatusChanged,
 }
 
 /// A domain event representing something that happened in the domain
