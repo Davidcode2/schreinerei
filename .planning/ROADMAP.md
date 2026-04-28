@@ -18,8 +18,8 @@
 
 ### Plans
 
-- [ ] 01-01-PLAN.md — Backend Foundation + Auth Middleware (AUTH-01, AUTH-02)
-- [ ] 01-02-PLAN.md — IAM Module + User Management API (AUTH-03, AUTH-04, AUTH-05)
+- [x] 01-01-PLAN.md — Backend Foundation + Auth Middleware (AUTH-01, AUTH-02)
+- [x] 01-02-PLAN.md — IAM Module + User Management API (AUTH-03, AUTH-04, AUTH-05)
 
 ### Success Criteria
 
