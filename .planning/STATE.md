@@ -2,7 +2,7 @@
 
 **Project:** Schreinerei SaaS
 **Current Phase:** 3 — Baustellen Management
-**Status:** Ready to Plan
+**Status:** Ready to Execute
 
 ---
 
@@ -11,7 +11,7 @@
 ```
 Phase 1: ██████████ 100%  Complete ✓
 Phase 2: ██████████ 100%  Complete ✓
-Phase 3: ░░░░░░░░░░ 0%    Ready to Plan
+Phase 3: ░░░░░░░░░░ 0%    Ready to Execute
 Phase 4: ░░░░░░░░░░ 0%    Blocked (Phase 3)
 Phase 5: ░░░░░░░░░░ 0%    Blocked (Phase 1-4)
 ```
@@ -20,13 +20,14 @@ Phase 5: ░░░░░░░░░░ 0%    Blocked (Phase 1-4)
 
 **Name:** Baustellen Management
 **Goal:** Baustellen anlegen, Mitarbeiter zuweisen, Zeit buchen, Activity Feed
-**Status:** Ready to Plan
+**Status:** Ready to Execute
 
 ### Plans
 
 | Plan | Status | Requirements |
 |------|--------|--------------|
-| — | Not started | — |
+| 03-01-PLAN.md | Not started | SITE-01, SITE-02, SITE-03, SITE-04 |
+| 03-02-PLAN.md | Not started | SITE-05, SITE-06, SITE-07, SITE-08 |
 
 ### Requirements
 
@@ -80,7 +81,7 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: Phase 2 complete, ready to plan Phase 3
+Stopped at: Phase 3 planned, ready to execute
 Resume file: None
 
 ---
@@ -99,9 +100,10 @@ Resume file: None
 | 2026-04-28 | Plan 02-02 Complete | Domain events, QR codes, order requests |
 | 2026-04-28 | Phase 2 Complete | Inventory Management finished |
 | 2026-04-28 | Transition to Phase 3 | Ready to plan Sites Management |
+| 2026-04-28 | Phase 3 Planned | Created 03-01-PLAN.md and 03-02-PLAN.md |
 
 ---
 
 ## Next Action
 
-Plan Phase 3: `/gsd-plan-phase 3`
+Execute Phase 3: `/gsd-execute-phase 3`

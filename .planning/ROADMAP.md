@@ -82,7 +82,14 @@
 
 **Requirements:** SITE-01, SITE-02, SITE-03, SITE-04, SITE-05, SITE-06, SITE-07, SITE-08
 
+**Plans:** 2 plans
+
 **Duration Estimate:** 3-4 Wochen
+
+### Plans
+
+- [ ] 03-01-PLAN.md — Sites Module Foundation + Time Tracking (SITE-01, SITE-02, SITE-03, SITE-04)
+- [ ] 03-02-PLAN.md — Activity Feed + Dashboard (SITE-05, SITE-06, SITE-07, SITE-08)
 
 ### Success Criteria
 
