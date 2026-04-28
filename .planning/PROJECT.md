@@ -21,15 +21,16 @@ Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, 
 - ✓ "Letzte Packung" Warnung mit Benachrichtigung — Phase 2
 - ✓ QR-Code generieren und scannen — Phase 2
 - ✓ Domain Events für Modulkommunikation — Phase 2
+- ✓ Baustellen anlegen und verwalten — Phase 3
+- ✓ Mitarbeiter auf Baustellen zuweisen — Phase 3
+- ✓ Arbeitszeit auf Baustellen buchen — Phase 3
+- ✓ Baustellen-Fotos und Notizen (Activity Feed) — Phase 3
+- ✓ Dashboard mit offenen Baustellen — Phase 3
+- ✓ Fahrzeug-Inventar und Reservierung — Phase 4
+- ✓ Werkzeug-Reservierung mit Zeitraum und Baustellen-Verknüpfung — Phase 4
 
 ### Active
 
-- [ ] Baustellen anlegen und verwalten
-- [ ] Mitarbeiter auf Baustellen zuweisen
-- [ ] Arbeitszeit auf Baustellen buchen
-- [ ] Baustellen-Fotos und Notizen (Activity Feed)
-- [ ] Fahrzeug-Inventar und Reservierung
-- [ ] Werkzeug-Reservierung mit Zeitraum und Baustellen-Verknüpfung
 - [ ] Mobile-first PWA mit Offline-Support
 - [ ] QR-Code Scanner für Werkzeug/Material
 
@@ -147,6 +148,13 @@ Vorteil: Unit Tests mit Mock-Implementierungen ohne Datenbank.
 | DDD layering | Clean architecture, testability | ✓ domain/application/infrastructure/api structure |
 | Domain Events (V1) | Inter-module communication, audit trail | ✓ Events stored in DB, polling (no pub/sub yet) |
 | QR codes with tenant prefix | Uniqueness across tenants | ✓ SVG generation working |
+| Site status state machine | Controlled status transitions | ✓ Planned → Active → Completed → Archived |
+| Nullable site_id on TimeEntry | Workshop work without site | ✓ Time tracking works for all work types |
+| Activity types with validation | Type-specific data requirements | ✓ Photo needs URL, Note needs content |
+| Dashboard filtering | Focus on relevant sites | ✓ Shows only planned + active sites |
+| Unified reservations table | One table for vehicles and tools | ✓ Resource type enum pattern |
+| Overlap detection for reservations | Prevent double-booking | ✓ PostgreSQL OVERLAPS operator |
+| Reservation status flow | Skip pending, start confirmed | ✓ V1 simplification for faster UX |
 
 ## Evolution
 
@@ -166,4 +174,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-28 after Phase 2*
+*Last updated: 2026-04-28 after Phase 4*

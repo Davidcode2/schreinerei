@@ -1,8 +1,8 @@
 # Project State
 
 **Project:** Schreinerei SaaS
-**Current Phase:** 4 — Fuhrpark & Werkzeuge
-**Status:** Complete ✓
+**Current Phase:** 5 — PWA & Mobile
+**Status:** Ready to Plan
 
 ---
 
@@ -16,36 +16,31 @@ Phase 4: ██████████ 100%  Complete ✓
 Phase 5: ░░░░░░░░░░ 0%    Ready to Plan
 ```
 
-## Current Phase: 4
+## Current Phase: 5
 
-**Name:** Fuhrpark & Werkzeuge
-**Goal:** Fahrzeug- und Werkzeugverwaltung mit Reservierung und Kalender
-**Status:** Complete ✓
+**Name:** PWA & Mobile
+**Goal:** PWA mit Offline-Support, QR-Scanner, Responsive Design
+**Status:** Ready to Plan
 
 ### Plans
 
 | Plan | Status | Requirements |
 |------|--------|--------------|
-| 04-01 | ✓ Complete | FLEET-01, FLEET-02 |
-| 04-02 | ✓ Complete | FLEET-03, FLEET-04, FLEET-05, FLEET-06, FLEET-07 |
+| — | Not started | PWA-01 through PWA-04 |
 
 ### Requirements
 
-- [x] FLEET-01: Fahrzeuge anlegen
-- [x] FLEET-02: Werkzeuge anlegen
-- [x] FLEET-03: Reservierung erstellen
-- [x] FLEET-04: Reservierung mit Baustelle verknüpfen
-- [x] FLEET-05: Kalenderansicht
-- [x] FLEET-06: QR-Code Status
-- [x] FLEET-07: Verfügbarkeitsprüfung
+- [ ] PWA-01: PWA installierbar
+- [ ] PWA-02: Offline-Modus mit Synchronisation
+- [ ] PWA-03: QR-Code Scanner via Kamera
+- [ ] PWA-04: Responsive Design (Tablet & Smartphone)
 
 ### Success Criteria
 
-1. Admin kann Fahrzeuge und Werkzeuge anlegen
-2. Mitarbeiter kann Werkzeug/Fahrzeug reservieren
-3. Reservierung wird mit Baustelle verknüpft
-4. Kalender zeigt Belegung
-5. QR-Code zeigt aktuellen Status
+1. App ist als PWA installierbar
+2. Offline-Modus funktioniert (Daten werden synchronisiert)
+3. QR-Code Scanner via Kamera
+4. UI funktioniert auf Tablet und Smartphone
 
 ---
 
@@ -54,7 +49,7 @@ Phase 5: ░░░░░░░░░░ 0%    Ready to Plan
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
-**Current focus:** Phase 4 — Fuhrpark & Werkzeuge
+**Current focus:** Phase 5 — PWA & Mobile
 
 ---
 
@@ -88,7 +83,7 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: Phase 3 complete, ready to plan Phase 4
+Stopped at: Phase 4 complete, ready to plan Phase 5
 Resume file: None
 
 ---
