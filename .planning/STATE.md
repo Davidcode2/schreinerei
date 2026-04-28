@@ -1,8 +1,8 @@
 # Project State
 
 **Project:** Schreinerei SaaS
-**Current Phase:** 2 — Inventar Management
-**Status:** Complete ✓
+**Current Phase:** 3 — Baustellen Management
+**Status:** Ready to Plan
 
 ---
 
@@ -11,42 +11,41 @@
 ```
 Phase 1: ██████████ 100%  Complete ✓
 Phase 2: ██████████ 100%  Complete ✓
-Phase 3: ░░░░░░░░░░ 0%    Blocked (Phase 2)
-Phase 4: ░░░░░░░░░░ 0%    Blocked (Phase 2, 3)
+Phase 3: ░░░░░░░░░░ 0%    Ready to Plan
+Phase 4: ░░░░░░░░░░ 0%    Blocked (Phase 3)
 Phase 5: ░░░░░░░░░░ 0%    Blocked (Phase 1-4)
 ```
 
-## Current Phase: 2
+## Current Phase: 3
 
-**Name:** Inventar Management
-**Goal:** Materialverwaltung mit Bestands-Tracking, Warnungen, QR-Codes und Domain Events
-**Status:** Complete ✓
+**Name:** Baustellen Management
+**Goal:** Baustellen anlegen, Mitarbeiter zuweisen, Zeit buchen, Activity Feed
+**Status:** Ready to Plan
 
 ### Plans
 
 | Plan | Status | Requirements |
 |------|--------|--------------|
-| 02-01 | Complete ✓ | INVT-01, INVT-02, INVT-03 |
-| 02-02 | Complete ✓ | INVT-04, INVT-05, INVT-06, INVT-07, ARCH-02 |
+| — | Not started | — |
 
 ### Requirements
 
-- [x] INVT-01: Material-Kategorien anlegen
-- [x] INVT-02: Materialien mit Mengeneinheit anlegen
-- [x] INVT-03: Bestand verwalten und entnehmen
-- [x] INVT-04: "Letzte Packung" Warnung
-- [x] INVT-05: QR-Code generieren
-- [x] INVT-06: QR-Code scannen
-- [x] INVT-07: Bestandsübersicht
-- [x] ARCH-02: Domain Events für Modulkommunikation
+- [ ] SITE-01: Baustelle anlegen
+- [ ] SITE-02: Mitarbeiter zuweisen
+- [ ] SITE-03: Zeit buchen
+- [ ] SITE-04: Activity Feed
+- [ ] SITE-05: Dashboard
+- [ ] SITE-06: Baustellen-Übersicht
+- [ ] SITE-07: Baustellen-Details
+- [ ] SITE-08: Baustellen-Abschluss
 
 ### Success Criteria
 
-1. Admin kann Material-Kategorien und Materialien anlegen ✓
-2. Mitarbeiter kann Material entnehmen und Bestand wird aktualisiert ✓
-3. "Letzte Packung" Warnung erscheint und benachrichtigt Admin ✓
-4. QR-Code für Material kann generiert und gescannt werden ✓
-5. Frontend zeigt Inventar-Übersicht ✓ (via API)
+1. Admin kann Baustelle mit Ort, Kunde, Zeitraum anlegen
+2. Admin kann Mitarbeiter zuweisen
+3. Mitarbeiter kann Arbeitszeit auf Baustelle/Werkstatt buchen
+4. Activity Feed zeigt Fotos und Notizen
+5. Dashboard zeigt offene Baustellen
 
 ---
 
@@ -55,7 +54,7 @@ Phase 5: ░░░░░░░░░░ 0%    Blocked (Phase 1-4)
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
-**Current focus:** Phase 3 — Baustellenverwaltung
+**Current focus:** Phase 3 — Baustellen Management
 
 ---
 
@@ -81,7 +80,7 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: Phase 2 complete
+Stopped at: Phase 2 complete, ready to plan Phase 3
 Resume file: None
 
 ---
@@ -99,9 +98,10 @@ Resume file: None
 | 2026-04-28 | Plan 02-01 Complete | Inventory module foundation with domain, repo, service, API |
 | 2026-04-28 | Plan 02-02 Complete | Domain events, QR codes, order requests |
 | 2026-04-28 | Phase 2 Complete | Inventory Management finished |
+| 2026-04-28 | Transition to Phase 3 | Ready to plan Sites Management |
 
 ---
 
 ## Next Action
 
-Transition to Phase 3: `/gsd-transition 3` or Plan Phase 3: `/gsd-plan-phase 3`
+Plan Phase 3: `/gsd-plan-phase 3`

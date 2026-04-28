@@ -16,11 +16,14 @@ Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, 
 
 - ✓ Multi-Tenant Auth via Keycloak — Phase 1
 - ✓ User-Management mit Rollen (Admin, Mitarbeiter) — Phase 1
+- ✓ Material-Inventar (Kategorien, Materialien, Mengeneinheiten) — Phase 2
+- ✓ Bestand verwalten und entnehmen — Phase 2
+- ✓ "Letzte Packung" Warnung mit Benachrichtigung — Phase 2
+- ✓ QR-Code generieren und scannen — Phase 2
+- ✓ Domain Events für Modulkommunikation — Phase 2
 
 ### Active
 
-- [ ] Material-Inventar (Platten, Kanten, Lacke, Schrauben, etc.)
-- [ ] "Letzte Packung" Warnung mit Benachrichtigung an Chef
 - [ ] Baustellen anlegen und verwalten
 - [ ] Mitarbeiter auf Baustellen zuweisen
 - [ ] Arbeitszeit auf Baustellen buchen
@@ -142,6 +145,8 @@ Vorteil: Unit Tests mit Mock-Implementierungen ohne Datenbank.
 | Kein RFID in V1 | Hardware nicht vorhanden, manuelle Erfassung first | — Pending |
 | SQLx runtime queries | No database during build | ✓ Working, type safety reduced but functional |
 | DDD layering | Clean architecture, testability | ✓ domain/application/infrastructure/api structure |
+| Domain Events (V1) | Inter-module communication, audit trail | ✓ Events stored in DB, polling (no pub/sub yet) |
+| QR codes with tenant prefix | Uniqueness across tenants | ✓ SVG generation working |
 
 ## Evolution
 
@@ -161,4 +166,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-28 after Phase 1*
+*Last updated: 2026-04-28 after Phase 2*
