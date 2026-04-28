@@ -15,7 +15,8 @@ use crate::common::error::AppError;
 use crate::common::types::{SiteId, UserId, SiteStatus, AssignmentRole, WorkType};
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::sites::application::site_service::SiteService;
-use crate::modules::sites::domain::{CreateSite, UpdateSite, CreateTimeEntry, AssignUser};
+use crate::modules::sites::domain::{CreateSite, UpdateSite, CreateTimeEntry, AssignUser, CreateActivity, ActivityType};
+use crate::modules::sites::infrastructure::site_repository::DashboardSite;
 use crate::AppState;
 
 /// Create the sites API router
@@ -34,6 +35,12 @@ pub fn create_router() -> Router<AppState> {
         .route("/api/v1/sites/{id}/time-entries", get(list_site_time_entries))
         .route("/api/v1/time-entries", post(create_time_entry))
         .route("/api/v1/time-entries/my", get(list_my_time_entries))
+        
+        // Activities
+        .route("/api/v1/sites/{id}/activities", get(list_activities).post(create_activity))
+        
+        // Dashboard
+        .route("/api/v1/dashboard/sites", get(get_dashboard))
 }
 
 // === DTOs ===
@@ -398,6 +405,153 @@ pub async fn list_my_time_entries(
     
     let entries = service.list_my_time_entries(&ctx).await?;
     let response: Vec<TimeEntryResponse> = entries.into_iter().map(TimeEntryResponse::from).collect();
+    
+    Ok(Json(response))
+}
+
+// === Activity DTOs ===
+
+#[derive(Debug, Serialize)]
+pub struct ActivityResponse {
+    pub id: String,
+    pub site_id: String,
+    pub user_id: String,
+    pub activity_type: String,
+    pub content: Option<String>,
+    pub photo_url: Option<String>,
+    pub created_at: String,
+}
+
+impl From<crate::modules::sites::domain::Activity> for ActivityResponse {
+    fn from(activity: crate::modules::sites::domain::Activity) -> Self {
+        Self {
+            id: activity.id.to_string(),
+            site_id: activity.site_id.to_string(),
+            user_id: activity.user_id.to_string(),
+            activity_type: activity.activity_type.as_str().to_string(),
+            content: activity.content,
+            photo_url: activity.photo_url,
+            created_at: activity.created_at.to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateActivityRequest {
+    pub activity_type: String,  // "photo" or "note"
+    pub content: Option<String>,
+    pub photo_url: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ActivityQuery {
+    pub limit: Option<i32>,
+}
+
+// === Dashboard DTOs ===
+
+#[derive(Debug, Serialize)]
+pub struct DashboardSiteResponse {
+    pub id: String,
+    pub name: String,
+    pub customer_name: String,
+    pub location: Option<String>,
+    pub status: String,
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
+    pub estimated_days: Option<i32>,
+    pub assigned_users: i64,
+    pub total_hours: f64,
+}
+
+impl From<DashboardSite> for DashboardSiteResponse {
+    fn from(site: DashboardSite) -> Self {
+        Self {
+            id: site.id.to_string(),
+            name: site.name,
+            customer_name: site.customer_name,
+            location: site.location,
+            status: site.status,
+            start_date: site.start_date.map(|d| d.to_string()),
+            end_date: site.end_date.map(|d| d.to_string()),
+            estimated_days: site.estimated_days,
+            assigned_users: site.assigned_users,
+            total_hours: site.total_hours,
+        }
+    }
+}
+
+// === Activity Handlers ===
+
+pub async fn list_activities(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+    Query(query): Query<ActivityQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+    
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+    
+    let limit = query.limit.unwrap_or(50).min(100);
+    
+    let activities = service.list_activities(site_id, limit, &ctx).await?;
+    let response: Vec<ActivityResponse> = activities.into_iter().map(ActivityResponse::from).collect();
+    
+    Ok(Json(response))
+}
+
+pub async fn create_activity(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+    Json(request): Json<CreateActivityRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+    
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+    
+    let activity_type = match request.activity_type.as_str() {
+        "photo" => ActivityType::Photo,
+        "note" => ActivityType::Note,
+        _ => return Err(AppError::Validation("Invalid activity type (expected 'photo' or 'note')".to_string())),
+    };
+    
+    let create = CreateActivity {
+        site_id,
+        activity_type,
+        content: request.content,
+        photo_url: request.photo_url,
+    };
+    
+    let activity = service.create_activity(create, &ctx).await?;
+    
+    Ok((StatusCode::CREATED, Json(ActivityResponse::from(activity))))
+}
+
+// === Dashboard Handler ===
+
+pub async fn get_dashboard(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+    
+    let sites = service.get_dashboard(&ctx).await?;
+    let response: Vec<DashboardSiteResponse> = sites.into_iter().map(DashboardSiteResponse::from).collect();
     
     Ok(Json(response))
 }
