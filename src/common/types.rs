@@ -421,3 +421,247 @@ impl FromStr for AssignmentRole {
         }
     }
 }
+
+/// Vehicle identifier - wraps UUID
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct VehicleId(pub Uuid);
+
+impl VehicleId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+
+    pub fn parse(s: &str) -> Result<Self, uuid::Error> {
+        Uuid::parse_str(s).map(Self)
+    }
+}
+
+impl Default for VehicleId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for VehicleId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+/// Tool identifier - wraps UUID
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct ToolId(pub Uuid);
+
+impl ToolId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+
+    pub fn parse(s: &str) -> Result<Self, uuid::Error> {
+        Uuid::parse_str(s).map(Self)
+    }
+}
+
+impl Default for ToolId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for ToolId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+/// Reservation identifier - wraps UUID
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct ReservationId(pub Uuid);
+
+impl ReservationId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+
+    pub fn parse(s: &str) -> Result<Self, uuid::Error> {
+        Uuid::parse_str(s).map(Self)
+    }
+}
+
+impl Default for ReservationId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for ReservationId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+/// Resource type for vehicles and tools
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ResourceType {
+    Vehicle,
+    Tool,
+}
+
+impl ResourceType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ResourceType::Vehicle => "vehicle",
+            ResourceType::Tool => "tool",
+        }
+    }
+}
+
+impl fmt::Display for ResourceType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl FromStr for ResourceType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "vehicle" => Ok(ResourceType::Vehicle),
+            "tool" => Ok(ResourceType::Tool),
+            _ => Err(format!("Invalid resource type: {}", s)),
+        }
+    }
+}
+
+/// Vehicle type
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum VehicleType {
+    Bulli,
+    Transporter,
+    Car,
+    Other,
+}
+
+impl VehicleType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            VehicleType::Bulli => "bulli",
+            VehicleType::Transporter => "transporter",
+            VehicleType::Car => "car",
+            VehicleType::Other => "other",
+        }
+    }
+}
+
+impl fmt::Display for VehicleType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl FromStr for VehicleType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "bulli" => Ok(VehicleType::Bulli),
+            "transporter" => Ok(VehicleType::Transporter),
+            "car" => Ok(VehicleType::Car),
+            "other" => Ok(VehicleType::Other),
+            _ => Err(format!("Invalid vehicle type: {}", s)),
+        }
+    }
+}
+
+/// Resource status for vehicles and tools
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum ResourceStatus {
+    #[default]
+    Available,
+    Reserved,
+    InUse,
+    Maintenance,
+}
+
+impl ResourceStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ResourceStatus::Available => "available",
+            ResourceStatus::Reserved => "reserved",
+            ResourceStatus::InUse => "in_use",
+            ResourceStatus::Maintenance => "maintenance",
+        }
+    }
+}
+
+impl fmt::Display for ResourceStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl FromStr for ResourceStatus {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "available" => Ok(ResourceStatus::Available),
+            "reserved" => Ok(ResourceStatus::Reserved),
+            "in_use" | "inuse" => Ok(ResourceStatus::InUse),
+            "maintenance" => Ok(ResourceStatus::Maintenance),
+            _ => Err(format!("Invalid resource status: {}", s)),
+        }
+    }
+}
+
+/// Reservation status
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum ReservationStatus {
+    #[default]
+    Pending,
+    Confirmed,
+    InUse,
+    Completed,
+    Cancelled,
+}
+
+impl ReservationStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ReservationStatus::Pending => "pending",
+            ReservationStatus::Confirmed => "confirmed",
+            ReservationStatus::InUse => "in_use",
+            ReservationStatus::Completed => "completed",
+            ReservationStatus::Cancelled => "cancelled",
+        }
+    }
+}
+
+impl fmt::Display for ReservationStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl FromStr for ReservationStatus {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "pending" => Ok(ReservationStatus::Pending),
+            "confirmed" => Ok(ReservationStatus::Confirmed),
+            "in_use" | "inuse" => Ok(ReservationStatus::InUse),
+            "completed" => Ok(ReservationStatus::Completed),
+            "cancelled" => Ok(ReservationStatus::Cancelled),
+            _ => Err(format!("Invalid reservation status: {}", s)),
+        }
+    }
+}
