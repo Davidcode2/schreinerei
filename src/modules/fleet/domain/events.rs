@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use uuid::Uuid;
 
 use crate::common::events::{DomainEvent, EventType};
-use crate::common::types::{TenantId, VehicleId, ToolId, ResourceType};
+use crate::common::types::{TenantId, VehicleId, ToolId, ReservationId, ResourceType};
 
 /// Payload for VehicleCreated event
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,6 +61,69 @@ impl ResourceStatusChangedPayload {
             tenant_id,
             self.resource_type.to_string(),
             self.resource_id.clone(),
+            json!(self),
+        )
+    }
+}
+
+/// Payload for ReservationCreated event
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReservationCreatedPayload {
+    pub reservation_id: ReservationId,
+    pub resource_type: ResourceType,
+    pub resource_id: Uuid,
+    pub user_id: String,
+    pub site_id: Option<String>,
+    pub start_time: String,
+    pub end_time: String,
+}
+
+impl ReservationCreatedPayload {
+    pub fn into_event(self, tenant_id: TenantId) -> DomainEvent {
+        DomainEvent::new(
+            EventType::ReservationCreated,
+            tenant_id,
+            "Reservation",
+            self.reservation_id.to_string(),
+            json!(self),
+        )
+    }
+}
+
+/// Payload for ReservationUpdated event
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReservationUpdatedPayload {
+    pub reservation_id: ReservationId,
+    pub changes: Vec<String>, // List of changed fields
+}
+
+impl ReservationUpdatedPayload {
+    pub fn into_event(self, tenant_id: TenantId) -> DomainEvent {
+        DomainEvent::new(
+            EventType::ReservationUpdated,
+            tenant_id,
+            "Reservation",
+            self.reservation_id.to_string(),
+            json!(self),
+        )
+    }
+}
+
+/// Payload for ReservationCancelled event
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReservationCancelledPayload {
+    pub reservation_id: ReservationId,
+    pub resource_type: ResourceType,
+    pub resource_id: Uuid,
+}
+
+impl ReservationCancelledPayload {
+    pub fn into_event(self, tenant_id: TenantId) -> DomainEvent {
+        DomainEvent::new(
+            EventType::ReservationCancelled,
+            tenant_id,
+            "Reservation",
+            self.reservation_id.to_string(),
             json!(self),
         )
     }
