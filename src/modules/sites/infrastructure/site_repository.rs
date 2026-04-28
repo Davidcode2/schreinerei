@@ -1,15 +1,16 @@
 use chrono::{DateTime, Utc, NaiveDate};
+use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, FromRow};
 use uuid::Uuid;
 
 use crate::common::error::AppError;
 use crate::common::events::{EventBus, DomainEvent};
 use crate::common::types::{
-    TenantId, SiteId, TimeEntryId, UserId, SiteStatus, AssignmentRole, WorkType,
+    TenantId, SiteId, TimeEntryId, UserId, SiteStatus, AssignmentRole, WorkType, ActivityId,
 };
 use crate::modules::sites::domain::{
     Site, SiteAssignment, TimeEntry,
-    CreateSite, UpdateSite, CreateTimeEntry,
+    CreateSite, UpdateSite, CreateTimeEntry, Activity, CreateActivity,
 };
 
 /// Repository for site data access with tenant isolation
@@ -363,6 +364,95 @@ impl SiteRepository {
         Ok(entries.into_iter().map(|e| e.into_time_entry()).collect())
     }
 
+    // === Activity operations ===
+
+    pub async fn create_activity(
+        &self,
+        tenant_id: TenantId,
+        user_id: UserId,
+        create: &CreateActivity,
+    ) -> Result<Activity, AppError> {
+        let now = Utc::now();
+        let id = Uuid::new_v4();
+
+        let activity = sqlx::query_as::<_, ActivityRow>(
+            r#"
+            INSERT INTO site_activities (id, tenant_id, site_id, user_id, activity_type, content, photo_url, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id, tenant_id, site_id, user_id, activity_type, content, photo_url, created_at
+            "#
+        )
+        .bind(id)
+        .bind(tenant_id.0)
+        .bind(create.site_id.0)
+        .bind(user_id.0)
+        .bind(create.activity_type.as_str())
+        .bind(&create.content)
+        .bind(&create.photo_url)
+        .bind(now)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(activity.into_activity())
+    }
+
+    pub async fn list_activities(
+        &self,
+        tenant_id: TenantId,
+        site_id: SiteId,
+        limit: i32,
+    ) -> Result<Vec<Activity>, AppError> {
+        let activities = sqlx::query_as::<_, ActivityRow>(
+            r#"
+            SELECT id, tenant_id, site_id, user_id, activity_type, content, photo_url, created_at
+            FROM site_activities
+            WHERE tenant_id = $1 AND site_id = $2
+            ORDER BY created_at DESC
+            LIMIT $3
+            "#
+        )
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(activities.into_iter().map(|a| a.into_activity()).collect())
+    }
+
+    // === Dashboard operations ===
+
+    pub async fn get_dashboard_sites(&self, tenant_id: TenantId) -> Result<Vec<DashboardSite>, AppError> {
+        let sites = sqlx::query_as::<_, DashboardSiteRow>(
+            r#"
+            SELECT 
+                s.id, s.tenant_id, s.name, s.customer_name, s.location, 
+                s.status, s.start_date, s.end_date, s.estimated_days,
+                COUNT(DISTINCT sa.user_id) as assigned_users,
+                COALESCE(SUM(te.hours), 0) as total_hours
+            FROM sites s
+            LEFT JOIN site_assignments sa ON s.id = sa.site_id AND s.tenant_id = sa.tenant_id
+            LEFT JOIN time_entries te ON s.id = te.site_id AND s.tenant_id = te.tenant_id
+            WHERE s.tenant_id = $1 AND s.status IN ('planned', 'active')
+            GROUP BY s.id
+            ORDER BY 
+                CASE s.status 
+                    WHEN 'active' THEN 1 
+                    WHEN 'planned' THEN 2 
+                END,
+                s.start_date ASC NULLS LAST
+            "#
+        )
+        .bind(tenant_id.0)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(sites.into_iter().map(|s| s.into_dashboard_site()).collect())
+    }
+
     // === Event publishing ===
 
     pub async fn publish_event(&self, event: &DomainEvent) -> Result<(), AppError> {
@@ -455,6 +545,83 @@ impl TimeEntryRow {
             work_date: self.work_date,
             notes: self.notes,
             created_at: self.created_at,
+        }
+    }
+}
+
+#[derive(Debug, FromRow)]
+struct ActivityRow {
+    id: Uuid,
+    tenant_id: Uuid,
+    site_id: Uuid,
+    user_id: Uuid,
+    activity_type: String,
+    content: Option<String>,
+    photo_url: Option<String>,
+    created_at: DateTime<Utc>,
+}
+
+impl ActivityRow {
+    fn into_activity(self) -> Activity {
+        use crate::modules::sites::domain::ActivityType;
+        Activity {
+            id: ActivityId(self.id),
+            tenant_id: TenantId(self.tenant_id),
+            site_id: SiteId(self.site_id),
+            user_id: UserId(self.user_id),
+            activity_type: self.activity_type.parse().unwrap_or(ActivityType::Note),
+            content: self.content,
+            photo_url: self.photo_url,
+            created_at: self.created_at,
+        }
+    }
+}
+
+/// Dashboard site summary for open sites view
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DashboardSite {
+    pub id: SiteId,
+    pub tenant_id: TenantId,
+    pub name: String,
+    pub customer_name: String,
+    pub location: Option<String>,
+    pub status: String,
+    pub start_date: Option<NaiveDate>,
+    pub end_date: Option<NaiveDate>,
+    pub estimated_days: Option<i32>,
+    pub assigned_users: i64,
+    pub total_hours: f64,
+}
+
+#[derive(Debug, FromRow)]
+struct DashboardSiteRow {
+    id: Uuid,
+    tenant_id: Uuid,
+    name: String,
+    customer_name: String,
+    location: Option<String>,
+    status: String,
+    start_date: Option<NaiveDate>,
+    end_date: Option<NaiveDate>,
+    estimated_days: Option<i32>,
+    assigned_users: i64,
+    total_hours: Option<f64>,
+}
+
+impl DashboardSiteRow {
+    fn into_dashboard_site(self) -> DashboardSite {
+        DashboardSite {
+            id: SiteId(self.id),
+            tenant_id: TenantId(self.tenant_id),
+            name: self.name,
+            customer_name: self.customer_name,
+            location: self.location,
+            status: self.status,
+            start_date: self.start_date,
+            end_date: self.end_date,
+            estimated_days: self.estimated_days,
+            assigned_users: self.assigned_users,
+            total_hours: self.total_hours.unwrap_or(0.0),
         }
     }
 }
