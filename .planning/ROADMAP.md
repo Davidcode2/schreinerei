@@ -76,28 +76,36 @@
 
 ---
 
-## Phase 3: Baustellen Management
+## Phase 3: Baustellen Management ✓
 
 **Goal:** Baustellen anlegen, Mitarbeiter zuweisen, Zeit buchen, Activity Feed
 
 **Requirements:** SITE-01, SITE-02, SITE-03, SITE-04, SITE-05, SITE-06, SITE-07, SITE-08
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 **Duration Estimate:** 3-4 Wochen
 
+**Completed:** 2026-04-28
+
 ### Plans
 
-- [ ] 03-01-PLAN.md — Sites Module Foundation + Time Tracking (SITE-01, SITE-02, SITE-03, SITE-04)
-- [ ] 03-02-PLAN.md — Activity Feed + Dashboard (SITE-05, SITE-06, SITE-07, SITE-08)
+- [x] 03-01-PLAN.md — Sites Module Foundation + Time Tracking (SITE-01, SITE-02, SITE-03, SITE-04)
+- [x] 03-02-PLAN.md — Activity Feed + Dashboard (SITE-05, SITE-06, SITE-07, SITE-08)
 
 ### Success Criteria
 
-1. Admin kann Baustelle mit Ort, Kunde, Zeitraum anlegen
-2. Admin kann Mitarbeiter zuweisen
-3. Mitarbeiter kann Arbeitszeit auf Baustelle/Werkstatt buchen
-4. Activity Feed zeigt Fotos und Notizen
-5. Dashboard zeigt offene Baustellen
+1. Admin kann Baustelle mit Ort, Kunde, Zeitraum anlegen ✓
+2. Admin kann Mitarbeiter zuweisen ✓
+3. Mitarbeiter kann Arbeitszeit auf Baustelle/Werkstatt buchen ✓
+4. Activity Feed zeigt Fotos und Notizen ✓
+5. Dashboard zeigt offene Baustellen ✓
+
+### Key Decisions
+
+- Site status state machine: Planned → Active → Completed → Archived
+- Nullable site_id on TimeEntry for workshop work
+- Activity types: Photo (requires URL), Note (requires content), StatusChange (system-only)
 
 ### Dependencies
 
