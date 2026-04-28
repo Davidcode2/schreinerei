@@ -5,6 +5,15 @@
 
 ## v1 Requirements
 
+### Architecture & Quality
+
+- [ ] **ARCH-01**: Hexagonal Architecture mit Domain/Application/Infrastructure Layern
+- [ ] **ARCH-02**: Module kommunizieren über Domain Events, nicht direkte Aufrufe
+- [ ] **ARCH-03**: Rust Traits als Ports für Infrastructure-Abstraktion
+- [ ] **ARCH-04**: Unit Tests können Domain/Application ohne Datenbank testen (Mock-Ports)
+- [ ] **ARCH-05**: TenantId wird automatisch aus JWT extrahiert (Request Context Pattern)
+- [ ] **ARCH-06**: State-Based Persistence mit Audit Log (nicht Event Sourcing)
+
 ### Authentication & IAM
 
 - [ ] **AUTH-01**: User kann sich via Keycloak einloggen
@@ -103,6 +112,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| ARCH-01 | Phase 1 | Pending |
+| ARCH-02 | Phase 2+ | Pending |
+| ARCH-03 | Phase 1 | Pending |
+| ARCH-04 | Phase 1 | Pending |
+| ARCH-05 | Phase 1 | Pending |
+| ARCH-06 | Phase 1 | Pending |
 | AUTH-01 | Phase 1 | Pending |
 | AUTH-02 | Phase 1 | Pending |
 | AUTH-03 | Phase 1 | Pending |
@@ -136,10 +151,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PWA-04 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 31 total
-- Mapped to phases: 31
+- v1 requirements: 37 total
+- Mapped to phases: 37
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-28*
-*Last updated: 2026-04-28 after initial definition*
+*Last updated: 2026-04-28 after adding architecture requirements*

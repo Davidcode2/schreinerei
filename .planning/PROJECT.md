@@ -59,10 +59,77 @@ Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, 
 
 - **Timeline**: 3-6 Monate für V1
 - **Tech Stack**: Rust Backend (SQLx, REST), Vite+React Frontend (PWA), Keycloak Auth, PostgreSQL, Kubernetes
-- **Architecture**: Modularer Monolith mit DDD Bounded Contexts
+- **Architecture**: Hexagonal Architecture (Ports & Adapters) mit Modular Monolith und DDD Bounded Contexts
 - **Multi-Tenancy**: Von Anfang an implementiert — TenantId in jeder Query
 - **Deployment**: Bestehender Kubernetes-Cluster
 - **Offline**: Wichtig — Service Worker, IndexedDB für Baustellen ohne Empfang
+- **Longevity**: 10+ Jahre Wartbarkeit ohne komplette Neuentwicklung
+
+## Architecture
+
+### Hexagonal Architecture (Ports & Adapters)
+
+Jedes Modul hat drei Schichten:
+
+- **Domain**: Reine Business-Logik, Entities, Value Objects, Domain Events. Keine Dependencies auf Frameworks oder Externes.
+- **Application**: Use Cases / Services. Orchestriert Domain-Objekte. Definiert Ports (Traits) für Infrastructure.
+- **Infrastructure**: Adapter für Datenbank, External APIs, Message Bus. Implementiert Ports aus Application.
+
+### Modular Monolith mit DDD Bounded Contexts
+
+Module sind vertikale Slices mit eigener Hexagon-Struktur:
+
+```
+src/
+├── common/           # Shared Kernel (TenantId, Money, Error Types)
+├── auth/             # Keycloak integration & JWT verification
+└── modules/
+    ├── iam/          # Identity & Access Management
+    ├── inventory/    # Material management
+    ├── sites/        # Construction site management
+    └── fleet/        # Vehicle & tool management
+```
+
+Jedes Modul:
+```
+modules/inventory/
+├── domain/           # Material, StockLevel, Events
+├── application/      # OrderMaterialUseCase, Ports (traits)
+└── infrastructure/   # PostgresRepo, EmailClient (implementations)
+```
+
+### Inter-Module Communication
+
+Module kommunizieren über **Domain Events**, nicht direkte Aufrufe:
+
+- ProjectManagement publiziert `ProjectCompleted` Event
+- Billing hört auf Event und erstellt Draft Invoice
+- Vorteil: Module können später in separate Microservices extrahiert werden
+
+### Multi-Tenancy
+
+TenantId wird nie manuell übergeben. Stattdessen:
+
+1. API Layer extrahiert TenantId aus Keycloak JWT
+2. TenantId wird in Request Context / Thread Local gespeichert
+3. Repositories lesen TenantId automatisch aus Context
+4. Verhindert Data Leaks zwischen Tenants
+
+### Rust Traits als Ports
+
+```rust
+// domain/port.rs
+pub trait MaterialRepository {
+    async fn find_by_id(&self, id: MaterialId) -> Result<Option<Material>>;
+    async fn save(&self, material: &Material) -> Result<()>;
+}
+
+// infrastructure/postgres.rs
+pub struct PostgresMaterialRepository { /* ... */ }
+impl MaterialRepository for PostgresMaterialRepository { /* ... */ }
+```
+
+Vorteil: Unit Tests mit Mock-Implementierungen ohne Datenbank.
 
 ## Key Decisions
 

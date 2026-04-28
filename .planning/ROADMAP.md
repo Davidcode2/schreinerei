@@ -8,9 +8,9 @@
 
 ## Phase 1: Auth & IAM Foundation
 
-**Goal:** Multi-Tenant Authentication mit Keycloak, User-Management, Basis-API
+**Goal:** Multi-Tenant Authentication mit Keycloak, User-Management, Basis-API, Hexagonal Architecture Foundation
 
-**Requirements:** AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05
+**Requirements:** AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, ARCH-01, ARCH-03, ARCH-04, ARCH-05, ARCH-06
 
 **Plans:** 2 plans in 2 waves
 
@@ -39,9 +39,9 @@
 
 ## Phase 2: Inventar Management
 
-**Goal:** Materialverwaltung mit Bestands-Tracking, Warnungen und QR-Codes
+**Goal:** Materialverwaltung mit Bestands-Tracking, Warnungen, QR-Codes und Domain Events
 
-**Requirements:** INVT-01, INVT-02, INVT-03, INVT-04, INVT-05, INVT-06, INVT-07
+**Requirements:** INVT-01, INVT-02, INVT-03, INVT-04, INVT-05, INVT-06, INVT-07, ARCH-02
 
 **Duration Estimate:** 3-4 Wochen
 
