@@ -2,7 +2,7 @@
 
 **Project:** Schreinerei SaaS
 **Current Phase:** 3 — Baustellen Management
-**Status:** Ready to Execute
+**Status:** In Progress
 
 ---
 
@@ -11,7 +11,7 @@
 ```
 Phase 1: ██████████ 100%  Complete ✓
 Phase 2: ██████████ 100%  Complete ✓
-Phase 3: ░░░░░░░░░░ 0%    Ready to Execute
+Phase 3: █████░░░░░ 50%   In Progress
 Phase 4: ░░░░░░░░░░ 0%    Blocked (Phase 3)
 Phase 5: ░░░░░░░░░░ 0%    Blocked (Phase 1-4)
 ```
@@ -20,21 +20,21 @@ Phase 5: ░░░░░░░░░░ 0%    Blocked (Phase 1-4)
 
 **Name:** Baustellen Management
 **Goal:** Baustellen anlegen, Mitarbeiter zuweisen, Zeit buchen, Activity Feed
-**Status:** Ready to Execute
+**Status:** In Progress
 
 ### Plans
 
 | Plan | Status | Requirements |
 |------|--------|--------------|
-| 03-01-PLAN.md | Not started | SITE-01, SITE-02, SITE-03, SITE-04 |
+| 03-01-PLAN.md | ✓ Complete | SITE-01, SITE-02, SITE-03, SITE-04 |
 | 03-02-PLAN.md | Not started | SITE-05, SITE-06, SITE-07, SITE-08 |
 
 ### Requirements
 
-- [ ] SITE-01: Baustelle anlegen
-- [ ] SITE-02: Mitarbeiter zuweisen
-- [ ] SITE-03: Zeit buchen
-- [ ] SITE-04: Activity Feed
+- [x] SITE-01: Baustelle anlegen
+- [x] SITE-02: Mitarbeiter zuweisen
+- [x] SITE-03: Zeit buchen
+- [ ] SITE-04: Activity Feed (infrastructure ready, API in 03-02)
 - [ ] SITE-05: Dashboard
 - [ ] SITE-06: Baustellen-Übersicht
 - [ ] SITE-07: Baustellen-Details
@@ -42,11 +42,11 @@ Phase 5: ░░░░░░░░░░ 0%    Blocked (Phase 1-4)
 
 ### Success Criteria
 
-1. Admin kann Baustelle mit Ort, Kunde, Zeitraum anlegen
-2. Admin kann Mitarbeiter zuweisen
-3. Mitarbeiter kann Arbeitszeit auf Baustelle/Werkstatt buchen
-4. Activity Feed zeigt Fotos und Notizen
-5. Dashboard zeigt offene Baustellen
+1. Admin kann Baustelle mit Ort, Kunde, Zeitraum anlegen ✓
+2. Admin kann Mitarbeiter zuweisen ✓
+3. Mitarbeiter kann Arbeitszeit auf Baustelle/Werkstatt buchen ✓
+4. Activity Feed zeigt Fotos und Notizen (pending 03-02)
+5. Dashboard zeigt offene Baustellen (pending 03-02)
 
 ---
 
@@ -71,6 +71,8 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 - Domain events for inter-module communication (Phase 2)
 - QR codes with tenant prefix (Phase 2)
 - Event store in database for V1 (Phase 2)
+- Site status state machine: Planned → Active → Completed → Archived (Phase 3)
+- Nullable site_id on TimeEntry for workshop work (Phase 3)
 
 ### Blockers/Concerns
 
@@ -81,7 +83,7 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: Phase 3 planned, ready to execute
+Stopped at: Phase 3 Plan 01 complete, executing Plan 02
 Resume file: None
 
 ---
@@ -101,9 +103,10 @@ Resume file: None
 | 2026-04-28 | Phase 2 Complete | Inventory Management finished |
 | 2026-04-28 | Transition to Phase 3 | Ready to plan Sites Management |
 | 2026-04-28 | Phase 3 Planned | Created 03-01-PLAN.md and 03-02-PLAN.md |
+| 2026-04-28 | Plan 03-01 Complete | Sites module foundation with domain, repo, service, API |
 
 ---
 
 ## Next Action
 
-Execute Phase 3: `/gsd-execute-phase 3`
+Execute Plan 03-02: Activity Feed and Dashboard
