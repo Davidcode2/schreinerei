@@ -2,7 +2,7 @@
 
 **Project:** Schreinerei SaaS
 **Current Phase:** 5 — PWA & Mobile
-**Status:** Ready to Execute
+**Status:** Complete ✓
 
 ---
 
@@ -13,23 +13,23 @@ Phase 1: ██████████ 100%  Complete ✓
 Phase 2: ██████████ 100%  Complete ✓
 Phase 3: ██████████ 100%  Complete ✓
 Phase 4: ██████████ 100%  Complete ✓
-Phase 5: ░░░░░░░░░░ 0%    Planned - Ready to Execute
+Phase 5: ██████████ 100%  Complete ✓
 ```
 
 ## Current Phase: 5
 
 **Name:** PWA & Mobile
 **Goal:** PWA mit Offline-Support, QR-Scanner, Responsive Design
-**Status:** Planned - Ready to Execute
+**Status:** Complete
 
 ### Plans
 
 | Plan | Status | Requirements |
 |------|--------|--------------|
-| 05-01 | Ready | PWA-01, PWA-04 |
-| 05-02 | Ready | (Auth prerequisite) |
-| 05-03 | Ready | PWA-04 |
-| 05-04 | Ready | PWA-02, PWA-03 |
+| 05-01 | Complete ✓ | PWA-01, PWA-04 |
+| 05-02 | Complete ✓ | (Auth prerequisite) |
+| 05-03 | Complete ✓ | PWA-04 |
+| 05-04 | Complete ✓ | PWA-02, PWA-03 |
 
 ### Wave Structure
 
@@ -42,17 +42,17 @@ Phase 5: ░░░░░░░░░░ 0%    Planned - Ready to Execute
 
 ### Requirements
 
-- [ ] PWA-01: PWA installierbar
-- [ ] PWA-02: Offline-Modus mit Synchronisation
-- [ ] PWA-03: QR-Code Scanner via Kamera
-- [ ] PWA-04: Responsive Design (Tablet & Smartphone)
+- [x] PWA-01: PWA installierbar
+- [x] PWA-02: Offline-Modus mit Synchronisation
+- [x] PWA-03: QR-Code Scanner via Kamera
+- [x] PWA-04: Responsive Design (Tablet & Smartphone)
 
 ### Success Criteria
 
-1. App ist als PWA installierbar
-2. Offline-Modus funktioniert (Daten werden synchronisiert)
-3. QR-Code Scanner via Kamera
-4. UI funktioniert auf Tablet und Smartphone
+1. App ist als PWA installierbar ✓
+2. Offline-Modus funktioniert (Daten werden synchronisiert) ✓
+3. QR-Code Scanner via Kamera ✓
+4. UI funktioniert auf Tablet und Smartphone ✓
 
 ---
 
@@ -61,7 +61,7 @@ Phase 5: ░░░░░░░░░░ 0%    Planned - Ready to Execute
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
-**Current focus:** Phase 5 — PWA & Mobile
+**Current focus:** V1 Launch Ready
 
 ---
 
@@ -85,6 +85,10 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 - ResourceType enum for polymorphic resource_id (Phase 4)
 - Availability check with overlap detection before reservation (Phase 4)
 - QR code shows current status + upcoming reservations (Phase 4)
+- Dexie.js for IndexedDB abstraction (Phase 5)
+- 24-hour cache duration for offline data (Phase 5)
+- Max 3 retries for failed sync actions (Phase 5)
+- NetworkFirst for API calls, CacheFirst for static assets (Phase 5)
 
 ### Blockers/Concerns
 
@@ -94,8 +98,8 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 
 ## Session Continuity
 
-Last session: 2026-04-28
-Stopped at: Phase 4 complete, ready to plan Phase 5
+Last session: 2026-04-29
+Stopped at: Phase 5 complete - V1 Launch Ready
 Resume file: None
 
 ---
@@ -124,9 +128,18 @@ Resume file: None
 | 2026-04-28 | Plan 04-02 Complete | Reservations, calendar, QR status |
 | 2026-04-28 | Phase 4 Complete | Fuhrpark & Werkzeuge finished |
 | 2026-04-28 | Phase 5 Planned | Created 05-01 through 05-04 PLAN files for PWA & Mobile |
+| 2026-04-29 | Plan 05-01 Complete | PWA manifest, service worker, icons |
+| 2026-04-29 | Plan 05-02 Complete | Keycloak auth with JWT validation |
+| 2026-04-29 | Plan 05-03 Complete | Core feature components (inventory, sites, fleet) |
+| 2026-04-29 | Plan 05-04 Complete | Offline storage, sync queue, QR scanner |
+| 2026-04-29 | Phase 5 Complete | PWA & Mobile finished - V1 Launch Ready |
 
 ---
 
 ## Next Action
 
-Execute Phase 5: `/gsd-execute-phase 5`
+**V1 MILESTONE COMPLETE**
+
+All phases finished. Ready for pilot customer deployment.
+
+Run verification: `/gsd-verify-phase 5`
