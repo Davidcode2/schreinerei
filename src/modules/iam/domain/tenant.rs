@@ -12,6 +12,8 @@ pub struct Tenant {
     pub keycloak_realm: String,
     pub name: String,
     pub slug: TenantSlug,
+    /// Keycloak Organization UUID for organization-based tenancy
+    pub keycloak_organization_id: Option<uuid::Uuid>,
     pub created_at: DateTime<Utc>,
 }
 

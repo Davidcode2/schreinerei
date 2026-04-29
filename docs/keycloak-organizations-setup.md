@@ -1,5 +1,40 @@
 # Keycloak Organizations Setup Guide
 
+## Quick Start for Schreinerei Realm
+
+**Prerequisite:** Organizations feature is already enabled in your Keycloak realm.
+
+### Steps to Complete Migration
+
+1. **Add Organization Scope to Client**
+   - Go to **Clients** → `schreinerei-pwa` → **Client Scopes** tab
+   - Click **Add client scope** → Select **organization** → Add
+
+2. **Create Organizations for Existing Tenants**
+   - Go to **Organizations** menu (left sidebar)
+   - For each tenant in your database:
+     - Click **Create organization**
+     - Name: Tenant name from database
+     - Alias: URL-friendly slug
+     - Domains: Associated email domain (optional)
+   - Note: Use the tenant UUID from database as reference
+
+3. **Add Users as Organization Members**
+   - Go to **Organizations** → Select organization → **Members** tab
+   - Click **Add member** → **Add realm user**
+   - Select users belonging to this tenant
+
+4. **Verify Token Contains Organization Claim**
+   - Log in and decode your JWT token
+   - Check for `organization` claim with organization ID
+
+5. **Run Database Migration**
+   ```bash
+   sqlx migrate run
+   ```
+
+---
+
 ## Overview
 
 This guide explains how to migrate from **attribute-based tenancy** to **organization-based tenancy** in Keycloak for the Schreinerei SaaS application.
