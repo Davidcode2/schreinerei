@@ -2,69 +2,74 @@
 
 **Date:** 2026-04-29
 **Tester:** Playwright E2E Tests
-**Environment:** localhost:5173 → localhost:3000 API
+**Environment:** localhost:5174 → localhost:3000 API
 
 ## Summary
 
 | Bug ID | Severity | Test | Status |
 |--------|----------|------|--------|
-| BUG-01 | High | All 18 tests | Open |
+| BUG-01 | High | All auth tests | Open |
+| BUG-02 | Medium | All tests | Open |
 
 ---
 
-## BUG-01: Vite Dev Server Returns 426 Upgrade Required
+## BUG-01: Keycloak Redirect URI Invalid
 
-**Test:** All tests - login helper in `tests/helpers/auth.ts:36`
+**Test:** `tests/auth.spec.ts - should login successfully`
 
-**Severity:** High (Blocks all E2E testing)
+**Severity:** High (Blocks authentication)
 
 **Steps to Reproduce:**
-1. Start Playwright test against localhost:5173
-2. Test navigates to http://localhost:5173
-3. Page shows "Upgrade Required" instead of the React app
-4. Test times out waiting for `main` element
+1. Navigate to http://localhost:5174
+2. App redirects to Keycloak for authentication
+3. Keycloak shows error page: "We are sorry... Invalid parameter: redirect_uri"
 
-**Expected:** Vite dev server should serve the React app with HTML that includes `<main>` element.
+**Expected:** Keycloak should accept the redirect_uri and show login form.
 
-**Actual:** Vite returns HTTP 426 "Upgrade Required" - this indicates a WebSocket/HTTP protocol mismatch. Multiple Vite processes may be conflicting on the same port.
+**Actual:** Keycloak rejects the redirect_uri parameter.
 
 **Error Message:**
 ```
-TimeoutError: page.waitForSelector: Timeout 15000ms exceeded.
-Call log:
-  - waiting for locator('main') to be visible
-
-Page snapshot:
-- generic [ref=e2]: Upgrade Required
+heading "We are sorry..."
+paragraph "Invalid parameter: redirect_uri"
 ```
 
 **Root Cause:**
-The Vite dev server is returning a 426 status code. This typically happens when:
-1. Multiple Vite instances are running on the same port
-2. HTTP/2 or WebSocket upgrade is required but failing
-3. HMR (Hot Module Replacement) WebSocket connection issues
+The Keycloak client `schreinerei_pwa` does not have `http://localhost:5174/auth/callback` registered as a valid redirect URI. The app is running on port 5174 (due to port 5173 being occupied), but Keycloak only accepts the configured redirect URIs.
 
-**Recommendation:**
-1. Kill all existing Vite processes: `pkill -f vite`
-2. Ensure only one Vite instance runs on port 5173
-3. Consider adding a health check before running tests
-4. For CI, use `webServer` config in playwright.config.ts to manage the dev server
+**Fix Required:**
+1. Register `http://localhost:5174/auth/callback` in Keycloak client settings
+2. OR ensure tests run on port 5173 (free the occupied port)
+3. OR use wildcard redirect URIs in Keycloak (less secure)
+
+**Keycloak Admin Action:**
+Go to Keycloak Admin Console → Clients → schreinerei_pwa → Valid Redirect URIs → Add `http://localhost:*/auth/callback`
+
+---
+
+## BUG-02: Port 5173 Occupied by Unknown Process
+
+**Test:** All tests
+
+**Severity:** Medium (Workaround available)
+
+**Steps to Reproduce:**
+1. Run `npm run dev` in frontend directory
+2. Vite reports "Port 5173 is in use, trying another one..."
+3. Server starts on port 5174 instead
+
+**Expected:** Port 5173 should be available for Vite dev server.
+
+**Actual:** An unknown process is occupying port 5173 and returning HTTP 426 "Upgrade Required".
+
+**Root Cause:**
+A lingering process is bound to port 5173. The process doesn't appear in `ps` output but shows in `ss` listening state.
 
 **Workaround:**
-Tests should be run in a clean environment where the Vite dev server is freshly started:
-```bash
-# Kill all Vite processes
-pkill -f vite
+Use port 5174 for testing (requires Keycloak redirect URI update - see BUG-01).
 
-# Start fresh dev server
-cd frontend && npm run dev &
-
-# Wait for server to be ready
-sleep 5
-
-# Run tests
-npx playwright test
-```
+**Fix Required:**
+Investigate and kill the process occupying port 5173. May require system reboot if process is a kernel-level listener.
 
 ---
 
@@ -76,6 +81,7 @@ npx playwright test
 - 18 E2E tests covering all major user flows
 - Test report generated at `playwright-report/index.html`
 - Screenshots and videos captured for all failures
+- Tests ARE running correctly - discovering real issues!
 
 **Test Coverage:**
 - Authentication: 2 tests (login, logout)
