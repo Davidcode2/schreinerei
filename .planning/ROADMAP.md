@@ -11,7 +11,7 @@
 - ✅ **v1.0 MVP** — Phases 1-5 (shipped 2026-04-29)
 - ✅ **v1.1 Organization-Based Tenancy** — Phase 6 (shipped 2026-04-29)
 - ✅ **v1.2 Frontend Polish** — Phase 7 (shipped 2026-04-29)
-- 🚧 **v1.3 Bug Fixes** — Phase 8 (in progress)
+- 🚧 **v1.3 Bug Fixes** — Phases 8-9 (in progress)
 
 ---
 
@@ -62,7 +62,7 @@
 
 ---
 
-## Phase 8: Bug Fixes
+## Phase 8: Bug Fixes ✅
 
 **Goal:** Fix all frontend-accessible functionalities - ensure end-to-end flows work correctly
 
@@ -73,17 +73,19 @@
 - Cannot create materials - no category selection/creation available
 - Calendar reservation 400 error (date format)
 
-**Plans:** 2 plans (0/2 complete)
+**Plans:** 2 plans (2/2 complete)
 
 **Duration:** 1 day
+
+**Status:** Complete (2026-04-29)
 
 ### Plans
 
 **Wave 1**
-- [ ] 08-01 — Backend Bug Fixes (Dashboard type mismatch, VehicleType enum)
+- [x] 08-01 — Backend Bug Fixes (Dashboard type mismatch, VehicleType enum)
 
 **Wave 2**
-- [ ] 08-02 — Frontend Bug Fixes (Logout, Category creation, Date format)
+- [x] 08-02 — Frontend Bug Fixes (Logout, Category creation, Date format)
 
 ### Success Criteria
 
@@ -98,6 +100,26 @@
 
 ---
 
+## Phase 9: Frontend Testing
+
+**Goal:** Comprehensive frontend testing with playwright-cli to discover remaining bugs
+
+**Testing scope:**
+- Create inventory category and add items
+- Withdraw items from inventory
+- Create vehicles and book them
+- Create sites and book time
+- Observe network console for all errors
+- Record navigation patterns for future testing
+
+**Plans:** 0 plans (not yet planned)
+
+**Duration:** 1 day
+
+**Status:** Not started
+
+---
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -109,7 +131,8 @@
 | 5. PWA & Mobile | v1.0 | 4/4 | Complete | 2026-04-29 |
 | 6. Org Tenancy | v1.1 | 3/3 | Complete | 2026-04-29 |
 | 7. Frontend Polish | v1.2 | 3/3 | Complete | 2026-04-29 |
-| 8. Bug Fixes | v1.3 | 0/2 | Planned | - |
+| 8. Bug Fixes | v1.3 | 2/2 | Complete | 2026-04-29 |
+| 9. Frontend Testing | v1.3 | 0/0 | Planned | - |
 
 ---
 
@@ -119,9 +142,10 @@
 |-------|------|----------|--------------|
 | 7 | Frontend Polish | 1 day | 9 |
 | 8 | Bug Fixes | 1 day | 5 bugs |
+| 9 | Frontend Testing | 1 day | thorough testing |
 
-**Total for v1.2+v1.3:** 2 days
+**Total for v1.2+v1.3:** 3 days
 
 ---
 
-*Last updated: 2026-04-29 after Phase 7 completion, Phase 8 added*
+*Last updated: 2026-04-29 after Phase 8 completion, Phase 9 added*

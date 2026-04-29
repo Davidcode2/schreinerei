@@ -2,16 +2,16 @@
 
 **Project:** Schreinerei SaaS
 **Current Milestone:** v1.3 Bug Fixes
-**Status:** Phase Complete
+**Status:** Ready to Plan
 
 ---
 
 ## Current Position
 
-Phase: 8 — Bug Fixes
-Plan: Complete
-Status: Verified
-Last activity: 2026-04-29 — Phase 8 executed with 2 plans, all bugs fixed
+Phase: 9 — Frontend Testing
+Plan: —
+Status: Ready to Plan
+Last activity: 2026-04-29 — Phase 9 added for comprehensive frontend testing
 
 ---
 
@@ -40,6 +40,7 @@ Full decision log in PROJECT.md. Key decisions:
 
 - Phase 8 added: Fix all frontend-accessible functionalities
 - Phase 8 complete: Backend and frontend bugs resolved
+- Phase 9 added: Comprehensive frontend testing with playwright-cli
 
 ### Pending Todos
 
@@ -70,14 +71,15 @@ Full decision log in PROJECT.md. Key decisions:
 | 2026-04-29 | Phase 8 Added | Bug fixes phase for end-to-end functionality |
 | 2026-04-29 | Phase 8 Planned | 2 plans created for backend and frontend bug fixes |
 | 2026-04-29 | Phase 8 Complete | Dashboard API, VehicleType, logout, category creation, reservation dates fixed |
+| 2026-04-29 | Phase 9 Added | Comprehensive frontend testing with playwright-cli |
 
 ---
 
 ## Next Action
 
-Phase 8 complete. Consider:
-- `/gsd-progress` — view updated roadmap
-- `/gsd-verify-work 8` — manual verification of fixes
+Plan Phase 9 - Frontend Testing:
+
+`/gsd-plan-phase 9`
 
 ---
 
