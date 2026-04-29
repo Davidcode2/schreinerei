@@ -7,67 +7,55 @@ const TEST_USER = {
 
 export async function login(page: Page) {
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(1000);
   
-  // Check if we need to click Keycloak login button
   const keycloakButton = page.locator('button:has-text("Keycloak"), button:has-text("anmelden")');
-  if (await keycloakButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-    await keycloakButton.click();
-    await page.waitForURL(/auth\.jakob-lingel\.dev|localhost:8080/, { timeout: 10000 });
+  const mainContent = page.locator('main');
+  
+  // Check if already logged in
+  const hasMain = await mainContent.isVisible().catch(() => false);
+  if (hasMain) return;
+  
+  const hasLoginButton = await keycloakButton.isVisible().catch(() => false);
+  if (!hasLoginButton) {
+    // Wait longer for page to load
+    await page.waitForTimeout(2000);
+    if (await mainContent.isVisible().catch(() => false)) return;
   }
   
-  // Check for Keycloak error
-  const errorText = await page.locator('body').textContent().catch(() => '');
-  if (errorText.includes('Invalid parameter') || errorText.includes('We are sorry')) {
-    throw new Error(`Keycloak error: redirect_uri not configured for port 5175`);
-  }
+  // Click Keycloak login
+  await keycloakButton.click();
+  await page.waitForURL(/auth\.jakob-lingel\.dev|localhost:8080/, { timeout: 15000 });
+  await page.waitForTimeout(500);
   
-  // Handle Keycloak login if on auth page
-  let url = page.url();
-  while (url.includes('auth.jakob-lingel.dev') || url.includes('localhost:8080')) {
-    // Wait for visible inputs
-    await page.waitForSelector('input:visible', { timeout: 5000 });
-    
-    // Get all visible input fields
-    const inputs = page.locator('input:visible');
-    const inputCount = await inputs.count();
-    
-    // Fill visible empty inputs
-    for (let i = 0; i < inputCount; i++) {
-      const input = inputs.nth(i);
-      const value = await input.inputValue().catch(() => '');
-      const type = await input.getAttribute('type').catch(() => 'text');
-      
-      if (!value) {
-        if (type === 'password') {
-          await input.fill(TEST_USER.password);
-        } else {
-          await input.fill(TEST_USER.email);
-        }
-      }
-    }
-    
-    // Submit
-    await page.locator('button:has-text("Sign In")').click();
-    
-    // Wait a moment for navigation
-    await page.waitForTimeout(1000);
-    
-    // Check if we're still on Keycloak (multi-step auth)
-    url = page.url();
-    if (!url.includes('auth.jakob-lingel.dev') && !url.includes('localhost:8080')) {
-      break;
-    }
-  }
+  // Fill username (Keycloak multi-step auth)
+  const usernameInput = page.locator('input#username, #username').first();
+  await usernameInput.waitFor({ state: 'visible', timeout: 10000 });
+  await usernameInput.fill(TEST_USER.email);
   
-  // Wait for main app
-  await page.waitForSelector('main', { timeout: 15000 });
+  // Click Sign In to show password
+  await page.locator('button:has-text("Sign In"), #kc-login').first().click();
+  await page.waitForTimeout(500);
+  
+  // Fill password
+  const passwordInput = page.locator('input#password, #password').first();
+  await passwordInput.waitFor({ state: 'visible', timeout: 10000 });
+  await passwordInput.fill(TEST_USER.password);
+  
+  // Submit
+  await page.locator('button:has-text("Sign In"), #kc-login').first().click();
+  
+  // Wait for app
+  await page.waitForURL(/localhost:5175/, { timeout: 20000 });
+  await page.waitForTimeout(1000);
+  await mainContent.waitFor({ state: 'visible', timeout: 10000 });
 }
 
 export async function logout(page: Page) {
   const logoutBtn = page.locator('button:has-text("Abmelden"), button:has-text("Logout")');
   if (await logoutBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
     await logoutBtn.click();
-    await page.waitForURL(/auth\.jakob-lingel\.dev|localhost:8080|login/, { timeout: 5000 });
+    await page.waitForURL(/auth\.jakob-lingel\.dev|localhost:8080|localhost:5175\/login/, { timeout: 10000 });
   }
 }
