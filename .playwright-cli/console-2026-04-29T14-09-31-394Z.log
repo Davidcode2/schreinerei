@@ -1,0 +1,37 @@
+Total messages: 21 (Errors: 16, Warnings: 2)
+Returning 18 messages for level "warning"
+
+[ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/inventory/low-stock:0
+[ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/dashboard/sites:0
+[ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/time-entries/my:0
+[ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/inventory/materials:0
+[ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/sites:0
+[ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/fleet/vehicles:0
+[ERROR] Sync from server failed: Error: API request failed
+    at ApiClient.request (http://localhost:5177/src/lib/api/client.ts:41:13)
+    at async Promise.all (index 0)
+    at async syncFromServer (http://localhost:5177/src/lib/offline/sync.ts:15:49)
+    at async fullSync (http://localhost:5177/src/lib/offline/sync.ts:55:5) @ http://localhost:5177/src/lib/offline/sync.ts:28
+[ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/fleet/tools:0
+[ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/inventory/low-stock:0
+[ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/time-entries/my:0
+[ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/dashboard/sites:0
+[WARNING] %s
+
+%s
+ An error occurred in the <QrScanner> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5177/node_modules/.vite/deps/react-dom_client.js?v=8571b6f2:6965
+[WARNING] %s
+
+%s
+ An error occurred in the <QrScanner> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5177/node_modules/.vite/deps/react-dom_client.js?v=8571b6f2:6965
+[ERROR] QR Scanner error: Error getting userMedia, error = NotAllowedError: Permission denied @ http://localhost:5177/src/components/qr/QrScanner.tsx:46
+[ERROR] QR Scanner error: Error getting userMedia, error = NotAllowedError: Permission denied @ http://localhost:5177/src/components/qr/QrScanner.tsx:46
+Error: API request failed
+    at ApiClient.request (http://localhost:5177/src/lib/api/client.ts:41:13)
+    at async Promise.all (index 0)
+    at async syncFromServer (http://localhost:5177/src/lib/offline/sync.ts:15:49)
+    at async fullSync (http://localhost:5177/src/lib/offline/sync.ts:55:5)
+Cannot stop, scanner is not running or paused.
+Cannot stop, scanner is not running or paused.

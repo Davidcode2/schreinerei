@@ -542,18 +542,20 @@ impl FromStr for ResourceType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum VehicleType {
-    Bulli,
-    Transporter,
     Car,
+    Van,
+    Truck,
+    Trailer,
     Other,
 }
 
 impl VehicleType {
     pub fn as_str(&self) -> &'static str {
         match self {
-            VehicleType::Bulli => "bulli",
-            VehicleType::Transporter => "transporter",
             VehicleType::Car => "car",
+            VehicleType::Van => "van",
+            VehicleType::Truck => "truck",
+            VehicleType::Trailer => "trailer",
             VehicleType::Other => "other",
         }
     }
@@ -570,9 +572,10 @@ impl FromStr for VehicleType {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "bulli" => Ok(VehicleType::Bulli),
-            "transporter" => Ok(VehicleType::Transporter),
             "car" => Ok(VehicleType::Car),
+            "van" => Ok(VehicleType::Van),
+            "truck" => Ok(VehicleType::Truck),
+            "trailer" => Ok(VehicleType::Trailer),
             "other" => Ok(VehicleType::Other),
             _ => Err(format!("Invalid vehicle type: {}", s)),
         }

@@ -1,0 +1,14 @@
+[   12746ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/v1/inventory/materials:0
+[   12746ms] [ERROR] Sync from server failed: TypeError: Failed to fetch
+    at ApiClient.request (http://localhost:5175/src/lib/api/client.ts:33:28)
+    at async Promise.all (index 0)
+    at async syncFromServer (http://localhost:5175/src/lib/offline/sync.ts:15:49)
+    at async fullSync (http://localhost:5175/src/lib/offline/sync.ts:55:5) @ http://localhost:5175/src/lib/offline/sync.ts:28
+[   12746ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/v1/sites:0
+[   12746ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/v1/fleet/vehicles:0
+[   12746ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/v1/fleet/tools:0
+[   12749ms] TypeError: Failed to fetch
+    at ApiClient.request (http://localhost:5175/src/lib/api/client.ts:33:28)
+    at async Promise.all (index 0)
+    at async syncFromServer (http://localhost:5175/src/lib/offline/sync.ts:15:49)
+    at async fullSync (http://localhost:5175/src/lib/offline/sync.ts:55:5)

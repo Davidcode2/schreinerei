@@ -1,0 +1,5 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - heading "Schreinerei App" [level=1] [ref=e5]
+    - button "Mit Keycloak anmelden" [ref=e6]
+  - region "Notifications alt+T"

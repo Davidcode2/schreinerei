@@ -1,0 +1,75 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - heading "Schreinerei" [level=1] [ref=e6]
+      - navigation [ref=e8]:
+        - link "Dashboard" [ref=e9] [cursor=pointer]:
+          - /url: /
+          - img [ref=e10]
+          - generic [ref=e15]: Dashboard
+        - link "Inventar" [ref=e16] [cursor=pointer]:
+          - /url: /inventory
+          - img [ref=e17]
+          - generic [ref=e21]: Inventar
+        - link "Baustellen" [ref=e22] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e23]
+          - generic [ref=e27]: Baustellen
+        - link "Fuhrpark" [ref=e28] [cursor=pointer]:
+          - /url: /fleet
+          - img [ref=e29]
+          - generic [ref=e34]: Fuhrpark
+        - link "Einstellungen" [ref=e35] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e36]
+          - generic [ref=e39]: Einstellungen
+      - generic [ref=e40]:
+        - button "Synchronisieren" [disabled]:
+          - img
+        - button "QR-Code scannen" [ref=e41]:
+          - img
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - img [ref=e46]
+          - generic [ref=e49]:
+            - paragraph [ref=e50]: Max Mustermann
+            - paragraph [ref=e51]: Admin
+        - button "Abmelden" [ref=e52]:
+          - img
+          - text: Abmelden
+    - main [ref=e53]:
+      - generic [ref=e55]:
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - heading "Fuhrpark & Werkzeuge" [level=1] [ref=e59]
+            - paragraph [ref=e60]: Fahrzeuge und Werkzeuge verwalten
+          - generic [ref=e62]:
+            - link [ref=e63] [cursor=pointer]:
+              - /url: /fleet/calendar
+              - button [ref=e64]:
+                - img
+            - button "Neu" [active] [ref=e65]:
+              - img
+              - generic [ref=e66]: Neu
+        - generic [ref=e67]:
+          - button "Fahrzeuge" [ref=e68]
+          - button "Werkzeuge" [ref=e69]
+          - button "Reservierungen" [ref=e70]
+        - generic [ref=e71]:
+          - generic [ref=e72]:
+            - generic [ref=e73]:
+              - img [ref=e74]
+              - textbox "Fahrzeug suchen..." [ref=e77]
+            - generic [ref=e78]:
+              - button "Alle" [ref=e79]
+              - button "Verfügbar" [ref=e80]
+              - button "In Benutzung" [ref=e81]
+              - button "Wartung" [ref=e82]
+          - generic [ref=e129]:
+            - img [ref=e131]
+            - heading "Fehler aufgetreten" [level=3] [ref=e133]
+            - paragraph [ref=e134]: Fahrzeuge konnten nicht geladen werden
+            - button "Erneut versuchen" [ref=e135]:
+              - img
+              - text: Erneut versuchen
+  - region "Notifications alt+T"

@@ -1,0 +1,34 @@
+[     231ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/inventory/low-stock:0
+[     231ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/dashboard/sites:0
+[     232ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/time-entries/my:0
+[     256ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/inventory/materials:0
+[     256ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/sites:0
+[     256ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/fleet/vehicles:0
+[     257ms] [ERROR] Sync from server failed: Error: API request failed
+    at ApiClient.request (http://localhost:5177/src/lib/api/client.ts:41:13)
+    at async Promise.all (index 0)
+    at async syncFromServer (http://localhost:5177/src/lib/offline/sync.ts:15:49)
+    at async fullSync (http://localhost:5177/src/lib/offline/sync.ts:55:5) @ http://localhost:5177/src/lib/offline/sync.ts:28
+[     259ms] Error: API request failed
+    at ApiClient.request (http://localhost:5177/src/lib/api/client.ts:41:13)
+    at async Promise.all (index 0)
+    at async syncFromServer (http://localhost:5177/src/lib/offline/sync.ts:15:49)
+    at async fullSync (http://localhost:5177/src/lib/offline/sync.ts:55:5)
+[     257ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/fleet/tools:0
+[    1254ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/inventory/low-stock:0
+[    1254ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/time-entries/my:0
+[    1255ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/dashboard/sites:0
+[    9361ms] Cannot stop, scanner is not running or paused.
+[    9360ms] [WARNING] %s
+
+%s
+ An error occurred in the <QrScanner> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5177/node_modules/.vite/deps/react-dom_client.js?v=8571b6f2:6965
+[    9361ms] Cannot stop, scanner is not running or paused.
+[    9361ms] [WARNING] %s
+
+%s
+ An error occurred in the <QrScanner> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:5177/node_modules/.vite/deps/react-dom_client.js?v=8571b6f2:6965
+[    9509ms] [ERROR] QR Scanner error: Error getting userMedia, error = NotAllowedError: Permission denied @ http://localhost:5177/src/components/qr/QrScanner.tsx:46
+[    9512ms] [ERROR] QR Scanner error: Error getting userMedia, error = NotAllowedError: Permission denied @ http://localhost:5177/src/components/qr/QrScanner.tsx:46

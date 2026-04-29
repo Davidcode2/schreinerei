@@ -1,0 +1,77 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - heading "Schreinerei" [level=1] [ref=e6]
+      - navigation [ref=e8]:
+        - link "Dashboard" [ref=e9] [cursor=pointer]:
+          - /url: /
+          - img [ref=e10]
+          - generic [ref=e15]: Dashboard
+        - link "Inventar" [ref=e16] [cursor=pointer]:
+          - /url: /inventory
+          - img [ref=e17]
+          - generic [ref=e21]: Inventar
+        - link "Baustellen" [ref=e22] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e23]
+          - generic [ref=e27]: Baustellen
+        - link "Fuhrpark" [ref=e28] [cursor=pointer]:
+          - /url: /fleet
+          - img [ref=e29]
+          - generic [ref=e34]: Fuhrpark
+        - link "Einstellungen" [ref=e35] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e36]
+          - generic [ref=e39]: Einstellungen
+      - generic [ref=e40]:
+        - button "Synchronisieren" [disabled]:
+          - img
+        - button "QR-Code scannen" [ref=e41]:
+          - img
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - img [ref=e46]
+          - generic [ref=e49]:
+            - paragraph [ref=e50]: Max Mustermann
+            - paragraph [ref=e51]: Admin
+        - button "Abmelden" [ref=e52]:
+          - img
+          - text: Abmelden
+    - main [ref=e53]:
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - heading "Dashboard" [level=1] [ref=e57]
+          - paragraph [ref=e58]: Übersicht über alle Aktivitäten
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - generic [ref=e62]: Aktive Baustellen
+              - img [ref=e63]
+            - generic [ref=e68]: "0"
+          - generic [ref=e69]:
+            - generic [ref=e70]:
+              - generic [ref=e71]: Niedrige Bestände
+              - img [ref=e72]
+            - generic [ref=e74]:
+              - generic [ref=e75]: "0"
+              - paragraph [ref=e76]: Alles im grünen Bereich
+          - generic [ref=e77]:
+            - generic [ref=e78]:
+              - generic [ref=e79]: Heute gebucht
+              - img [ref=e80]
+            - generic [ref=e84]: 0.0h
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - generic [ref=e87]: Diese Woche
+              - img [ref=e88]
+            - generic [ref=e91]: 0.0h
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e94]: Aktive Baustellen
+            - link "Alle anzeigen" [ref=e95] [cursor=pointer]:
+              - /url: /sites
+              - button "Alle anzeigen" [ref=e96]:
+                - text: Alle anzeigen
+                - img
+          - img [ref=e99]
+  - region "Notifications alt+T"

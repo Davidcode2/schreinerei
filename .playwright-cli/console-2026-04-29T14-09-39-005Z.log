@@ -1,0 +1,18 @@
+[     160ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/inventory/categories:0
+[     160ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/inventory/materials:0
+[     181ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/inventory/materials:0
+[     181ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/fleet/tools:0
+[     181ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/sites:0
+[     181ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/fleet/vehicles:0
+[     185ms] [ERROR] Sync from server failed: Error: API request failed
+    at ApiClient.request (http://localhost:5177/src/lib/api/client.ts:41:13)
+    at async Promise.all (index 0)
+    at async syncFromServer (http://localhost:5177/src/lib/offline/sync.ts:15:49)
+    at async fullSync (http://localhost:5177/src/lib/offline/sync.ts:55:5) @ http://localhost:5177/src/lib/offline/sync.ts:28
+[     186ms] Error: API request failed
+    at ApiClient.request (http://localhost:5177/src/lib/api/client.ts:41:13)
+    at async Promise.all (index 0)
+    at async syncFromServer (http://localhost:5177/src/lib/offline/sync.ts:15:49)
+    at async fullSync (http://localhost:5177/src/lib/offline/sync.ts:55:5)
+[    1175ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/inventory/categories:0
+[    1176ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/v1/inventory/materials:0

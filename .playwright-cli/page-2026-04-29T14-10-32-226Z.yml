@@ -1,0 +1,120 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - heading "Schreinerei" [level=1] [ref=e6]
+      - navigation [ref=e8]:
+        - link "Dashboard" [ref=e9] [cursor=pointer]:
+          - /url: /
+          - img [ref=e10]
+          - generic [ref=e15]: Dashboard
+        - link "Inventar" [ref=e16] [cursor=pointer]:
+          - /url: /inventory
+          - img [ref=e17]
+          - generic [ref=e21]: Inventar
+        - link "Baustellen" [ref=e22] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e23]
+          - generic [ref=e27]: Baustellen
+        - link "Fuhrpark" [ref=e28] [cursor=pointer]:
+          - /url: /fleet
+          - img [ref=e29]
+          - generic [ref=e34]: Fuhrpark
+        - link "Einstellungen" [ref=e35] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e36]
+          - generic [ref=e39]: Einstellungen
+      - generic [ref=e40]:
+        - button "Synchronisieren" [disabled]:
+          - img
+        - button "QR-Code scannen" [ref=e41]:
+          - img
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - img [ref=e46]
+          - generic [ref=e49]:
+            - paragraph [ref=e50]: Max Mustermann
+            - paragraph [ref=e51]: Admin
+        - button "Abmelden" [ref=e52]:
+          - img
+          - text: Abmelden
+    - main [ref=e53]:
+      - generic [ref=e55]:
+        - generic [ref=e58]:
+          - heading "Einstellungen" [level=1] [ref=e59]
+          - paragraph [ref=e60]: App-Einstellungen und Profil
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - img [ref=e64]
+              - text: Profil
+            - generic [ref=e67]: Ihre persönlichen Informationen
+          - generic [ref=e68]:
+            - generic [ref=e69]:
+              - generic [ref=e70]:
+                - text: Name
+                - textbox "Name" [ref=e71]:
+                  - /placeholder: Nicht gesetzt
+                  - text: Test User
+              - generic [ref=e72]:
+                - text: E-Mail
+                - textbox "E-Mail" [ref=e73]: test@test.com
+            - generic [ref=e74]:
+              - generic [ref=e75]:
+                - paragraph [ref=e76]: Rolle
+                - paragraph [ref=e77]: Ihre Berechtigungen im System
+              - generic [ref=e78]: Administrator
+        - generic [ref=e79]:
+          - generic [ref=e81]:
+            - generic [ref=e82]:
+              - generic [ref=e83]:
+                - img [ref=e84]
+                - text: Benutzerverwaltung
+              - generic [ref=e89]: Verwalten Sie die Benutzer Ihrer Organisation
+            - button "Einladen" [ref=e90]:
+              - img
+              - text: Einladen
+          - generic [ref=e92]:
+            - generic [ref=e94]:
+              - generic [ref=e95]:
+                - generic [ref=e97]: MM
+                - generic [ref=e98]:
+                  - paragraph [ref=e99]: Max Mustermann
+                  - paragraph [ref=e100]: max@example.com
+              - generic [ref=e101]:
+                - img [ref=e102]
+                - text: Admin
+            - generic [ref=e105]:
+              - generic [ref=e106]:
+                - generic [ref=e108]: AS
+                - generic [ref=e109]:
+                  - paragraph [ref=e110]: Anna Schmidt
+                  - paragraph [ref=e111]: anna@example.com
+              - generic [ref=e112]: Mitarbeiter
+            - generic [ref=e114]:
+              - generic [ref=e115]:
+                - generic [ref=e117]: PW
+                - generic [ref=e118]:
+                  - paragraph [ref=e119]: Peter Weber
+                  - paragraph [ref=e120]: peter@example.com
+              - generic [ref=e121]: Mitarbeiter
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - generic [ref=e124]:
+              - img [ref=e125]
+              - text: Über
+            - generic [ref=e127]: Informationen zur Anwendung
+          - generic [ref=e129]:
+            - generic [ref=e130]:
+              - paragraph [ref=e131]: Version
+              - paragraph [ref=e132]: 1.0.0
+            - generic [ref=e133]:
+              - paragraph [ref=e134]: Umgebung
+              - paragraph [ref=e135]: development
+        - generic [ref=e138]:
+          - generic [ref=e139]:
+            - paragraph [ref=e140]: Abmelden
+            - paragraph [ref=e141]: Von Ihrem Konto abmelden
+          - button "Abmelden" [ref=e142]:
+            - img
+            - text: Abmelden
+  - region "Notifications alt+T"

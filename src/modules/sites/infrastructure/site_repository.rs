@@ -431,7 +431,7 @@ impl SiteRepository {
                 s.id, s.tenant_id, s.name, s.customer_name, s.location, 
                 s.status, s.start_date, s.end_date, s.estimated_days,
                 COUNT(DISTINCT sa.user_id) as assigned_users,
-                COALESCE(SUM(te.hours), 0) as total_hours
+                COALESCE(SUM(te.hours), 0)::FLOAT as total_hours
             FROM sites s
             LEFT JOIN site_assignments sa ON s.id = sa.site_id AND s.tenant_id = sa.tenant_id
             LEFT JOIN time_entries te ON s.id = te.site_id AND s.tenant_id = te.tenant_id

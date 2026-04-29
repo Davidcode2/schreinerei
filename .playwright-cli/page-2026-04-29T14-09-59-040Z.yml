@@ -1,0 +1,57 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - heading "Schreinerei" [level=1] [ref=e6]
+      - navigation [ref=e8]:
+        - link "Dashboard" [ref=e9] [cursor=pointer]:
+          - /url: /
+          - img [ref=e10]
+          - generic [ref=e15]: Dashboard
+        - link "Inventar" [ref=e16] [cursor=pointer]:
+          - /url: /inventory
+          - img [ref=e17]
+          - generic [ref=e21]: Inventar
+        - link "Baustellen" [ref=e22] [cursor=pointer]:
+          - /url: /sites
+          - img [ref=e23]
+          - generic [ref=e27]: Baustellen
+        - link "Fuhrpark" [ref=e28] [cursor=pointer]:
+          - /url: /fleet
+          - img [ref=e29]
+          - generic [ref=e34]: Fuhrpark
+        - link "Einstellungen" [ref=e35] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e36]
+          - generic [ref=e39]: Einstellungen
+      - generic [ref=e40]:
+        - button "Synchronisieren" [disabled]:
+          - img
+        - button "QR-Code scannen" [ref=e41]:
+          - img
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - img [ref=e46]
+          - generic [ref=e49]:
+            - paragraph [ref=e50]: Max Mustermann
+            - paragraph [ref=e51]: Admin
+        - button "Abmelden" [ref=e52]:
+          - img
+          - text: Abmelden
+    - main [ref=e53]:
+      - generic [ref=e55]:
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - heading "Baustellen" [level=1] [ref=e59]
+            - paragraph [ref=e60]: Baustellenverwaltung
+          - button "Baustelle anlegen" [ref=e62]:
+            - img
+            - generic [ref=e63]: Baustelle anlegen
+        - generic [ref=e64]:
+          - button "Alle" [ref=e65]
+          - button "Geplant" [ref=e66]
+          - button "Aktiv" [ref=e67]
+          - button "Abgeschlossen" [ref=e68]
+        - generic [ref=e69]:
+          - img [ref=e70]
+          - textbox "Baustelle suchen..." [ref=e73]
+  - region "Notifications alt+T"
