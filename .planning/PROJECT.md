@@ -10,30 +10,44 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
+## Current State
+
+**Shipped:** v1.0 MVP (2026-04-29)
+
+- 5 phases, 12 plans completed
+- ~10,850 LOC Rust + ~6,700 LOC TypeScript
+- 37/37 requirements validated
+- Ready for pilot customer deployment
+
+**Next:** Collect pilot feedback → Plan v2 features
+
 ## Requirements
 
 ### Validated
 
-- ✓ Multi-Tenant Auth via Keycloak — Phase 1
-- ✓ User-Management mit Rollen (Admin, Mitarbeiter) — Phase 1
-- ✓ Material-Inventar (Kategorien, Materialien, Mengeneinheiten) — Phase 2
-- ✓ Bestand verwalten und entnehmen — Phase 2
-- ✓ "Letzte Packung" Warnung mit Benachrichtigung — Phase 2
-- ✓ QR-Code generieren und scannen — Phase 2
-- ✓ Domain Events für Modulkommunikation — Phase 2
-- ✓ Baustellen anlegen und verwalten — Phase 3
-- ✓ Mitarbeiter auf Baustellen zuweisen — Phase 3
-- ✓ Arbeitszeit auf Baustellen buchen — Phase 3
-- ✓ Baustellen-Fotos und Notizen (Activity Feed) — Phase 3
-- ✓ Dashboard mit offenen Baustellen — Phase 3
-- ✓ Fahrzeug-Inventar und Reservierung — Phase 4
-- ✓ Werkzeug-Reservierung mit Zeitraum und Baustellen-Verknüpfung — Phase 4
-- ✓ Mobile-first PWA mit Offline-Support — Phase 5
-- ✓ QR-Code Scanner für Werkzeug/Material — Phase 5
+All 37 v1 requirements validated:
+
+**Architecture:**
+- ✓ ARCH-01 to ARCH-06 — Phase 1
+
+**Authentication:**
+- ✓ AUTH-01 to AUTH-05 — Phase 1
+
+**Inventar:**
+- ✓ INVT-01 to INVT-07 — Phase 2
+
+**Baustellen:**
+- ✓ SITE-01 to SITE-08 — Phase 3
+
+**Fuhrpark:**
+- ✓ FLEET-01 to FLEET-07 — Phase 4
+
+**PWA:**
+- ✓ PWA-01 to PWA-04 — Phase 5
 
 ### Active
 
-None — V1 complete, ready for pilot customer.
+None — V1 complete, awaiting pilot feedback for v2 planning.
 
 ### Out of Scope
 
@@ -47,26 +61,24 @@ None — V1 complete, ready for pilot customer.
 
 **Pilot-Kunde:** Eine Schreinerei wird als erster Kunde die Software testen. Ziel: Frühes Feedback für iterative Verbesserung.
 
-**Problem-Szenarien aus der Praxis:**
-1. **"Haben wir alles?"** — Um 7:00 Uhr am Bulli fehlt das Spezial-Werkzeug. 1 Stunde Fahrt verloren.
-2. **WhatsApp-Chaos** — Infos zwischen Urlaubsfotos, Kollege findet die Maße nicht.
-3. **"Wo gehört das hin?"** — 150 weiße Bauteile, welches ist für welchen Schrank?
-4. **Reklamationen** — Kunde behauptet, Kratzer waren schon vorher da. Keine Dokumentation.
+**Tech Stack:**
+- Backend: Rust, Axum 0.8, SQLx 0.8, PostgreSQL
+- Frontend: Vite 6, React 18, TypeScript, Tailwind CSS 4, shadcn/ui
+- Auth: Keycloak with OAuth2 PKCE
+- Offline: Workbox, Dexie.js (IndexedDB)
 
-**Lösungen:**
-1. Packlisten-Generator — Automatische Checkliste bei "Montage"-Status
-2. Projekt-Timeline — Fotos und Notizen direkt im Projekt, nicht in WhatsApp
-3. Visual Part-Finder — Label scannen, 3D-Explosionszeichnung zeigt Position
-4. Voice-to-Documentation — 5 Sekunden Sprachnotiz, KI wandelt in Text um
+**Known Tech Debt:**
+- No rate limiting (infrastructure level)
+- Event polling vs pub/sub
+- No conflict resolution for offline edits
 
 ## Constraints
 
-- **Timeline**: 3-6 Monate für V1
-- **Tech Stack**: Rust Backend (SQLx, REST), Vite+React Frontend (PWA), Keycloak Auth, PostgreSQL, Kubernetes
+- **Timeline**: V1 shipped in 2 days
 - **Architecture**: Hexagonal Architecture (Ports & Adapters) mit Modular Monolith und DDD Bounded Contexts
-- **Multi-Tenancy**: Von Anfang an implementiert — TenantId in jeder Query
-- **Deployment**: Bestehender Kubernetes-Cluster
-- **Offline**: Wichtig — Service Worker, IndexedDB für Baustellen ohne Empfang
+- **Multi-Tenancy**: TenantId in jeder Query
+- **Deployment**: Kubernetes cluster
+- **Offline**: Service Worker, IndexedDB für Baustellen ohne Empfang
 - **Longevity**: 10+ Jahre Wartbarkeit ohne komplette Neuentwicklung
 
 ## Architecture
@@ -81,8 +93,6 @@ Jedes Modul hat drei Schichten:
 
 ### Modular Monolith mit DDD Bounded Contexts
 
-Module sind vertikale Slices mit eigener Hexagon-Struktur:
-
 ```
 src/
 ├── common/           # Shared Kernel (TenantId, Money, Error Types)
@@ -94,91 +104,23 @@ src/
     └── fleet/        # Vehicle & tool management
 ```
 
-Jedes Modul:
-```
-modules/inventory/
-├── domain/           # Material, StockLevel, Events
-├── application/      # OrderMaterialUseCase, Ports (traits)
-└── infrastructure/   # PostgresRepo, EmailClient (implementations)
-```
-
-### Inter-Module Communication
-
-Module kommunizieren über **Domain Events**, nicht direkte Aufrufe:
-
-- ProjectManagement publiziert `ProjectCompleted` Event
-- Billing hört auf Event und erstellt Draft Invoice
-- Vorteil: Module können später in separate Microservices extrahiert werden
-
-### Multi-Tenancy
-
-TenantId wird nie manuell übergeben. Stattdessen:
-
-1. API Layer extrahiert TenantId aus Keycloak JWT
-2. TenantId wird in Request Context / Thread Local gespeichert
-3. Repositories lesen TenantId automatisch aus Context
-4. Verhindert Data Leaks zwischen Tenants
-
-### Rust Traits als Ports
-
-```rust
-// domain/port.rs
-pub trait MaterialRepository {
-    async fn find_by_id(&self, id: MaterialId) -> Result<Option<Material>>;
-    async fn save(&self, material: &Material) -> Result<()>;
-}
-
-// infrastructure/postgres.rs
-pub struct PostgresMaterialRepository { /* ... */ }
-impl MaterialRepository for PostgresMaterialRepository { /* ... */ }
-```
-
-Vorteil: Unit Tests mit Mock-Implementierungen ohne Datenbank.
-
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Rust Backend | Sicherheit, Performance, 10+ Jahre Wartbarkeit | ✓ Axum 0.8, SQLx 0.8 working |
-| Vite + React PWA | Einfach, schnell, Offline-Support möglich, später native App mit Capacitor | — Pending |
-| Keycloak (bestehend) | Bereits im Cluster, SSO, Multi-Tenant-ready | ✓ JWT validation with JWKS caching working |
-| Modularer Monolith | Klare Trennung, später extrahierbar, keine Microservice-Komplexität | ✓ DDD structure established in modules/iam |
-| Multi-Tenant ab Tag 1 | Architektur mitdenken, nicht nachrüsten | ✓ TenantId in all tables, enforced in repository layer |
-| Kein RFID in V1 | Hardware nicht vorhanden, manuelle Erfassung first | — Pending |
-| SQLx runtime queries | No database during build | ✓ Working, type safety reduced but functional |
-| DDD layering | Clean architecture, testability | ✓ domain/application/infrastructure/api structure |
-| Domain Events (V1) | Inter-module communication, audit trail | ✓ Events stored in DB, polling (no pub/sub yet) |
-| QR codes with tenant prefix | Uniqueness across tenants | ✓ SVG generation working |
+| Vite + React PWA | Einfach, schnell, Offline-Support möglich | ✓ v1 shipped |
+| Keycloak (bestehend) | Bereits im Cluster, SSO, Multi-Tenant-ready | ✓ JWT validation with JWKS caching |
+| Modularer Monolith | Klare Trennung, später extrahierbar | ✓ DDD structure established |
+| Multi-Tenant ab Tag 1 | Architektur mitdenken, nicht nachrüsten | ✓ TenantId in all tables |
+| SQLx runtime queries | No database during build | ✓ Working |
+| Domain Events (V1) | Inter-module communication | ✓ Events stored in DB |
+| QR codes with tenant prefix | Uniqueness across tenants | ✓ SVG generation |
 | Site status state machine | Controlled status transitions | ✓ Planned → Active → Completed → Archived |
-| Nullable site_id on TimeEntry | Workshop work without site | ✓ Time tracking works for all work types |
-| Activity types with validation | Type-specific data requirements | ✓ Photo needs URL, Note needs content |
-| Dashboard filtering | Focus on relevant sites | ✓ Shows only planned + active sites |
-| Unified reservations table | One table for vehicles and tools | ✓ Resource type enum pattern |
-| Overlap detection for reservations | Prevent double-booking | ✓ PostgreSQL OVERLAPS operator |
-| Reservation status flow | Skip pending, start confirmed | ✓ V1 simplification for faster UX |
-| Vite + React 18 frontend | Modern build tooling, fast dev | ✓ Working with TypeScript |
-| OAuth2 PKCE for SPA auth | Secure token flow without client secret | ✓ Keycloak integration |
-| React Query + Zustand | Server state + client state separation | ✓ Caching and offline support |
-| IndexedDB via Dexie | Offline data persistence | ✓ Sync queue with background sync |
-| html5-qrcode | Camera QR scanning | ✓ Works on iOS and Android |
-| Tailwind + shadcn/ui | Utility-first CSS with accessible components | ✓ Responsive design |
-
-## Evolution
-
-This document evolves at phase transitions and milestone boundaries.
-
-**After each phase transition** (via `/gsd-transition`):
-1. Requirements invalidated? → Move to Out of Scope with reason
-2. Requirements validated? → Move to Validated with phase reference
-3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
-5. "What This Is" still accurate? → Update if drifted
-
-**After each milestone** (via `/gsd-complete-milestone`):
-1. Full review of all sections
-2. Core Value check — still the right priority?
-3. Audit Out of Scope — reasons still valid?
-4. Update Context with current state
+| Unified reservations table | One table for vehicles and tools | ✓ Resource type enum |
+| OAuth2 PKCE for SPA auth | Secure token flow | ✓ Keycloak integration |
+| IndexedDB via Dexie | Offline data persistence | ✓ Sync queue |
 
 ---
-*Last updated: 2026-04-29 after Phase 5 (V1 Complete)*
+
+*Last updated: 2026-04-29 after v1.0 MVP milestone*

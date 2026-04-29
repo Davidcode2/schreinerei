@@ -1,94 +1,39 @@
 # Project State
 
 **Project:** Schreinerei SaaS
-**Current Phase:** 5 — PWA & Mobile
-**Status:** Complete ✓
+**Current Milestone:** v1.0 MVP
+**Status:** Shipped ✓
 
 ---
 
 ## Progress
 
 ```
-Phase 1: ██████████ 100%  Complete ✓
-Phase 2: ██████████ 100%  Complete ✓
-Phase 3: ██████████ 100%  Complete ✓
-Phase 4: ██████████ 100%  Complete ✓
-Phase 5: ██████████ 100%  Complete ✓
+v1.0 MVP: ██████████ 100%  Complete ✓
 ```
-
-## Current Phase: 5
-
-**Name:** PWA & Mobile
-**Goal:** PWA mit Offline-Support, QR-Scanner, Responsive Design
-**Status:** Complete
-
-### Plans
-
-| Plan | Status | Requirements |
-|------|--------|--------------|
-| 05-01 | Complete ✓ | PWA-01, PWA-04 |
-| 05-02 | Complete ✓ | (Auth prerequisite) |
-| 05-03 | Complete ✓ | PWA-04 |
-| 05-04 | Complete ✓ | PWA-02, PWA-03 |
-
-### Wave Structure
-
-| Wave | Plans | Autonomous |
-|------|-------|------------|
-| 1 | 05-01 | yes |
-| 2 | 05-02 | yes |
-| 3 | 05-03 | yes |
-| 4 | 05-04 | no (human verification) |
-
-### Requirements
-
-- [x] PWA-01: PWA installierbar
-- [x] PWA-02: Offline-Modus mit Synchronisation
-- [x] PWA-03: QR-Code Scanner via Kamera
-- [x] PWA-04: Responsive Design (Tablet & Smartphone)
-
-### Success Criteria
-
-1. App ist als PWA installierbar ✓
-2. Offline-Modus funktioniert (Daten werden synchronisiert) ✓
-3. QR-Code Scanner via Kamera ✓
-4. UI funktioniert auf Tablet und Smartphone ✓
 
 ---
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-28)
+See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
-**Current focus:** V1 Launch Ready
+**Current focus:** Pilot customer deployment
 
 ---
 
 ## Accumulated Context
 
-### Decisions
+### Decisions Summary
 
-- Rust Workspace mit Modulen (Phase 1)
-- Postgres-Schema mit TenantId in allen Tabellen (Phase 1)
-- Keycloak integration via JWT validation middleware (Phase 1)
-- DDD layering: domain, application, infrastructure, api (Phase 1)
-- SQLx runtime queries (no compile-time macros) (Phase 1)
-- Domain events for inter-module communication (Phase 2)
-- QR codes with tenant prefix (Phase 2)
-- Event store in database for V1 (Phase 2)
-- Site status state machine: Planned → Active → Completed → Archived (Phase 3)
-- Nullable site_id on TimeEntry for workshop work (Phase 3)
-- Activity types: Photo (requires URL), Note (requires content), StatusChange (system-only) (Phase 3)
-- Dashboard shows only planned + active sites (Phase 3)
-- Unified reservations table for vehicles and tools (Phase 4)
-- ResourceType enum for polymorphic resource_id (Phase 4)
-- Availability check with overlap detection before reservation (Phase 4)
-- QR code shows current status + upcoming reservations (Phase 4)
-- Dexie.js for IndexedDB abstraction (Phase 5)
-- 24-hour cache duration for offline data (Phase 5)
-- Max 3 retries for failed sync actions (Phase 5)
-- NetworkFirst for API calls, CacheFirst for static assets (Phase 5)
+Full decision log in PROJECT.md. Key decisions:
+
+- Rust Backend with Axum 0.8, SQLx 0.8
+- DDD layering: domain/application/infrastructure/api
+- Multi-tenant via TenantId in all queries
+- Keycloak OAuth2 PKCE for SPA auth
+- IndexedDB (Dexie.js) for offline storage
 
 ### Blockers/Concerns
 
@@ -99,47 +44,18 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 ## Session Continuity
 
 Last session: 2026-04-29
-Stopped at: Phase 5 complete - V1 Launch Ready
+Stopped at: v1.0 MVP shipped
 Resume file: None
-
----
-
-## History
-
-| Date | Event | Details |
-|------|-------|---------|
-| 2026-04-28 | Project Initialized | PROJECT.md, REQUIREMENTS.md, ROADMAP.md created |
-| 2026-04-28 | Plan 01-01 Complete | Rust backend with JWT auth middleware |
-| 2026-04-28 | Plan 01-02 Complete | IAM module with user management API |
-| 2026-04-28 | Phase 1 Complete | Auth & IAM Foundation finished |
-| 2026-04-28 | Transition to Phase 2 | Ready to plan Inventory Management |
-| 2026-04-28 | Phase 2 Planned | Created 02-01-PLAN.md and 02-02-PLAN.md |
-| 2026-04-28 | Plan 02-01 Complete | Inventory module foundation with domain, repo, service, API |
-| 2026-04-28 | Plan 02-02 Complete | Domain events, QR codes, order requests |
-| 2026-04-28 | Phase 2 Complete | Inventory Management finished |
-| 2026-04-28 | Transition to Phase 3 | Ready to plan Sites Management |
-| 2026-04-28 | Phase 3 Planned | Created 03-01-PLAN.md and 03-02-PLAN.md |
-| 2026-04-28 | Plan 03-01 Complete | Sites module foundation with domain, repo, service, API |
-| 2026-04-28 | Plan 03-02 Complete | Activity Feed and Dashboard |
-| 2026-04-28 | Phase 3 Complete | Baustellen Management finished |
-| 2026-04-28 | Transition to Phase 4 | Ready to plan Fuhrpark & Werkzeuge |
-| 2026-04-28 | Phase 4 Planned | Created 04-01-PLAN.md and 04-02-PLAN.md |
-| 2026-04-28 | Plan 04-01 Complete | Fleet module foundation with vehicles and tools |
-| 2026-04-28 | Plan 04-02 Complete | Reservations, calendar, QR status |
-| 2026-04-28 | Phase 4 Complete | Fuhrpark & Werkzeuge finished |
-| 2026-04-28 | Phase 5 Planned | Created 05-01 through 05-04 PLAN files for PWA & Mobile |
-| 2026-04-29 | Plan 05-01 Complete | PWA manifest, service worker, icons |
-| 2026-04-29 | Plan 05-02 Complete | Keycloak auth with JWT validation |
-| 2026-04-29 | Plan 05-03 Complete | Core feature components (inventory, sites, fleet) |
-| 2026-04-29 | Plan 05-04 Complete | Offline storage, sync queue, QR scanner |
-| 2026-04-29 | Phase 5 Complete | PWA & Mobile finished - V1 Launch Ready |
 
 ---
 
 ## Next Action
 
-**V1 MILESTONE COMPLETE**
+**MILESTONE COMPLETE**
 
-All phases finished. Ready for pilot customer deployment.
+V1 shipped and ready for pilot customer deployment.
 
-Run verification: `/gsd-verify-phase 5`
+Next steps:
+1. Deploy to pilot environment
+2. Collect feedback from pilot customer
+3. Run `/gsd-new-milestone` to plan v2 features
