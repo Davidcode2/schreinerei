@@ -71,26 +71,35 @@ export function AddMaterialDialog({
   const handleSubmit = () => {
     if (!isFormValid) return
 
-    createMaterial.mutate(
-      {
-        category_id: categoryId,
-        name,
-        quantity: parseFloat(quantity),
-        unit,
-        min_quantity: parseFloat(minQuantity),
-        location: location || undefined,
+    const payload: {
+      category_id: string
+      name: string
+      quantity: number
+      unit: string
+      min_quantity: number
+      location?: string
+    } = {
+      category_id: categoryId,
+      name,
+      quantity: parseFloat(quantity),
+      unit,
+      min_quantity: parseFloat(minQuantity),
+    }
+
+    if (location) {
+      payload.location = location
+    }
+
+    createMaterial.mutate(payload, {
+      onSuccess: () => {
+        toast.success("Material erstellt")
+        handleOpenChange(false)
       },
-      {
-        onSuccess: () => {
-          toast.success("Material erstellt")
-          handleOpenChange(false)
-        },
-        onError: (error) => {
-          toast.error("Material konnte nicht erstellt werden")
-          console.error("Create material error:", error)
-        },
-      }
-    )
+      onError: (error) => {
+        toast.error("Material konnte nicht erstellt werden")
+        console.error("Create material error:", error)
+      },
+    })
   }
 
   return (

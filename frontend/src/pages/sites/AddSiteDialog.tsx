@@ -49,24 +49,33 @@ export function AddSiteDialog({
   const handleSubmit = () => {
     if (!isFormValid) return
 
-    createSite.mutate(
-      {
-        name,
-        customer_name: customerName,
-        location: location || undefined,
-        description: description || undefined,
+    const payload: {
+      name: string
+      customer_name: string
+      location?: string
+      description?: string
+    } = {
+      name,
+      customer_name: customerName,
+    }
+
+    if (location) {
+      payload.location = location
+    }
+    if (description) {
+      payload.description = description
+    }
+
+    createSite.mutate(payload, {
+      onSuccess: () => {
+        toast.success("Baustelle erstellt")
+        handleOpenChange(false)
       },
-      {
-        onSuccess: () => {
-          toast.success("Baustelle erstellt")
-          handleOpenChange(false)
-        },
-        onError: (error) => {
-          toast.error("Baustelle konnte nicht erstellt werden")
-          console.error("Create site error:", error)
-        },
-      }
-    )
+      onError: (error) => {
+        toast.error("Baustelle konnte nicht erstellt werden")
+        console.error("Create site error:", error)
+      },
+    })
   }
 
   return (
