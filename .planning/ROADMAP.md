@@ -102,21 +102,33 @@
 
 ## Phase 9: Frontend Testing
 
-**Goal:** Comprehensive frontend testing with playwright-cli to discover remaining bugs
+**Goal:** Comprehensive frontend testing with Playwright to discover remaining bugs
 
-**Testing scope:**
-- Create inventory category and add items
-- Withdraw items from inventory
-- Create vehicles and book them
-- Create sites and book time
-- Observe network console for all errors
-- Record navigation patterns for future testing
+**Requirements:** TEST-01, TEST-02, TEST-03, TEST-04, TEST-05, TEST-06
 
-**Plans:** 0 plans (not yet planned)
+**Plans:** 3 plans (0/3 complete)
 
 **Duration:** 1 day
 
-**Status:** Not started
+**Status:** Ready to Execute
+
+### Plans
+
+**Wave 1**
+- [ ] 09-01 — Playwright Setup & Auth/Inventory Tests (TEST-01, TEST-02)
+
+**Wave 2**
+- [ ] 09-02 — Fleet, Sites & Dashboard Tests (TEST-03, TEST-04, TEST-05)
+
+**Wave 3**
+- [ ] 09-03 — Run Tests & Document Bugs (TEST-06)
+
+### Success Criteria
+
+1. Playwright installed and configured
+2. All user flows have E2E tests
+3. Tests can authenticate with Keycloak
+4. Bug report generated with findings
 
 ---
 
@@ -132,7 +144,7 @@
 | 6. Org Tenancy | v1.1 | 3/3 | Complete | 2026-04-29 |
 | 7. Frontend Polish | v1.2 | 3/3 | Complete | 2026-04-29 |
 | 8. Bug Fixes | v1.3 | 2/2 | Complete | 2026-04-29 |
-| 9. Frontend Testing | v1.3 | 0/0 | Planned | - |
+| 9. Frontend Testing | v1.3 | 0/3 | Planned | - |
 
 ---
 
@@ -142,10 +154,10 @@
 |-------|------|----------|--------------|
 | 7 | Frontend Polish | 1 day | 9 |
 | 8 | Bug Fixes | 1 day | 5 bugs |
-| 9 | Frontend Testing | 1 day | thorough testing |
+| 9 | Frontend Testing | 1 day | 6 test requirements |
 
 **Total for v1.2+v1.3:** 3 days
 
 ---
 
-*Last updated: 2026-04-29 after Phase 8 completion, Phase 9 added*
+*Last updated: 2026-04-29 after Phase 9 planning*
