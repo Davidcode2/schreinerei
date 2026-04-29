@@ -5,6 +5,7 @@ import { Search, Plus } from "lucide-react"
 import { EmptyState, ErrorState } from "@/components/shared"
 import { ResourceCard, ResourceCardSkeleton } from "@/components/fleet/ResourceCard"
 import { useTools } from "@/lib/api/hooks"
+import { AddToolDialog } from "./AddToolDialog"
 import type { Tool, ResourceStatus } from "@/types/fleet"
 
 const statusFilters: { value: ResourceStatus | undefined; label: string }[] = [
@@ -21,6 +22,7 @@ interface ToolsListProps {
 export function ToolsList({ onReserve }: ToolsListProps) {
   const [selectedStatus, setSelectedStatus] = useState<ResourceStatus | undefined>()
   const [searchQuery, setSearchQuery] = useState("")
+  const [addToolOpen, setAddToolOpen] = useState(false)
 
   const {
     data: tools,
@@ -84,7 +86,7 @@ export function ToolsList({ onReserve }: ToolsListProps) {
           }
           action={
             !searchQuery && (
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={() => setAddToolOpen(true)}>
                 <Plus className="h-4 w-4" />
                 Werkzeug hinzufügen
               </Button>
@@ -103,6 +105,7 @@ export function ToolsList({ onReserve }: ToolsListProps) {
           ))}
         </div>
       )}
+      <AddToolDialog open={addToolOpen} onOpenChange={setAddToolOpen} />
     </div>
   )
 }
