@@ -22,7 +22,6 @@ export default function FleetPage() {
   const [reserveResource, setReserveResource] = useState<{
     id: string
     type: "vehicle" | "tool"
-    name?: string
   } | null>(null)
 
   const handleReserve = (id: string, type: "vehicle" | "tool") => {
@@ -74,13 +73,14 @@ export default function FleetPage() {
       {activeTab === "tools" && <ToolsList onReserve={handleReserve} />}
       {activeTab === "reservations" && <ReservationsList showOnlyMine />}
 
-      <ReservationDialog
-        open={showReservationDialog}
-        onOpenChange={handleCloseDialog}
-        resourceId={reserveResource?.id}
-        resourceType={reserveResource?.type}
-        resourceName={reserveResource?.name}
-      />
+      {reserveResource && (
+        <ReservationDialog
+          open={showReservationDialog}
+          onOpenChange={handleCloseDialog}
+          resourceId={reserveResource.id}
+          resourceType={reserveResource.type}
+        />
+      )}
     </div>
   )
 }

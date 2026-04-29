@@ -2,7 +2,7 @@
 
 **Project:** Schreinerei SaaS
 **Current Phase:** 5 — PWA & Mobile
-**Status:** Ready to Plan
+**Status:** Ready to Execute
 
 ---
 
@@ -13,20 +13,32 @@ Phase 1: ██████████ 100%  Complete ✓
 Phase 2: ██████████ 100%  Complete ✓
 Phase 3: ██████████ 100%  Complete ✓
 Phase 4: ██████████ 100%  Complete ✓
-Phase 5: ░░░░░░░░░░ 0%    Ready to Plan
+Phase 5: ░░░░░░░░░░ 0%    Planned - Ready to Execute
 ```
 
 ## Current Phase: 5
 
 **Name:** PWA & Mobile
 **Goal:** PWA mit Offline-Support, QR-Scanner, Responsive Design
-**Status:** Ready to Plan
+**Status:** Planned - Ready to Execute
 
 ### Plans
 
 | Plan | Status | Requirements |
 |------|--------|--------------|
-| — | Not started | PWA-01 through PWA-04 |
+| 05-01 | Ready | PWA-01, PWA-04 |
+| 05-02 | Ready | (Auth prerequisite) |
+| 05-03 | Ready | PWA-04 |
+| 05-04 | Ready | PWA-02, PWA-03 |
+
+### Wave Structure
+
+| Wave | Plans | Autonomous |
+|------|-------|------------|
+| 1 | 05-01 | yes |
+| 2 | 05-02 | yes |
+| 3 | 05-03 | yes |
+| 4 | 05-04 | no (human verification) |
 
 ### Requirements
 
@@ -111,9 +123,10 @@ Resume file: None
 | 2026-04-28 | Plan 04-01 Complete | Fleet module foundation with vehicles and tools |
 | 2026-04-28 | Plan 04-02 Complete | Reservations, calendar, QR status |
 | 2026-04-28 | Phase 4 Complete | Fuhrpark & Werkzeuge finished |
+| 2026-04-28 | Phase 5 Planned | Created 05-01 through 05-04 PLAN files for PWA & Mobile |
 
 ---
 
 ## Next Action
 
-Plan Phase 5: `/gsd-discuss-phase 5` or `/gsd-plan-phase 5`
+Execute Phase 5: `/gsd-execute-phase 5`

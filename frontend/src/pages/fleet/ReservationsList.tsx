@@ -1,6 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Calendar, MapPin, X } from "lucide-react"
 import { EmptyState, ErrorState, StatusBadge } from "@/components/shared"
 import { useReservations, useCancelReservation } from "@/lib/api/hooks"
@@ -34,7 +33,7 @@ export function ReservationsList({ showOnlyMine = false }: ReservationsListProps
     try {
       await cancelMutation.mutateAsync(id)
       toast.success("Reservierung storniert")
-    } catch (err) {
+    } catch {
       toast.error("Stornierung fehlgeschlagen")
     }
   }

@@ -15,7 +15,7 @@ const statusFilters: { value: ResourceStatus | undefined; label: string }[] = [
 ]
 
 interface ToolsListProps {
-  onReserve?: (id: string, type: "vehicle" | "tool") => void
+  onReserve: (id: string, type: "vehicle" | "tool") => void
 }
 
 export function ToolsList({ onReserve }: ToolsListProps) {

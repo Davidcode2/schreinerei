@@ -2,8 +2,6 @@ import { useState } from "react"
 import { useParams } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import {
   Package,
   MapPin,
@@ -48,11 +46,11 @@ export default function InventoryDetailPage() {
       await withdrawMutation.mutateAsync({
         id: material.id,
         quantity,
-        notes,
+        ...(notes ? { notes } : {}),
       })
       toast.success(`${quantity} ${material.unit} entnommen`)
       setShowWithdrawDialog(false)
-    } catch (err) {
+    } catch {
       toast.error("Entnahme fehlgeschlagen")
     }
   }
@@ -65,7 +63,7 @@ export default function InventoryDetailPage() {
         reason: "Niedriger Bestand",
       })
       toast.success("Bestellanforderung erstellt")
-    } catch (err) {
+    } catch {
       toast.error("Bestellanforderung fehlgeschlagen")
     }
   }

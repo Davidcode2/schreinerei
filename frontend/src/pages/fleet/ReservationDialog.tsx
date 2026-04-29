@@ -18,9 +18,8 @@ import type { ResourceType, Vehicle, Tool } from "@/types/fleet"
 interface ReservationDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  resourceId?: string
-  resourceType?: ResourceType
-  resourceName?: string
+  resourceId: string
+  resourceType: ResourceType
 }
 
 export function ReservationDialog({
@@ -28,7 +27,6 @@ export function ReservationDialog({
   onOpenChange,
   resourceId,
   resourceType,
-  resourceName,
 }: ReservationDialogProps) {
   const [selectedResourceId, setSelectedResourceId] = useState(resourceId || "")
   const [selectedResourceType, setSelectedResourceType] = useState<ResourceType>(resourceType || "vehicle")
@@ -71,10 +69,10 @@ export function ReservationDialog({
       await createMutation.mutateAsync({
         resource_type: selectedResourceType,
         resource_id: selectedResourceId,
-        site_id: siteId || undefined,
+        ...(siteId ? { site_id: siteId } : {}),
         start_time: new Date(startTime).toISOString(),
         end_time: new Date(endTime).toISOString(),
-        notes: notes || undefined,
+        ...(notes ? { notes } : {}),
       })
       toast.success("Reservierung erstellt")
       onOpenChange(false)
@@ -84,17 +82,12 @@ export function ReservationDialog({
       setStartTime("")
       setEndTime("")
       setNotes("")
-    } catch (err) {
+    } catch {
       toast.error("Reservierung fehlgeschlagen")
     }
   }
 
   const resources = selectedResourceType === "vehicle" ? vehicles : tools
-
-  // Set default datetime values
-  const now = new Date()
-  const defaultStart = new Date(now.getTime() + 60 * 60 * 1000) // 1 hour from now
-  const defaultEnd = new Date(defaultStart.getTime() + 2 * 60 * 60 * 1000) // 2 hours later
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -105,7 +98,7 @@ export function ReservationDialog({
             Reservierung erstellen
           </DialogTitle>
           <DialogDescription>
-            {resourceName || "Neue Reservierung anlegen"}
+            Neue Reservierung anlegen
           </DialogDescription>
         </DialogHeader>
 

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState } from "react"
@@ -14,8 +14,8 @@ function getWeekDates(date: Date): { start: string; end: string } {
   end.setDate(end.getDate() + 6) // Sunday
 
   return {
-    start: start.toISOString().split("T")[0],
-    end: end.toISOString().split("T")[0],
+    start: start.toISOString().split("T")[0] ?? "",
+    end: end.toISOString().split("T")[0] ?? "",
   }
 }
 
@@ -60,7 +60,7 @@ export default function CalendarView() {
     setCurrentWeek(newWeek)
   }
 
-  const today = new Date().toISOString().split("T")[0]
+  const today = new Date().toISOString().split("T")[0] ?? ""
 
   return (
     <div className="space-y-6">
@@ -90,7 +90,7 @@ export default function CalendarView() {
         {Array.from({ length: 7 }).map((_, i) => {
           const date = new Date(weekStart)
           date.setDate(date.getDate() + i)
-          const isToday = date.toISOString().split("T")[0] === today
+          const isToday = (date.toISOString().split("T")[0] ?? "") === today
 
           return (
             <div
@@ -139,13 +139,13 @@ export default function CalendarView() {
                   {Array.from({ length: 7 }).map((_, i) => {
                     const date = new Date(weekStart)
                     date.setDate(date.getDate() + i)
-                    const dateStr = date.toISOString().split("T")[0]
+                    const dateStr = date.toISOString().split("T")[0] ?? ""
 
                     const dayReservations = entry.reservations.filter(
                       (r: ReservationSummary) => {
-                        const start = r.start_time.split("T")[0]
-                        const end = r.end_time.split("T")[0]
-                        return dateStr >= start && dateStr <= end
+                        const startDate = r.start_time.split("T")[0] ?? ""
+                        const endDate = r.end_time.split("T")[0] ?? ""
+                        return dateStr >= startDate && dateStr <= endDate
                       }
                     )
 

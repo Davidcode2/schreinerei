@@ -1,7 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { MapPin, Calendar, Users } from "lucide-react"
+import { MapPin, Calendar } from "lucide-react"
 import { Link } from "react-router-dom"
 import { StatusBadge } from "@/components/shared"
 import type { Site } from "@/types/sites"
@@ -17,21 +16,6 @@ function formatDate(date: string | null): string {
     month: "2-digit",
     year: "numeric",
   })
-}
-
-function getStatusColor(status: string): string {
-  switch (status) {
-    case "active":
-      return "bg-green-500"
-    case "planned":
-      return "bg-blue-500"
-    case "completed":
-      return "bg-gray-500"
-    case "archived":
-      return "bg-gray-400"
-    default:
-      return "bg-gray-500"
-  }
 }
 
 export function SiteCard({ site }: SiteCardProps) {

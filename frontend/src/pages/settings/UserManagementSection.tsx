@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Users, UserPlus, Shield } from "lucide-react"
-import { useAuth } from "@/hooks/useAuth"
 
 interface UserManagementSectionProps {
   isAdmin: boolean

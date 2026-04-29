@@ -6,7 +6,6 @@ import {
   PageHeader,
   EmptyState,
   ErrorState,
-  LoadingSpinner,
 } from "@/components/shared"
 import { MaterialCard, MaterialCardSkeleton } from "@/components/inventory/MaterialCard"
 import { CategoryFilter } from "@/components/inventory/CategoryFilter"

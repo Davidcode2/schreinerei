@@ -20,7 +20,6 @@ import {
 import { useSite, useActivities, useTimeEntries, useSiteAssignments } from "@/lib/api/hooks"
 import { TimeEntryDialog } from "./TimeEntryDialog"
 import { ActivityFeed } from "./ActivityFeed"
-import type { Site } from "@/types/sites"
 
 function formatDate(date: string | null): string {
   if (!date) return "-"

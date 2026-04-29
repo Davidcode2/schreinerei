@@ -1,12 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { User, Shield, Info, LogOut } from "lucide-react"
+import { User } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
-import { useAuthStore } from "@/lib/auth/authStore"
 
 function getRoleLabel(role: string): string {
   switch (role) {

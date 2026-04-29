@@ -163,7 +163,18 @@
 
 **Requirements:** PWA-01, PWA-02, PWA-03, PWA-04
 
+**Plans:** 4 plans in 4 waves
+
 **Duration Estimate:** 2 Wochen
+
+**Status:** Ready to Execute
+
+### Plans
+
+- [ ] 05-01-PLAN.md — Frontend Foundation + PWA Setup (PWA-01, PWA-04)
+- [ ] 05-02-PLAN.md — Auth + API Client (OAuth2 PKCE with Keycloak)
+- [ ] 05-03-PLAN.md — Core Feature Components (PWA-04)
+- [ ] 05-04-PLAN.md — Offline + QR Scanner (PWA-02, PWA-03)
 
 ### Success Criteria
 
@@ -171,6 +182,16 @@
 2. Offline-Modus funktioniert (Daten werden synchronisiert)
 3. QR-Code Scanner via Kamera
 4. UI funktioniert auf Tablet und Smartphone
+
+### Key Decisions
+
+- Vite + React 18 for frontend
+- vite-plugin-pwa + Workbox for offline
+- OAuth2 PKCE flow for Keycloak authentication
+- IndexedDB (Dexie.js) for offline data storage
+- html5-qrcode for camera QR scanning
+- Mobile-first responsive design with Tailwind
+- shadcn/ui for component library
 
 ### Dependencies
 

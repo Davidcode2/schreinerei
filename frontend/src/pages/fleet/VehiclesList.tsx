@@ -15,7 +15,7 @@ const statusFilters: { value: ResourceStatus | undefined; label: string }[] = [
 ]
 
 interface VehiclesListProps {
-  onReserve?: (id: string, type: "vehicle" | "tool") => void
+  onReserve: (id: string, type: "vehicle" | "tool") => void
 }
 
 export function VehiclesList({ onReserve }: VehiclesListProps) {

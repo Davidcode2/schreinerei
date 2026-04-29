@@ -1,6 +1,5 @@
 import { Card } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Camera, FileText, User } from "lucide-react"
+import { Camera, FileText } from "lucide-react"
 import type { Activity } from "@/types/sites"
 
 interface ActivityFeedProps {
@@ -28,15 +27,6 @@ function formatRelativeTime(dateString: string): string {
       month: "2-digit",
     })
   }
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2)
 }
 
 export function ActivityFeed({ activities, maxItems }: ActivityFeedProps) {

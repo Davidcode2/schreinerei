@@ -4,8 +4,8 @@ import type { Category } from "@/types/inventory"
 
 interface CategoryFilterProps {
   categories: Category[]
-  selectedId?: string
-  onSelect: (id?: string) => void
+  selectedId: string | undefined
+  onSelect: (id: string | undefined) => void
   className?: string
 }
 

@@ -1,33 +1,17 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { MapPin, Calendar, QrCode } from "lucide-react"
+import { MapPin, QrCode } from "lucide-react"
 import { StatusBadge } from "@/components/shared"
-import type { Vehicle, Tool, ResourceStatus } from "@/types/fleet"
+import type { Vehicle, Tool } from "@/types/fleet"
 
 interface ResourceCardProps {
   resource: Vehicle | Tool
   type: "vehicle" | "tool"
-  onReserve?: (id: string, type: "vehicle" | "tool") => void
+  onReserve: (id: string, type: "vehicle" | "tool") => void
 }
 
 function isVehicle(resource: Vehicle | Tool): resource is Vehicle {
   return "vehicle_type" in resource
-}
-
-function getStatusLabel(status: ResourceStatus): string {
-  switch (status) {
-    case "available":
-      return "Verfügbar"
-    case "in_use":
-      return "In Benutzung"
-    case "maintenance":
-      return "Wartung"
-    case "reserved":
-      return "Reserviert"
-    default:
-      return status
-  }
 }
 
 export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
@@ -71,7 +55,7 @@ export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
             size="sm"
             variant={isAvailable ? "default" : "outline"}
             disabled={!isAvailable}
-            onClick={() => onReserve?.(resource.id, type)}
+            onClick={() => onReserve(resource.id, type)}
             className="ml-auto"
           >
             {isAvailable ? "Reservieren" : "Nicht verfügbar"}

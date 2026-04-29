@@ -39,7 +39,7 @@ export function TimeEntryDialog({
 }: TimeEntryDialogProps) {
   const [workType, setWorkType] = useState<WorkType>("site")
   const [hours, setHours] = useState(1)
-  const [workDate, setWorkDate] = useState(new Date().toISOString().split("T")[0])
+  const [workDate, setWorkDate] = useState(new Date().toISOString().split("T")[0] ?? "")
   const [notes, setNotes] = useState("")
 
   const createMutation = useCreateTimeEntry()
@@ -47,11 +47,11 @@ export function TimeEntryDialog({
   const handleSubmit = async () => {
     try {
       await createMutation.mutateAsync({
-        site_id: workType === "site" ? siteId : undefined,
+        ...(workType === "site" && siteId ? { site_id: siteId } : {}),
         work_type: workType,
         hours,
         work_date: workDate,
-        notes: notes || undefined,
+        ...(notes ? { notes } : {}),
       })
       toast.success("Zeit erfasst")
       onOpenChange(false)
@@ -59,7 +59,7 @@ export function TimeEntryDialog({
       setWorkType("site")
       setHours(1)
       setNotes("")
-    } catch (err) {
+    } catch {
       toast.error("Zeiterfassung fehlgeschlagen")
     }
   }
