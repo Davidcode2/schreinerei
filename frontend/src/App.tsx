@@ -54,30 +54,30 @@ function AppRoutes() {
 
       {/* Protected routes */}
       <Route
-        path="/"
+        path="/*"
         element={
           <AuthGuard>
             <AppLayout>
               <Routes>
-                <Route index element={<DashboardPage />} />
+                <Route path="/" element={<DashboardPage />} />
 
                 {/* Inventory */}
-                <Route path="inventory" element={<InventoryListPage />} />
-                <Route path="inventory/:id" element={<InventoryDetailPage />} />
+                <Route path="/inventory" element={<InventoryListPage />} />
+                <Route path="/inventory/:id" element={<InventoryDetailPage />} />
 
                 {/* Sites */}
-                <Route path="sites" element={<SitesListPage />} />
-                <Route path="sites/:id" element={<SiteDetailPage />} />
+                <Route path="/sites" element={<SitesListPage />} />
+                <Route path="/sites/:id" element={<SiteDetailPage />} />
 
                 {/* Fleet */}
-                <Route path="fleet" element={<FleetPage />} />
-                <Route path="fleet/calendar" element={<CalendarView />} />
+                <Route path="/fleet" element={<FleetPage />} />
+                <Route path="/fleet/calendar" element={<CalendarView />} />
 
                 {/* QR Scanner */}
-                <Route path="scan" element={<ScanPage />} />
+                <Route path="/scan" element={<ScanPage />} />
 
                 {/* Settings */}
-                <Route path="settings" element={<SettingsPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
 
                 {/* 404 */}
                 <Route path="*" element={<NotFoundPage />} />
