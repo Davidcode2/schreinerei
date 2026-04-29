@@ -1,17 +1,17 @@
 # Project State
 
 **Project:** Schreinerei SaaS
-**Current Milestone:** v1.3 Bug Fixes
-**Status:** Complete
+**Current Milestone:** v1.4 Core Feature Fixes
+**Status:** Not started
 
 ---
 
 ## Current Position
 
-Phase: 10 — Bug Fixes Round 2
-Plan: Complete
-Status: Complete - 4 plans executed, 8 bugs fixed
-Last activity: 2026-04-29 — Phase 10 complete, all bugs fixed
+Phase: 11 — Core Feature Fixes
+Plan: Not planned yet
+Status: Not started - 0 plans created
+Last activity: 2026-04-29 — Phase 11 added for FK constraint violations
 
 ---
 
@@ -42,14 +42,21 @@ Full decision log in PROJECT.md. Key decisions:
 - Phase 8 complete: Backend and frontend bugs resolved
 - Phase 9 added: Comprehensive frontend testing with playwright-cli
 - Phase 9 complete: 18 E2E tests, 2 bugs discovered
+- Phase 10 added: Bug fixes for 8 bugs discovered in testing
+- Phase 10 complete: All auth and UI bugs fixed
+- Phase 11 added: Fix core features with FK constraint violations
 
 ### Pending Todos
 
-None - all bugs fixed in Phase 10.
+Investigate and fix FK constraint violations in Phase 11:
+- CORE-01: stock_entries_user_id_fkey violation on material withdrawal
+- CORE-02: reservations_user_id_fkey violation on reservation creation
+- CORE-03: Time entries POST returns 400
+- CORE-04: Fleet calendar GET returns 400
 
 ### Blockers/Concerns
 
-None.
+User ID foreign key constraints failing - likely the user_id being passed doesn't exist in users table or is a Keycloak ID that needs mapping.
 
 ---
 
@@ -76,18 +83,18 @@ None.
 | 2026-04-29 | Phase 10 Added | Bug fixes for 8 bugs discovered in testing |
 | 2026-04-29 | Phase 10 Planned | 4 plans created in 2 waves |
 | 2026-04-29 | Phase 10 Complete | All 8 bugs fixed |
+| 2026-04-29 | Phase 11 Added | Core feature FK constraint fixes |
 
 ---
 
 ## Next Action
 
-Run E2E tests to verify all fixes work correctly:
+Plan Phase 11 to fix core feature FK constraint violations:
 
-1. `cd frontend && npx playwright test` to run the test suite
-2. Verify authentication flow works without double-exchange
-3. Verify Fleet "Neu" button opens dropdown
-4. Verify user management displays users correctly
+1. Run `/gsd-plan-phase 11` to create plans for fixing core features
+2. Investigate user_id FK violations in stock_entries and reservations tables
+3. Check if user_id from JWT is being stored correctly
 
 ---
 
-*Last updated: 2026-04-29 after Phase 10 completion*
+*Last updated: 2026-04-29 after Phase 11 added*

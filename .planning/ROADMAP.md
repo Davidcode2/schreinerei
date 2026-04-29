@@ -12,6 +12,7 @@
 - ✅ **v1.1 Organization-Based Tenancy** — Phase 6 (shipped 2026-04-29)
 - ✅ **v1.2 Frontend Polish** — Phase 7 (shipped 2026-04-29)
 - ✅ **v1.3 Bug Fixes** — Phases 8-10 (shipped 2026-04-29)
+- 🚧 **v1.4 Core Feature Fixes** — Phase 11 (in progress)
 
 ---
 
@@ -187,6 +188,33 @@
 
 ---
 
+## Phase 11: Core Feature Fixes
+
+**Goal:** Fix core features that fail due to user_id foreign key constraint violations and validation errors
+
+**Issues discovered during manual testing:**
+- Stock withdrawal fails with FK constraint violation (stock_entries_user_id_fkey)
+- Fleet reservation creation fails with FK constraint violation (reservations_user_id_fkey)
+- Time entries POST returns 400 (validation error)
+- Fleet calendar GET returns 400 (validation error)
+
+**Requirements:** CORE-01, CORE-02, CORE-03, CORE-04
+
+**Plans:** 0 plans (not planned yet)
+
+**Duration:** 1 day
+
+**Status:** Not started
+
+### Success Criteria
+
+1. User can withdraw materials from inventory
+2. User can create fleet reservations
+3. User can create time entries
+4. Fleet calendar displays reservations correctly
+
+---
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -201,6 +229,7 @@
 | 8. Bug Fixes | v1.3 | 2/2 | Complete | 2026-04-29 |
 | 9. Frontend Testing | v1.3 | 3/3 | Complete | 2026-04-29 |
 | 10. Bug Fixes Round 2 | v1.3 | 4/4 | Complete | 2026-04-29 |
+| 11. Core Feature Fixes | v1.4 | 0/0 | Not started | - |
 
 ---
 
@@ -212,9 +241,10 @@
 | 8 | Bug Fixes | 1 day | 5 bugs |
 | 9 | Frontend Testing | 1 day | 6 test requirements |
 | 10 | Bug Fixes Round 2 | 1 day | 8 bugs |
+| 11 | Core Feature Fixes | 1 day | 4 core issues |
 
-**Total for v1.2+v1.3:** 4 days
+**Total for v1.2-v1.4:** 5 days
 
 ---
 
-*Last updated: 2026-04-29 after Phase 10 planning*
+*Last updated: 2026-04-29 after Phase 11 added*
