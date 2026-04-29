@@ -80,7 +80,7 @@
 | 4. Fuhrpark | v1.0 | 2/2 | Complete | 2026-04-28 |
 | 5. PWA & Mobile | v1.0 | 4/4 | Complete | 2026-04-29 |
 | 6. Org Tenancy | v1.1 | 3/3 | Complete | 2026-04-29 |
-| 7. Frontend Polish | v1.2 | 0/3 | Not started | - |
+| 7. Frontend Polish | v1.2 | 0/3 | Planned | - |
 
 ---
 
