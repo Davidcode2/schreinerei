@@ -3,31 +3,33 @@
 **Defined:** 2026-04-29
 **Core Value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
 
-## v1.1 Requirements (Organization-Based Tenancy) ✓
+## v1.2 Requirements (Frontend Polish)
 
-### Keycloak Configuration
+### Inventory Module
 
-- [x] **KC-01**: Enable Organizations feature in schreinerei realm
-- [x] **KC-02**: Configure organization scope for schreinerei_pwa client
+- [ ] **INVT-08**: User can add new material via dialog form
+- [ ] **INVT-09**: User can scan QR code to navigate to material detail
 
-### Organization Migration
+### Sites Module
 
-- [x] **ORG-01**: Create Keycloak organizations for existing tenants
-- [x] **ORG-02**: Migrate existing users as organization members
-- [x] **ORG-03**: Add keycloak_organization_id column to tenants table
+- [ ] **SITE-09**: User can create new site via dialog form
 
-### Backend Changes
+### Fleet Module
 
-- [x] **BE-01**: Update JWT Claims struct to use organization claim
-- [x] **BE-02**: Update AuthenticatedUser extractor for organization claim
-- [x] **BE-03**: Add organization ID extraction from JWT organization claim
+- [ ] **FLEET-08**: User can add new vehicle via dialog form
+- [ ] **FLEET-09**: User can add new tool via dialog form
 
-### Frontend Changes
+### User Management
 
-- [x] **FE-01**: Update OAuth2 scope to include organization
-- [x] **FE-02**: Update token parsing for organization claim structure
+- [ ] **USER-01**: Admin can invite user via email dialog
+- [ ] **USER-02**: Settings page displays real users from API
 
-## v1.2 Requirements (Future)
+### Error Handling
+
+- [ ] **ERR-01**: QR scanner shows graceful error when camera denied
+- [ ] **ERR-02**: QR scanner provides retry option after error
+
+## v1.3 Requirements (Future)
 
 ### Self-Service
 
@@ -45,11 +47,11 @@
 
 | Feature | Reason |
 |---------|--------|
-| Multi-org user support | Single org per user for v1.1 |
-| Public website/landing page | Deferred to v1.2 |
-| Self-service registration | Deferred to v1.2 |
+| Multi-org user support | Single org per user for v1.x |
+| Public website/landing page | Deferred to v1.3 |
+| Self-service registration | Deferred to v1.3 |
 | Organization identity providers | Not needed for pilot |
-| Stripe integration | Deferred to v1.2+ |
+| Stripe integration | Deferred to v1.3+ |
 
 ## Traceability
 
@@ -57,21 +59,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| KC-01 | Phase 6 | Complete |
-| KC-02 | Phase 6 | Complete |
-| ORG-01 | Phase 6 | Complete |
-| ORG-02 | Phase 6 | Complete |
-| ORG-03 | Phase 6 | Complete |
-| BE-01 | Phase 6 | Complete |
-| BE-02 | Phase 6 | Complete |
-| BE-03 | Phase 6 | Complete |
-| FE-01 | Phase 6 | Complete |
-| FE-02 | Phase 6 | Complete |
+| INVT-08 | Phase 7 | Pending |
+| INVT-09 | Phase 7 | Pending |
+| SITE-09 | Phase 7 | Pending |
+| FLEET-08 | Phase 7 | Pending |
+| FLEET-09 | Phase 7 | Pending |
+| USER-01 | Phase 7 | Pending |
+| USER-02 | Phase 7 | Pending |
+| ERR-01 | Phase 7 | Pending |
+| ERR-02 | Phase 7 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 10 total
-- Complete: 10/10 ✓
+- v1.2 requirements: 9 total
+- Mapped to phases: 9
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-29*
-*Last updated: 2026-04-29 after v1.1 milestone completion*
+*Last updated: 2026-04-29 after v1.2 milestone start*

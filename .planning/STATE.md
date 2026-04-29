@@ -1,17 +1,17 @@
 # Project State
 
 **Project:** Schreinerei SaaS
-**Current Milestone:** Planning v1.2
-**Status:** v1.1 Complete ✓
+**Current Milestone:** v1.2 Frontend Polish
+**Status:** Ready to Plan
 
 ---
 
 ## Current Position
 
-Phase: —
+Phase: 7 — Frontend Polish
 Plan: —
-Status: Milestone Complete
-Last activity: 2026-04-29 — v1.1 Organization-Based Tenancy shipped
+Status: Ready to Plan
+Last activity: 2026-04-29 — Milestone v1.2 started
 
 ---
 
@@ -20,7 +20,7 @@ Last activity: 2026-04-29 — v1.1 Organization-Based Tenancy shipped
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
-**Current focus:** Planning next milestone
+**Current focus:** Fix non-functional buttons and connect UI to backend
 
 ---
 
@@ -54,15 +54,16 @@ Full decision log in PROJECT.md. Key decisions:
 | 2026-04-29 | Phase 5 Complete | PWA & Mobile finished |
 | 2026-04-29 | v1.0 Complete | MVP shipped |
 | 2026-04-29 | v1.1 Complete | Organization-Based Tenancy shipped |
+| 2026-04-29 | v1.2 Started | Frontend Polish milestone |
 
 ---
 
 ## Next Action
 
-Ready for next milestone planning:
+Ready to plan Phase 7:
 
-`/gsd-new-milestone`
+`/gsd-plan-phase 7`
 
 ---
 
-*Last updated: 2026-04-29 after v1.1 milestone completion*
+*Last updated: 2026-04-29*

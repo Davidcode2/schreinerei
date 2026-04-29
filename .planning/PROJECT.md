@@ -10,9 +10,17 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## Current Milestone: Planning v1.2
+## Current Milestone: v1.2 Frontend Polish
 
-**Next:** Self-service organization registration and public website
+**Goal:** Fix non-functional buttons and missing UI interactions across the app
+
+**Target features:**
+- Add material dialog with form submission
+- Add site dialog with form submission
+- Add vehicle/tool dialog with form submission
+- User invitation dialog with email submission
+- QR scanner graceful error handling
+- Real user data from API in settings
 
 ## Requirements
 
@@ -46,7 +54,21 @@ All 37 v1 requirements + 10 v1.1 requirements validated:
 
 ### Active
 
-**v1.2 Requirements (Self-Service Registration):**
+**v1.2 Requirements (Frontend Polish):**
+
+- INVT-08: User can add new material via dialog form
+- INVT-09: User can scan QR code to navigate to material detail
+- SITE-09: User can create new site via dialog form
+- FLEET-08: User can add new vehicle via dialog form
+- FLEET-09: User can add new tool via dialog form
+- USER-01: Admin can invite user via email dialog
+- USER-02: Settings page displays real users from API
+- ERR-01: QR scanner shows graceful error when camera denied
+- ERR-02: QR scanner provides retry option after error
+
+### Future (v1.3+)
+
+**Self-Service Registration:**
 
 - SS-01: Public website with organization registration
 - SS-02: Self-service organization creation flow
