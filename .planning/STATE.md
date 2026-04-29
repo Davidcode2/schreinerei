@@ -2,16 +2,16 @@
 
 **Project:** Schreinerei SaaS
 **Current Milestone:** v1.3 Bug Fixes
-**Status:** Ready to Plan
+**Status:** Partial
 
 ---
 
 ## Current Position
 
 Phase: 9 — Frontend Testing
-Plan: —
-Status: Ready to Plan
-Last activity: 2026-04-29 — Phase 9 added for comprehensive frontend testing
+Plan: Complete
+Status: Partial - Test infrastructure complete, bugs documented
+Last activity: 2026-04-29 — Phase 9 complete with 2 bugs found
 
 ---
 
@@ -20,7 +20,7 @@ Last activity: 2026-04-29 — Phase 9 added for comprehensive frontend testing
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
-**Current focus:** Fix non-functional buttons and connect UI to backend
+**Current focus:** E2E testing infrastructure complete, config bugs discovered
 
 ---
 
@@ -41,15 +41,16 @@ Full decision log in PROJECT.md. Key decisions:
 - Phase 8 added: Fix all frontend-accessible functionalities
 - Phase 8 complete: Backend and frontend bugs resolved
 - Phase 9 added: Comprehensive frontend testing with playwright-cli
+- Phase 9 complete: 18 E2E tests, 2 bugs discovered
 
 ### Pending Todos
 
-- Fix fleet page "Neu" button
-- Fix baustelle time booking 400 error
+- BUG-01: Fix Keycloak redirect_uri for port 5174 (High)
+- BUG-02: Resolve port 5173 conflict (Medium)
 
 ### Blockers/Concerns
 
-- None currently
+- Keycloak redirect_uri configuration needed before E2E tests can pass
 
 ---
 
@@ -72,15 +73,17 @@ Full decision log in PROJECT.md. Key decisions:
 | 2026-04-29 | Phase 8 Planned | 2 plans created for backend and frontend bug fixes |
 | 2026-04-29 | Phase 8 Complete | Dashboard API, VehicleType, logout, category creation, reservation dates fixed |
 | 2026-04-29 | Phase 9 Added | Comprehensive frontend testing with playwright-cli |
+| 2026-04-29 | Phase 9 Complete | 18 E2E tests created, 2 config bugs discovered |
 
 ---
 
 ## Next Action
 
-Plan Phase 9 - Frontend Testing:
+Fix discovered bugs:
 
-`/gsd-plan-phase 9`
+1. Add `http://localhost:*/auth/callback` to Keycloak valid redirect URIs
+2. Re-run E2E tests to verify all functionality
 
 ---
 
-*Last updated: 2026-04-29 after Phase 8 execution*
+*Last updated: 2026-04-29 after Phase 9 execution*
