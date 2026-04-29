@@ -2,16 +2,16 @@
 
 **Project:** Schreinerei SaaS
 **Current Milestone:** v1.3 Bug Fixes
-**Status:** Ready to Plan
+**Status:** Phase Complete
 
 ---
 
 ## Current Position
 
 Phase: 8 — Bug Fixes
-Plan: —
-Status: Ready to Execute
-Last activity: 2026-04-29 — Phase 8 planned with 2 plans across 2 waves
+Plan: Complete
+Status: Verified
+Last activity: 2026-04-29 — Phase 8 executed with 2 plans, all bugs fixed
 
 ---
 
@@ -39,12 +39,7 @@ Full decision log in PROJECT.md. Key decisions:
 ### Roadmap Evolution
 
 - Phase 8 added: Fix all frontend-accessible functionalities
-
-### Pending Todos
-
-- Fix fleet page "Neu" button
-- Fix vehicle reservation submit failure
-- Fix baustelle time booking 400 error
+- Phase 8 complete: Backend and frontend bugs resolved
 
 ### Blockers/Concerns
 
@@ -69,14 +64,15 @@ Full decision log in PROJECT.md. Key decisions:
 | 2026-04-29 | Phase 7 Complete | Material/Site/Fleet dialogs, User management, QR scanner |
 | 2026-04-29 | Phase 8 Added | Bug fixes phase for end-to-end functionality |
 | 2026-04-29 | Phase 8 Planned | 2 plans created for backend and frontend bug fixes |
+| 2026-04-29 | Phase 8 Complete | Dashboard API, VehicleType, logout, category creation, reservation dates fixed |
 
 ---
 
 ## Next Action
 
-Execute Phase 8 - Bug Fixes:
-
-`/gsd-execute-phase 8`
+Phase 8 complete. Consider:
+- `/gsd-progress` — view updated roadmap
+- `/gsd-verify-work 8` — manual verification of fixes
 
 ---
 
