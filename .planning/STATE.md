@@ -74,7 +74,7 @@ Before the organization-based tenancy works end-to-end, complete these steps in 
 4. Run database migration: `sqlx migrate run`
 5. Test login — verify token contains `organization` claim
 
-See: `docs/keycloak-organizations-setup.md` for detailed instructions.
+See: `docs/keycloak-setup.md` for detailed instructions.
 
 ---
 

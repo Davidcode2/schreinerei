@@ -71,7 +71,7 @@
 ### Dependencies
 
 - Keycloak 26.x or later ✓
-- Manual Keycloak setup (see docs/keycloak-organizations-setup.md)
+- Manual Keycloak setup (see docs/keycloak-setup.md)
 
 ---
 

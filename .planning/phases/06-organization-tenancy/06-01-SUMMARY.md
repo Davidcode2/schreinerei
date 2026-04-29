@@ -17,7 +17,7 @@ key-files:
   modified:
     - path: "src/modules/iam/domain/tenant.rs"
       purpose: "Added keycloak_organization_id field to Tenant struct"
-    - path: "docs/keycloak-organizations-setup.md"
+    - path: "docs/keycloak-setup.md"
       purpose: "Comprehensive setup guide with quick start section"
 decisions:
   - "keycloak_organization_id column is nullable (populated after organization creation)"
@@ -43,7 +43,7 @@ Added database schema for Keycloak organization ID storage and comprehensive set
 - **Tenant struct** — Added optional `keycloak_organization_id` field
 
 ### Documentation
-- **docs/keycloak-organizations-setup.md** — Comprehensive guide with:
+- **docs/keycloak-setup.md** — Consolidated Keycloak configuration guide with:
   - Quick start section for schreinerei realm
   - Architecture comparison (attribute-based vs organization-based)
   - Step-by-step migration instructions
