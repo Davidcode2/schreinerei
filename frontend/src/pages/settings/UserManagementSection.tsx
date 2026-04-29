@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,6 +9,7 @@ import { Users, UserPlus, Shield, Copy, Link2, Loader2 } from "lucide-react"
 import { useUsers } from "@/lib/api/hooks"
 import { useAuthStore } from "@/lib/auth/authStore"
 import { toast } from "sonner"
+import { InviteUserDialog } from "@/components/settings/InviteUserDialog"
 
 interface UserManagementSectionProps {
   isAdmin: boolean
@@ -43,7 +45,8 @@ function getDisplayName(user: { name: string | null; email: string }): string {
 
 export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
   const { data: users, isLoading, error } = useUsers()
-  const user = useAuthStore((state) => state.user)
+  const { user, isAuthenticated } = useAuthStore((state) => state)
+  const [showInviteDialog, setShowInviteDialog] = useState(false)
 
   if (!isAdmin) {
     return null
@@ -72,7 +75,7 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
             </CardTitle>
             <CardDescription>Verwalten Sie die Benutzer Ihrer Organisation</CardDescription>
           </div>
-          <Button size="sm" className="gap-2" onClick={copyInviteUrl}>
+          <Button size="sm" className="gap-2" onClick={() => setShowInviteDialog(true)}>
             <UserPlus className="h-4 w-4" />
             Einladen
           </Button>
@@ -103,7 +106,7 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
         <Separator className="mb-4" />
 
         {/* User list */}
-        {isLoading && (
+        {isLoading && isAuthenticated && (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
@@ -115,7 +118,13 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
           </div>
         )}
 
-        {users && (
+        {users && users.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            Keine Benutzer gefunden
+          </div>
+        )}
+
+        {users && users.length > 0 && (
           <div className="space-y-4">
             {users.map((apiUser, index) => (
               <div key={apiUser.id}>
@@ -142,6 +151,12 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
             ))}
           </div>
         )}
+
+        <InviteUserDialog
+          open={showInviteDialog}
+          onOpenChange={setShowInviteDialog}
+          inviteUrl={inviteUrl}
+        />
       </CardContent>
     </Card>
   )

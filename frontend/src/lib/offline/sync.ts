@@ -4,6 +4,7 @@ import { apiClient } from '@/lib/api/client'
 import type { Material } from '@/types/inventory'
 import type { Site } from '@/types/sites'
 import type { Vehicle, Tool } from '@/types/fleet'
+import { toast } from 'sonner'
 
 let isSyncing = false
 let lastSyncTime: Date | null = null
@@ -21,7 +22,6 @@ export async function syncFromServer(): Promise<void> {
   if (!isOnline()) return
 
   try {
-    // Fetch and cache all data in parallel
     const [materials, sites, vehicles, tools] = await Promise.all([
       apiClient.get<Material[]>('/api/v1/inventory/materials'),
       apiClient.get<Site[]>('/api/v1/sites'),
@@ -37,8 +37,16 @@ export async function syncFromServer(): Promise<void> {
     ])
 
     lastSyncTime = new Date()
+    toast.success('Daten synchronisiert')
   } catch (error) {
     console.error('Sync from server failed:', error)
+    toast.error('Synchronisierung fehlgeschlagen', {
+      description: 'Die Daten konnten nicht aktualisiert werden. Bitte versuchen Sie es später erneut.',
+      action: {
+        label: 'Erneut versuchen',
+        onClick: () => fullSync()
+      }
+    })
     throw error
   }
 }
@@ -62,6 +70,13 @@ export async function syncPendingActions(): Promise<{ success: number; failed: n
     }
   }
 
+  if (success > 0) {
+    toast.success(`${success} Änderung${success > 1 ? 'en' : ''} synchronisiert`)
+  }
+  if (failed > 0) {
+    toast.error(`${failed} Änderung${failed > 1 ? 'en' : ''} konnten nicht synchronisiert werden`)
+  }
+
   return { success, failed }
 }
 
@@ -70,13 +85,13 @@ export async function fullSync(): Promise<void> {
   if (isSyncing || !isOnline()) return
 
   isSyncing = true
+  toast.info('Synchronisierung gestartet...')
 
   try {
-    // First, send pending actions
     await syncPendingActions()
-
-    // Then, fetch fresh data
     await syncFromServer()
+  } catch (error) {
+    // Error already toasted in syncFromServer
   } finally {
     isSyncing = false
   }
