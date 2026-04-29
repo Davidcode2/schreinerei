@@ -28,11 +28,12 @@ Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, 
 - ✓ Dashboard mit offenen Baustellen — Phase 3
 - ✓ Fahrzeug-Inventar und Reservierung — Phase 4
 - ✓ Werkzeug-Reservierung mit Zeitraum und Baustellen-Verknüpfung — Phase 4
+- ✓ Mobile-first PWA mit Offline-Support — Phase 5
+- ✓ QR-Code Scanner für Werkzeug/Material — Phase 5
 
 ### Active
 
-- [ ] Mobile-first PWA mit Offline-Support
-- [ ] QR-Code Scanner für Werkzeug/Material
+None — V1 complete, ready for pilot customer.
 
 ### Out of Scope
 
@@ -155,6 +156,12 @@ Vorteil: Unit Tests mit Mock-Implementierungen ohne Datenbank.
 | Unified reservations table | One table for vehicles and tools | ✓ Resource type enum pattern |
 | Overlap detection for reservations | Prevent double-booking | ✓ PostgreSQL OVERLAPS operator |
 | Reservation status flow | Skip pending, start confirmed | ✓ V1 simplification for faster UX |
+| Vite + React 18 frontend | Modern build tooling, fast dev | ✓ Working with TypeScript |
+| OAuth2 PKCE for SPA auth | Secure token flow without client secret | ✓ Keycloak integration |
+| React Query + Zustand | Server state + client state separation | ✓ Caching and offline support |
+| IndexedDB via Dexie | Offline data persistence | ✓ Sync queue with background sync |
+| html5-qrcode | Camera QR scanning | ✓ Works on iOS and Android |
+| Tailwind + shadcn/ui | Utility-first CSS with accessible components | ✓ Responsive design |
 
 ## Evolution
 
@@ -174,4 +181,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-28 after Phase 4*
+*Last updated: 2026-04-29 after Phase 5 (V1 Complete)*
