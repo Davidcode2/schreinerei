@@ -11,14 +11,15 @@ CREATE TABLE vehicles (
     qr_code VARCHAR(100),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(tenant_id, name),
-    UNIQUE(tenant_id, qr_code) WHERE qr_code IS NOT NULL
+    UNIQUE(tenant_id, name)
 );
+
+-- Partial unique index for vehicle QR codes (nulls allowed, but non-null must be unique per tenant)
+CREATE UNIQUE INDEX idx_vehicles_qr_code_unique ON vehicles(tenant_id, qr_code) WHERE qr_code IS NOT NULL;
 
 -- Indexes for vehicles
 CREATE INDEX idx_vehicles_tenant ON vehicles(tenant_id);
 CREATE INDEX idx_vehicles_status ON vehicles(status);
-CREATE INDEX idx_vehicles_qr_code ON vehicles(qr_code);
 
 -- Update timestamp trigger for vehicles
 CREATE TRIGGER vehicles_updated_at
@@ -38,14 +39,15 @@ CREATE TABLE tools (
     qr_code VARCHAR(100),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(tenant_id, name),
-    UNIQUE(tenant_id, qr_code) WHERE qr_code IS NOT NULL
+    UNIQUE(tenant_id, name)
 );
+
+-- Partial unique index for tool QR codes
+CREATE UNIQUE INDEX idx_tools_qr_code_unique ON tools(tenant_id, qr_code) WHERE qr_code IS NOT NULL;
 
 -- Indexes for tools
 CREATE INDEX idx_tools_tenant ON tools(tenant_id);
 CREATE INDEX idx_tools_status ON tools(status);
-CREATE INDEX idx_tools_qr_code ON tools(qr_code);
 
 -- Update timestamp trigger for tools
 CREATE TRIGGER tools_updated_at
