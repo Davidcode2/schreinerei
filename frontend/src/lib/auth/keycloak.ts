@@ -1,40 +1,31 @@
-/**
- * Keycloak OAuth2 client with PKCE flow
- * 
- * Implements the Authorization Code flow with PKCE for secure
- * authentication against Keycloak.
- */
-
 import { generateCodeVerifier, generateCodeChallenge } from './pkce'
-import type { TokenResponse } from '@/types/user'
+import type { AuthTokens, User, KeycloakTokenPayload } from '../../types/user'
 
-// Environment configuration
-const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL
-const REALM = import.meta.env.VITE_KEYCLOAK_REALM
-const CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID
+const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080'
+const REALM = import.meta.env.VITE_KEYCLOAK_REALM || 'schreinerei'
+const CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'schreinerei-pwa'
 
-// OAuth endpoints
 const AUTH_URL = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/auth`
 const TOKEN_URL = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`
 const LOGOUT_URL = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/logout`
 
-// Redirect URI for callback
 const REDIRECT_URI = `${window.location.origin}/auth/callback`
 
-/**
- * Start the OAuth2 login flow
- * Redirects user to Keycloak login page
- */
+interface TokenResponse {
+  access_token: string
+  refresh_token: string
+  expires_in: number
+  token_type: string
+}
+
 export async function startLogin(): Promise<void> {
   const state = generateCodeVerifier()
   const verifier = generateCodeVerifier()
   const challenge = await generateCodeChallenge(verifier)
 
-  // Store PKCE state for callback verification
   sessionStorage.setItem('pkce_verifier', verifier)
   sessionStorage.setItem('auth_state', state)
 
-  // Build authorization URL
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
     redirect_uri: REDIRECT_URI,
@@ -48,55 +39,49 @@ export async function startLogin(): Promise<void> {
   window.location.href = `${AUTH_URL}?${params}`
 }
 
-/**
- * Handle callback from Keycloak
- * Exchange authorization code for tokens
- */
-export async function handleCallback(code: string, state: string): Promise<TokenResponse> {
+export async function handleCallback(code: string, state: string): Promise<AuthTokens> {
   const storedState = sessionStorage.getItem('auth_state')
   const verifier = sessionStorage.getItem('pkce_verifier')
 
-  // Validate state to prevent CSRF
   if (state !== storedState || !verifier) {
     throw new Error('Invalid auth state')
   }
 
-  // Exchange code for tokens
   const response = await fetch(TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id: CLIENT_ID,
       grant_type: 'authorization_code',
-      code,
+      client_id: CLIENT_ID,
+      code: code,
       redirect_uri: REDIRECT_URI,
       code_verifier: verifier,
     }),
   })
 
   if (!response.ok) {
-    const errorText = await response.text()
-    console.error('Token exchange failed:', errorText)
     throw new Error('Token exchange failed')
   }
 
-  // Clear PKCE state
+  const tokens: TokenResponse = await response.json()
+
   sessionStorage.removeItem('pkce_verifier')
   sessionStorage.removeItem('auth_state')
 
-  return response.json()
+  return {
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token,
+    expires_at: Date.now() + tokens.expires_in * 1000,
+  }
 }
 
-/**
- * Refresh access token using refresh token
- */
-export async function refreshToken(refreshToken: string): Promise<TokenResponse> {
+export async function refreshAccessToken(refreshToken: string): Promise<AuthTokens> {
   const response = await fetch(TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id: CLIENT_ID,
       grant_type: 'refresh_token',
+      client_id: CLIENT_ID,
       refresh_token: refreshToken,
     }),
   })
@@ -105,12 +90,50 @@ export async function refreshToken(refreshToken: string): Promise<TokenResponse>
     throw new Error('Token refresh failed')
   }
 
-  return response.json()
+  const tokens: TokenResponse = await response.json()
+
+  return {
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token,
+    expires_at: Date.now() + tokens.expires_in * 1000,
+  }
 }
 
-/**
- * Get logout URL for redirecting to Keycloak logout
- */
 export function getLogoutUrl(): string {
-  return `${LOGOUT_URL}?client_id=${CLIENT_ID}&post_logout_redirect_uri=${window.location.origin}`
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: window.location.origin,
+  })
+  return `${LOGOUT_URL}?${params}`
+}
+
+export function parseJwt(token: string): KeycloakTokenPayload {
+  const parts = token.split('.')
+  if (parts.length < 2 || !parts[1]) {
+    throw new Error('Invalid JWT token')
+  }
+  const base64Url: string = parts[1]
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+  const jsonPayload = decodeURIComponent(
+    atob(base64)
+      .split('')
+      .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+      .join('')
+  )
+  return JSON.parse(jsonPayload)
+}
+
+export function extractUserFromToken(token: string): User {
+  const payload = parseJwt(token)
+  const roles = payload.realm_access?.roles || []
+  const role = roles.includes('admin') ? 'admin' : 'mitarbeiter'
+
+  return {
+    id: payload.sub,
+    email: payload.email,
+    name: payload.preferred_username,
+    role: role as 'admin' | 'mitarbeiter',
+    tenant_id: payload.tenant_id,
+    created_at: new Date().toISOString(),
+  }
 }
