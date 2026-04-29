@@ -45,8 +45,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
           // API calls - NetworkFirst with offline fallback
+          // Exclude localhost (let Vite proxy handle them)
           {
-            urlPattern: /^https:\/\/.*\/api\/v1\/.*/i,
+            urlPattern: /^https:\/\/(?!localhost)[^\/]+\/api\/v1\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',

@@ -28,6 +28,7 @@ export function useVehicles(query?: ListVehiclesQuery) {
       const params = query?.status ? `?status=${query.status}` : ""
       return apiClient.get<Vehicle[]>(`/api/v1/fleet/vehicles${params}`)
     },
+    staleTime: 30000,
   })
 }
 
@@ -36,6 +37,7 @@ export function useVehicle(id: string) {
     queryKey: ["vehicle", id],
     queryFn: () => apiClient.get<Vehicle>(`/api/v1/fleet/vehicles/${id}`),
     enabled: !!id,
+    staleTime: 30000,
   })
 }
 
@@ -78,6 +80,7 @@ export function useTools(query?: ListToolsQuery) {
         `/api/v1/fleet/tools${queryString ? `?${queryString}` : ""}`
       )
     },
+    staleTime: 30000,
   })
 }
 
@@ -86,6 +89,7 @@ export function useTool(id: string) {
     queryKey: ["tool", id],
     queryFn: () => apiClient.get<Tool>(`/api/v1/fleet/tools/${id}`),
     enabled: !!id,
+    staleTime: 30000,
   })
 }
 
@@ -129,6 +133,7 @@ export function useReservations(query?: ListReservationsQuery) {
         `/api/v1/fleet/reservations${queryString ? `?${queryString}` : ""}`
       )
     },
+    staleTime: 30000,
   })
 }
 
@@ -193,6 +198,7 @@ export function useCalendar(query: CalendarQuery) {
       )
     },
     enabled: !!query.start_date && !!query.end_date,
+    staleTime: 30000,
   })
 }
 
@@ -216,5 +222,6 @@ export function useAvailability(query: AvailabilityQuery) {
       !!query.resource_id &&
       !!query.start_time &&
       !!query.end_time,
+    staleTime: 30000,
   })
 }

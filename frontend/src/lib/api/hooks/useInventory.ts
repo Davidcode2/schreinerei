@@ -16,6 +16,7 @@ export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
     queryFn: () => apiClient.get<Category[]>("/api/v1/inventory/categories"),
+    staleTime: 30000,
   })
 }
 
@@ -40,6 +41,7 @@ export function useMaterials(categoryId?: string) {
       const params = categoryId ? `?category_id=${categoryId}` : ""
       return apiClient.get<Material[]>(`/api/v1/inventory/materials${params}`)
     },
+    staleTime: 30000,
   })
 }
 
@@ -48,6 +50,7 @@ export function useMaterial(id: string) {
     queryKey: ["material", id],
     queryFn: () => apiClient.get<Material>(`/api/v1/inventory/materials/${id}`),
     enabled: !!id,
+    staleTime: 30000,
   })
 }
 
@@ -89,6 +92,7 @@ export function useLowStockMaterials() {
   return useQuery({
     queryKey: ["low-stock"],
     queryFn: () => apiClient.get<Material[]>("/api/v1/inventory/low-stock"),
+    staleTime: 30000,
   })
 }
 
@@ -99,6 +103,7 @@ export function useQrLookup(code: string | null) {
     queryKey: ["qr-lookup", code],
     queryFn: () => apiClient.get<Material>(`/api/v1/inventory/qr/${code}`),
     enabled: !!code,
+    staleTime: 30000,
   })
 }
 
@@ -111,6 +116,7 @@ export function useOrderRequests(query?: OrderStatusQuery) {
       const params = query?.status ? `?status=${query.status}` : ""
       return apiClient.get<OrderRequest[]>(`/api/v1/inventory/orders${params}`)
     },
+    staleTime: 30000,
   })
 }
 

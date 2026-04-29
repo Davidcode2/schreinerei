@@ -24,6 +24,7 @@ export function useSites(query?: ListSitesQuery) {
       const params = query?.status ? `?status=${query.status}` : ""
       return apiClient.get<Site[]>(`/api/v1/sites${params}`)
     },
+    staleTime: 30000,
   })
 }
 
@@ -32,6 +33,7 @@ export function useSite(id: string) {
     queryKey: ["site", id],
     queryFn: () => apiClient.get<Site>(`/api/v1/sites/${id}`),
     enabled: !!id,
+    staleTime: 30000,
   })
 }
 
@@ -70,6 +72,7 @@ export function useSiteAssignments(siteId: string) {
     queryFn: () =>
       apiClient.get<SiteAssignment[]>(`/api/v1/sites/${siteId}/assignments`),
     enabled: !!siteId,
+    staleTime: 30000,
   })
 }
 
@@ -104,6 +107,7 @@ export function useTimeEntries(siteId?: string) {
       }
       return apiClient.get<TimeEntry[]>("/api/v1/time-entries/my")
     },
+    staleTime: 30000,
   })
 }
 
@@ -111,6 +115,7 @@ export function useMyTimeEntries() {
   return useQuery({
     queryKey: ["my-time-entries"],
     queryFn: () => apiClient.get<TimeEntry[]>("/api/v1/time-entries/my"),
+    staleTime: 30000,
   })
 }
 
@@ -140,6 +145,7 @@ export function useActivities(siteId: string, query?: ActivityQuery) {
       )
     },
     enabled: !!siteId,
+    staleTime: 30000,
   })
 }
 
@@ -167,5 +173,6 @@ export function useDashboardSites() {
     queryKey: ["dashboard-sites"],
     queryFn: () =>
       apiClient.get<DashboardSite[]>("/api/v1/dashboard/sites"),
+    staleTime: 30000,
   })
 }
