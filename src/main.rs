@@ -58,7 +58,7 @@ async fn main() {
     // Create app state
     let state = AppState {
         config: config.clone(),
-        pool,
+        pool: pool.clone(),
         jwks_client: jwks_client.clone(),
     };
 
@@ -66,6 +66,7 @@ async fn main() {
     let auth_state = AuthState {
         jwks_client,
         jwt_issuer: config.jwt_issuer.clone(),
+        pool,
     };
 
     // Build router with health endpoint and IAM routes

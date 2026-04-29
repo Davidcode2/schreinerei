@@ -1,8 +1,6 @@
-use std::collections::HashMap;
 use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
 use jsonwebtoken::jwk::JwkSet;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 use crate::common::error::AppError;
 
@@ -15,9 +13,9 @@ pub struct Claims {
     pub email: String,
     /// Preferred username
     pub preferred_username: Option<String>,
-    /// Organization membership from Keycloak Organizations feature
-    /// Format: {"org-uuid": {}}
-    pub organization: HashMap<String, Value>,
+    /// Organization aliases from Keycloak Organizations feature
+    /// Format: ["org-alias-1", "org-alias-2"]
+    pub organization: Vec<String>,
     /// Realm access roles
     pub realm_access: RealmAccess,
     /// Expiration timestamp
@@ -27,9 +25,9 @@ pub struct Claims {
 }
 
 impl Claims {
-    /// Get the first organization ID (single-org users)
-    pub fn organization_id(&self) -> Option<String> {
-        self.organization.keys().next().cloned()
+    /// Get the first organization alias (single-org users)
+    pub fn organization_alias(&self) -> Option<&str> {
+        self.organization.first().map(|s| s.as_str())
     }
 }
 
@@ -62,10 +60,11 @@ pub fn validate_jwt(
     let decoding_key = DecodingKey::from_jwk(jwk)
         .map_err(|e| AppError::Auth(format!("Failed to create decoding key: {}", e)))?;
 
-    // Set up validation
+    // Set up validation - disable audience validation since Keycloak sets aud to "account"
     let mut validation = Validation::new(Algorithm::RS256);
     validation.set_issuer(&[issuer]);
     validation.set_required_spec_claims(&["exp", "iat", "sub"]);
+    validation.validate_aud = false;
 
     // Decode and validate
     let token_data = decode::<Claims>(token, &decoding_key, &validation)

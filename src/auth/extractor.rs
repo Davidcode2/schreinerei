@@ -3,7 +3,6 @@ use axum::{
     http::request::Parts,
 };
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use crate::common::error::AppError;
 use crate::common::types::{TenantId, UserId, Role};
@@ -18,31 +17,6 @@ pub struct AuthenticatedUser {
 }
 
 impl AuthenticatedUser {
-    /// Create from JWT claims
-    pub fn from_claims(claims: &crate::auth::jwt::Claims) -> Result<Self, AppError> {
-        let user_id = Uuid::parse_str(&claims.sub)
-            .map(UserId)
-            .map_err(|e| AppError::Auth(format!("Invalid user ID in token: {}", e)))?;
-
-        let org_id = claims.organization_id()
-            .ok_or_else(|| AppError::Auth("No organization membership in token".to_string()))?;
-
-        let tenant_id = Uuid::parse_str(&org_id)
-            .map(TenantId)
-            .map_err(|e| AppError::Auth(format!("Invalid organization ID in token: {}", e)))?;
-
-        let roles = claims.realm_access.roles.iter()
-            .filter_map(|r| r.parse::<Role>().ok())
-            .collect();
-
-        Ok(Self {
-            user_id,
-            tenant_id,
-            email: claims.email.clone(),
-            roles,
-        })
-    }
-
     /// Check if user has admin role
     pub fn is_admin(&self) -> bool {
         self.roles.iter().any(|r| r.is_admin())
