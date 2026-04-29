@@ -3,6 +3,7 @@ import { apiClient } from "../client"
 import type {
   Category,
   Material,
+  CreateMaterialRequest,
   WithdrawRequest,
   OrderRequest,
   CreateOrderRequestDto,
@@ -35,6 +36,18 @@ export function useMaterial(id: string) {
     queryKey: ["material", id],
     queryFn: () => apiClient.get<Material>(`/api/v1/inventory/materials/${id}`),
     enabled: !!id,
+  })
+}
+
+export function useCreateMaterial() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: CreateMaterialRequest) =>
+      apiClient.post<Material>("/api/v1/inventory/materials", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["materials"] })
+    },
   })
 }
 
