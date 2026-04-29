@@ -73,9 +73,17 @@
 - Cannot create materials - no category selection/creation available
 - Calendar reservation 400 error (date format)
 
-**Plans:** TBD
+**Plans:** 2 plans (0/2 complete)
 
 **Duration:** 1 day
+
+### Plans
+
+**Wave 1**
+- [ ] 08-01 — Backend Bug Fixes (Dashboard type mismatch, VehicleType enum)
+
+**Wave 2**
+- [ ] 08-02 — Frontend Bug Fixes (Logout, Category creation, Date format)
 
 ### Success Criteria
 
@@ -101,7 +109,7 @@
 | 5. PWA & Mobile | v1.0 | 4/4 | Complete | 2026-04-29 |
 | 6. Org Tenancy | v1.1 | 3/3 | Complete | 2026-04-29 |
 | 7. Frontend Polish | v1.2 | 3/3 | Complete | 2026-04-29 |
-| 8. Bug Fixes | v1.3 | 0/TBD | Planned | - |
+| 8. Bug Fixes | v1.3 | 0/2 | Planned | - |
 
 ---
 
@@ -110,7 +118,7 @@
 | Phase | Goal | Duration | Requirements |
 |-------|------|----------|--------------|
 | 7 | Frontend Polish | 1 day | 9 |
-| 8 | Bug Fixes | 1 day | TBD |
+| 8 | Bug Fixes | 1 day | 5 bugs |
 
 **Total for v1.2+v1.3:** 2 days
 

@@ -10,8 +10,8 @@
 
 Phase: 8 — Bug Fixes
 Plan: —
-Status: Not Planned
-Last activity: 2026-04-29 — Phase 7 complete, Phase 8 added for bug fixes
+Status: Ready to Execute
+Last activity: 2026-04-29 — Phase 8 planned with 2 plans across 2 waves
 
 ---
 
@@ -62,15 +62,16 @@ Full decision log in PROJECT.md. Key decisions:
 | 2026-04-29 | Phase 7 Planned | 3 plans created in 3 waves |
 | 2026-04-29 | Phase 7 Complete | Material/Site/Fleet dialogs, User management, QR scanner |
 | 2026-04-29 | Phase 8 Added | Bug fixes phase for end-to-end functionality |
+| 2026-04-29 | Phase 8 Planned | 2 plans created for backend and frontend bug fixes |
 
 ---
 
 ## Next Action
 
-Plan Phase 8 - Bug Fixes:
+Execute Phase 8 - Bug Fixes:
 
-`/gsd-plan-phase 8`
+`/gsd-execute-phase 8`
 
 ---
 
-*Last updated: 2026-04-29*
+*Last updated: 2026-04-29 after Phase 8 planning*
