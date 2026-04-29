@@ -9,6 +9,7 @@ import { AuthCallback } from "@/components/auth/AuthCallback"
 import { useAuth } from "@/hooks/useAuth"
 import { initSync } from "@/lib/offline/sync"
 import OfflineIndicator from "@/components/offline/OfflineIndicator"
+import InstallPrompt from "@/components/pwa/InstallPrompt"
 import DashboardPage from "@/pages/DashboardPage"
 import { InventoryListPage, InventoryDetailPage } from "@/pages/inventory"
 import { SitesListPage, SiteDetailPage } from "@/pages/sites"
@@ -96,6 +97,7 @@ function App() {
         <AppRoutes />
         <Toaster />
         <OfflineIndicator />
+        <InstallPrompt />
       </BrowserRouter>
     </QueryClientProvider>
   )
