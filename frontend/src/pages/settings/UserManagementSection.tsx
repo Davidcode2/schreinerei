@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -43,7 +42,6 @@ function getDisplayName(user: { name: string | null; email: string }): string {
 }
 
 export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
-  const [inviteUrlCopied, setInviteUrlCopied] = useState(false)
   const { data: users, isLoading, error } = useUsers()
   const user = useAuthStore((state) => state.user)
 
@@ -57,9 +55,7 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
   const copyInviteUrl = async () => {
     try {
       await navigator.clipboard.writeText(inviteUrl)
-      setInviteUrlCopied(true)
       toast.success("Einladungslink kopiert")
-      setTimeout(() => setInviteUrlCopied(false), 2000)
     } catch {
       toast.error("Link konnte nicht kopiert werden")
     }
