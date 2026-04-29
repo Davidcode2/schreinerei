@@ -24,14 +24,23 @@ export function AuthCallback() {
       return
     }
 
+    const exchangeKey = `auth_exchanging_${code}`
+    if (sessionStorage.getItem(exchangeKey)) {
+      console.log('Token exchange already in progress, skipping')
+      return
+    }
+    sessionStorage.setItem(exchangeKey, 'pending')
+
     handleCallback(code, state)
       .then((tokens) => {
+        sessionStorage.removeItem(exchangeKey)
         setTokens(tokens)
         const user = extractUserFromToken(tokens.access_token)
         setUser(user)
         navigate('/')
       })
       .catch((err) => {
+        sessionStorage.removeItem(exchangeKey)
         console.error('Auth callback failed:', err)
         navigate('/login')
       })

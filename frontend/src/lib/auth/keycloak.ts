@@ -47,6 +47,9 @@ export async function handleCallback(code: string, state: string): Promise<AuthT
     throw new Error('Invalid auth state')
   }
 
+  sessionStorage.removeItem('pkce_verifier')
+  sessionStorage.removeItem('auth_state')
+
   const response = await fetch(TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -64,9 +67,6 @@ export async function handleCallback(code: string, state: string): Promise<AuthT
   }
 
   const tokens: TokenResponse = await response.json()
-
-  sessionStorage.removeItem('pkce_verifier')
-  sessionStorage.removeItem('auth_state')
 
   return {
     access_token: tokens.access_token,

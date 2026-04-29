@@ -1,8 +1,28 @@
 import { useAuthStore } from '../auth/authStore'
 import { refreshAccessToken } from '../auth/keycloak'
 import type { ApiError } from '../../types/api'
+import { toast } from 'sonner'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const MAX_REFRESH_RETRIES = 3
+const REFRESH_BASE_DELAY = 1000
+
+async function refreshWithRetry(
+  refreshToken: string,
+  attempt: number = 1
+): Promise<import('../../types/user').AuthTokens> {
+  try {
+    return await refreshAccessToken(refreshToken)
+  } catch (error) {
+    if (attempt >= MAX_REFRESH_RETRIES) {
+      throw error
+    }
+    const delay = REFRESH_BASE_DELAY * Math.pow(2, attempt - 1)
+    console.warn(`Token refresh failed (attempt ${attempt}), retrying in ${delay}ms...`)
+    await new Promise(resolve => setTimeout(resolve, delay))
+    return refreshWithRetry(refreshToken, attempt + 1)
+  }
+}
 
 class ApiClient {
   private baseUrl: string
@@ -18,10 +38,15 @@ class ApiClient {
 
     if (Date.now() >= tokens.expires_at - 60000) {
       try {
-        const newTokens = await refreshAccessToken(tokens.refresh_token)
+        if (Date.now() >= tokens.expires_at - 120000) {
+          toast.warning('Session wird bald ablaufen')
+        }
+        const newTokens = await refreshWithRetry(tokens.refresh_token)
         setTokens(newTokens)
         return newTokens.access_token
-      } catch {
+      } catch (error) {
+        console.error('Token refresh failed after retries:', error)
+        toast.error('Session abgelaufen. Bitte melden Sie sich erneut an.')
         logout()
         return null
       }
