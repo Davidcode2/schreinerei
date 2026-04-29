@@ -2,16 +2,16 @@
 
 **Project:** Schreinerei SaaS
 **Current Milestone:** v1.3 Bug Fixes
-**Status:** Partial
+**Status:** Planned
 
 ---
 
 ## Current Position
 
-Phase: 9 — Frontend Testing
-Plan: Complete
-Status: Partial - Test infrastructure complete, bugs documented
-Last activity: 2026-04-29 — Phase 9 complete with 2 bugs found
+Phase: 10 — Bug Fixes Round 2
+Plan: Ready to Execute
+Status: Planned - 4 plans created in 2 waves
+Last activity: 2026-04-29 — Phase 10 planned to fix 8 bugs from testing
 
 ---
 
@@ -45,12 +45,19 @@ Full decision log in PROJECT.md. Key decisions:
 
 ### Pending Todos
 
-- BUG-01: Fix Keycloak redirect_uri for port 5174 (High)
-- BUG-02: Resolve port 5173 conflict (Medium)
+Execute Phase 10 to fix all 8 bugs:
+- BUG-001: Token Exchange Failure (Critical)
+- BUG-002: Token Refresh Cascade Failure (Critical)
+- BUG-003: Wrong API URL (High)
+- BUG-004: Fleet "Neu" Button Non-Functional (High)
+- BUG-005: Redundant API Calls (Medium)
+- BUG-006: User List Not Displaying (Medium)
+- BUG-007: No Email Invite Dialog (Medium)
+- BUG-008: Offline Sync Fails Silently (Medium)
 
 ### Blockers/Concerns
 
-- Keycloak redirect_uri configuration needed before E2E tests can pass
+None - all bugs have planned fixes in Phase 10 plans.
 
 ---
 
@@ -74,16 +81,18 @@ Full decision log in PROJECT.md. Key decisions:
 | 2026-04-29 | Phase 8 Complete | Dashboard API, VehicleType, logout, category creation, reservation dates fixed |
 | 2026-04-29 | Phase 9 Added | Comprehensive frontend testing with playwright-cli |
 | 2026-04-29 | Phase 9 Complete | 18 E2E tests created, 2 config bugs discovered |
+| 2026-04-29 | Phase 10 Added | Bug fixes for 8 bugs discovered in testing |
+| 2026-04-29 | Phase 10 Planned | 4 plans created in 2 waves |
 
 ---
 
 ## Next Action
 
-Fix discovered bugs:
+Execute Phase 10 plans:
 
-1. Add `http://localhost:*/auth/callback` to Keycloak valid redirect URIs
-2. Re-run E2E tests to verify all functionality
+1. Run `/gsd-execute-phase 10` to fix all discovered bugs
+2. After execution, run E2E tests to verify fixes
 
 ---
 
-*Last updated: 2026-04-29 after Phase 9 execution*
+*Last updated: 2026-04-29 after Phase 10 planning*

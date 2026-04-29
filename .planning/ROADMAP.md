@@ -11,7 +11,7 @@
 - ✅ **v1.0 MVP** — Phases 1-5 (shipped 2026-04-29)
 - ✅ **v1.1 Organization-Based Tenancy** — Phase 6 (shipped 2026-04-29)
 - ✅ **v1.2 Frontend Polish** — Phase 7 (shipped 2026-04-29)
-- 🚧 **v1.3 Bug Fixes** — Phases 8-9 (in progress)
+- 🚧 **v1.3 Bug Fixes** — Phases 8-10 (in progress)
 
 ---
 
@@ -139,6 +139,54 @@
 
 ---
 
+## Phase 10: Bug Fixes Round 2
+
+**Goal:** Fix all 8 bugs discovered during Phase 9 automated Playwright testing
+
+**Requirements:** BUG-001, BUG-002, BUG-003, BUG-004, BUG-005, BUG-006, BUG-007, BUG-008
+
+**Plans:** 4 plans (0/4 complete)
+
+**Duration:** 1 day
+
+**Status:** Planned (2026-04-29)
+
+### Plans
+
+**Wave 1 (Parallel)**
+- [ ] 10-01 — Authentication Fixes (BUG-001, BUG-002)
+- [ ] 10-02 — Fleet Button Fix (BUG-004)
+- [ ] 10-03 — PWA & Query Fixes (BUG-003, BUG-005)
+
+**Wave 2**
+- [ ] 10-04 — User Management & Sync (BUG-006, BUG-007, BUG-008)
+
+### Success Criteria
+
+1. Token exchange succeeds on first attempt (no double-exchange failures)
+2. Token refresh retries before logout (exponential backoff)
+3. API calls go through Vite proxy correctly
+4. Fleet "Neu" button opens dropdown with Vehicle/Tool options
+5. No redundant API calls within 30 second window
+6. User list displays users from API
+7. Admin can invite users via email dialog
+8. Sync status visible to user with toast notifications
+
+### Bugs to Fix
+
+| Bug | Description | Severity | Location |
+|-----|-------------|----------|----------|
+| BUG-001 | Token Exchange Failure During Auth Callback | Critical | keycloak.ts, AuthCallback.tsx |
+| BUG-002 | Token Refresh Cascade Failure | Critical | client.ts |
+| BUG-003 | Wrong API URL (Frontend Port Instead of Backend) | High | vite.config.ts |
+| BUG-004 | Fleet "Neu" Button Non-Functional | High | FleetPage.tsx |
+| BUG-005 | Redundant API Calls | Medium | hooks/*.ts |
+| BUG-006 | User List Not Displaying (Loading State Stuck) | Medium | UserManagementSection.tsx |
+| BUG-007 | No Email Invite Dialog | Medium | UserManagementSection.tsx |
+| BUG-008 | Offline Sync Fails Silently | Medium | sync.ts |
+
+---
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -152,6 +200,7 @@
 | 7. Frontend Polish | v1.2 | 3/3 | Complete | 2026-04-29 |
 | 8. Bug Fixes | v1.3 | 2/2 | Complete | 2026-04-29 |
 | 9. Frontend Testing | v1.3 | 3/3 | Complete | 2026-04-29 |
+| 10. Bug Fixes Round 2 | v1.3 | 0/4 | Planned | - |
 
 ---
 
@@ -162,9 +211,10 @@
 | 7 | Frontend Polish | 1 day | 9 |
 | 8 | Bug Fixes | 1 day | 5 bugs |
 | 9 | Frontend Testing | 1 day | 6 test requirements |
+| 10 | Bug Fixes Round 2 | 1 day | 8 bugs |
 
-**Total for v1.2+v1.3:** 3 days
+**Total for v1.2+v1.3:** 4 days
 
 ---
 
-*Last updated: 2026-04-29 after Phase 9 planning*
+*Last updated: 2026-04-29 after Phase 10 planning*
