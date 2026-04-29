@@ -34,17 +34,28 @@
 
 **Requirements:** KC-01, KC-02, ORG-01, ORG-02, ORG-03, BE-01, BE-02, BE-03, FE-01, FE-02
 
-**Plans:** 0/3 plans
+**Plans:** 3/3 plans
 
 **Duration Estimate:** 1 Woche
 
-**Status:** Ready to Plan
+**Status:** Ready to Execute
 
 ### Plans
 
+**Wave 1**
 - [ ] 06-01-PLAN.md — Keycloak Organizations Setup (KC-01, KC-02, ORG-01, ORG-02)
+
+**Wave 2 *(blocked on Wave 1 completion)***
 - [ ] 06-02-PLAN.md — Backend JWT Migration (ORG-03, BE-01, BE-02, BE-03)
+
+**Wave 3 *(blocked on Wave 2 completion)***
 - [ ] 06-03-PLAN.md — Frontend OAuth2 Scope Update (FE-01, FE-02)
+
+### Cross-cutting Constraints
+
+- All plans depend on Keycloak Organizations feature being enabled
+- Backend changes require organizations to exist before code deployment
+- Frontend changes require backend to accept organization claim
 
 ### Success Criteria
 
@@ -77,7 +88,7 @@
 | 3. Baustellen | v1.0 | 2/2 | Complete | 2026-04-28 |
 | 4. Fuhrpark | v1.0 | 2/2 | Complete | 2026-04-28 |
 | 5. PWA & Mobile | v1.0 | 4/4 | Complete | 2026-04-29 |
-| 6. Org Tenancy | v1.1 | 0/3 | Not started | - |
+| 6. Org Tenancy | v1.1 | 0/3 | Planned | - |
 
 ---
 
@@ -91,4 +102,4 @@
 
 ---
 
-*Last updated: 2026-04-29*
+*Last updated: 2026-04-29 after Phase 6 planning*

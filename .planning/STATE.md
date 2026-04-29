@@ -10,8 +10,8 @@
 
 Phase: 6 — Organization-Based Tenancy
 Plan: —
-Status: Ready to Plan
-Last activity: 2026-04-29 — Milestone v1.1 roadmap created
+Status: Ready to Execute
+Last activity: 2026-04-29 — Phase 6 plans created
 
 ---
 
@@ -58,6 +58,11 @@ Full decision log in PROJECT.md. Key decisions from v1.0:
 
 ## Next Action
 
-**Define requirements and create roadmap**
+**Execute Phase 6: Organization-Based Tenancy**
 
-Next: `/gsd-new-milestone` (continue workflow)
+3 plans ready to execute in 3 waves:
+- Wave 1: Keycloak Organizations Setup
+- Wave 2: Backend JWT Migration
+- Wave 3: Frontend OAuth2 Scope Update
+
+Next: `/gsd-execute-phase 6`
