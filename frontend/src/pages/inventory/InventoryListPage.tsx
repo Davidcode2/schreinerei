@@ -10,11 +10,13 @@ import {
 import { MaterialCard, MaterialCardSkeleton } from "@/components/inventory/MaterialCard"
 import { CategoryFilter } from "@/components/inventory/CategoryFilter"
 import { useCategories, useMaterials } from "@/lib/api/hooks"
+import { AddMaterialDialog } from "./AddMaterialDialog"
 import type { Material } from "@/types/inventory"
 
 export default function InventoryListPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>()
   const [searchQuery, setSearchQuery] = useState("")
+  const [addMaterialOpen, setAddMaterialOpen] = useState(false)
 
   const { data: categories, isLoading: categoriesLoading } = useCategories()
   const {
@@ -36,7 +38,7 @@ export default function InventoryListPage() {
         title="Inventar"
         description="Materialverwaltung"
         action={
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setAddMaterialOpen(true)}>
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Material hinzufügen</span>
           </Button>
@@ -89,7 +91,7 @@ export default function InventoryListPage() {
           }
           action={
             !searchQuery && (
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={() => setAddMaterialOpen(true)}>
                 <Plus className="h-4 w-4" />
                 Material hinzufügen
               </Button>
@@ -106,6 +108,13 @@ export default function InventoryListPage() {
           ))}
         </div>
       )}
+
+      {/* Add Material Dialog */}
+      <AddMaterialDialog
+        open={addMaterialOpen}
+        onOpenChange={setAddMaterialOpen}
+        categories={categories || []}
+      />
     </div>
   )
 }
