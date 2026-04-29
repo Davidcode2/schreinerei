@@ -7,30 +7,30 @@
 
 ### Architecture & Quality
 
-- [ ] **ARCH-01**: Hexagonal Architecture mit Domain/Application/Infrastructure Layern
-- [ ] **ARCH-02**: Module kommunizieren über Domain Events, nicht direkte Aufrufe
-- [ ] **ARCH-03**: Rust Traits als Ports für Infrastructure-Abstraktion
-- [ ] **ARCH-04**: Unit Tests können Domain/Application ohne Datenbank testen (Mock-Ports)
-- [ ] **ARCH-05**: TenantId wird automatisch aus JWT extrahiert (Request Context Pattern)
-- [ ] **ARCH-06**: State-Based Persistence mit Audit Log (nicht Event Sourcing)
+- [x] **ARCH-01**: Hexagonal Architecture mit Domain/Application/Infrastructure Layern
+- [x] **ARCH-02**: Module kommunizieren über Domain Events, nicht direkte Aufrufe
+- [x] **ARCH-03**: Rust Traits als Ports für Infrastructure-Abstraktion
+- [x] **ARCH-04**: Unit Tests können Domain/Application ohne Datenbank testen (Mock-Ports)
+- [x] **ARCH-05**: TenantId wird automatisch aus JWT extrahiert (Request Context Pattern)
+- [x] **ARCH-06**: State-Based Persistence mit Audit Log (nicht Event Sourcing)
 
 ### Authentication & IAM
 
-- [ ] **AUTH-01**: User kann sich via Keycloak einloggen
-- [ ] **AUTH-02**: Multi-Tenant-Trennung ist gewährleistet (TenantId in jeder Query)
-- [ ] **AUTH-03**: Admin kann neue User einladen
-- [ ] **AUTH-04**: Rollen: Admin, Mitarbeiter mit unterschiedlichen Berechtigungen
-- [ ] **AUTH-05**: User kann sein Profil bearbeiten
+- [x] **AUTH-01**: User kann sich via Keycloak einloggen
+- [x] **AUTH-02**: Multi-Tenant-Trennung ist gewährleistet (TenantId in jeder Query)
+- [x] **AUTH-03**: Admin kann neue User einladen
+- [x] **AUTH-04**: Rollen: Admin, Mitarbeiter mit unterschiedlichen Berechtigungen
+- [x] **AUTH-05**: User kann sein Profil bearbeiten
 
 ### Inventar
 
-- [ ] **INVT-01**: Admin kann Material-Kategorien anlegen (Platten, Kanten, Lacke, Schrauben, etc.)
-- [ ] **INVT-02**: Admin kann Materialien mit Bestand anlegen
-- [ ] **INVT-03**: Mitarbeiter kann Material entnehmen und Bestand reduzieren
-- [ ] **INVT-04**: System warnt bei "letzte Packung" und benachrichtigt Admin
-- [ ] **INVT-05**: Admin sieht Benachrichtigungen über niedrige Bestände
-- [ ] **INVT-06**: Admin kann Bestellanforderungen erstellen
-- [ ] **INVT-07**: Material kann mit QR-Code getaggt und gescannt werden
+- [x] **INVT-01**: Admin kann Material-Kategorien anlegen (Platten, Kanten, Lacke, Schrauben, etc.)
+- [x] **INVT-02**: Admin kann Materialien mit Bestand anlegen
+- [x] **INVT-03**: Mitarbeiter kann Material entnehmen und Bestand reduzieren
+- [x] **INVT-04**: System warnt bei "letzte Packung" und benachrichtigt Admin
+- [x] **INVT-05**: Admin sieht Benachrichtigungen über niedrige Bestände
+- [x] **INVT-06**: Admin kann Bestellanforderungen erstellen
+- [x] **INVT-07**: Material kann mit QR-Code getaggt und gescannt werden
 
 ### Baustellen
 
@@ -45,20 +45,20 @@
 
 ### Fuhrpark & Werkzeuge
 
-- [ ] **FLEET-01**: Admin kann Fahrzeuge anlegen
-- [ ] **FLEET-02**: Admin kann Werkzeuge/Geräte anlegen
-- [ ] **FLEET-03**: Mitarbeiter kann Werkzeug für Zeitraum reservieren
-- [ ] **FLEET-04**: Reservierung wird mit Baustelle verknüpft (automatisch Zeitraum übernehmen)
-- [ ] **FLEET-05**: Mitarbeiter sieht Belegung von Fahrzeugen/Werkzeugen im Kalender
-- [ ] **FLEET-06**: Mitarbeiter kann Fahrzeug reservieren
-- [ ] **FLEET-07**: QR-Code an Werkzeug zeigt aktuellen Status/Reservierung
+- [x] **FLEET-01**: Admin kann Fahrzeuge anlegen
+- [x] **FLEET-02**: Admin kann Werkzeuge/Geräte anlegen
+- [x] **FLEET-03**: Mitarbeiter kann Werkzeug für Zeitraum reservieren
+- [x] **FLEET-04**: Reservierung wird mit Baustelle verknüpft (automatisch Zeitraum übernehmen)
+- [x] **FLEET-05**: Mitarbeiter sieht Belegung von Fahrzeugen/Werkzeugen im Kalender
+- [x] **FLEET-06**: Mitarbeiter kann Fahrzeug reservieren
+- [x] **FLEET-07**: QR-Code an Werkzeug zeigt aktuellen Status/Reservierung
 
 ### PWA & Mobile
 
-- [ ] **PWA-01**: App ist als PWA installierbar
-- [ ] **PWA-02**: Offline-Modus für Grundfunktionen (Daten werden synchronisiert wenn wieder online)
-- [ ] **PWA-03**: QR-Code Scanner funktioniert über Kamera
-- [ ] **PWA-04**: Responsive Design für Tablet und Smartphone
+- [x] **PWA-01**: App ist als PWA installierbar
+- [x] **PWA-02**: Offline-Modus für Grundfunktionen (Daten werden synchronisiert wenn wieder online)
+- [x] **PWA-03**: QR-Code Scanner funktioniert über Kamera
+- [x] **PWA-04**: Responsive Design für Tablet und Smartphone
 
 ## v2 Requirements
 
@@ -112,24 +112,24 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARCH-01 | Phase 1 | Pending |
-| ARCH-02 | Phase 2+ | Pending |
-| ARCH-03 | Phase 1 | Pending |
-| ARCH-04 | Phase 1 | Pending |
-| ARCH-05 | Phase 1 | Pending |
-| ARCH-06 | Phase 1 | Pending |
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| AUTH-04 | Phase 1 | Pending |
-| AUTH-05 | Phase 1 | Pending |
-| INVT-01 | Phase 2 | Pending |
-| INVT-02 | Phase 2 | Pending |
-| INVT-03 | Phase 2 | Pending |
-| INVT-04 | Phase 2 | Pending |
-| INVT-05 | Phase 2 | Pending |
-| INVT-06 | Phase 2 | Pending |
-| INVT-07 | Phase 2 | Pending |
+| ARCH-01 | Phase 1 | Complete |
+| ARCH-02 | Phase 2+ | Complete |
+| ARCH-03 | Phase 1 | Complete |
+| ARCH-04 | Phase 1 | Complete |
+| ARCH-05 | Phase 1 | Complete |
+| ARCH-06 | Phase 1 | Complete |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
+| AUTH-03 | Phase 1 | Complete |
+| AUTH-04 | Phase 1 | Complete |
+| AUTH-05 | Phase 1 | Complete |
+| INVT-01 | Phase 2 | Complete |
+| INVT-02 | Phase 2 | Complete |
+| INVT-03 | Phase 2 | Complete |
+| INVT-04 | Phase 2 | Complete |
+| INVT-05 | Phase 2 | Complete |
+| INVT-06 | Phase 2 | Complete |
+| INVT-07 | Phase 2 | Complete |
 | SITE-01 | Phase 3 | Complete |
 | SITE-02 | Phase 3 | Complete |
 | SITE-03 | Phase 3 | Complete |
@@ -138,21 +138,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SITE-06 | Phase 3 | Complete |
 | SITE-07 | Phase 3 | Complete |
 | SITE-08 | Phase 3 | Complete |
-| FLEET-01 | Phase 4 | Pending |
-| FLEET-02 | Phase 4 | Pending |
-| FLEET-03 | Phase 4 | Pending |
-| FLEET-04 | Phase 4 | Pending |
-| FLEET-05 | Phase 4 | Pending |
-| FLEET-06 | Phase 4 | Pending |
-| FLEET-07 | Phase 4 | Pending |
-| PWA-01 | Phase 5 | Pending |
-| PWA-02 | Phase 5 | Pending |
-| PWA-03 | Phase 5 | Pending |
-| PWA-04 | Phase 5 | Pending |
+| FLEET-01 | Phase 4 | Complete |
+| FLEET-02 | Phase 4 | Complete |
+| FLEET-03 | Phase 4 | Complete |
+| FLEET-04 | Phase 4 | Complete |
+| FLEET-05 | Phase 4 | Complete |
+| FLEET-06 | Phase 4 | Complete |
+| FLEET-07 | Phase 4 | Complete |
+| PWA-01 | Phase 5 | Complete |
+| PWA-02 | Phase 5 | Complete |
+| PWA-03 | Phase 5 | Complete |
+| PWA-04 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 37 total
-- Mapped to phases: 37
+- Complete: 37
 - Unmapped: 0 ✓
 
 ---
