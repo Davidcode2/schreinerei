@@ -21,7 +21,7 @@ This guide explains how to configure Keycloak for the Schreinerei SaaS applicati
 │  JWT Token:                                                  │
 │  {                                                           │
 │    "sub": "user-id",                                         │
-│    "organization": { "uuid-aaa": {} },                       │
+│    "organization": ["org-alias"],                            │
 │    "realm_access": { "roles": ["admin"] }                    │
 │  }                                                           │
 └─────────────────────────────────────────────────────────────┘
@@ -114,6 +114,14 @@ Go to **Realm Roles** → **Create role**:
 
 ```bash
 sqlx migrate run
+```
+
+### 9. Link Tenants to Organizations
+
+For each tenant, update the `keycloak_organization_alias` to match the Keycloak organization alias:
+
+```bash
+psql -c "UPDATE tenants SET keycloak_organization_alias = 'org-alias-here' WHERE id = 'tenant-uuid';"
 ```
 
 ## Testing
