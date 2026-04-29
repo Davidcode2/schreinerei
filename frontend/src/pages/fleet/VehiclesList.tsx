@@ -5,6 +5,7 @@ import { Search, Plus } from "lucide-react"
 import { EmptyState, ErrorState } from "@/components/shared"
 import { ResourceCard, ResourceCardSkeleton } from "@/components/fleet/ResourceCard"
 import { useVehicles } from "@/lib/api/hooks"
+import { AddVehicleDialog } from "./AddVehicleDialog"
 import type { Vehicle, ResourceStatus } from "@/types/fleet"
 
 const statusFilters: { value: ResourceStatus | undefined; label: string }[] = [
@@ -21,6 +22,7 @@ interface VehiclesListProps {
 export function VehiclesList({ onReserve }: VehiclesListProps) {
   const [selectedStatus, setSelectedStatus] = useState<ResourceStatus | undefined>()
   const [searchQuery, setSearchQuery] = useState("")
+  const [addVehicleOpen, setAddVehicleOpen] = useState(false)
 
   const {
     data: vehicles,
@@ -84,7 +86,7 @@ export function VehiclesList({ onReserve }: VehiclesListProps) {
           }
           action={
             !searchQuery && (
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={() => setAddVehicleOpen(true)}>
                 <Plus className="h-4 w-4" />
                 Fahrzeug hinzufügen
               </Button>
@@ -103,6 +105,7 @@ export function VehiclesList({ onReserve }: VehiclesListProps) {
           ))}
         </div>
       )}
+      <AddVehicleDialog open={addVehicleOpen} onOpenChange={setAddVehicleOpen} />
     </div>
   )
 }
