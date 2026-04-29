@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -49,17 +49,21 @@ export function AddMaterialDialog({
 
   const createMaterial = useCreateMaterial()
 
-  // Reset form when dialog opens
-  useEffect(() => {
-    if (open) {
-      setCategoryId("")
-      setName("")
-      setQuantity("")
-      setUnit("")
-      setMinQuantity("")
-      setLocation("")
+  const resetForm = () => {
+    setCategoryId("")
+    setName("")
+    setQuantity("")
+    setUnit("")
+    setMinQuantity("")
+    setLocation("")
+  }
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      resetForm()
     }
-  }, [open])
+    onOpenChange(open)
+  }
 
   const isFormValid =
     categoryId && name && quantity && unit && minQuantity
@@ -79,7 +83,7 @@ export function AddMaterialDialog({
       {
         onSuccess: () => {
           toast.success("Material erstellt")
-          onOpenChange(false)
+          handleOpenChange(false)
         },
         onError: (error) => {
           toast.error("Material konnte nicht erstellt werden")
@@ -90,7 +94,7 @@ export function AddMaterialDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Material hinzufügen</DialogTitle>
@@ -186,7 +190,7 @@ export function AddMaterialDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Abbrechen
           </Button>
           <Button

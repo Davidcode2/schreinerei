@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -30,15 +30,19 @@ export function AddSiteDialog({
 
   const createSite = useCreateSite()
 
-  // Reset form when dialog opens
-  useEffect(() => {
-    if (open) {
-      setName("")
-      setCustomerName("")
-      setLocation("")
-      setDescription("")
+  const resetForm = () => {
+    setName("")
+    setCustomerName("")
+    setLocation("")
+    setDescription("")
+  }
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      resetForm()
     }
-  }, [open])
+    onOpenChange(open)
+  }
 
   const isFormValid = name && customerName
 
@@ -55,7 +59,7 @@ export function AddSiteDialog({
       {
         onSuccess: () => {
           toast.success("Baustelle erstellt")
-          onOpenChange(false)
+          handleOpenChange(false)
         },
         onError: (error) => {
           toast.error("Baustelle konnte nicht erstellt werden")
@@ -66,7 +70,7 @@ export function AddSiteDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Baustelle anlegen</DialogTitle>
@@ -123,7 +127,7 @@ export function AddSiteDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Abbrechen
           </Button>
           <Button
