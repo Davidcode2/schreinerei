@@ -30,7 +30,7 @@ export async function startLogin(): Promise<void> {
     client_id: CLIENT_ID,
     redirect_uri: REDIRECT_URI,
     response_type: 'code',
-    scope: 'openid profile email',
+    scope: 'openid profile email organization',
     code_challenge: challenge,
     code_challenge_method: 'S256',
     state: state,
@@ -133,7 +133,7 @@ export function extractUserFromToken(token: string): User {
     email: payload.email,
     name: payload.preferred_username,
     role: role as 'admin' | 'mitarbeiter',
-    tenant_id: payload.tenant_id,
+    tenant_id: payload.organization,
     created_at: new Date().toISOString(),
   }
 }
