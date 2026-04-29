@@ -17,6 +17,6 @@ export interface KeycloakTokenPayload {
   sub: string
   email: string
   preferred_username: string
-  organization: string
+  organization: Record<string, unknown>
   realm_access: { roles: string[] }
 }

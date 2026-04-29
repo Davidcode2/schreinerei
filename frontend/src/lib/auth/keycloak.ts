@@ -128,12 +128,15 @@ export function extractUserFromToken(token: string): User {
   const roles = payload.realm_access?.roles || []
   const role = roles.includes('admin') ? 'admin' : 'mitarbeiter'
 
+  const orgIds = Object.keys(payload.organization || {})
+  const tenantId = orgIds[0] || ''
+
   return {
     id: payload.sub,
     email: payload.email,
     name: payload.preferred_username,
     role: role as 'admin' | 'mitarbeiter',
-    tenant_id: payload.organization,
+    tenant_id: tenantId,
     created_at: new Date().toISOString(),
   }
 }

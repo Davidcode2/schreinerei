@@ -1,6 +1,8 @@
+use std::collections::HashMap;
 use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
 use jsonwebtoken::jwk::JwkSet;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::common::error::AppError;
 
@@ -13,14 +15,22 @@ pub struct Claims {
     pub email: String,
     /// Preferred username
     pub preferred_username: Option<String>,
-    /// Organization ID from Keycloak Organizations feature
-    pub organization: String,
+    /// Organization membership from Keycloak Organizations feature
+    /// Format: {"org-uuid": {}}
+    pub organization: HashMap<String, Value>,
     /// Realm access roles
     pub realm_access: RealmAccess,
     /// Expiration timestamp
     pub exp: usize,
     /// Issued at timestamp
     pub iat: usize,
+}
+
+impl Claims {
+    /// Get the first organization ID (single-org users)
+    pub fn organization_id(&self) -> Option<String> {
+        self.organization.keys().next().cloned()
+    }
 }
 
 /// Realm access from Keycloak token

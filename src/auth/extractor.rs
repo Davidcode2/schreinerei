@@ -24,7 +24,10 @@ impl AuthenticatedUser {
             .map(UserId)
             .map_err(|e| AppError::Auth(format!("Invalid user ID in token: {}", e)))?;
 
-        let tenant_id = Uuid::parse_str(&claims.organization)
+        let org_id = claims.organization_id()
+            .ok_or_else(|| AppError::Auth("No organization membership in token".to_string()))?;
+
+        let tenant_id = Uuid::parse_str(&org_id)
             .map(TenantId)
             .map_err(|e| AppError::Auth(format!("Invalid organization ID in token: {}", e)))?;
 
