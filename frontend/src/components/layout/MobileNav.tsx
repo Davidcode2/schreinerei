@@ -1,10 +1,12 @@
 import { useNavigate } from "react-router-dom"
-import { Menu, QrCode } from "lucide-react"
+import { Menu, QrCode, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { SidebarContent } from "./SidebarContent"
 import PendingActionsBadge from "@/components/offline/PendingActionsBadge"
 import SyncButton from "@/components/offline/SyncButton"
+import { useAuthStore } from "@/lib/auth/authStore"
+import { getLogoutUrl } from "@/lib/auth/keycloak"
 
 export function MobileNav() {
   const navigate = useNavigate()
@@ -18,13 +20,27 @@ export function MobileNav() {
             <span className="sr-only">Menü öffnen</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-60 p-0">
+        <SheetContent side="left" className="w-60 p-0 flex flex-col">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <div className="flex h-16 items-center border-b px-4">
             <h1 className="text-lg font-semibold text-primary">Schreinerei</h1>
           </div>
-          <div className="py-4">
+          <div className="py-4 flex-1">
             <SidebarContent />
+          </div>
+          <div className="border-t p-4">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full justify-start gap-2"
+              onClick={() => {
+                useAuthStore.getState().logout()
+                window.location.href = getLogoutUrl()
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Abmelden
+            </Button>
           </div>
         </SheetContent>
       </Sheet>

@@ -15,6 +15,11 @@ import { useCreateReservation, useAvailability, useVehicles, useTools } from "@/
 import { toast } from "sonner"
 import type { ResourceType, Vehicle, Tool } from "@/types/fleet"
 
+const formatDateToRfc3339 = (datetimeLocal: string): string => {
+  const date = new Date(datetimeLocal)
+  return date.toISOString()
+}
+
 interface ReservationDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -46,8 +51,8 @@ export function ReservationDialog({
       ? {
           resource_type: selectedResourceType,
           resource_id: selectedResourceId,
-          start_time: new Date(startTime).toISOString(),
-          end_time: new Date(endTime).toISOString(),
+          start_time: formatDateToRfc3339(startTime),
+          end_time: formatDateToRfc3339(endTime),
         }
       : { resource_type: "vehicle", resource_id: "", start_time: "", end_time: "" }
   )
@@ -70,8 +75,8 @@ export function ReservationDialog({
         resource_type: selectedResourceType,
         resource_id: selectedResourceId,
         ...(siteId ? { site_id: siteId } : {}),
-        start_time: new Date(startTime).toISOString(),
-        end_time: new Date(endTime).toISOString(),
+        start_time: formatDateToRfc3339(startTime),
+        end_time: formatDateToRfc3339(endTime),
         ...(notes ? { notes } : {}),
       })
       toast.success("Reservierung erstellt")

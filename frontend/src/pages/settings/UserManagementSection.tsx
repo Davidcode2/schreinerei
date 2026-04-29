@@ -38,7 +38,7 @@ function getRoleLabel(role: string): string {
 }
 
 function getDisplayName(user: { name: string | null; email: string }): string {
-  return user.name || user.email.split("@")[0]
+  return user.name ?? user.email.split("@")[0] ?? "User"
 }
 
 export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {

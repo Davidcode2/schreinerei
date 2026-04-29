@@ -19,6 +19,18 @@ export function useCategories() {
   })
 }
 
+export function useCreateCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: { name: string; description?: string }) =>
+      apiClient.post<Category>("/api/v1/inventory/categories", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] })
+    },
+  })
+}
+
 // === Materials ===
 
 export function useMaterials(categoryId?: string) {

@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { useCreateMaterial } from "@/lib/api/hooks"
+import { useCreateMaterial, useCreateCategory } from "@/lib/api/hooks"
 import type { Category } from "@/types/inventory"
 
 interface AddMaterialDialogProps {
@@ -46,8 +46,11 @@ export function AddMaterialDialog({
   const [unit, setUnit] = useState("")
   const [minQuantity, setMinQuantity] = useState("")
   const [location, setLocation] = useState("")
+  const [showNewCategory, setShowNewCategory] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState("")
 
   const createMaterial = useCreateMaterial()
+  const createCategory = useCreateCategory()
 
   const resetForm = () => {
     setCategoryId("")
@@ -56,6 +59,8 @@ export function AddMaterialDialog({
     setUnit("")
     setMinQuantity("")
     setLocation("")
+    setShowNewCategory(false)
+    setNewCategoryName("")
   }
 
   const handleOpenChange = (open: boolean) => {
@@ -116,18 +121,71 @@ export function AddMaterialDialog({
           {/* Category */}
           <div className="space-y-2">
             <Label htmlFor="category">Kategorie *</Label>
-            <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger id="category">
-                <SelectValue placeholder="Kategorie wählen" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {showNewCategory ? (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Kategoriename"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    if (newCategoryName.trim()) {
+                      createCategory.mutate(
+                        { name: newCategoryName.trim() },
+                        {
+                          onSuccess: (newCat) => {
+                            setCategoryId(newCat.id)
+                            setShowNewCategory(false)
+                            setNewCategoryName("")
+                          },
+                        }
+                      )
+                    }
+                  }}
+                  disabled={!newCategoryName.trim() || createCategory.isPending}
+                >
+                  Erstellen
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowNewCategory(false)
+                    setNewCategoryName("")
+                  }}
+                >
+                  Abbrechen
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Select value={categoryId} onValueChange={setCategoryId}>
+                  <SelectTrigger id="category" className="flex-1">
+                    <SelectValue placeholder="Kategorie wählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowNewCategory(true)}
+                >
+                  + Neu
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Name */}

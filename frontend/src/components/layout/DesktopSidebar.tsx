@@ -6,9 +6,17 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarContent } from "./SidebarContent"
 import PendingActionsBadge from "@/components/offline/PendingActionsBadge"
 import SyncButton from "@/components/offline/SyncButton"
+import { useAuthStore } from "@/lib/auth/authStore"
+import { getLogoutUrl } from "@/lib/auth/keycloak"
 
 export function DesktopSidebar() {
   const navigate = useNavigate()
+  const logout = useAuthStore((state) => state.logout)
+
+  const handleLogout = () => {
+    logout()
+    window.location.href = getLogoutUrl()
+  }
 
   return (
     <aside className="hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 border-r bg-card">
@@ -50,7 +58,12 @@ export function DesktopSidebar() {
           </div>
         </div>
         <Separator className="my-3" />
-        <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="w-full justify-start gap-2"
+          onClick={handleLogout}
+        >
           <LogOut className="h-4 w-4" />
           Abmelden
         </Button>
