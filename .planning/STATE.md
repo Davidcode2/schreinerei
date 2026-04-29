@@ -2,7 +2,7 @@
 
 **Project:** Schreinerei SaaS
 **Current Milestone:** v1.1 Organization-Based Tenancy
-**Status:** Planning
+**Status:** Phase 6 Complete ✓
 
 ---
 
@@ -10,8 +10,8 @@
 
 Phase: 6 — Organization-Based Tenancy
 Plan: —
-Status: Ready to Execute
-Last activity: 2026-04-29 — Phase 6 plans created
+Status: Complete ✓
+Last activity: 2026-04-29 — Phase 6 complete
 
 ---
 
@@ -20,7 +20,7 @@ Last activity: 2026-04-29 — Phase 6 plans created
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
-**Current focus:** Migrate to Keycloak Organizations for multi-tenant isolation
+**Current focus:** Phase 6 complete — Manual Keycloak setup required
 
 ---
 
@@ -34,6 +34,11 @@ Full decision log in PROJECT.md. Key decisions from v1.0:
 - Multi-tenant via TenantId in all queries
 - Keycloak OAuth2 PKCE for SPA auth
 - IndexedDB (Dexie.js) for offline storage
+
+New decisions from Phase 6:
+- Organization claim replaces tenant_id attribute in JWT
+- Keycloak operations (create orgs, add members) are manual
+- User.tenant_id field name unchanged (internal representation)
 
 ### Blockers/Concerns
 
@@ -53,16 +58,24 @@ Full decision log in PROJECT.md. Key decisions from v1.0:
 | 2026-04-29 | Phase 5 Complete | PWA & Mobile finished |
 | 2026-04-29 | v1.0 Complete | MVP shipped |
 | 2026-04-29 | v1.1 Started | Organization-Based Tenancy migration |
+| 2026-04-29 | Phase 6 Complete | Database + Backend + Frontend ready for org-based tenancy |
 
 ---
 
 ## Next Action
 
-**Execute Phase 6: Organization-Based Tenancy**
+**Manual Keycloak Setup Required**
 
-3 plans ready to execute in 3 waves:
-- Wave 1: Keycloak Organizations Setup
-- Wave 2: Backend JWT Migration
-- Wave 3: Frontend OAuth2 Scope Update
+Before the organization-based tenancy works end-to-end, complete these steps in Keycloak:
 
-Next: `/gsd-execute-phase 6`
+1. Add `organization` scope to `schreinerei-pwa` client
+2. Create organizations for existing tenants
+3. Add users as organization members
+4. Run database migration: `sqlx migrate run`
+5. Test login — verify token contains `organization` claim
+
+See: `docs/keycloak-organizations-setup.md` for detailed instructions.
+
+---
+
+After Keycloak setup: `/gsd-verify-phase 6` to verify E2E functionality.
