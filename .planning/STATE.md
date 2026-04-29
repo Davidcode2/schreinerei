@@ -1,17 +1,17 @@
 # Project State
 
 **Project:** Schreinerei SaaS
-**Current Milestone:** v1.1 Organization-Based Tenancy
-**Status:** Phase 6 Complete ✓
+**Current Milestone:** Planning v1.2
+**Status:** v1.1 Complete ✓
 
 ---
 
 ## Current Position
 
-Phase: 6 — Organization-Based Tenancy
+Phase: —
 Plan: —
-Status: Complete ✓
-Last activity: 2026-04-29 — Phase 6 complete
+Status: Milestone Complete
+Last activity: 2026-04-29 — v1.1 Organization-Based Tenancy shipped
 
 ---
 
@@ -20,7 +20,7 @@ Last activity: 2026-04-29 — Phase 6 complete
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
-**Current focus:** Phase 6 complete — Manual Keycloak setup required
+**Current focus:** Planning next milestone
 
 ---
 
@@ -28,17 +28,13 @@ See: .planning/PROJECT.md (updated 2026-04-29)
 
 ### Decisions Summary
 
-Full decision log in PROJECT.md. Key decisions from v1.0:
+Full decision log in PROJECT.md. Key decisions:
 - Rust Backend with Axum 0.8, SQLx 0.8
 - DDD layering: domain/application/infrastructure/api
 - Multi-tenant via TenantId in all queries
 - Keycloak OAuth2 PKCE for SPA auth
 - IndexedDB (Dexie.js) for offline storage
-
-New decisions from Phase 6:
-- Organization claim replaces tenant_id attribute in JWT
-- Keycloak operations (create orgs, add members) are manual
-- User.tenant_id field name unchanged (internal representation)
+- Keycloak Organizations for tenant isolation (v1.1)
 
 ### Blockers/Concerns
 
@@ -57,25 +53,16 @@ New decisions from Phase 6:
 | 2026-04-28 | Phase 4 Complete | Fuhrpark & Werkzeuge finished |
 | 2026-04-29 | Phase 5 Complete | PWA & Mobile finished |
 | 2026-04-29 | v1.0 Complete | MVP shipped |
-| 2026-04-29 | v1.1 Started | Organization-Based Tenancy migration |
-| 2026-04-29 | Phase 6 Complete | Database + Backend + Frontend ready for org-based tenancy |
+| 2026-04-29 | v1.1 Complete | Organization-Based Tenancy shipped |
 
 ---
 
 ## Next Action
 
-**Manual Keycloak Setup Required**
+Ready for next milestone planning:
 
-Before the organization-based tenancy works end-to-end, complete these steps in Keycloak:
-
-1. Add `organization` scope to `schreinerei_pwa` client
-2. Create organizations for existing tenants
-3. Add users as organization members
-4. Run database migration: `sqlx migrate run`
-5. Test login — verify token contains `organization` claim
-
-See: `docs/keycloak-setup.md` for detailed instructions.
+`/gsd-new-milestone`
 
 ---
 
-After Keycloak setup: `/gsd-verify-phase 6` to verify E2E functionality.
+*Last updated: 2026-04-29 after v1.1 milestone completion*

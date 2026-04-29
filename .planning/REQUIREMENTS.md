@@ -3,29 +3,29 @@
 **Defined:** 2026-04-29
 **Core Value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
 
-## v1.1 Requirements (Organization-Based Tenancy)
+## v1.1 Requirements (Organization-Based Tenancy) ✓
 
 ### Keycloak Configuration
 
-- [ ] **KC-01**: Enable Organizations feature in schreinerei realm
-- [ ] **KC-02**: Configure organization scope for schreinerei_pwa client
+- [x] **KC-01**: Enable Organizations feature in schreinerei realm
+- [x] **KC-02**: Configure organization scope for schreinerei_pwa client
 
 ### Organization Migration
 
-- [ ] **ORG-01**: Create Keycloak organizations for existing tenants
-- [ ] **ORG-02**: Migrate existing users as organization members
-- [ ] **ORG-03**: Add keycloak_organization_id column to tenants table
+- [x] **ORG-01**: Create Keycloak organizations for existing tenants
+- [x] **ORG-02**: Migrate existing users as organization members
+- [x] **ORG-03**: Add keycloak_organization_id column to tenants table
 
 ### Backend Changes
 
-- [ ] **BE-01**: Update JWT Claims struct to use organization claim
-- [ ] **BE-02**: Update AuthenticatedUser extractor for organization claim
-- [ ] **BE-03**: Add organization ID extraction from JWT organization claim
+- [x] **BE-01**: Update JWT Claims struct to use organization claim
+- [x] **BE-02**: Update AuthenticatedUser extractor for organization claim
+- [x] **BE-03**: Add organization ID extraction from JWT organization claim
 
 ### Frontend Changes
 
-- [ ] **FE-01**: Update OAuth2 scope to include organization
-- [ ] **FE-02**: Update token parsing for organization claim structure
+- [x] **FE-01**: Update OAuth2 scope to include organization
+- [x] **FE-02**: Update token parsing for organization claim structure
 
 ## v1.2 Requirements (Future)
 
@@ -57,22 +57,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| KC-01 | Phase 6 | Pending |
-| KC-02 | Phase 6 | Pending |
-| ORG-01 | Phase 6 | Pending |
-| ORG-02 | Phase 6 | Pending |
-| ORG-03 | Phase 6 | Pending |
-| BE-01 | Phase 6 | Pending |
-| BE-02 | Phase 6 | Pending |
-| BE-03 | Phase 6 | Pending |
-| FE-01 | Phase 6 | Pending |
-| FE-02 | Phase 6 | Pending |
+| KC-01 | Phase 6 | Complete |
+| KC-02 | Phase 6 | Complete |
+| ORG-01 | Phase 6 | Complete |
+| ORG-02 | Phase 6 | Complete |
+| ORG-03 | Phase 6 | Complete |
+| BE-01 | Phase 6 | Complete |
+| BE-02 | Phase 6 | Complete |
+| BE-03 | Phase 6 | Complete |
+| FE-01 | Phase 6 | Complete |
+| FE-02 | Phase 6 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 10 total
-- Mapped to phases: 10
-- Unmapped: 0 ✓
+- Complete: 10/10 ✓
 
 ---
 *Requirements defined: 2026-04-29*
-*Last updated: 2026-04-29 after v1.1 milestone start*
+*Last updated: 2026-04-29 after v1.1 milestone completion*

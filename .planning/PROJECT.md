@@ -10,23 +10,15 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## Current Milestone: v1.1 Organization-Based Tenancy
+## Current Milestone: Planning v1.2
 
-**Goal:** Migrate from attribute-based to Keycloak Organizations for multi-tenant isolation
-
-**Target features:**
-- Enable Keycloak Organizations in schreinerei realm
-- Migrate existing tenants to Keycloak Organizations
-- Update JWT claims to use `organization` claim instead of `tenant_id` attribute
-- Update Rust backend to extract TenantId from organization claim
-- Update frontend to request `organization` scope
-- Organization self-service management (create org, invite members)
+**Next:** Self-service organization registration and public website
 
 ## Requirements
 
 ### Validated
 
-All 37 v1 requirements validated:
+All 37 v1 requirements + 10 v1.1 requirements validated:
 
 **Architecture:**
 - ✓ ARCH-01 to ARCH-06 — Phase 1
@@ -46,18 +38,22 @@ All 37 v1 requirements validated:
 **PWA:**
 - ✓ PWA-01 to PWA-04 — Phase 5
 
+**Organization-Based Tenancy (v1.1):**
+- ✓ KC-01, KC-02 — Keycloak Organizations enabled and scoped
+- ✓ ORG-01, ORG-02, ORG-03 — Organizations created and users migrated
+- ✓ BE-01, BE-02, BE-03 — Backend uses organization claim
+- ✓ FE-01, FE-02 — Frontend requests organization scope
+
 ### Active
 
-**v1.1 Requirements (Organization-Based Tenancy):**
+**v1.2 Requirements (Self-Service Registration):**
 
-- ORG-01: Enable Organizations feature in Keycloak realm
-- ORG-02: Create organizations for existing tenants
-- ORG-03: Migrate users to organizations as members
-- ORG-04: Update JWT claims to use organization claim
-- ORG-05: Update Rust backend for organization claim extraction
-- ORG-06: Update frontend OAuth2 scope to include organization
-- ORG-07: Organization self-service creation (public website)
-- ORG-08: Organization member invitation flow
+- SS-01: Public website with organization registration
+- SS-02: Self-service organization creation flow
+- SS-03: Organization admin dashboard
+- SS-04: Member invitation via email
+- EXT-01: Organization identity provider support
+- EXT-02: Multi-organization user support
 
 ### Out of Scope
 
@@ -130,6 +126,9 @@ src/
 | Unified reservations table | One table for vehicles and tools | ✓ Resource type enum |
 | OAuth2 PKCE for SPA auth | Secure token flow | ✓ Keycloak integration |
 | IndexedDB via Dexie | Offline data persistence | ✓ Sync queue |
+| Keycloak Organizations | Native multi-tenant isolation | ✓ v1.1 organization claim |
+| Manual Keycloak ops | No automation needed for pilot | ✓ User manages orgs in Admin Console |
+| Organization → tenant_id mapping | Minimal codebase changes | ✓ Frontend maps at extraction |
 
 ---
 
@@ -152,4 +151,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-04-29 after v1.0 MVP milestone*
+*Last updated: 2026-04-29 after v1.1 milestone completion*
