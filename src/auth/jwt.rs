@@ -13,8 +13,8 @@ pub struct Claims {
     pub email: String,
     /// Preferred username
     pub preferred_username: Option<String>,
-    /// Tenant ID (custom mapper in Keycloak)
-    pub tenant_id: String,
+    /// Organization ID from Keycloak Organizations feature
+    pub organization: String,
     /// Realm access roles
     pub realm_access: RealmAccess,
     /// Expiration timestamp

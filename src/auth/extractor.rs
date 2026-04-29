@@ -24,9 +24,9 @@ impl AuthenticatedUser {
             .map(UserId)
             .map_err(|e| AppError::Auth(format!("Invalid user ID in token: {}", e)))?;
 
-        let tenant_id = Uuid::parse_str(&claims.tenant_id)
+        let tenant_id = Uuid::parse_str(&claims.organization)
             .map(TenantId)
-            .map_err(|e| AppError::Auth(format!("Invalid tenant ID in token: {}", e)))?;
+            .map_err(|e| AppError::Auth(format!("Invalid organization ID in token: {}", e)))?;
 
         let roles = claims.realm_access.roles.iter()
             .filter_map(|r| r.parse::<Role>().ok())
