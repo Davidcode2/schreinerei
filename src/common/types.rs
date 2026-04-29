@@ -91,7 +91,7 @@ impl FromStr for Role {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "admin" => Ok(Role::Admin),
-            "employee" => Ok(Role::Employee),
+            "employee" | "mitarbeiter" => Ok(Role::Employee),
             _ => Err(format!("Invalid role: {}", s)),
         }
     }
