@@ -7,10 +7,10 @@ import { LoginPage } from "@/components/auth/LoginPage"
 import { AuthCallback } from "@/components/auth/AuthCallback"
 import { useAuth } from "@/hooks/useAuth"
 import DashboardPage from "@/pages/DashboardPage"
-import InventoryPage from "@/pages/InventoryPage"
-import SitesPage from "@/pages/SitesPage"
-import FleetPage from "@/pages/FleetPage"
-import SettingsPage from "@/pages/SettingsPage"
+import { InventoryListPage, InventoryDetailPage } from "@/pages/inventory"
+import { SitesListPage, SiteDetailPage } from "@/pages/sites"
+import { FleetPage, CalendarView } from "@/pages/fleet"
+import { SettingsPage } from "@/pages/settings"
 import NotFoundPage from "@/pages/NotFoundPage"
 
 const queryClient = new QueryClient({
@@ -35,8 +35,11 @@ function AppRoutes() {
 
   return (
     <Routes>
+      {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
+
+      {/* Protected routes */}
       <Route
         path="/"
         element={
@@ -44,10 +47,23 @@ function AppRoutes() {
             <AppLayout>
               <Routes>
                 <Route index element={<DashboardPage />} />
-                <Route path="inventory/*" element={<InventoryPage />} />
-                <Route path="sites/*" element={<SitesPage />} />
-                <Route path="fleet/*" element={<FleetPage />} />
+
+                {/* Inventory */}
+                <Route path="inventory" element={<InventoryListPage />} />
+                <Route path="inventory/:id" element={<InventoryDetailPage />} />
+
+                {/* Sites */}
+                <Route path="sites" element={<SitesListPage />} />
+                <Route path="sites/:id" element={<SiteDetailPage />} />
+
+                {/* Fleet */}
+                <Route path="fleet" element={<FleetPage />} />
+                <Route path="fleet/calendar" element={<CalendarView />} />
+
+                {/* Settings */}
                 <Route path="settings" element={<SettingsPage />} />
+
+                {/* 404 */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </AppLayout>
