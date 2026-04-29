@@ -10,7 +10,8 @@
 
 - ✅ **v1.0 MVP** — Phases 1-5 (shipped 2026-04-29)
 - ✅ **v1.1 Organization-Based Tenancy** — Phase 6 (shipped 2026-04-29)
-- 🚧 **v1.2 Frontend Polish** — Phase 7 (in progress)
+- ✅ **v1.2 Frontend Polish** — Phase 7 (shipped 2026-04-29)
+- 🚧 **v1.3 Bug Fixes** — Phase 8 (in progress)
 
 ---
 
@@ -36,26 +37,45 @@
 
 ---
 
-## Phase 7: Frontend Polish
+## Phase 7: Frontend Polish ✅
 
 **Goal:** Fix non-functional buttons and connect UI to backend APIs
 
 **Requirements:** INVT-08, INVT-09, SITE-09, FLEET-08, FLEET-09, USER-01, USER-02, ERR-01, ERR-02
 
-**Plans:** 3 plans
+**Plans:** 3 plans (3/3 complete)
 
 **Duration:** 1 day
+
+**Status:** Complete (2026-04-29)
 
 ### Plans
 
 **Wave 1**
-- [ ] 07-01 — Add Material & Site Dialogs (INVT-08, INVT-09, SITE-09)
+- [x] 07-01 — Add Material & Site Dialogs (INVT-08, INVT-09, SITE-09)
 
 **Wave 2**
-- [ ] 07-02 — Add Fleet Dialogs (FLEET-08, FLEET-09)
+- [x] 07-02 — Add Fleet Dialogs (FLEET-08, FLEET-09)
 
 **Wave 3**
-- [ ] 07-03 — User Management & Error Handling (USER-01, USER-02, ERR-01, ERR-02)
+- [x] 07-03 — User Management & Error Handling (USER-01, USER-02, ERR-01, ERR-02)
+
+---
+
+## Phase 8: Bug Fixes
+
+**Goal:** Fix all frontend-accessible functionalities - ensure end-to-end flows work correctly
+
+**Issues discovered during Phase 7 testing:**
+- Dashboard sites API 500 error (NUMERIC vs FLOAT8 type mismatch)
+- Logout button non-functional
+- Vehicle creation 400 error ("Invalid vehicle type: van")
+- Cannot create materials - no category selection/creation available
+- Calendar reservation 400 error (date format)
+
+**Plans:** TBD
+
+**Duration:** 1 day
 
 ### Success Criteria
 
@@ -80,7 +100,8 @@
 | 4. Fuhrpark | v1.0 | 2/2 | Complete | 2026-04-28 |
 | 5. PWA & Mobile | v1.0 | 4/4 | Complete | 2026-04-29 |
 | 6. Org Tenancy | v1.1 | 3/3 | Complete | 2026-04-29 |
-| 7. Frontend Polish | v1.2 | 0/3 | Planned | - |
+| 7. Frontend Polish | v1.2 | 3/3 | Complete | 2026-04-29 |
+| 8. Bug Fixes | v1.3 | 0/TBD | Planned | - |
 
 ---
 
@@ -89,9 +110,10 @@
 | Phase | Goal | Duration | Requirements |
 |-------|------|----------|--------------|
 | 7 | Frontend Polish | 1 day | 9 |
+| 8 | Bug Fixes | 1 day | TBD |
 
-**Total for v1.2:** 1 day
+**Total for v1.2+v1.3:** 2 days
 
 ---
 
-*Last updated: 2026-04-29 after v1.2 milestone start*
+*Last updated: 2026-04-29 after Phase 7 completion, Phase 8 added*

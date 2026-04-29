@@ -1,17 +1,17 @@
 # Project State
 
 **Project:** Schreinerei SaaS
-**Current Milestone:** v1.2 Frontend Polish
-**Status:** Phase Complete
+**Current Milestone:** v1.3 Bug Fixes
+**Status:** Ready to Plan
 
 ---
 
 ## Current Position
 
-Phase: 7 — Frontend Polish
+Phase: 8 — Bug Fixes
 Plan: —
-Status: Complete
-Last activity: 2026-04-29 — Phase 7 execution complete
+Status: Not Planned
+Last activity: 2026-04-29 — Phase 7 complete, Phase 8 added for bug fixes
 
 ---
 
@@ -36,6 +36,10 @@ Full decision log in PROJECT.md. Key decisions:
 - IndexedDB (Dexie.js) for offline storage
 - Keycloak Organizations for tenant isolation (v1.1)
 
+### Roadmap Evolution
+
+- Phase 8 added: Fix all frontend-accessible functionalities
+
 ### Blockers/Concerns
 
 - None currently
@@ -57,14 +61,15 @@ Full decision log in PROJECT.md. Key decisions:
 | 2026-04-29 | v1.2 Started | Frontend Polish milestone |
 | 2026-04-29 | Phase 7 Planned | 3 plans created in 3 waves |
 | 2026-04-29 | Phase 7 Complete | Material/Site/Fleet dialogs, User management, QR scanner |
+| 2026-04-29 | Phase 8 Added | Bug fixes phase for end-to-end functionality |
 
 ---
 
 ## Next Action
 
-Phase 7 complete. Ready for verification:
+Plan Phase 8 - Bug Fixes:
 
-`/gsd-verify-phase 7`
+`/gsd-plan-phase 8`
 
 ---
 
