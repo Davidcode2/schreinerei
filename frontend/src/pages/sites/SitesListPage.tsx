@@ -9,6 +9,7 @@ import {
 } from "@/components/shared"
 import { SiteCard, SiteCardSkeleton } from "@/components/sites/SiteCard"
 import { useSites } from "@/lib/api/hooks"
+import { AddSiteDialog } from "./AddSiteDialog"
 import type { Site, SiteStatus } from "@/types/sites"
 
 const statusTabs: { value: SiteStatus | undefined; label: string }[] = [
@@ -21,6 +22,7 @@ const statusTabs: { value: SiteStatus | undefined; label: string }[] = [
 export default function SitesListPage() {
   const [selectedStatus, setSelectedStatus] = useState<SiteStatus | undefined>()
   const [searchQuery, setSearchQuery] = useState("")
+  const [addSiteOpen, setAddSiteOpen] = useState(false)
 
   const {
     data: sites,
@@ -41,7 +43,7 @@ export default function SitesListPage() {
         title="Baustellen"
         description="Baustellenverwaltung"
         action={
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setAddSiteOpen(true)}>
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Baustelle anlegen</span>
           </Button>
@@ -95,7 +97,7 @@ export default function SitesListPage() {
           }
           action={
             !searchQuery && (
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={() => setAddSiteOpen(true)}>
                 <Plus className="h-4 w-4" />
                 Baustelle anlegen
               </Button>
@@ -114,6 +116,9 @@ export default function SitesListPage() {
           </div>
         </>
       )}
+
+      {/* Add Site Dialog */}
+      <AddSiteDialog open={addSiteOpen} onOpenChange={setAddSiteOpen} />
     </div>
   )
 }
