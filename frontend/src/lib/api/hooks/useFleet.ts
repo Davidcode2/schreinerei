@@ -170,9 +170,7 @@ export function useCancelReservation() {
 
   return useMutation({
     mutationFn: (id: string) =>
-      apiClient.patch<Reservation>(`/api/v1/fleet/reservations/${id}`, {
-        status: "cancelled",
-      }),
+      apiClient.delete<void>(`/api/v1/fleet/reservations/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reservations"] })
       queryClient.invalidateQueries({ queryKey: ["calendar"] })

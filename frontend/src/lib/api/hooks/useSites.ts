@@ -82,7 +82,7 @@ export function useAssignUser() {
       ...data
     }: AssignUserRequest & { siteId: string }) =>
       apiClient.post<SiteAssignment>(
-        `/api/v1/sites/${siteId}/assignments`,
+        `/api/v1/sites/${siteId}/assign`,
         data
       ),
     onSuccess: (_, variables) => {
@@ -99,8 +99,10 @@ export function useTimeEntries(siteId?: string) {
   return useQuery({
     queryKey: ["time-entries", siteId],
     queryFn: () => {
-      const params = siteId ? `?site_id=${siteId}` : ""
-      return apiClient.get<TimeEntry[]>(`/api/v1/time-entries${params}`)
+      if (siteId) {
+        return apiClient.get<TimeEntry[]>(`/api/v1/sites/${siteId}/time-entries`)
+      }
+      return apiClient.get<TimeEntry[]>("/api/v1/time-entries/my")
     },
   })
 }

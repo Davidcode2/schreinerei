@@ -13,7 +13,7 @@ const actionHandlers: Record<string, (data: Record<string, unknown>) => Promise<
   },
 
   time_entry: async (data) => {
-    await apiClient.post('/api/v1/sites/time-entries', {
+    await apiClient.post('/api/v1/time-entries', {
       site_id: data.siteId,
       work_type: data.workType,
       hours: data.hours,
