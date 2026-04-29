@@ -1,7 +1,7 @@
-import { db, cacheMaterials, cacheSites, cacheVehicles, cacheTools } from './db'
+import { cacheMaterials, cacheSites, cacheVehicles, cacheTools } from './db'
 import { processAction, getPendingActions } from './queue'
 import { apiClient } from '@/lib/api/client'
-import type { Material, Category } from '@/types/inventory'
+import type { Material } from '@/types/inventory'
 import type { Site } from '@/types/sites'
 import type { Vehicle, Tool } from '@/types/fleet'
 
@@ -22,9 +22,8 @@ export async function syncFromServer(): Promise<void> {
 
   try {
     // Fetch and cache all data in parallel
-    const [materials, categories, sites, vehicles, tools] = await Promise.all([
+    const [materials, sites, vehicles, tools] = await Promise.all([
       apiClient.get<Material[]>('/api/v1/inventory/materials'),
-      apiClient.get<Category[]>('/api/v1/inventory/categories'),
       apiClient.get<Site[]>('/api/v1/sites'),
       apiClient.get<Vehicle[]>('/api/v1/fleet/vehicles'),
       apiClient.get<Tool[]>('/api/v1/fleet/tools')
