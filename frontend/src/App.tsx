@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Toaster } from "@/components/ui/sonner"
@@ -6,11 +7,14 @@ import { AuthGuard } from "@/components/auth/AuthGuard"
 import { LoginPage } from "@/components/auth/LoginPage"
 import { AuthCallback } from "@/components/auth/AuthCallback"
 import { useAuth } from "@/hooks/useAuth"
+import { initSync } from "@/lib/offline/sync"
+import OfflineIndicator from "@/components/offline/OfflineIndicator"
 import DashboardPage from "@/pages/DashboardPage"
 import { InventoryListPage, InventoryDetailPage } from "@/pages/inventory"
 import { SitesListPage, SiteDetailPage } from "@/pages/sites"
 import { FleetPage, CalendarView } from "@/pages/fleet"
 import { SettingsPage } from "@/pages/settings"
+import ScanPage from "@/pages/qr/ScanPage"
 import NotFoundPage from "@/pages/NotFoundPage"
 
 const queryClient = new QueryClient({
@@ -23,7 +27,15 @@ const queryClient = new QueryClient({
 })
 
 function AppRoutes() {
-  const { isLoading } = useAuth()
+  const { isLoading, isAuthenticated } = useAuth()
+
+  // Initialize offline sync when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const cleanup = initSync()
+      return cleanup
+    }
+  }, [isAuthenticated])
 
   if (isLoading) {
     return (
@@ -60,6 +72,9 @@ function AppRoutes() {
                 <Route path="fleet" element={<FleetPage />} />
                 <Route path="fleet/calendar" element={<CalendarView />} />
 
+                {/* QR Scanner */}
+                <Route path="scan" element={<ScanPage />} />
+
                 {/* Settings */}
                 <Route path="settings" element={<SettingsPage />} />
 
@@ -80,6 +95,7 @@ function App() {
       <BrowserRouter>
         <AppRoutes />
         <Toaster />
+        <OfflineIndicator />
       </BrowserRouter>
     </QueryClientProvider>
   )

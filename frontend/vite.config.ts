@@ -44,17 +44,34 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
+          // API calls - NetworkFirst with offline fallback
           {
             urlPattern: /^https:\/\/.*\/api\/v1\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
+              networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 60,
               },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
             },
           },
+          // Static assets - CacheFirst
+          {
+            urlPattern: /\.(?:js|css|png|jpg|svg)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'static-assets',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 7 * 24 * 60 * 60
+              }
+            }
+          }
         ],
       },
     }),

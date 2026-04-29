@@ -1,9 +1,14 @@
-import { Menu } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import { Menu, QrCode } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { SidebarContent } from "./SidebarContent"
+import PendingActionsBadge from "@/components/offline/PendingActionsBadge"
+import SyncButton from "@/components/offline/SyncButton"
 
 export function MobileNav() {
+  const navigate = useNavigate()
+
   return (
     <header className="flex md:hidden h-16 items-center border-b bg-card px-4 fixed top-0 left-0 right-0 z-50">
       <Sheet>
@@ -23,7 +28,21 @@ export function MobileNav() {
           </div>
         </SheetContent>
       </Sheet>
-      <h1 className="text-lg font-semibold text-primary">Schreinerei</h1>
+      <h1 className="text-lg font-semibold text-primary flex-1">Schreinerei</h1>
+
+      {/* Right side actions */}
+      <div className="flex items-center gap-2">
+        <PendingActionsBadge />
+        <SyncButton />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/scan')}
+          title="QR-Code scannen"
+        >
+          <QrCode className="h-5 w-5" />
+        </Button>
+      </div>
     </header>
   )
 }

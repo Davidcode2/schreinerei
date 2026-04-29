@@ -1,10 +1,15 @@
-import { LogOut, User } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import { LogOut, User, QrCode } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarContent } from "./SidebarContent"
+import PendingActionsBadge from "@/components/offline/PendingActionsBadge"
+import SyncButton from "@/components/offline/SyncButton"
 
 export function DesktopSidebar() {
+  const navigate = useNavigate()
+
   return (
     <aside className="hidden md:flex md:w-60 md:flex-col md:fixed md:inset-y-0 border-r bg-card">
       {/* Logo */}
@@ -15,6 +20,20 @@ export function DesktopSidebar() {
       {/* Navigation */}
       <div className="flex-1 overflow-auto py-4">
         <SidebarContent />
+      </div>
+
+      {/* Quick actions */}
+      <div className="border-t p-2 flex justify-center gap-2">
+        <PendingActionsBadge />
+        <SyncButton />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/scan')}
+          title="QR-Code scannen"
+        >
+          <QrCode className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* User section */}
