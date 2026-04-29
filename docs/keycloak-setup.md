@@ -8,7 +8,7 @@ This guide explains how to configure Keycloak for the Schreinerei SaaS applicati
 ┌─────────────────────────────────────────────────────────────┐
 │  Keycloak Realm: schreinerei                                │
 │                                                             │
-│  Client: schreinerei-pwa (Public)                           │
+│  Client: schreinerei_pwa (Public)                           │
 │  └── Used by: Frontend PWA                                  │
 │  └── Flow: OAuth2 Authorization Code + PKCE                 │
 │                                                             │
@@ -56,7 +56,7 @@ This guide explains how to configure Keycloak for the Schreinerei SaaS applicati
 | Field | Value |
 |-------|-------|
 | Client type | OpenID Connect |
-| Client ID | `schreinerei-pwa` |
+| Client ID | `schreinerei_pwa` |
 | Client authentication | **Off** (public client) |
 | Authorization | Off |
 | Authentication flow | Standard flow |
@@ -70,7 +70,7 @@ This guide explains how to configure Keycloak for the Schreinerei SaaS applicati
 
 ### 3. Add Required Scopes
 
-Go to **Clients** → `schreinerei-pwa` → **Client Scopes** → **Add client scope**:
+Go to **Clients** → `schreinerei_pwa` → **Client Scopes** → **Add client scope**:
 
 - `openid` (built-in)
 - `profile` (built-in)
@@ -79,7 +79,7 @@ Go to **Clients** → `schreinerei-pwa` → **Client Scopes** → **Add client s
 
 ### 4. Add Realm Role Mapper
 
-1. Go to **Clients** → `schreinerei-pwa` → **Mappers**
+1. Go to **Clients** → `schreinerei_pwa` → **Mappers**
 2. **Add mapper**:
 
 | Field | Value |
@@ -124,7 +124,7 @@ sqlx migrate run
 # Get token
 TOKEN=$(curl -s -X POST \
   "https://auth.jakob-lingel.dev/realms/schreinerei/protocol/openid-connect/token" \
-  -d "client_id=schreinerei-pwa" \
+  -d "client_id=schreinerei_pwa" \
   -d "username=test@example.com" \
   -d "password=your-password" \
   -d "grant_type=password" \
@@ -159,7 +159,7 @@ PORT=3000
 ```env
 VITE_KEYCLOAK_URL=https://auth.jakob-lingel.dev
 VITE_KEYCLOAK_REALM=schreinerei
-VITE_KEYCLOAK_CLIENT_ID=schreinerei-pwa
+VITE_KEYCLOAK_CLIENT_ID=schreinerei_pwa
 VITE_API_URL=http://localhost:3000
 ```
 

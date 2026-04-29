@@ -30,7 +30,7 @@ Migrate from attribute-based multi-tenancy to Keycloak Organizations for proper 
 
 ### Keycloak Configuration (KC-01, KC-02)
 - **D-01**: Enable Organizations feature in the schreinerei realm via Keycloak Admin Console or REST API
-- **D-02**: Configure `organization` scope for the `schreinerei-pwa` client to include organization claim in tokens
+- **D-02**: Configure `organization` scope for the `schreinerei_pwa` client to include organization claim in tokens
 
 ### Organization Migration (ORG-01, ORG-02, ORG-03)
 - **D-03**: Create one Keycloak organization per existing tenant, using tenant UUID as organization ID

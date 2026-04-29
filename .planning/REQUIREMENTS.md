@@ -8,7 +8,7 @@
 ### Keycloak Configuration
 
 - [ ] **KC-01**: Enable Organizations feature in schreinerei realm
-- [ ] **KC-02**: Configure organization scope for schreinerei-pwa client
+- [ ] **KC-02**: Configure organization scope for schreinerei_pwa client
 
 ### Organization Migration
 

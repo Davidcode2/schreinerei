@@ -60,7 +60,7 @@ Added database schema for Keycloak organization ID storage and comprehensive set
 
 User needs to complete these steps in Keycloak Admin Console:
 
-1. Add `organization` scope to `schreinerei-pwa` client
+1. Add `organization` scope to `schreinerei_pwa` client
 2. Create organizations for existing tenants
 3. Add users as organization members
 4. Verify tokens contain `organization` claim

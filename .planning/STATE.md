@@ -68,7 +68,7 @@ New decisions from Phase 6:
 
 Before the organization-based tenancy works end-to-end, complete these steps in Keycloak:
 
-1. Add `organization` scope to `schreinerei-pwa` client
+1. Add `organization` scope to `schreinerei_pwa` client
 2. Create organizations for existing tenants
 3. Add users as organization members
 4. Run database migration: `sqlx migrate run`

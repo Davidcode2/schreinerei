@@ -119,7 +119,7 @@ Before pilot deployment:
 3. **Environment Variables:**
    - `VITE_KEYCLOAK_URL` - Live Keycloak URL
    - `VITE_KEYCLOAK_REALM` - schreinerei
-   - `VITE_KEYCLOAK_CLIENT_ID` - schreinerei-pwa
+   - `VITE_KEYCLOAK_CLIENT_ID` - schreinerei_pwa
    - `VITE_API_URL` - Backend API URL
 
 ## Conclusion
