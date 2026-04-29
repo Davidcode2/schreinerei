@@ -41,6 +41,11 @@ Full decision log in PROJECT.md. Key decisions:
 - Phase 8 added: Fix all frontend-accessible functionalities
 - Phase 8 complete: Backend and frontend bugs resolved
 
+### Pending Todos
+
+- Fix fleet page "Neu" button
+- Fix baustelle time booking 400 error
+
 ### Blockers/Concerns
 
 - None currently
@@ -76,4 +81,4 @@ Phase 8 complete. Consider:
 
 ---
 
-*Last updated: 2026-04-29 after Phase 8 planning*
+*Last updated: 2026-04-29 after Phase 8 execution*
