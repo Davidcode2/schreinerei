@@ -40,6 +40,12 @@ Full decision log in PROJECT.md. Key decisions:
 
 - Phase 8 added: Fix all frontend-accessible functionalities
 
+### Pending Todos
+
+- Fix fleet page "Neu" button
+- Fix vehicle reservation submit failure
+- Fix baustelle time booking 400 error
+
 ### Blockers/Concerns
 
 - None currently
