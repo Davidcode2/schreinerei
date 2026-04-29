@@ -1,12 +1,20 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Plus, Calendar } from "lucide-react"
+import { Plus, Calendar, Car, Wrench } from "lucide-react"
 import { Link } from "react-router-dom"
 import { PageHeader } from "@/components/shared"
 import { VehiclesList } from "./VehiclesList"
 import { ToolsList } from "./ToolsList"
 import { ReservationsList } from "./ReservationsList"
 import { ReservationDialog } from "./ReservationDialog"
+import { AddVehicleDialog } from "./AddVehicleDialog"
+import { AddToolDialog } from "./AddToolDialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 type TabType = "vehicles" | "tools" | "reservations"
 
@@ -23,6 +31,7 @@ export default function FleetPage() {
     id: string
     type: "vehicle" | "tool"
   } | null>(null)
+  const [dialogType, setDialogType] = useState<"vehicle" | "tool" | null>(null)
 
   const handleReserve = (id: string, type: "vehicle" | "tool") => {
     setReserveResource({ id, type })
@@ -46,10 +55,24 @@ export default function FleetPage() {
                 <Calendar className="h-4 w-4" />
               </Button>
             </Link>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Neu</span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Neu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setDialogType("vehicle")}>
+                  <Car className="h-4 w-4 mr-2" />
+                  Fahrzeug
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDialogType("tool")}>
+                  <Wrench className="h-4 w-4 mr-2" />
+                  Werkzeug
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         }
       />
@@ -81,6 +104,15 @@ export default function FleetPage() {
           resourceType={reserveResource.type}
         />
       )}
+
+      <AddVehicleDialog
+        open={dialogType === "vehicle"}
+        onOpenChange={(open) => !open && setDialogType(null)}
+      />
+      <AddToolDialog
+        open={dialogType === "tool"}
+        onOpenChange={(open) => !open && setDialogType(null)}
+      />
     </div>
   )
 }
