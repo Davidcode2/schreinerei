@@ -4,17 +4,17 @@
 
 **Core Value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
 
-**Current Focus:** v1.5 Testing & Quality Foundation — Backend domain tests complete
+**Current Focus:** v1.5 Testing & Quality Foundation — Agent QA Playbook complete
 
 ## Current Position
 
-**Phase:** 12 — Backend Domain Tests
+**Phase:** 13 — Agent QA Playbook
 **Status:** Complete
 **Progress:** ██████████ 100%
 
 ```
 Phase 12 [██████████] Complete ✓
-Phase 13 [░░░░░░░░░░] Not started
+Phase 13 [██████████] Complete ✓
 Phase 14 [░░░░░░░░░░] Not started
 Phase 15 [░░░░░░░░░░] Not started
 Phase 16 [░░░░░░░░░░] Not started
@@ -26,8 +26,8 @@ Phase 17 [░░░░░░░░░░] Not started
 | Metric | Value |
 |--------|-------|
 | Milestone | v1.5 |
-| Phases Complete | 1/6 |
-| Requirements Complete | 3/21 |
+| Phases Complete | 2/6 |
+| Requirements Complete | 7/21 |
 | Days in Milestone | 0 |
 | Tests Added | 116 |
 
@@ -40,6 +40,8 @@ Phase 17 [░░░░░░░░░░] Not started
 - E2E tests verify data persistence, not just UI presence
 - Tests use helper functions for test fixtures to reduce boilerplate
 - State machines tested with exhaustive transition tables
+- Frontend must run on port 5175 for local testing (Keycloak config)
+- QA Playbook documents validation procedures for future agents
 
 ### Active Patterns
 - Backend: Hexagonal architecture (domain → application → infrastructure)
@@ -52,8 +54,8 @@ Phase 17 [░░░░░░░░░░] Not started
 
 ## Session Continuity
 
-**Last Session:** 2026-04-30 — Phase 12 complete
-**Next Action:** `/gsd-plan-phase 13`
+**Last Session:** 2026-04-30 — Phase 13 complete
+**Next Action:** `/gsd-plan-phase 14`
 
 ### Quick Context
 - Project: Schreinerei SaaS (multi-tenant construction site management)
@@ -73,3 +75,4 @@ Phase 17 [░░░░░░░░░░] Not started
 
 *State initialized: 2026-04-30*
 *Phase 12 completed: 2026-04-30*
+*Phase 13 completed: 2026-04-30*
