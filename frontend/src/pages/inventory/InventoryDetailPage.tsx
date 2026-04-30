@@ -18,6 +18,7 @@ import {
 } from "@/components/shared"
 import {
   useMaterial,
+  useMaterialHistory,
   useWithdrawMaterial,
   useCreateOrderRequest,
   usePreferences,
@@ -31,6 +32,7 @@ export default function InventoryDetailPage() {
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false)
 
   const { data: material, isLoading, error, refetch } = useMaterial(id!)
+  const { data: history } = useMaterialHistory(id!)
   const { data: preferences } = usePreferences()
   const { data: sites } = useSites()
   const withdrawMutation = useWithdrawMaterial()
@@ -201,6 +203,43 @@ export default function InventoryDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Historie</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!history || history.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Noch keine Entnahmen erfasst
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {history.map((entry) => (
+                <div key={entry.id} className="rounded-lg border p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(entry.created_at).toLocaleString("de-DE")}
+                    </span>
+                    <span className="font-medium">{entry.quantity_change}</span>
+                  </div>
+
+                  {entry.notes && (
+                    <p className="mt-2 text-sm text-muted-foreground">{entry.notes}</p>
+                  )}
+
+                  {entry.site_name && (
+                    <div className="mt-2 flex items-center gap-2 text-sm">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span>{entry.site_name}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <WithdrawDialog
         open={showWithdrawDialog}
