@@ -17,7 +17,7 @@ Active Project Context — auto-assign materials, reservations, and time entries
 
 - [x] **DEDU-01**: Material deductions can be linked to a Baustelle (FK column)
 - [x] **DEDU-02**: WithdrawMaterial command accepts optional site_id parameter
-- [ ] **DEDU-03**: Deduction details include Baustelle name when linked
+- [x] **DEDU-03**: Deduction details include Baustelle name when linked
 
 ### Frontend — Active Site UI
 
@@ -76,7 +76,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PREF-03 | 24 | Complete |
 | DEDU-01 | 24 | Complete |
 | DEDU-02 | 24 | Complete |
-| DEDU-03 | 25 | Pending |
+| DEDU-03 | 25 | Complete |
 | ACTV-01 | 24 | Complete |
 | ACTV-02 | 24 | Complete |
 | ACTV-03 | 24 | Complete |
@@ -96,4 +96,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-30*
-*Last updated: 2026-04-30 after milestone audit gap reassignment to phases 24-25*
+*Last updated: 2026-05-01 after Phase 25 execution completed DEDU-03 frontend integration gap*

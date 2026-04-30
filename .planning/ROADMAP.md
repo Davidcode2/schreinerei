@@ -46,7 +46,7 @@
 **Milestone Goal:** Close audit gaps from v1.7 milestone verification and restore full end-to-end coverage.
 
 - [x] **Phase 24: Phase Verification & Requirement Revalidation** - Add missing verification artifacts for Phases 22/23 and revalidate requirement evidence ✅
-- [ ] **Phase 25: Deduction History Site Name End-to-End Wiring** - Wire frontend consumer/render path for history `site_name` and close DEDU-03
+- [x] **Phase 25: Deduction History Site Name End-to-End Wiring** - Wire frontend consumer/render path for history `site_name` and close DEDU-03 ✅
 
 ## Phase Details
 
@@ -116,9 +116,9 @@ Plans:
 **Requirements**: DEDU-03
 **Plans**: 1 plan
 Plans:
-- [ ] 25-01-PLAN.md — Add inventory history hook, render site_name in detail history UI, and lock with regression tests
+- [x] 25-01-PLAN.md — Add inventory history hook, render site_name in detail history UI, and lock with regression tests
 **Gap Closure**: Closes integration + flow gap where history endpoint data is not consumed by frontend.
 
 ---
 
-*Roadmap updated: 2026-04-30 — Added gap-closure phases 24-25 after v1.7 milestone audit (v1.7-MILESTONE-AUDIT.md)*
+*Roadmap updated: 2026-05-01 — Phase 25 executed and DEDU-03 gap closed with frontend wiring + regression tests.*

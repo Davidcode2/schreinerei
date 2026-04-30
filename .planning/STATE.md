@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-04-30)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler.
-**Current focus:** Phase 25 planning and DEDU-03 end-to-end closure
+**Current focus:** v1.7 gap closure complete; ready for phase verification/transition
 
 ## Current Position
 
 Phase: 25 of 25 (Deduction History Site Name End-to-End Wiring)
-Plan: 0 plans created
-Status: Ready to plan
-Last activity: 2026-04-30 — Executed Phase 24 verification and requirement revalidation plans
+Plan: 1 plan completed
+Status: Phase complete
+Last activity: 2026-05-01 — Executed 25-01 plan for DEDU-03 frontend wiring and tests
 
-Progress: [██████████] 100% (v1.7 milestone; pending Phase 25 DEDU-03 closure)
+Progress: [██████████] 100% (v1.7 milestone and gap-closure phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10 (v1.7 milestone)
+- Total plans completed: 11 (v1.7 milestone + gap closure)
 - Average duration: ~5 minutes
-- Total execution time: ~53 minutes
+- Total execution time: ~55 minutes
 
 **By Phase:**
 
@@ -30,6 +30,7 @@ Progress: [██████████] 100% (v1.7 milestone; pending Phase 2
 | 22. Backend Foundation | 4 | 4 | ~3 min |
 | 23. Frontend UI & Auto-Assignment | 4 | 4 | ~5 min |
 | 24. Verification & Revalidation | 2 | 2 | ~9 min |
+| 25. DEDU-03 Frontend Wiring | 1 | 1 | ~2 min |
 
 **Recent Trend:**
 - Phase 22 completed efficiently with parallel Wave 1 execution
@@ -52,6 +53,7 @@ Recent decisions affecting current work:
 - 22-04: LEFT JOIN for site names in stock history
 - 24-01: Requirement verification uses explicit evidence pointers per REQ row
 - 24-02: Phase 24 revalidation verdict includes complete pass/partial/missing totals
+- 25-01: Inventory detail consumes stock history and conditionally renders site_name with regression tests
 
 ### Pending Todos
 
@@ -75,6 +77,6 @@ Items acknowledged and carried forward from v1.6 close:
 
 ## Session Continuity
 
-Last session: 2026-04-30
-Stopped at: Completed 24-02-PLAN.md
-Resume file: .planning/phases/24-phase-verification-requirement-revalidation/24-02-SUMMARY.md
+Last session: 2026-05-01
+Stopped at: Completed 25-01-PLAN.md
+Resume file: .planning/phases/25-deduction-history-site-name-end-to-end-wiring/25-01-SUMMARY.md
