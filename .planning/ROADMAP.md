@@ -198,13 +198,24 @@
 - Time entries POST returns 400 (validation error)
 - Fleet calendar GET returns 400 (validation error)
 
+**Root Cause:** Backend passes Keycloak user IDs directly to FK columns that expect local users.id values.
+
 **Requirements:** CORE-01, CORE-02, CORE-03, CORE-04
 
-**Plans:** 0 plans (not planned yet)
+**Plans:** 3 plans (0/3 complete)
 
 **Duration:** 1 day
 
-**Status:** Not started
+**Status:** Planned (2026-04-29)
+
+### Plans
+
+**Wave 1 (Parallel)**
+- [ ] 11-01 — Fix Material Withdrawal FK (CORE-01)
+- [ ] 11-02 — Fix Fleet Reservation FK (CORE-02)
+
+**Wave 2**
+- [ ] 11-03 — Fix Time Entries & Calendar (CORE-03, CORE-04)
 
 ### Success Criteria
 
@@ -229,7 +240,7 @@
 | 8. Bug Fixes | v1.3 | 2/2 | Complete | 2026-04-29 |
 | 9. Frontend Testing | v1.3 | 3/3 | Complete | 2026-04-29 |
 | 10. Bug Fixes Round 2 | v1.3 | 4/4 | Complete | 2026-04-29 |
-| 11. Core Feature Fixes | v1.4 | 0/0 | Not started | - |
+| 11. Core Feature Fixes | v1.4 | 0/3 | Planned | - |
 
 ---
 
