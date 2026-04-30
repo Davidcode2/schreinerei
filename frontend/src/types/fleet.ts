@@ -105,7 +105,7 @@ export interface Reservation {
 export interface CreateReservationRequest {
   resource_type: ResourceType
   resource_id: string
-  site_id?: string
+  site_id?: string | null
   start_time: string
   end_time: string
   notes?: string
@@ -114,7 +114,7 @@ export interface CreateReservationRequest {
 export interface UpdateReservationRequest {
   start_time?: string
   end_time?: string
-  site_id?: string
+  site_id?: string | null
   notes?: string
   status?: ReservationStatus
 }

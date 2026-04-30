@@ -3,6 +3,7 @@ import { Menu, QrCode, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { SidebarContent } from "./SidebarContent"
+import { ActiveSiteIndicator } from "./ActiveSiteIndicator"
 import PendingActionsBadge from "@/components/offline/PendingActionsBadge"
 import SyncButton from "@/components/offline/SyncButton"
 import { useAuthStore } from "@/lib/auth/authStore"
@@ -26,6 +27,7 @@ export function MobileNav() {
             <h1 className="text-lg font-semibold text-primary">Schreinerei</h1>
           </div>
           <div className="py-4 flex-1">
+            <ActiveSiteIndicator />
             <SidebarContent />
           </div>
           <div className="border-t p-4">

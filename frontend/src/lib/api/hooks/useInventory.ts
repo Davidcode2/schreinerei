@@ -77,6 +77,7 @@ export function useWithdrawMaterial() {
       apiClient.post<Material>(`/api/v1/inventory/materials/${id}/withdraw`, {
         quantity: data.quantity,
         notes: data.notes,
+        site_id: data.site_id ?? null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["materials"] })

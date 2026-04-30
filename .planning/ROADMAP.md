@@ -73,7 +73,12 @@
   3. Only one Baustelle can be active per user at a time
   4. Active state persists across page navigation and browser refresh
   5. Material, reservation, and time entry forms pre-fill active Baustelle (changeable)
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 23-01-PLAN.md — Preferences hooks, deterministic color utility, and persistent active-site indicator in app layout
+- [ ] 23-02-PLAN.md — Active-site toggle controls on sites overview and dashboard cards
+- [ ] 23-03-PLAN.md — Auto-prefill active site in withdrawal/reservation/time-entry forms with user override
+- [ ] 23-04-PLAN.md — Fix preferences FK-safe local-user mapping for active-site toggle (UAT gap closure)
 **UI hint**: yes
 
 ### Phase 24: Opt-Out Dialog & E2E Tests
@@ -85,7 +90,11 @@
   2. Dialog auto-confirms after 5 seconds if user takes no action
   3. User can change project or dismiss to leave unassigned from dialog
   4. E2E tests verify active Baustelle workflow end-to-end
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 24-01-PLAN.md — Shared auto-assignment confirmation contracts (types, hook, dialog)
+- [ ] 24-02-PLAN.md — Integrate confirmation flow into withdraw/reservation/time-entry dialogs
+- [ ] 24-03-PLAN.md — Add E2E coverage for active-site workflow and opt-out behavior
 **UI hint**: yes
 
 ## Progress
@@ -95,9 +104,9 @@
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 22. Backend Foundation | v1.7 | 4/4 | ✅ Complete | 2026-04-30 |
-| 23. Frontend UI & Auto-Assignment | v1.7 | 0/TBD | Ready to plan | - |
-| 24. Opt-Out Dialog & E2E Tests | v1.7 | 0/TBD | Not started | - |
+| 23. Frontend UI & Auto-Assignment | v1.7 | 3/4 | In Progress | - |
+| 24. Opt-Out Dialog & E2E Tests | v1.7 | 0/3 | Planned | - |
 
 ---
 
-*Roadmap updated: 2026-04-30 — Phase 22 complete*
+*Roadmap updated: 2026-04-30 — Phase 23 execution in progress; added 23-04 UAT gap closure plan*

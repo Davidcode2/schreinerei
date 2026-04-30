@@ -21,7 +21,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Clock } from "lucide-react"
-import { useCreateTimeEntry, useUpdateTimeEntry, useDeleteTimeEntry } from "@/lib/api/hooks"
+import {
+  useCreateTimeEntry,
+  useDeleteTimeEntry,
+  usePreferences,
+  useSites,
+  useUpdateTimeEntry,
+} from "@/lib/api/hooks"
 import { toast } from "sonner"
 import type { WorkType, TimeEntry } from "@/types/sites"
 
@@ -57,6 +63,9 @@ export function TimeEntryDialog({
     initialData?.work_date ?? new Date().toISOString().split("T")[0] ?? ""
   )
   const [notes, setNotes] = useState(initialData?.notes ?? "")
+  const [selectedSiteId, setSelectedSiteId] = useState(
+    initialData?.site_id ?? siteId ?? ""
+  )
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -64,6 +73,8 @@ export function TimeEntryDialog({
   const createMutation = useCreateTimeEntry()
   const updateMutation = useUpdateTimeEntry()
   const deleteMutation = useDeleteTimeEntry()
+  const { data: preferences } = usePreferences()
+  const { data: sites } = useSites()
 
   // Reset state when dialog opens with new data
   useEffect(() => {
@@ -73,17 +84,19 @@ export function TimeEntryDialog({
         setHours(initialData.hours)
         setWorkDate(initialData.work_date)
         setNotes(initialData.notes ?? "")
+        setSelectedSiteId(initialData.site_id ?? "")
       } else {
         setWorkType("site")
         setHours(0.5)
         setWorkDate(new Date().toISOString().split("T")[0] ?? "")
         setNotes("")
+        setSelectedSiteId(siteId ?? preferences?.active_site_id ?? "")
       }
       setErrors({})
       setTouched({})
       setShowDeleteConfirm(false)
     }
-  }, [open, mode, initialData])
+  }, [open, mode, initialData, preferences?.active_site_id, siteId])
 
   const validateHours = (value: number): string | null => {
     if (value <= 0) return "Stunden müssen größer als 0 sein"
@@ -109,6 +122,7 @@ export function TimeEntryDialog({
       if (mode === "edit" && initialData) {
         await updateMutation.mutateAsync({
           id: initialData.id,
+          site_id: workType === "site" ? selectedSiteId || null : null,
           work_type: workType,
           hours,
           work_date: workDate,
@@ -117,7 +131,7 @@ export function TimeEntryDialog({
         toast.success("Zeiteintrag aktualisiert")
       } else {
         await createMutation.mutateAsync({
-          ...(workType === "site" && siteId ? { site_id: siteId } : {}),
+          site_id: workType === "site" ? selectedSiteId || null : null,
           work_type: workType,
           hours,
           work_date: workDate,
@@ -190,6 +204,24 @@ export function TimeEntryDialog({
                 onChange={(e) => setWorkDate(e.target.value)}
               />
             </div>
+
+            {workType === "site" && (
+              <div className="space-y-2">
+                <Label>Baustelle</Label>
+                <select
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={selectedSiteId}
+                  onChange={(event) => setSelectedSiteId(event.target.value)}
+                >
+                  <option value="">Keine Zuordnung</option>
+                  {sites?.map((site) => (
+                    <option key={site.id} value={site.id}>
+                      {site.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Hours */}
             <div className="space-y-2">

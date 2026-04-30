@@ -10,25 +10,25 @@ See: .planning/PROJECT.md (updated 2026-04-30)
 ## Current Position
 
 Phase: 23 of 24 (Frontend UI & Auto-Assignment)
-Plan: — of —
-Status: Ready to plan
-Last activity: 2026-04-30 — Phase 22 complete, 4/4 plans
+Plan: 04 of 04
+Status: Ready to execute
+Last activity: 2026-04-30 — Plans 23-01..23-03 completed, UAT found toggle FK gap, and 23-04 fix plan created
 
-Progress: [████░░░░░░] 33% (v1.7 milestone)
+Progress: [███████░░░] 58% (v1.7 milestone)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4 (v1.7 milestone)
+- Total plans completed: 7 (v1.7 milestone)
 - Average duration: ~3 minutes
-- Total execution time: ~12 minutes
+- Total execution time: ~21 minutes
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 22. Backend Foundation | 4 | 4 | ~3 min |
-| 23. Frontend UI & Auto-Assignment | 0 | TBD | — |
+| 23. Frontend UI & Auto-Assignment | 3 | 4 | ~3 min |
 | 24. Opt-Out Dialog & E2E Tests | 0 | TBD | — |
 
 **Recent Trend:**
@@ -46,6 +46,8 @@ Recent decisions affecting current work:
 - v1.7 planning: Active Baustelle is user-scoped (not global)
 - v1.7 planning: Deterministic hash-based colors (no manual selection)
 - v1.7 planning: Opt-out dialog with 5-second auto-confirm
+- 23-UAT: Active-site toggle currently hits preferences FK mismatch path in backend (500)
+- 23-04 plan added to resolve user mapping before preference writes
 - 22-01: UserPreferences stores active_site_id as Option<String>
 - 22-02: site_id is optional in WithdrawMaterial (backward compatible)
 - 22-03: PATCH /preferences with null clears active site
@@ -53,11 +55,11 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+1 pending UAT test in `23-UAT.md` (Time Entry conditional prefill).
 
 ### Blockers/Concerns
 
-None yet.
+- Active-site toggle can return 500 due to preferences/user FK mapping mismatch; addressed by pending 23-04 backend fix plan.
 
 ## Deferred Items
 
@@ -74,5 +76,5 @@ Items acknowledged and carried forward from v1.6 close:
 ## Session Continuity
 
 Last session: 2026-04-30
-Stopped at: Phase 22 complete, ready to plan Phase 23
+Stopped at: Phase 23 in progress, ready to execute 23-04 and resume UAT
 Resume file: None

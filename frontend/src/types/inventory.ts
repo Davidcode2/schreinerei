@@ -45,6 +45,7 @@ export interface CreateMaterialRequest {
 export interface WithdrawRequest {
   quantity: number
   notes?: string
+  site_id?: string | null
 }
 
 export interface AdjustStockRequest {

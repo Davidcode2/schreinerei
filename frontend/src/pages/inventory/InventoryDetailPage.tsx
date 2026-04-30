@@ -16,7 +16,13 @@ import {
   ErrorState,
   StatusBadge,
 } from "@/components/shared"
-import { useMaterial, useWithdrawMaterial, useCreateOrderRequest } from "@/lib/api/hooks"
+import {
+  useMaterial,
+  useWithdrawMaterial,
+  useCreateOrderRequest,
+  usePreferences,
+  useSites,
+} from "@/lib/api/hooks"
 import { WithdrawDialog } from "./WithdrawDialog"
 import { toast } from "sonner"
 
@@ -25,6 +31,8 @@ export default function InventoryDetailPage() {
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false)
 
   const { data: material, isLoading, error, refetch } = useMaterial(id!)
+  const { data: preferences } = usePreferences()
+  const { data: sites } = useSites()
   const withdrawMutation = useWithdrawMaterial()
   const orderMutation = useCreateOrderRequest()
 
@@ -41,11 +49,16 @@ export default function InventoryDetailPage() {
     )
   }
 
-  const handleWithdraw = async (quantity: number, notes?: string) => {
+  const handleWithdraw = async (
+    quantity: number,
+    notes?: string,
+    siteId?: string | null
+  ) => {
     try {
       await withdrawMutation.mutateAsync({
         id: material.id,
         quantity,
+        site_id: siteId ?? null,
         ...(notes ? { notes } : {}),
       })
       toast.success(`${quantity} ${material.unit} entnommen`)
@@ -195,6 +208,8 @@ export default function InventoryDetailPage() {
         material={material}
         onConfirm={handleWithdraw}
         isLoading={withdrawMutation.isPending}
+        sites={(sites ?? []).map((site) => ({ id: site.id, name: site.name }))}
+        initialSiteId={preferences?.active_site_id ?? null}
       />
     </div>
   )

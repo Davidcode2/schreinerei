@@ -21,3 +21,14 @@ Thumbs.db
 
 # Debug
 npm-debug.log*
+
+# Local agent/runtime artifacts
+.bg-shell/
+.gsd/
+.playwright-cli/
+frontend/playwright-report/
+frontend/test-results/
+
+# Local scratch notes
+SRATCHPAD.md
+REFINED_SCRATCHPAD.md

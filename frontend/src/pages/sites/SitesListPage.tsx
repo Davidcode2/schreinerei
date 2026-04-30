@@ -8,9 +8,10 @@ import {
   ErrorState,
 } from "@/components/shared"
 import { SiteCard, SiteCardSkeleton } from "@/components/sites/SiteCard"
-import { useSites } from "@/lib/api/hooks"
+import { usePreferences, useSites, useUpdatePreferences } from "@/lib/api/hooks"
 import { AddSiteDialog } from "./AddSiteDialog"
 import type { Site, SiteStatus } from "@/types/sites"
+import { toast } from "sonner"
 
 const statusTabs: { value: SiteStatus | undefined; label: string }[] = [
   { value: undefined, label: "Alle" },
@@ -30,6 +31,21 @@ export default function SitesListPage() {
     error,
     refetch,
   } = useSites(selectedStatus ? { status: selectedStatus } : undefined)
+  const { data: preferences } = usePreferences()
+  const updatePreferences = useUpdatePreferences()
+
+  const activeSiteId = preferences?.active_site_id ?? null
+
+  const handleToggleActive = async (siteId: string, nextActive: boolean) => {
+    try {
+      await updatePreferences.mutateAsync({
+        active_site_id: nextActive ? siteId : null,
+      })
+      toast.success(nextActive ? "Aktive Baustelle gesetzt" : "Aktive Baustelle entfernt")
+    } catch {
+      toast.error("Aktive Baustelle konnte nicht aktualisiert werden")
+    }
+  }
 
   const filteredSites = sites?.filter((site: Site) =>
     site.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -111,7 +127,13 @@ export default function SitesListPage() {
           </p>
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {filteredSites.map((site: Site) => (
-              <SiteCard key={site.id} site={site} />
+              <SiteCard
+                key={site.id}
+                site={site}
+                isActive={activeSiteId === site.id}
+                onToggleActive={handleToggleActive}
+                isToggling={updatePreferences.isPending}
+              />
             ))}
           </div>
         </>

@@ -12,6 +12,9 @@ import type { Site } from "@/types/sites"
 
 interface SiteCardProps {
   site: Site
+  isActive: boolean
+  onToggleActive: (siteId: string, nextActive: boolean) => void
+  isToggling: boolean
 }
 
 function formatDate(date: string | null): string {
@@ -23,7 +26,12 @@ function formatDate(date: string | null): string {
   })
 }
 
-export function SiteCard({ site }: SiteCardProps) {
+export function SiteCard({
+  site,
+  isActive,
+  onToggleActive,
+  isToggling,
+}: SiteCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const deleteMutation = useDeleteSite()
 
@@ -51,6 +59,18 @@ export function SiteCard({ site }: SiteCardProps) {
               </p>
             </Link>
             <div className="flex items-center gap-2">
+              <Button
+                variant={isActive ? "default" : "outline"}
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onToggleActive(site.id, !isActive)
+                }}
+                disabled={isToggling}
+              >
+                {isActive ? "Aktiv" : "Aktiv setzen"}
+              </Button>
               <StatusBadge status={site.status} />
               <Button
                 variant="ghost"
@@ -95,6 +115,7 @@ export function SiteCard({ site }: SiteCardProps) {
                   {site.estimated_days} Tage
                 </Badge>
               )}
+              {isActive && <Badge className="text-xs">Aktiv</Badge>}
             </div>
           </Link>
         </CardContent>

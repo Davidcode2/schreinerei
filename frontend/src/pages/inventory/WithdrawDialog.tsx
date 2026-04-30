@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -18,8 +18,10 @@ interface WithdrawDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   material: Material
-  onConfirm: (quantity: number, notes?: string) => void
+  onConfirm: (quantity: number, notes?: string, siteId?: string | null) => void
   isLoading: boolean
+  sites: Array<{ id: string; name: string }>
+  initialSiteId?: string | null
 }
 
 export function WithdrawDialog({
@@ -28,9 +30,12 @@ export function WithdrawDialog({
   material,
   onConfirm,
   isLoading,
+  sites,
+  initialSiteId,
 }: WithdrawDialogProps) {
   const [quantity, setQuantity] = useState(1)
   const [notes, setNotes] = useState("")
+  const [siteId, setSiteId] = useState(initialSiteId ?? "")
 
   const handleQuantityChange = (value: number) => {
     const newQuantity = Math.max(1, Math.min(value, material.quantity))
@@ -38,12 +43,18 @@ export function WithdrawDialog({
   }
 
   const handleSubmit = () => {
-    onConfirm(quantity, notes || undefined)
+    onConfirm(quantity, notes || undefined, siteId || null)
     setQuantity(1)
     setNotes("")
   }
 
   const quickAmounts = [1, 2, 5, 10].filter((n) => n <= material.quantity)
+
+  useEffect(() => {
+    if (open) {
+      setSiteId(initialSiteId ?? "")
+    }
+  }, [open, initialSiteId])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -113,6 +124,23 @@ export function WithdrawDialog({
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="site">Baustelle (optional)</Label>
+            <select
+              id="site"
+              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={siteId}
+              onChange={(event) => setSiteId(event.target.value)}
+            >
+              <option value="">Keine Zuordnung</option>
+              {sites.map((site) => (
+                <option key={site.id} value={site.id}>
+                  {site.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Notes */}

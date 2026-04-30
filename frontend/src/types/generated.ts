@@ -69,6 +69,11 @@ export type OrderRequestResponse = { id: string, material_id: string, material_n
 
 export type OrderStatusQuery = { status: string | null, };
 
+/**
+ * Response DTO for user preferences
+ */
+export type PreferencesResponse = { active_site_id: string | null, };
+
 export type QrCodeResponse = { qr_code: string, material_id: string, material_name: string, };
 
 export type QrStatusResponse = { resource_type: string, resource_id: string, resource_name: string, status: string, current_reservation: ReservationSummaryResponse | null, upcoming_reservations: Array<ReservationSummaryResponse>, };
@@ -81,11 +86,21 @@ export type ReservationSummaryResponse = { id: string, start_time: string, end_t
 
 export type SiteResponse = { id: string, name: string, customer_name: string, location: string | null, description: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, created_at: string, };
 
+/**
+ * Response DTO for stock entry history
+ */
+export type StockEntryResponse = { id: string, quantity_change: number, quantity_after: number, notes: string | null, site_id: string | null, site_name: string | null, created_at: string, };
+
 export type TimeEntryResponse = { id: string, site_id: string | null, user_id: string, work_type: string, hours: number, work_date: string, notes: string | null, created_at: string, };
 
 export type ToolResponse = { id: string, name: string, category: string | null, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
 
 export type UpdatePreferences = { active_site_id: string | null, };
+
+/**
+ * Request DTO for updating preferences
+ */
+export type UpdatePreferencesRequest = { active_site_id: string | null, };
 
 /**
  * Request DTO for updating profile

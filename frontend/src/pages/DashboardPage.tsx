@@ -7,23 +7,41 @@ import {
   useDashboardSites,
   useLowStockMaterials,
   useMyTimeEntries,
+  usePreferences,
+  useUpdatePreferences,
 } from "@/lib/api/hooks"
 import { StatsCard } from "@/components/dashboard/StatsCard"
 import { SiteCard } from "@/components/dashboard/SiteCard"
 import type { DashboardSite } from "@/types/sites"
 import type { Material } from "@/types/inventory"
 import type { TimeEntry } from "@/types/sites"
+import { toast } from "sonner"
 
 export default function DashboardPage() {
   const { data: sites, isLoading: sitesLoading, error: sitesError, refetch: refetchSites } = useDashboardSites()
   const { data: lowStock } = useLowStockMaterials()
   const { data: timeEntries } = useMyTimeEntries()
+  const { data: preferences } = usePreferences()
+  const updatePreferences = useUpdatePreferences()
+
+  const activeSiteId = preferences?.active_site_id ?? null
 
   const activeSites = sites?.filter((s: DashboardSite) => s.status === "active") || []
   const todayEntries = timeEntries?.filter((e: TimeEntry) => 
     e.work_date === new Date().toISOString().split("T")[0]
   ) || []
   const totalHoursToday = todayEntries.reduce((sum: number, e: TimeEntry) => sum + e.hours, 0)
+
+  const handleToggleActive = async (siteId: string, nextActive: boolean) => {
+    try {
+      await updatePreferences.mutateAsync({
+        active_site_id: nextActive ? siteId : null,
+      })
+      toast.success(nextActive ? "Aktive Baustelle gesetzt" : "Aktive Baustelle entfernt")
+    } catch {
+      toast.error("Aktive Baustelle konnte nicht aktualisiert werden")
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -87,7 +105,13 @@ export default function DashboardPage() {
           ) : (
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
               {activeSites.map((site: DashboardSite) => (
-                <SiteCard key={site.id} site={site} />
+                <SiteCard
+                  key={site.id}
+                  site={site}
+                  isActive={activeSiteId === site.id}
+                  onToggleActive={handleToggleActive}
+                  isToggling={updatePreferences.isPending}
+                />
               ))}
             </div>
           )}

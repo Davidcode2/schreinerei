@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarContent } from "./SidebarContent"
+import { ActiveSiteIndicator } from "./ActiveSiteIndicator"
 import PendingActionsBadge from "@/components/offline/PendingActionsBadge"
 import SyncButton from "@/components/offline/SyncButton"
 import { useAuthStore } from "@/lib/auth/authStore"
@@ -27,6 +28,7 @@ export function DesktopSidebar() {
 
       {/* Navigation */}
       <div className="flex-1 overflow-auto py-4">
+        <ActiveSiteIndicator />
         <SidebarContent />
       </div>
 

@@ -12,7 +12,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, AlertCircle } from "lucide-react"
-import { useCreateReservation, useUpdateReservation, useAvailability, useVehicles, useTools } from "@/lib/api/hooks"
+import {
+  useAvailability,
+  useCreateReservation,
+  usePreferences,
+  useSites,
+  useTools,
+  useUpdateReservation,
+  useVehicles,
+} from "@/lib/api/hooks"
 import { StatusTransitionButtons, statusLabels } from "@/components/fleet/StatusTransitionButtons"
 import { toast } from "sonner"
 import type { ResourceType, Vehicle, Tool, Reservation, ReservationStatus, ConflictDetail } from "@/types/fleet"
@@ -87,6 +95,8 @@ export function ReservationDialog({
 
   const { data: vehicles } = useVehicles()
   const { data: tools } = useTools()
+  const { data: preferences } = usePreferences()
+  const { data: sites } = useSites()
 
   const createMutation = useCreateReservation()
   const updateMutation = useUpdateReservation()
@@ -104,13 +114,22 @@ export function ReservationDialog({
       } else if (mode === "create") {
         setSelectedResourceId(resourceId ?? "")
         setSelectedResourceType(resourceType ?? "vehicle")
-        setSiteId("")
+        setSiteId(preferences?.active_site_id ?? "")
         setStartTime(initialStartTime ?? "")
         setEndTime(initialEndTime ?? "")
         setNotes("")
       }
     }
-  }, [open, mode, initialData, resourceId, resourceType, initialStartTime, initialEndTime])
+  }, [
+    open,
+    mode,
+    initialData,
+    resourceId,
+    resourceType,
+    initialStartTime,
+    initialEndTime,
+    preferences?.active_site_id,
+  ])
 
   // Check availability when both times are set
   const { data: availability } = useAvailability(
@@ -141,7 +160,7 @@ export function ReservationDialog({
       if (mode === "edit" && initialData) {
         await updateMutation.mutateAsync({
           id: initialData.id,
-          ...(siteId ? { site_id: siteId } : {}),
+          site_id: siteId || null,
           start_time: formatDateToRfc3339(startTime),
           end_time: formatDateToRfc3339(endTime),
           ...(notes ? { notes } : {}),
@@ -151,7 +170,7 @@ export function ReservationDialog({
         await createMutation.mutateAsync({
           resource_type: selectedResourceType,
           resource_id: selectedResourceId,
-          ...(siteId ? { site_id: siteId } : {}),
+          site_id: siteId || null,
           start_time: formatDateToRfc3339(startTime),
           end_time: formatDateToRfc3339(endTime),
           ...(notes ? { notes } : {}),
@@ -197,6 +216,22 @@ export function ReservationDialog({
               </div>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label>Baustelle (optional)</Label>
+            <select
+              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={siteId}
+              onChange={(event) => setSiteId(event.target.value)}
+            >
+              <option value="">Keine Zuordnung</option>
+              {sites?.map((site) => (
+                <option key={site.id} value={site.id}>
+                  {site.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Status Transition Buttons (edit mode only, for active statuses) */}
           {canTransition && (

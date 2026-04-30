@@ -77,7 +77,7 @@ export interface TimeEntry {
 }
 
 export interface CreateTimeEntryRequest {
-  site_id?: string
+  site_id?: string | null
   work_type: WorkType
   hours: number
   work_date: string
@@ -85,7 +85,7 @@ export interface CreateTimeEntryRequest {
 }
 
 export interface UpdateTimeEntryRequest {
-  site_id?: string
+  site_id?: string | null
   work_type?: WorkType
   hours?: number
   work_date?: string
