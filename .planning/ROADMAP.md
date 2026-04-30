@@ -30,7 +30,11 @@ Establish comprehensive testing strategy, document all issues in existing featur
   2. Tests are inline in domain files with `#[cfg(test)]` attribute
   3. Business rules and validation logic are covered (status transitions, quantity checks)
   4. All tests pass in under 1 second (pure unit tests, no DB)
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 12-01-PLAN.md — IAM and Inventory domain tests
+- [ ] 12-02-PLAN.md — Sites and Fleet domain tests
 
 ### Phase 13: Agent QA Playbook
 **Goal:** Future agent sessions can efficiently validate features using documented procedures
@@ -92,7 +96,7 @@ Establish comprehensive testing strategy, document all issues in existing featur
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 12. Backend Domain Tests | 0/1 | Not started | - |
+| 12. Backend Domain Tests | 0/2 | Planned | - |
 | 13. Agent QA Playbook | 0/1 | Not started | - |
 | 14. Frontend Test Infrastructure | 0/1 | Not started | - |
 | 15. ts-rs Type Generation | 0/1 | Not started | - |
