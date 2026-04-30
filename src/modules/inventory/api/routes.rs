@@ -7,6 +7,7 @@ use axum::{
     routing::{get, post},
 };
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 use uuid::Uuid;
 
 use crate::auth::extractor::AuthenticatedUser;
@@ -49,7 +50,8 @@ pub fn create_router() -> Router<AppState> {
 
 // === DTOs ===
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CategoryResponse {
     pub id: String,
     pub name: String,
@@ -68,13 +70,15 @@ impl From<crate::modules::inventory::domain::Category> for CategoryResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CreateCategoryRequest {
     pub name: String,
     pub description: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct MaterialResponse {
     pub id: String,
     pub category_id: String,
@@ -107,7 +111,8 @@ impl From<crate::modules::inventory::domain::Material> for MaterialResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CreateMaterialRequest {
     pub category_id: String,
     pub name: String,
@@ -118,37 +123,43 @@ pub struct CreateMaterialRequest {
     pub location: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct WithdrawRequest {
     pub quantity: i32,
     pub notes: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct AdjustStockRequest {
     pub quantity: i32,
     pub reason: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ListMaterialsQuery {
     pub category_id: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct QrCodeResponse {
     pub qr_code: String,
     pub material_id: String,
     pub material_name: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct QrSvgResponse {
     pub svg: String,
     pub qr_code: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct OrderRequestResponse {
     pub id: String,
     pub material_id: String,
@@ -183,25 +194,29 @@ impl OrderRequestResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CreateOrderRequestDto {
     pub material_id: String,
     pub quantity: i32,
     pub reason: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ApproveOrderRequestDto {
     pub notes: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct FulfillOrderRequestDto {
     pub actual_quantity: i32,
     pub notes: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct OrderStatusQuery {
     pub status: Option<String>,
 }
