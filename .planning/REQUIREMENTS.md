@@ -15,12 +15,12 @@ Testing & Quality Foundation — comprehensive testing strategy and issue docume
 
 ### Frontend Testing
 
-- [ ] **TEST-04**: Vitest configured with React Testing Library and MSW
-- [ ] **TEST-05**: Test utilities and fixtures created (render with providers, mock data)
-- [ ] **TEST-06**: Key components tested (forms, dialogs, lists)
-- [ ] **TEST-07**: ts-rs derive macros added to all backend DTOs
-- [ ] **TEST-08**: TypeScript types auto-generated from Rust structs
-- [ ] **TEST-09**: CI fails if generated types differ from committed
+- [x] **TEST-04**: Vitest configured with React Testing Library and MSW
+- [x] **TEST-05**: Test utilities and fixtures created (render with providers, mock data)
+- [x] **TEST-06**: Key components tested (forms, dialogs, lists)
+- [x] **TEST-07**: ts-rs derive macros added to all backend DTOs
+- [x] **TEST-08**: TypeScript types auto-generated from Rust structs
+- [x] **TEST-09**: CI fails if generated types differ from committed
 
 ### E2E Data Assertions
 
@@ -29,19 +29,19 @@ Testing & Quality Foundation — comprehensive testing strategy and issue docume
 
 ### Agent QA Playbook
 
-- [ ] **QA-01**: Playwright learnings documented (UI navigation patterns)
-- [ ] **QA-02**: QA Playbook created (run tests, logs, validate features)
-- [ ] **QA-03**: Parameter mismatch prevention strategy documented
-- [ ] **QA-04**: ts-rs usage documented in AGENTS.md
+- [x] **QA-01**: Playwright learnings documented (UI navigation patterns)
+- [x] **QA-02**: QA Playbook created (run tests, logs, validate features)
+- [x] **QA-03**: Parameter mismatch prevention strategy documented
+- [x] **QA-04**: ts-rs usage documented in AGENTS.md
 
 ### Feature Audit
 
-- [ ] **AUDIT-01**: Baustellen feature audit complete (bugs, issues, missing functionality)
-- [ ] **AUDIT-02**: Inventory feature audit complete
-- [ ] **AUDIT-03**: Time Booking feature audit complete
-- [ ] **AUDIT-04**: Vehicles/Machines feature audit complete
-- [ ] **AUDIT-05**: Reservations feature audit complete
-- [ ] **AUDIT-06**: Comprehensive issue backlog documented
+- [x] **AUDIT-01**: Baustellen feature audit complete (bugs, issues, missing functionality)
+- [x] **AUDIT-02**: Inventory feature audit complete
+- [x] **AUDIT-03**: Time Booking feature audit complete
+- [x] **AUDIT-04**: Vehicles/Machines feature audit complete
+- [x] **AUDIT-05**: Reservations feature audit complete
+- [x] **AUDIT-06**: Comprehensive issue backlog documented
 
 ## v1.6+ Requirements (Future)
 
@@ -89,32 +89,38 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-01 | Phase 12 | ✓ Complete |
 | TEST-02 | Phase 12 | ✓ Complete |
 | TEST-03 | Phase 12 | ✓ Complete |
-| QA-01 | Phase 13 | Pending |
-| QA-02 | Phase 13 | Pending |
-| QA-03 | Phase 13 | Pending |
-| QA-04 | Phase 13 | Pending |
-| TEST-04 | Phase 14 | Pending |
-| TEST-05 | Phase 14 | Pending |
-| TEST-06 | Phase 14 | Pending |
-| TEST-07 | Phase 15 | Pending |
-| TEST-08 | Phase 15 | Pending |
-| TEST-09 | Phase 15 | Pending |
+| QA-01 | Phase 13 | ✓ Complete |
+| QA-02 | Phase 13 | ✓ Complete |
+| QA-03 | Phase 13 | ✓ Complete |
+| QA-04 | Phase 13 | ✓ Complete |
+| TEST-04 | Phase 14 | ✓ Complete |
+| TEST-05 | Phase 14 | ✓ Complete |
+| TEST-06 | Phase 14 | ✓ Complete |
+| TEST-07 | Phase 15 | ✓ Complete |
+| TEST-08 | Phase 15 | ✓ Complete |
+| TEST-09 | Phase 15 | ✓ Complete |
 | TEST-10 | Phase 16 | ✓ Complete |
 | TEST-11 | Phase 16 | ✓ Complete |
-| AUDIT-01 | Phase 17 | Pending |
-| AUDIT-02 | Phase 17 | Pending |
-| AUDIT-03 | Phase 17 | Pending |
-| AUDIT-04 | Phase 17 | Pending |
-| AUDIT-05 | Phase 17 | Pending |
-| AUDIT-06 | Phase 17 | Pending |
+| AUDIT-01 | Phase 17 | ✓ Complete |
+| AUDIT-02 | Phase 17 | ✓ Complete |
+| AUDIT-03 | Phase 17 | ✓ Complete |
+| AUDIT-04 | Phase 17 | ✓ Complete |
+| AUDIT-05 | Phase 17 | ✓ Complete |
+| AUDIT-06 | Phase 17 | ✓ Complete |
 
 **Coverage:**
 - v1.5 requirements: 21 total
 - Mapped to phases: 21
 - Unmapped: 0
-- Complete: 15/21
+- Complete: 21/21
 
 ---
 *Requirements defined: 2026-04-30*
-*Last updated: 2026-04-30 after phase reordering*
+*Last updated: 2026-04-30 after Phase 17 completion*
 *Phase 12 completed: 2026-04-30*
+*Phase 13 completed: 2026-04-30*
+*Phase 14 completed: 2026-04-30*
+*Phase 15 completed: 2026-04-30*
+*Phase 16 completed: 2026-04-30*
+*Phase 17 completed: 2026-04-30*
+*v1.5 complete: 2026-04-30*

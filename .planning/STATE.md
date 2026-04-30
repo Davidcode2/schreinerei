@@ -4,12 +4,12 @@
 
 **Core Value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
 
-**Current Focus:** v1.5 Testing & Quality Foundation — ts-rs type generation complete
+**Current Focus:** v1.5 Testing & Quality Foundation — Complete
 
 ## Current Position
 
 **Phase:** 17 — Feature Audit
-**Status:** Ready to Execute
+**Status:** Complete ✓
 **Progress:** ██████████ 100%
 
 ```
@@ -18,7 +18,7 @@ Phase 13 [██████████] Complete ✓
 Phase 14 [██████████] Complete ✓
 Phase 15 [██████████] Complete ✓
 Phase 16 [██████████] Complete ✓
-Phase 17 [████████░░] Ready to execute
+Phase 17 [██████████] Complete ✓
 ```
 
 ## Performance Metrics
@@ -26,11 +26,12 @@ Phase 17 [████████░░] Ready to execute
 | Metric | Value |
 |--------|-------|
 | Milestone | v1.5 |
-| Phases Complete | 5/6 |
-| Requirements Complete | 15/21 |
+| Phases Complete | 6/6 |
+| Requirements Complete | 21/21 |
 | Days in Milestone | 0 |
 | Tests Added | 116 (backend) + 28 (frontend) + 6 (E2E data assertions) |
 | DTOs with ts-rs | 49 |
+| Issues Documented | 24 (in ISSUE-BACKLOG.md) |
 
 ## Accumulated Context
 
@@ -47,6 +48,10 @@ Phase 17 [████████░░] Ready to execute
 - Vitest over Jest for frontend testing (native Vite integration)
 - MSW for API mocking at network level (no axios mocking)
 - Test factories generate consistent data with unique IDs
+- BUG-004 (Fleet Neu button) confirmed FIXED via code review
+- Time booking 400 error root cause: hours=0 fails backend validation
+- Reservation state machine fully implemented with overlap detection
+- Issue backlog prioritizes 24 issues for v1.6+ roadmap
 
 ### Active Patterns
 - Backend: Hexagonal architecture (domain → application → infrastructure)
@@ -59,21 +64,23 @@ Phase 17 [████████░░] Ready to execute
 
 ## Session Continuity
 
-**Last Session:** 2026-04-30 — Phase 17 planning complete
-**Next Action:** `/gsd-execute-phase 17`
+**Last Session:** 2026-04-30 — Phase 17 Feature Audit complete
+**Next Action:** `/gsd-complete-milestone` (v1.5 complete)
 
 ### Quick Context
 - Project: Schreinerei SaaS (multi-tenant construction site management)
 - Stack: Rust/Axum/SQLx + Vite/React/PWA + Keycloak
 - LOC: ~8,900 Rust + ~8,000 TypeScript
 - Previous milestones: v1.0-v1.4 shipped (37+ requirements complete)
+- v1.5: Testing & Quality Foundation complete (21 requirements)
 
 ### Key Files
 | File | Purpose |
 |------|---------|
 | `.planning/PROJECT.md` | Project vision and context |
-| `.planning/REQUIREMENTS.md` | v1.5 requirements (21 total) |
+| `.planning/REQUIREMENTS.md` | v1.5 requirements (21 total, all complete) |
 | `.planning/ROADMAP.md` | Phase structure (Phase 12-17) |
+| `.planning/ISSUE-BACKLOG.md` | 24 documented issues for v1.6+ |
 | `.planning/STATE.md` | This file |
 
 ---
@@ -84,3 +91,4 @@ Phase 17 [████████░░] Ready to execute
 *Phase 14 completed: 2026-04-30*
 *Phase 15 completed: 2026-04-30*
 *Phase 16 completed: 2026-04-30*
+*Phase 17 completed: 2026-04-30*

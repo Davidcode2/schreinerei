@@ -17,7 +17,7 @@ Establish comprehensive testing strategy, document all issues in existing featur
 - [x] **Phase 14: Frontend Test Infrastructure** — Vitest setup and key component tests
 - [x] **Phase 15: ts-rs Type Generation** — Auto-generate TypeScript types from Rust DTOs
 - [x] **Phase 16: E2E Data Assertions** — Verify data persistence in E2E tests
-- [ ] **Phase 17: Feature Audit** — Audit all features and document issues
+- [x] **Phase 17: Feature Audit** — Audit all features and document issues
 
 ## Phase Details
 
@@ -105,9 +105,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 17-01-PLAN.md — Baustellen and Time Booking audit
-- [ ] 17-02-PLAN.md — Inventory audit
-- [ ] 17-03-PLAN.md — Fleet and Reservations audit + Issue Backlog consolidation
+- [x] 17-01-PLAN.md — Baustellen and Time Booking audit
+- [x] 17-02-PLAN.md — Inventory audit
+- [x] 17-03-PLAN.md — Fleet and Reservations audit + Issue Backlog consolidation
 
 ## Progress
 
@@ -118,7 +118,7 @@ Plans:
 | 14. Frontend Test Infrastructure | 2/2 | ✓ Complete | 2026-04-30 |
 | 15. ts-rs Type Generation | 1/1 | ✓ Complete | 2026-04-30 |
 | 16. E2E Data Assertions | 1/1 | ✓ Complete | 2026-04-30 |
-| 17. Feature Audit | 0/3 | Ready to execute | - |
+| 17. Feature Audit | 3/3 | ✓ Complete | 2026-04-30 |
 
 ## Coverage
 
@@ -129,9 +129,9 @@ Plans:
 | Frontend Testing | TEST-04, TEST-05, TEST-06 | Phase 14 ✓ |
 | ts-rs Type Generation | TEST-07, TEST-08, TEST-09 | Phase 15 ✓ |
 | E2E Data Assertions | TEST-10, TEST-11 | Phase 16 ✓ |
-| Feature Audit | AUDIT-01 to AUDIT-06 | Phase 17 |
+| Feature Audit | AUDIT-01 to AUDIT-06 | Phase 17 ✓ |
 
-**Total:** 15/21 requirements complete
+**Total:** 21/21 requirements complete
 
 ## Dependencies
 
@@ -160,3 +160,5 @@ Phase 13 ─┬─► Phase 14
 *Phase 14 completed: 2026-04-30*
 *Phase 15 completed: 2026-04-30*
 *Phase 16 completed: 2026-04-30*
+*Phase 17 completed: 2026-04-30*
+*All v1.5 requirements complete*
