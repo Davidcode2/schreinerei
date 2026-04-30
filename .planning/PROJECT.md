@@ -10,21 +10,20 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## Current Milestone: v1.7 Active Project (Baustelle) Context
-
-**Goal:** Enable automatic assignment of materials/tools to the currently active construction site.
-
-**Target features:**
-- Status indicator showing which Baustelle is active (persistent UI element)
-- Auto-assigned colors per Baustelle
-- Toggle to set active Baustelle (overview + dashboard views)
-- Single active Baustelle per user (user-scoped, not global)
-- Auto-assignment: material deductions and tool reservations tagged to active project
-- Opt-out dialog: unobtrusive 5-second confirmation with change/dismiss options
-
 ## Current State
 
-**v1.6 shipped on 2026-04-30.**
+**v1.7 shipped on 2026-05-01.**
+
+All v1.7 features working:
+- ✅ Active Baustelle indicator with hash-based colors
+- ✅ Toggle controls on sites overview and dashboard
+- ✅ Single active Baustelle per user (user-scoped)
+- ✅ Auto-prefill in material withdrawal, reservation, and time entry forms
+- ✅ Backend validation and auto-clear for invalid sites
+- ✅ Deduction history with linked Baustelle name
+- ✅ Full verification evidence and regression tests
+
+## Previous Milestones
 
 All core features working:
 - ✅ Material management with stock tracking and QR codes
@@ -42,6 +41,12 @@ All core features working:
 ### Validated
 
 All v1.x requirements validated:
+
+**v1.7 Active Project Context (17 requirements):**
+- ✓ PREF-01, PREF-02, PREF-03 — User preferences with validation
+- ✓ DEDU-01, DEDU-02, DEDU-03 — Material deductions linked to Baustelle
+- ✓ ACTV-01 to ACTV-07 — Active site UI with persistence
+- ✓ AUTO-01 to AUTO-04 — Auto-assignment with override
 
 **v1.6 User Experience & Missing Functionality (19 requirements):**
 - ✓ FIX-01, FIX-02 — Validation bugs fixed
@@ -87,15 +92,7 @@ All v1.x requirements validated:
 
 ### Active
 
-**v1.7 Active Project Context:**
-- [ ] Active Baustelle status indicator (persistent UI element)
-- [ ] Auto-assigned colors per Baustelle
-- [ ] Toggle to set active Baustelle on overview page
-- [ ] Toggle to set active Baustelle on dashboard
-- [ ] Single active Baustelle per user (user-scoped)
-- [ ] Auto-assignment of material deductions to active project
-- [ ] Auto-assignment of tool reservations to active project
-- [ ] Opt-out dialog with 5-second auto-confirm
+Ready for next milestone planning. See `/gsd-new-milestone` to start.
 
 ### Future (v2.0+)
 
@@ -195,6 +192,10 @@ src/
 | ts-rs v12 for type generation | Prevents frontend-backend drift | ✓ 49 DTOs exported |
 | Vitest over Jest | Native Vite integration | ✓ 28 frontend tests |
 | MSW for API mocking | Network-level mocking | ✓ No axios mocking |
+| Active Baustelle user-scoped | Per-user context, not global | ✓ v1.7 shipped |
+| Hash-based colors | Deterministic, no user decisions | ✓ v1.7 shipped |
+| JSONB preferences | Flexible schema evolution | ✓ v1.7 shipped |
+| FK-safe user mapping | Tenant-local user resolution | ✓ v1.7 shipped |
 
 ## Evolution
 
@@ -215,4 +216,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-04-30 after v1.7 milestone started*
+*Last updated: 2026-05-01 after v1.7 milestone archived*
