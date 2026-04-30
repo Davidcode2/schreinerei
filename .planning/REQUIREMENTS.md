@@ -21,20 +21,20 @@ Active Project Context — auto-assign materials, reservations, and time entries
 
 ### Frontend — Active Site UI
 
-- [ ] **ACTV-01**: User sees persistent indicator showing active Baustelle name and color
-- [ ] **ACTV-02**: User can toggle active Baustelle from overview page
-- [ ] **ACTV-03**: User can toggle active Baustelle from dashboard view
-- [ ] **ACTV-04**: Only one Baustelle can be active per user at a time
-- [ ] **ACTV-05**: Baustellen have auto-assigned colors (hash-based, no manual selection)
-- [ ] **ACTV-06**: Active state persists across page navigation and browser refresh
-- [ ] **ACTV-07**: Frontend state syncs with server preference on load and after changes
+- [x] **ACTV-01**: User sees persistent indicator showing active Baustelle name and color
+- [x] **ACTV-02**: User can toggle active Baustelle from overview page
+- [x] **ACTV-03**: User can toggle active Baustelle from dashboard view
+- [x] **ACTV-04**: Only one Baustelle can be active per user at a time
+- [x] **ACTV-05**: Baustellen have auto-assigned colors (hash-based, no manual selection)
+- [x] **ACTV-06**: Active state persists across page navigation and browser refresh
+- [x] **ACTV-07**: Frontend state syncs with server preference on load and after changes
 
 ### Auto-Assignment
 
-- [ ] **AUTO-01**: Material withdrawal form pre-fills active Baustelle
-- [ ] **AUTO-02**: Tool/vehicle reservation form pre-fills active Baustelle
-- [ ] **AUTO-03**: Time entry form pre-fills active Baustelle when work_type is 'site'
-- [ ] **AUTO-04**: User can change or remove assignment before submission
+- [x] **AUTO-01**: Material withdrawal form pre-fills active Baustelle
+- [x] **AUTO-02**: Tool/vehicle reservation form pre-fills active Baustelle
+- [x] **AUTO-03**: Time entry form pre-fills active Baustelle when work_type is 'site'
+- [x] **AUTO-04**: User can change or remove assignment before submission
 
 ### Opt-Out Dialog
 
@@ -91,17 +91,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEDU-01 | 22 | Pending |
 | DEDU-02 | 22 | Pending |
 | DEDU-03 | 22 | Pending |
-| ACTV-01 | 23 | Pending |
-| ACTV-02 | 23 | Pending |
-| ACTV-03 | 23 | Pending |
-| ACTV-04 | 23 | Pending |
-| ACTV-05 | 23 | Pending |
-| ACTV-06 | 23 | Pending |
-| ACTV-07 | 23 | Pending |
-| AUTO-01 | 23 | Pending |
-| AUTO-02 | 23 | Pending |
-| AUTO-03 | 23 | Pending |
-| AUTO-04 | 23 | Pending |
+| ACTV-01 | 23 | Complete |
+| ACTV-02 | 23 | Complete |
+| ACTV-03 | 23 | Complete |
+| ACTV-04 | 23 | Complete |
+| ACTV-05 | 23 | Complete |
+| ACTV-06 | 23 | Complete |
+| ACTV-07 | 23 | Complete |
+| AUTO-01 | 23 | Complete |
+| AUTO-02 | 23 | Complete |
+| AUTO-03 | 23 | Complete |
+| AUTO-04 | 23 | Complete |
 | DLOG-01 | 24 | Pending |
 | DLOG-02 | 24 | Pending |
 | DLOG-03 | 24 | Pending |
@@ -118,4 +118,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-30*
-*Last updated: 2026-04-30 after v1.7 requirements defined*
+*Last updated: 2026-04-30 after Phase 23 completion*

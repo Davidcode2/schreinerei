@@ -39,7 +39,7 @@
 **Milestone Goal:** Enable automatic assignment of materials/tools to the currently active construction site.
 
 - [x] **Phase 22: Backend Foundation & User Preferences** - Store and validate user's active Baustelle preference ✅
-- [ ] **Phase 23: Frontend UI & Auto-Assignment** - Persistent indicator, toggle, and form pre-fill
+- [x] **Phase 23: Frontend UI & Auto-Assignment** - Persistent indicator, toggle, and form pre-fill ✅
 - [ ] **Phase 24: Opt-Out Dialog & E2E Tests** - Confirmation dialog with auto-confirm and test coverage
 
 ## Phase Details
@@ -75,10 +75,10 @@
   5. Material, reservation, and time entry forms pre-fill active Baustelle (changeable)
 **Plans**: 4 plans
 Plans:
-- [ ] 23-01-PLAN.md — Preferences hooks, deterministic color utility, and persistent active-site indicator in app layout
-- [ ] 23-02-PLAN.md — Active-site toggle controls on sites overview and dashboard cards
-- [ ] 23-03-PLAN.md — Auto-prefill active site in withdrawal/reservation/time-entry forms with user override
-- [ ] 23-04-PLAN.md — Fix preferences FK-safe local-user mapping for active-site toggle (UAT gap closure)
+- [x] 23-01-PLAN.md — Preferences hooks, deterministic color utility, and persistent active-site indicator in app layout
+- [x] 23-02-PLAN.md — Active-site toggle controls on sites overview and dashboard cards
+- [x] 23-03-PLAN.md — Auto-prefill active site in withdrawal/reservation/time-entry forms with user override
+- [x] 23-04-PLAN.md — Fix preferences FK-safe local-user mapping for active-site toggle (UAT gap closure)
 **UI hint**: yes
 
 ### Phase 24: Opt-Out Dialog & E2E Tests
@@ -104,9 +104,9 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 22. Backend Foundation | v1.7 | 4/4 | ✅ Complete | 2026-04-30 |
-| 23. Frontend UI & Auto-Assignment | v1.7 | 3/4 | In Progress | - |
+| 23. Frontend UI & Auto-Assignment | v1.7 | 4/4 | ✅ Complete | 2026-04-30 |
 | 24. Opt-Out Dialog & E2E Tests | v1.7 | 0/3 | Planned | - |
 
 ---
 
-*Roadmap updated: 2026-04-30 — Phase 23 execution in progress; added 23-04 UAT gap closure plan*
+*Roadmap updated: 2026-04-30 — Phase 23 completed including 23-04 FK mapping gap closure*
