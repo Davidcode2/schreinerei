@@ -27,6 +27,7 @@ Active Project Context — auto-assign materials, reservations, and time entries
 - [ ] **ACTV-04**: Only one Baustelle can be active per user at a time
 - [ ] **ACTV-05**: Baustellen have auto-assigned colors (hash-based, no manual selection)
 - [ ] **ACTV-06**: Active state persists across page navigation and browser refresh
+- [ ] **ACTV-07**: Frontend state syncs with server preference on load and after changes
 
 ### Auto-Assignment
 
@@ -96,6 +97,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ACTV-04 | — | Pending |
 | ACTV-05 | — | Pending |
 | ACTV-06 | — | Pending |
+| ACTV-07 | — | Pending |
 | AUTO-01 | — | Pending |
 | AUTO-02 | — | Pending |
 | AUTO-03 | — | Pending |
@@ -110,9 +112,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-18 | — | Pending |
 
 **Coverage:**
-- v1.7 requirements: 24 total
+- v1.7 requirements: 25 total
 - Mapped to phases: 0
-- Unmapped: 24 ⚠️
+- Unmapped: 25 ⚠️
 
 ---
 *Requirements defined: 2026-04-30*
