@@ -45,7 +45,10 @@ Plans:
   2. QA Playbook created in `.planning/QA-PLAYBOOK.md` (run tests, check logs, validate features)
   3. Parameter mismatch prevention strategy documented (ts-rs + type guards)
   4. ts-rs usage documented in AGENTS.md for future DTO additions
-**Plans:** TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 13-01-PLAN.md — Create QA Playbook, E2E patterns, and ts-rs documentation
 
 ### Phase 14: Frontend Test Infrastructure
 **Goal:** Frontend has test infrastructure and key component tests for regression prevention
@@ -97,7 +100,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 12. Backend Domain Tests | 2/2 | ✓ Complete | 2026-04-30 |
-| 13. Agent QA Playbook | 0/1 | Not started | - |
+| 13. Agent QA Playbook | 0/1 | ◆ Ready | - |
 | 14. Frontend Test Infrastructure | 0/1 | Not started | - |
 | 15. ts-rs Type Generation | 0/1 | Not started | - |
 | 16. E2E Data Assertions | 0/1 | Not started | - |
