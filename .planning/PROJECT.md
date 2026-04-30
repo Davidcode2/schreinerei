@@ -10,9 +10,21 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
+## Current Milestone: v1.7 Active Project (Baustelle) Context
+
+**Goal:** Enable automatic assignment of materials/tools to the currently active construction site.
+
+**Target features:**
+- Status indicator showing which Baustelle is active (persistent UI element)
+- Auto-assigned colors per Baustelle
+- Toggle to set active Baustelle (overview + dashboard views)
+- Single active Baustelle per user (user-scoped, not global)
+- Auto-assignment: material deductions and tool reservations tagged to active project
+- Opt-out dialog: unobtrusive 5-second confirmation with change/dismiss options
+
 ## Current State
 
-**v1.6 shipped on 2026-04-30.** All milestones complete.
+**v1.6 shipped on 2026-04-30.**
 
 All core features working:
 - ✅ Material management with stock tracking and QR codes
@@ -75,9 +87,17 @@ All v1.x requirements validated:
 
 ### Active
 
-None. All v1.x milestones complete.
+**v1.7 Active Project Context:**
+- [ ] Active Baustelle status indicator (persistent UI element)
+- [ ] Auto-assigned colors per Baustelle
+- [ ] Toggle to set active Baustelle on overview page
+- [ ] Toggle to set active Baustelle on dashboard
+- [ ] Single active Baustelle per user (user-scoped)
+- [ ] Auto-assignment of material deductions to active project
+- [ ] Auto-assignment of tool reservations to active project
+- [ ] Opt-out dialog with 5-second auto-confirm
 
-### Future (v1.7+)
+### Future (v2.0+)
 
 **Integration Tests:**
 - INT-01: Integration tests with real PostgreSQL for inventory module
@@ -195,4 +215,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-04-30 after v1.6 milestone shipped*
+*Last updated: 2026-04-30 after v1.7 milestone started*

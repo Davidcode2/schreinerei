@@ -5,16 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-04-30)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
-**Current focus:** v1.6 Complete — Ready for v1.7 planning
+**Current focus:** v1.7 Active Project Context
 
 ## Current Position
 
-Milestone: v1.6 Complete
-Phase: 21 of 21 (All phases complete)
-Status: Milestone Shipped
-Last activity: 2026-04-30 — v1.6 shipped with all E2E tests
+Milestone: v1.7 Active Project Context
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-30 — Milestone v1.7 started
 
-Progress: [████████████████████] 100% (21/21 phases, v1.6 complete)
+Progress: [░░░░░░░░░░░░░░░░░░░░] 0% (0 phases, v1.7 started)
 
 ## Performance Metrics
 
@@ -33,10 +34,7 @@ Progress: [████████████████████] 100% (2
 | v1.3 (8-10) | 9 | ~4.5h | ~30min |
 | v1.4 (11-13) | 6 | ~3h | ~30min |
 | v1.5 (14-17) | 8 | ~4h | ~30min |
-| v1.6 (18) | 2 | ~2min | ~1min |
-| v1.6 (19) | 3 | ~30min | ~10min |
-| v1.6 (20) | 4 | ~52min | ~13min |
-| v1.6 (21) | 4 | ~20min | ~5min |
+| v1.6 (18-21) | 13 | ~1.7h | ~8min |
 
 **Recent Trend:**
 - Last 5 phases: faster execution (experience + good planning)
@@ -78,7 +76,7 @@ Items acknowledged and carried forward from v1.5 milestone close:
 ## Session Continuity
 
 Last session: 2026-04-30
-Stopped at: v1.6 shipped, ready for v1.7 planning
+Stopped at: v1.7 milestone started, defining requirements
 Resume file: None
 
 ---
