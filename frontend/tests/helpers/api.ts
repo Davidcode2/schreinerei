@@ -191,3 +191,21 @@ export async function listCategories(page: Page): Promise<CategoryResponse[]> {
   const response = await page.request.get('/api/v1/inventory/categories');
   return response.json();
 }
+
+interface CategoryData {
+  name: string;
+  description?: string;
+}
+
+export async function createCategory(
+  page: Page,
+  data: CategoryData
+): Promise<CategoryResponse> {
+  const response = await page.request.post('/api/v1/inventory/categories', {
+    data,
+  });
+  if (!response.ok()) {
+    throw new Error(`Failed to create category: ${response.status()}`);
+  }
+  return response.json();
+}
