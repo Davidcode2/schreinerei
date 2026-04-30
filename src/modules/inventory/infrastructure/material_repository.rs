@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::common::error::AppError;
 use crate::common::events::{EventBus, DomainEvent};
-use crate::common::types::{TenantId, MaterialId, CategoryId, UserId, Unit, OrderRequestId};
+use crate::common::types::{TenantId, MaterialId, CategoryId, UserId, Unit, OrderRequestId, SiteId};
 use crate::modules::inventory::domain::{
     Category, Material, CreateCategory, CreateMaterial,
     OrderRequest, OrderStatus, CreateOrderRequest,
@@ -239,6 +239,7 @@ impl MaterialRepository {
         quantity: i32,
         user_id: UserId,
         notes: Option<String>,
+        site_id: Option<SiteId>,  // Optional link to Baustelle
         tenant_id: TenantId,
     ) -> Result<Material, AppError> {
         // Use transaction for atomic update + audit log
@@ -290,8 +291,8 @@ impl MaterialRepository {
         // Create audit entry
         sqlx::query(
             r#"
-            INSERT INTO stock_entries (id, tenant_id, material_id, user_id, quantity_change, quantity_after, notes, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO stock_entries (id, tenant_id, material_id, user_id, quantity_change, quantity_after, notes, site_id, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             "#
         )
         .bind(Uuid::new_v4())
@@ -301,6 +302,7 @@ impl MaterialRepository {
         .bind(-quantity)
         .bind(new_quantity)
         .bind(&notes)
+        .bind(site_id.map(|s| s.0))  // Optional site_id
         .bind(Utc::now())
         .execute(&mut *tx)
         .await
