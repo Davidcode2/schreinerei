@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 use crate::auth::extractor::AuthenticatedUser;
 use crate::common::error::AppError;
-use crate::common::types::{MaterialId, CategoryId, OrderRequestId};
+use crate::common::types::{MaterialId, CategoryId, OrderRequestId, SiteId};
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::inventory::application::InventoryService;
 use crate::modules::inventory::domain::{
@@ -128,6 +128,7 @@ pub struct CreateMaterialRequest {
 pub struct WithdrawRequest {
     pub quantity: i32,
     pub notes: Option<String>,
+    pub site_id: Option<String>,  // Optional Baustelle ID
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -383,11 +384,17 @@ pub async fn withdraw_material(
         .map(MaterialId)
         .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
     
+    // Parse site_id if provided
+    let site_id = request.site_id
+        .map(|s| Uuid::parse_str(&s).map(SiteId))
+        .transpose()
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+    
     let withdraw = WithdrawMaterial {
         material_id,
         quantity: request.quantity,
         notes: request.notes,
-        site_id: None,  // Will be populated in Task 4
+        site_id,  // Pass parsed site_id
     };
     
     let material = service.withdraw_material(withdraw, &ctx).await?;
