@@ -2,6 +2,7 @@
 created: 2026-04-29T00:00:00Z
 title: Fix baustelle time booking 400 error
 area: api
+resolves_phase: 17
 files:
   - src/components/sites/TimeBookingDialog.tsx
   - src/api/time_bookings.rs
