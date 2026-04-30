@@ -17,6 +17,7 @@ use crate::modules::iam::application::user_preferences_service::UserPreferencesS
 use crate::modules::iam::application::user_service::{TenantContext, UserService};
 use crate::modules::iam::domain::user::{InviteUser, UpdateProfile};
 use crate::modules::iam::domain::user_preferences::UserPreferenceRecord;
+use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::AppState;
 
 /// Create the IAM API router
@@ -217,10 +218,14 @@ pub async fn get_preferences(
     State(state): State<AppState>,
     auth: AuthenticatedUser,
 ) -> Result<impl IntoResponse, AppError> {
-    let service = UserPreferencesService::new(state.pool);
+    let service = UserPreferencesService::new(state.pool.clone());
+    let user_service = UserService::new(UserRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
-    let preferences = service.get_validated_preferences(ctx.user_id, ctx.tenant_id).await?;
+
+    let user = user_service.get_or_create_from_auth(&auth).await?;
+    let preferences = service
+        .get_validated_preferences(user.id, ctx.tenant_id)
+        .await?;
     
     Ok(Json(PreferencesResponse::from(preferences)))
 }
@@ -231,20 +236,23 @@ pub async fn update_preferences(
     auth: AuthenticatedUser,
     Json(request): Json<UpdatePreferencesRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    let service = UserPreferencesService::new(state.pool);
+    let service = UserPreferencesService::new(state.pool.clone());
+    let user_service = UserService::new(UserRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
+
+    let user = user_service.get_or_create_from_auth(&auth).await?;
+
     let preferences = match request.active_site_id {
         Some(site_id_str) => {
             // Parse and validate site_id
             let site_id = SiteId::parse(&site_id_str)
                 .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
-            
-            service.set_active_site(ctx.user_id, ctx.tenant_id, site_id).await?
+
+            service.set_active_site(user.id, ctx.tenant_id, site_id).await?
         }
         None => {
             // Clear active site
-            service.clear_active_site(ctx.user_id, ctx.tenant_id).await?
+            service.clear_active_site(user.id, ctx.tenant_id).await?
         }
     };
     
