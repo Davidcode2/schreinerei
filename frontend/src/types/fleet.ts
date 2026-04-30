@@ -7,7 +7,7 @@
 export type VehicleType = 'car' | 'van' | 'truck' | 'trailer' | 'other'
 export type ResourceStatus = 'available' | 'in_use' | 'maintenance' | 'reserved'
 export type ResourceType = 'vehicle' | 'tool'
-export type ReservationStatus = 'confirmed' | 'active' | 'completed' | 'cancelled'
+export type ReservationStatus = 'pending' | 'confirmed' | 'in_use' | 'completed' | 'cancelled'
 
 // === Vehicle ===
 
@@ -155,8 +155,17 @@ export interface CalendarQuery {
 
 // === Availability ===
 
+export interface ConflictDetail {
+  id: string
+  user_name: string | null
+  start_time: string
+  end_time: string
+  status: string
+}
+
 export interface AvailabilityResponse {
   available: boolean
+  conflicts?: ConflictDetail[]
 }
 
 export interface AvailabilityQuery {

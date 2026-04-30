@@ -5,7 +5,8 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { LoadingSpinner, EmptyState } from "@/components/shared"
 import { useCalendar } from "@/lib/api/hooks"
-import type { CalendarEntry, ReservationSummary } from "@/types/fleet"
+import { ReservationDialog } from "./ReservationDialog"
+import type { CalendarEntry, ReservationSummary, ResourceType } from "@/types/fleet"
 
 function getWeekDates(date: Date): { start: string; end: string } {
   const start = new Date(date)
@@ -42,6 +43,14 @@ export default function CalendarView() {
     return now
   })
 
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [selectedSlot, setSelectedSlot] = useState<{
+    resourceId: string
+    resourceType: ResourceType
+    startTime: string
+    endTime: string
+  } | null>(null)
+
   const { start, end } = getWeekDates(currentWeek)
   const { data: calendarData, isLoading, error } = useCalendar({ start_date: start, end_date: end })
 
@@ -61,6 +70,23 @@ export default function CalendarView() {
   }
 
   const today = new Date().toISOString().split("T")[0] ?? ""
+
+  const handleSlotClick = (
+    entry: CalendarEntry,
+    dateStr: string
+  ) => {
+    // Create datetime-local values for the clicked day
+    const startTime = `${dateStr}T08:00`  // Default 8am start
+    const endTime = `${dateStr}T17:00`    // Default 5pm end
+
+    setSelectedSlot({
+      resourceId: entry.resource_id,
+      resourceType: entry.resource_type as ResourceType,
+      startTime,
+      endTime,
+    })
+    setDialogOpen(true)
+  }
 
   return (
     <div className="space-y-6">
@@ -149,10 +175,19 @@ export default function CalendarView() {
                       }
                     )
 
+                    const isEmpty = dayReservations.length === 0
+
                     return (
                       <div
                         key={i}
-                        className="p-2 min-h-[60px] border-l last:border-r"
+                        className={`p-2 min-h-[60px] border-l last:border-r ${
+                          isEmpty ? "cursor-pointer hover:bg-muted/50" : ""
+                        }`}
+                        onClick={() => {
+                          if (isEmpty) {
+                            handleSlotClick(entry, dateStr)
+                          }
+                        }}
                       >
                         {dayReservations.map((r: ReservationSummary) => (
                           <div
@@ -160,8 +195,10 @@ export default function CalendarView() {
                             className={`text-xs p-1 rounded mb-1 ${
                               r.status === "confirmed"
                                 ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                                : r.status === "active"
+                                : r.status === "in_use"
                                 ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                : r.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
                                 : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
                             }`}
                           >
@@ -183,6 +220,21 @@ export default function CalendarView() {
           <Button variant="outline">Zurück zum Fuhrpark</Button>
         </Link>
       </div>
+
+      {/* Reservation Dialog for click-to-create */}
+      {selectedSlot && (
+        <ReservationDialog
+          open={dialogOpen}
+          onOpenChange={(open) => {
+            setDialogOpen(open)
+            if (!open) setSelectedSlot(null)
+          }}
+          resourceId={selectedSlot.resourceId}
+          resourceType={selectedSlot.resourceType}
+          initialStartTime={selectedSlot.startTime}
+          initialEndTime={selectedSlot.endTime}
+        />
+      )}
     </div>
   )
 }

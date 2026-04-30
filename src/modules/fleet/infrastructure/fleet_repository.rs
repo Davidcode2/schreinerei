@@ -781,6 +781,48 @@ impl FleetRepository {
         Ok(count == 0)
     }
 
+    /// Find all reservations that conflict with the given time range
+    /// Returns detailed information about conflicting reservations
+    pub async fn find_conflicts(
+        &self,
+        tenant_id: TenantId,
+        resource_type: ResourceType,
+        resource_id: Uuid,
+        start_time: DateTime<Utc>,
+        end_time: DateTime<Utc>,
+    ) -> Result<Vec<ReservationSummary>, AppError> {
+        let conflicts = sqlx::query_as::<_, ReservationSummaryRow>(
+            r#"
+            SELECT 
+                r.id, 
+                r.start_time, 
+                r.end_time, 
+                u.name as user_name,
+                s.name as site_name,
+                r.status
+            FROM reservations r
+            LEFT JOIN users u ON r.user_id = u.id AND r.tenant_id = u.tenant_id
+            LEFT JOIN sites s ON r.site_id = s.id AND r.tenant_id = s.tenant_id
+            WHERE r.tenant_id = $1 
+              AND r.resource_type = $2 
+              AND r.resource_id = $3 
+              AND r.status != 'cancelled'
+              AND (r.start_time, r.end_time) OVERLAPS ($4, $5)
+            ORDER BY r.start_time
+            "#
+        )
+        .bind(tenant_id.0)
+        .bind(resource_type.as_str())
+        .bind(resource_id)
+        .bind(start_time)
+        .bind(end_time)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(conflicts.into_iter().map(|r| r.into_summary()).collect())
+    }
+
     /// Get calendar data for a date range
     pub async fn get_calendar_data(
         &self,
@@ -1088,6 +1130,13 @@ pub struct ReservationSummary {
     pub user_name: Option<String>,
     pub site_name: Option<String>,
     pub status: ReservationStatus,
+}
+
+/// Availability information with conflict details
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AvailabilityInfo {
+    pub available: bool,
+    pub conflicts: Vec<ReservationSummary>,
 }
 
 #[derive(Debug, FromRow)]

@@ -14,7 +14,7 @@ export type AssignmentResponse = { id: string, site_id: string, user_id: string,
 
 export type AvailabilityQuery = { resource_type: string, resource_id: string, start_time: string, end_time: string, };
 
-export type AvailabilityResponse = { available: boolean, };
+export type AvailabilityResponse = { available: boolean, conflicts: Array<ConflictDetail> | null, };
 
 export type CalendarEntryResponse = { resource_type: string, resource_id: string, resource_name: string, reservations: Array<ReservationSummaryResponse>, };
 
@@ -23,6 +23,8 @@ export type CalendarQuery = { start_date: string, end_date: string, resource_typ
 export type CalendarResponse = { resources: Array<CalendarEntryResponse>, };
 
 export type CategoryResponse = { id: string, name: string, description: string | null, created_at: string, };
+
+export type ConflictDetail = { id: string, user_name: string | null, start_time: string, end_time: string, status: string, };
 
 export type CreateActivityRequest = { activity_type: string, content: string | null, photo_url: string | null, };
 

@@ -300,6 +300,18 @@ pub struct CalendarQuery {
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct AvailabilityResponse {
     pub available: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub conflicts: Option<Vec<ConflictDetail>>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct ConflictDetail {
+    pub id: String,
+    pub user_name: Option<String>,
+    pub start_time: String,
+    pub end_time: String,
+    pub status: String,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -790,9 +802,29 @@ pub async fn check_availability(
         .map_err(|_| AppError::Validation("Invalid end_time format".to_string()))?
         .with_timezone(&Utc);
     
-    let available = service.check_availability(resource_type, resource_id, start_time, end_time, &ctx).await?;
+    let info = service.check_availability_with_conflicts(resource_type, resource_id, start_time, end_time, &ctx).await?;
     
-    Ok(Json(AvailabilityResponse { available }))
+    let conflicts = if info.conflicts.is_empty() {
+        None
+    } else {
+        Some(
+            info.conflicts
+                .into_iter()
+                .map(|c| ConflictDetail {
+                    id: c.id.to_string(),
+                    user_name: c.user_name,
+                    start_time: c.start_time.to_rfc3339(),
+                    end_time: c.end_time.to_rfc3339(),
+                    status: c.status.to_string(),
+                })
+                .collect()
+        )
+    };
+    
+    Ok(Json(AvailabilityResponse {
+        available: info.available,
+        conflicts,
+    }))
 }
 
 // === QR Code Handler ===

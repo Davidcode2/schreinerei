@@ -519,6 +519,34 @@ impl FleetService {
         ).await
     }
 
+    /// Check resource availability with conflict details
+    pub async fn check_availability_with_conflicts(
+        &self,
+        resource_type: ResourceType,
+        resource_id: uuid::Uuid,
+        start_time: chrono::DateTime<chrono::Utc>,
+        end_time: chrono::DateTime<chrono::Utc>,
+        ctx: &TenantContext,
+    ) -> Result<crate::modules::fleet::infrastructure::fleet_repository::AvailabilityInfo, AppError> {
+        // Validate time range
+        if end_time <= start_time {
+            return Err(AppError::Validation("End time must be after start time".to_string()));
+        }
+
+        let conflicts = self.fleet_repo.find_conflicts(
+            ctx.tenant_id,
+            resource_type,
+            resource_id,
+            start_time,
+            end_time,
+        ).await?;
+
+        Ok(crate::modules::fleet::infrastructure::fleet_repository::AvailabilityInfo {
+            available: conflicts.is_empty(),
+            conflicts,
+        })
+    }
+
     /// Get resource status by QR code
     pub async fn get_status_by_qr(
         &self,

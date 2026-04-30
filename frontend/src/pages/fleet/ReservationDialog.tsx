@@ -15,7 +15,7 @@ import { Calendar, AlertCircle } from "lucide-react"
 import { useCreateReservation, useUpdateReservation, useAvailability, useVehicles, useTools } from "@/lib/api/hooks"
 import { StatusTransitionButtons, statusLabels } from "@/components/fleet/StatusTransitionButtons"
 import { toast } from "sonner"
-import type { ResourceType, Vehicle, Tool, Reservation, ReservationStatus } from "@/types/fleet"
+import type { ResourceType, Vehicle, Tool, Reservation, ReservationStatus, ConflictDetail } from "@/types/fleet"
 
 const formatDateToRfc3339 = (datetimeLocal: string): string => {
   const date = new Date(datetimeLocal)
@@ -26,6 +26,12 @@ const formatDateTimeLocal = (rfc3339?: string): string => {
   if (!rfc3339) return ""
   const date = new Date(rfc3339)
   return date.toISOString().slice(0, 16)
+}
+
+const formatTimeRange = (start: string, end: string): string => {
+  const startDate = new Date(start)
+  const endDate = new Date(end)
+  return `${startDate.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })} ${startDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} - ${endDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`
 }
 
 const getStatusVariant = (status: ReservationStatus): "default" | "secondary" | "destructive" | "outline" => {
@@ -284,11 +290,29 @@ export function ReservationDialog({
 
           {/* Availability Warning (create mode only) */}
           {mode === "create" && startTime && endTime && !isAvailable && (
-            <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg text-sm">
-              <AlertCircle className="h-4 w-4 text-yellow-600" />
-              <span className="text-yellow-800 dark:text-yellow-200">
-                Nicht verfügbar zu diesem Zeitpunkt
-              </span>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg text-sm">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <span className="text-yellow-800 dark:text-yellow-200">
+                  Nicht verfügbar zu diesem Zeitpunkt
+                </span>
+              </div>
+              {availability?.conflicts && availability.conflicts.length > 0 && (
+                <div className="space-y-1 text-sm">
+                  <p className="font-medium text-muted-foreground">Bestehende Reservierungen:</p>
+                  {availability.conflicts.map((conflict: ConflictDetail) => (
+                    <div key={conflict.id} className="flex items-center gap-2 p-2 bg-muted rounded">
+                      <span className="font-medium">{conflict.user_name || "Unbekannt"}</span>
+                      <span className="text-muted-foreground">
+                        {formatTimeRange(conflict.start_time, conflict.end_time)}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {statusLabels[conflict.status as ReservationStatus] || conflict.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
