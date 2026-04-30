@@ -7,6 +7,7 @@ use axum::{
     routing::{get, patch, post},
 };
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 use uuid::Uuid;
 
 use crate::auth::extractor::AuthenticatedUser;
@@ -31,7 +32,8 @@ pub fn create_router() -> Router<AppState> {
 }
 
 /// Response DTO for user data
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct UserResponse {
     pub id: String,
     pub email: String,
@@ -53,7 +55,8 @@ impl From<crate::modules::iam::domain::user::User> for UserResponse {
 }
 
 /// Request DTO for inviting a user
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct InviteUserRequest {
     pub email: String,
     pub name: Option<String>,
@@ -61,13 +64,15 @@ pub struct InviteUserRequest {
 }
 
 /// Request DTO for updating role
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct UpdateRoleRequest {
     pub role: String,
 }
 
 /// Request DTO for updating profile
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct UpdateProfileRequest {
     pub name: Option<String>,
 }
