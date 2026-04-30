@@ -8,6 +8,7 @@ use axum::{
 };
 use chrono::{DateTime, Utc, NaiveDate};
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 use uuid::Uuid;
 
 use crate::auth::extractor::AuthenticatedUser;
@@ -47,7 +48,8 @@ pub fn create_router() -> Router<AppState> {
 
 // === DTOs ===
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct VehicleResponse {
     pub id: String,
     pub name: String,
@@ -78,7 +80,8 @@ impl From<crate::modules::fleet::domain::Vehicle> for VehicleResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CreateVehicleRequest {
     pub name: String,
     pub license_plate: Option<String>,
@@ -88,7 +91,8 @@ pub struct CreateVehicleRequest {
     pub qr_code: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct UpdateVehicleRequest {
     pub name: Option<String>,
     pub license_plate: Option<String>,
@@ -99,12 +103,14 @@ pub struct UpdateVehicleRequest {
     pub qr_code: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ListVehiclesQuery {
     pub status: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ToolResponse {
     pub id: String,
     pub name: String,
@@ -133,7 +139,8 @@ impl From<crate::modules::fleet::domain::Tool> for ToolResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CreateToolRequest {
     pub name: String,
     pub category: Option<String>,
@@ -142,7 +149,8 @@ pub struct CreateToolRequest {
     pub qr_code: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct UpdateToolRequest {
     pub name: Option<String>,
     pub category: Option<String>,
@@ -152,7 +160,8 @@ pub struct UpdateToolRequest {
     pub qr_code: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ListToolsQuery {
     pub status: Option<String>,
     pub category: Option<String>,
@@ -160,7 +169,8 @@ pub struct ListToolsQuery {
 
 // === Reservation DTOs ===
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ReservationResponse {
     pub id: String,
     pub resource_type: String,
@@ -199,7 +209,8 @@ impl From<crate::modules::fleet::domain::ReservationWithDetails> for Reservation
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CreateReservationRequest {
     pub resource_type: String,
     pub resource_id: String,
@@ -209,7 +220,8 @@ pub struct CreateReservationRequest {
     pub notes: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct UpdateReservationRequest {
     pub start_time: Option<String>,
     pub end_time: Option<String>,
@@ -218,19 +230,22 @@ pub struct UpdateReservationRequest {
     pub status: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ListReservationsQuery {
     pub user_id: Option<String>,
     pub resource_type: Option<String>,
     pub resource_id: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CalendarResponse {
     pub resources: Vec<CalendarEntryResponse>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CalendarEntryResponse {
     pub resource_type: String,
     pub resource_id: String,
@@ -249,7 +264,8 @@ impl From<crate::modules::fleet::infrastructure::fleet_repository::CalendarEntry
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ReservationSummaryResponse {
     pub id: String,
     pub start_time: String,
@@ -272,19 +288,22 @@ impl From<ReservationSummary> for ReservationSummaryResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CalendarQuery {
     pub start_date: String,
     pub end_date: String,
     pub resource_type: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct AvailabilityResponse {
     pub available: bool,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct AvailabilityQuery {
     pub resource_type: String,
     pub resource_id: String,
@@ -292,7 +311,8 @@ pub struct AvailabilityQuery {
     pub end_time: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct QrStatusResponse {
     pub resource_type: String,
     pub resource_id: String,
