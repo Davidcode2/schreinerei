@@ -189,7 +189,7 @@ Plans:
 
 **Milestone Goal:** Make the app user-friendly and complete missing core functionalities.
 
-#### Phase 18: Bug Fixes & UX Improvements
+#### ✅ Phase 18: Bug Fixes & UX Improvements (Complete)
 **Goal**: Fix validation bugs and wire existing UX features
 **Depends on**: Phase 17
 **Requirements**: FIX-01, FIX-02, UX-02
@@ -203,8 +203,8 @@ Plans:
 > **Note:** UX-01 (low stock badge) is already implemented in MaterialCard.tsx - shows AlertTriangle icon and StatusBadge when `is_low_stock` is true.
 
 Plans:
-- [ ] 18-01: TimeEntryDialog validation improvements (FIX-01, FIX-02)
-- [ ] 18-02: QR button wiring (UX-02)
+- [x] 18-01: TimeEntryDialog validation improvements (FIX-01, FIX-02)
+- [x] 18-02: QR button wiring (UX-02)
 
 #### Phase 19: Delete Operations
 **Goal**: Users can safely delete entities with confirmation and clear error feedback
@@ -286,7 +286,7 @@ Phases execute in numeric order: 1 → 2 → ... → 17 → 18 → 19 → 20 →
 | 15. ts-rs Types | v1.5 | 2/2 | Complete | 2026-04-30 |
 | 16. Frontend Tests | v1.5 | 2/2 | Complete | 2026-04-30 |
 | 17. E2E Data | v1.5 | 2/2 | Complete | 2026-04-30 |
-| 18. Bug Fixes & UX | v1.6 | 0/4 | Not started | - |
+| 18. Bug Fixes & UX | v1.6 | 2/2 | Complete | 2026-04-30 |
 | 19. Delete Ops | v1.6 | 0/3 | Not started | - |
 | 20. Edit & Resv | v1.6 | 0/5 | Not started | - |
 | 21. E2E Tests | v1.6 | 0/4 | Not started | - |
