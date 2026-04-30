@@ -5,6 +5,7 @@ import type {
   Material,
   CreateMaterialRequest,
   WithdrawRequest,
+  MaterialStockHistoryEntry,
   OrderRequest,
   CreateOrderRequestDto,
   OrderStatusQuery,
@@ -49,6 +50,18 @@ export function useMaterial(id: string) {
   return useQuery({
     queryKey: ["material", id],
     queryFn: () => apiClient.get<Material>(`/api/v1/inventory/materials/${id}`),
+    enabled: !!id,
+    staleTime: 30000,
+  })
+}
+
+export function useMaterialHistory(id: string) {
+  return useQuery({
+    queryKey: ["material-history", id],
+    queryFn: () =>
+      apiClient.get<MaterialStockHistoryEntry[]>(
+        `/api/v1/inventory/materials/${id}/history`
+      ),
     enabled: !!id,
     staleTime: 30000,
   })

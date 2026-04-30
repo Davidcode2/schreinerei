@@ -32,6 +32,16 @@ export interface Material {
   created_at: string
 }
 
+export interface MaterialStockHistoryEntry {
+  id: string
+  quantity_change: number
+  quantity_after: number
+  notes: string | null
+  site_id: string | null
+  site_name: string | null
+  created_at: string
+}
+
 export interface CreateMaterialRequest {
   category_id: string
   name: string
