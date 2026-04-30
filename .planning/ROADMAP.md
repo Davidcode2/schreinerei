@@ -74,7 +74,10 @@ Plans:
   2. TypeScript types generated to `frontend/src/types/generated.ts`
   3. CI pipeline fails if generated types differ from committed version
   4. Frontend imports types from generated file instead of manual definitions
-**Plans:** TBD
+**Plans:** 1 plan
+
+Plans:
+- [ ] 15-01-PLAN.md — Add ts-rs dependency, derive macros, generate types, CI check
 
 ### Phase 16: E2E Data Assertions
 **Goal:** E2E tests verify data persistence through API calls, not just UI presence
@@ -105,7 +108,7 @@ Plans:
 | 12. Backend Domain Tests | 2/2 | ✓ Complete | 2026-04-30 |
 | 13. Agent QA Playbook | 1/1 | ✓ Complete | 2026-04-30 |
 | 14. Frontend Test Infrastructure | 2/2 | ✓ Complete | 2026-04-30 |
-| 15. ts-rs Type Generation | 0/1 | ◆ Ready | - |
+| 15. ts-rs Type Generation | 0/1 | ◆ Planning | - |
 | 16. E2E Data Assertions | 0/1 | Not started | - |
 | 17. Feature Audit | 0/1 | Not started | - |
 
