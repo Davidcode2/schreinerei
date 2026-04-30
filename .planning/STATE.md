@@ -4,16 +4,16 @@
 
 **Core Value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
 
-**Current Focus:** v1.5 Testing & Quality Foundation — Establishing test infrastructure and documenting issues
+**Current Focus:** v1.5 Testing & Quality Foundation — Backend domain tests complete
 
 ## Current Position
 
 **Phase:** 12 — Backend Domain Tests
-**Status:** Ready to Plan
-**Progress:** ░░░░░░░░░░ 0%
+**Status:** Complete
+**Progress:** ██████████ 100%
 
 ```
-Phase 12 [░░░░░░░░░░] Not started
+Phase 12 [██████████] Complete ✓
 Phase 13 [░░░░░░░░░░] Not started
 Phase 14 [░░░░░░░░░░] Not started
 Phase 15 [░░░░░░░░░░] Not started
@@ -26,9 +26,10 @@ Phase 17 [░░░░░░░░░░] Not started
 | Metric | Value |
 |--------|-------|
 | Milestone | v1.5 |
-| Phases Complete | 0/6 |
-| Requirements Complete | 0/21 |
+| Phases Complete | 1/6 |
+| Requirements Complete | 3/21 |
 | Days in Milestone | 0 |
+| Tests Added | 116 |
 
 ## Accumulated Context
 
@@ -37,6 +38,8 @@ Phase 17 [░░░░░░░░░░] Not started
 - ts-rs chosen for type generation (prevents frontend-backend drift)
 - Domain tests inline in domain files (zero mocking, fast feedback)
 - E2E tests verify data persistence, not just UI presence
+- Tests use helper functions for test fixtures to reduce boilerplate
+- State machines tested with exhaustive transition tables
 
 ### Active Patterns
 - Backend: Hexagonal architecture (domain → application → infrastructure)
@@ -49,8 +52,8 @@ Phase 17 [░░░░░░░░░░] Not started
 
 ## Session Continuity
 
-**Last Session:** 2026-04-30 — v1.5 milestone initialized
-**Next Action:** `/gsd-plan-phase 12`
+**Last Session:** 2026-04-30 — Phase 12 complete
+**Next Action:** `/gsd-plan-phase 13`
 
 ### Quick Context
 - Project: Schreinerei SaaS (multi-tenant construction site management)
@@ -69,3 +72,4 @@ Phase 17 [░░░░░░░░░░] Not started
 ---
 
 *State initialized: 2026-04-30*
+*Phase 12 completed: 2026-04-30*

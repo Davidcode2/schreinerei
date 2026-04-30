@@ -9,9 +9,9 @@ Testing & Quality Foundation — comprehensive testing strategy and issue docume
 
 ### Backend Unit Tests
 
-- [ ] **TEST-01**: Domain layer unit tests exist for all modules (iam, inventory, sites, fleet)
-- [ ] **TEST-02**: Domain tests are inline in domain files with `#[cfg(test)]`
-- [ ] **TEST-03**: Domain tests cover business rules and validation logic
+- [x] **TEST-01**: Domain layer unit tests exist for all modules (iam, inventory, sites, fleet)
+- [x] **TEST-02**: Domain tests are inline in domain files with `#[cfg(test)]`
+- [x] **TEST-03**: Domain tests cover business rules and validation logic
 
 ### Frontend Testing
 
@@ -86,9 +86,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TEST-01 | Phase 12 | Pending |
-| TEST-02 | Phase 12 | Pending |
-| TEST-03 | Phase 12 | Pending |
+| TEST-01 | Phase 12 | ✓ Complete |
+| TEST-02 | Phase 12 | ✓ Complete |
+| TEST-03 | Phase 12 | ✓ Complete |
 | QA-01 | Phase 13 | Pending |
 | QA-02 | Phase 13 | Pending |
 | QA-03 | Phase 13 | Pending |
@@ -112,7 +112,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 - v1.5 requirements: 21 total
 - Mapped to phases: 21
 - Unmapped: 0
+- Complete: 3/21
 
 ---
 *Requirements defined: 2026-04-30*
 *Last updated: 2026-04-30 after phase reordering*
+*Phase 12 completed: 2026-04-30*

@@ -12,7 +12,7 @@ Establish comprehensive testing strategy, document all issues in existing featur
 
 ## Phases
 
-- [ ] **Phase 12: Backend Domain Tests** — Unit tests for pure business logic in all modules
+- [x] **Phase 12: Backend Domain Tests** — Unit tests for pure business logic in all modules
 - [ ] **Phase 13: Agent QA Playbook** — Document validation procedures for future efficiency
 - [ ] **Phase 14: Frontend Test Infrastructure** — Vitest setup and key component tests
 - [ ] **Phase 15: ts-rs Type Generation** — Auto-generate TypeScript types from Rust DTOs
@@ -26,15 +26,15 @@ Establish comprehensive testing strategy, document all issues in existing featur
 **Depends on:** Nothing (first phase)
 **Requirements:** TEST-01, TEST-02, TEST-03
 **Success Criteria** (what must be TRUE):
-  1. All domain modules (iam, inventory, sites, fleet) have unit tests
-  2. Tests are inline in domain files with `#[cfg(test)]` attribute
-  3. Business rules and validation logic are covered (status transitions, quantity checks)
-  4. All tests pass in under 1 second (pure unit tests, no DB)
+  1. All domain modules (iam, inventory, sites, fleet) have unit tests ✓
+  2. Tests are inline in domain files with `#[cfg(test)]` attribute ✓
+  3. Business rules and validation logic are covered (status transitions, quantity checks) ✓
+  4. All tests pass in under 1 second (pure unit tests, no DB) ✓
 **Plans:** 2 plans
 
 Plans:
-- [ ] 12-01-PLAN.md — IAM and Inventory domain tests
-- [ ] 12-02-PLAN.md — Sites and Fleet domain tests
+- [x] 12-01-PLAN.md — IAM and Inventory domain tests
+- [x] 12-02-PLAN.md — Sites and Fleet domain tests
 
 ### Phase 13: Agent QA Playbook
 **Goal:** Future agent sessions can efficiently validate features using documented procedures
@@ -96,7 +96,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 12. Backend Domain Tests | 0/2 | Planned | - |
+| 12. Backend Domain Tests | 2/2 | ✓ Complete | 2026-04-30 |
 | 13. Agent QA Playbook | 0/1 | Not started | - |
 | 14. Frontend Test Infrastructure | 0/1 | Not started | - |
 | 15. ts-rs Type Generation | 0/1 | Not started | - |
@@ -107,14 +107,14 @@ Plans:
 
 | Category | Requirements | Phases |
 |----------|-------------|--------|
-| Backend Unit Tests | TEST-01, TEST-02, TEST-03 | Phase 12 |
+| Backend Unit Tests | TEST-01, TEST-02, TEST-03 | Phase 12 ✓ |
 | Agent QA Playbook | QA-01, QA-02, QA-03, QA-04 | Phase 13 |
 | Frontend Testing | TEST-04, TEST-05, TEST-06 | Phase 14 |
 | ts-rs Type Generation | TEST-07, TEST-08, TEST-09 | Phase 15 |
 | E2E Data Assertions | TEST-10, TEST-11 | Phase 16 |
 | Feature Audit | AUDIT-01 to AUDIT-06 | Phase 17 |
 
-**Total:** 21/21 requirements mapped ✓
+**Total:** 3/21 requirements complete
 
 ## Dependencies
 
@@ -130,7 +130,7 @@ Phase 13 ─┬─► Phase 14
 
 - Phase 12, 13 can run in parallel (independent)
 - Phase 14 depends on Phase 13 (uses QA learnings)
-- Phase 15 depends on Phase 12 (needs stable DTOs)
+- Phase 15 depends on Phase 12 (needs stable DTOs) ✓ ready
 - Phase 16 depends on Phase 12, 14 (needs test patterns established)
 - Phase 17 depends on Phase 13 (uses QA Playbook)
 
@@ -138,3 +138,4 @@ Phase 13 ─┬─► Phase 14
 
 *Roadmap created: 2026-04-30*
 *Reordered: 2026-04-30 — QA Playbook moved to Phase 13 for earlier frontend testing benefit*
+*Phase 12 completed: 2026-04-30*
