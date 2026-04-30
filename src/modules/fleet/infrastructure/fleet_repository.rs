@@ -82,7 +82,7 @@ impl FleetRepository {
             r#"
             SELECT id, tenant_id, name, license_plate, vehicle_type, description, status, location, qr_code, created_at, updated_at
             FROM vehicles
-            WHERE id = $1 AND tenant_id = $2
+            WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#
         )
         .bind(id.0)
@@ -105,7 +105,7 @@ impl FleetRepository {
                     r#"
                     SELECT id, tenant_id, name, license_plate, vehicle_type, description, status, location, qr_code, created_at, updated_at
                     FROM vehicles
-                    WHERE tenant_id = $1 AND status = $2
+                    WHERE tenant_id = $1 AND status = $2 AND deleted_at IS NULL
                     ORDER BY name
                     "#
                 )
@@ -119,7 +119,7 @@ impl FleetRepository {
                     r#"
                     SELECT id, tenant_id, name, license_plate, vehicle_type, description, status, location, qr_code, created_at, updated_at
                     FROM vehicles
-                    WHERE tenant_id = $1
+                    WHERE tenant_id = $1 AND deleted_at IS NULL
                     ORDER BY name
                     "#
                 )
@@ -192,8 +192,9 @@ impl FleetRepository {
     ) -> Result<(), AppError> {
         let result = sqlx::query(
             r#"
-            DELETE FROM vehicles
-            WHERE id = $1 AND tenant_id = $2
+            UPDATE vehicles
+            SET deleted_at = NOW(), updated_at = NOW()
+            WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#
         )
         .bind(id.0)
@@ -218,7 +219,7 @@ impl FleetRepository {
             r#"
             SELECT id, tenant_id, name, license_plate, vehicle_type, description, status, location, qr_code, created_at, updated_at
             FROM vehicles
-            WHERE qr_code = $1 AND tenant_id = $2
+            WHERE qr_code = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#
         )
         .bind(qr_code)
@@ -279,7 +280,7 @@ impl FleetRepository {
             r#"
             SELECT id, tenant_id, name, category, description, status, location, qr_code, created_at, updated_at
             FROM tools
-            WHERE id = $1 AND tenant_id = $2
+            WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#
         )
         .bind(id.0)
@@ -303,7 +304,7 @@ impl FleetRepository {
                     r#"
                     SELECT id, tenant_id, name, category, description, status, location, qr_code, created_at, updated_at
                     FROM tools
-                    WHERE tenant_id = $1 AND status = $2 AND category = $3
+                    WHERE tenant_id = $1 AND status = $2 AND category = $3 AND deleted_at IS NULL
                     ORDER BY name
                     "#
                 )
@@ -318,7 +319,7 @@ impl FleetRepository {
                     r#"
                     SELECT id, tenant_id, name, category, description, status, location, qr_code, created_at, updated_at
                     FROM tools
-                    WHERE tenant_id = $1 AND status = $2
+                    WHERE tenant_id = $1 AND status = $2 AND deleted_at IS NULL
                     ORDER BY name
                     "#
                 )
@@ -332,7 +333,7 @@ impl FleetRepository {
                     r#"
                     SELECT id, tenant_id, name, category, description, status, location, qr_code, created_at, updated_at
                     FROM tools
-                    WHERE tenant_id = $1 AND category = $2
+                    WHERE tenant_id = $1 AND category = $2 AND deleted_at IS NULL
                     ORDER BY name
                     "#
                 )
@@ -346,7 +347,7 @@ impl FleetRepository {
                     r#"
                     SELECT id, tenant_id, name, category, description, status, location, qr_code, created_at, updated_at
                     FROM tools
-                    WHERE tenant_id = $1
+                    WHERE tenant_id = $1 AND deleted_at IS NULL
                     ORDER BY name
                     "#
                 )
@@ -417,8 +418,9 @@ impl FleetRepository {
     ) -> Result<(), AppError> {
         let result = sqlx::query(
             r#"
-            DELETE FROM tools
-            WHERE id = $1 AND tenant_id = $2
+            UPDATE tools
+            SET deleted_at = NOW(), updated_at = NOW()
+            WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#
         )
         .bind(id.0)
@@ -443,7 +445,7 @@ impl FleetRepository {
             r#"
             SELECT id, tenant_id, name, category, description, status, location, qr_code, created_at, updated_at
             FROM tools
-            WHERE qr_code = $1 AND tenant_id = $2
+            WHERE qr_code = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#
         )
         .bind(qr_code)
@@ -766,11 +768,11 @@ impl FleetRepository {
             WITH resources AS (
                 SELECT 'vehicle'::text as resource_type, id, name 
                 FROM vehicles 
-                WHERE tenant_id = $1
+                WHERE tenant_id = $1 AND deleted_at IS NULL
                 UNION ALL
                 SELECT 'tool'::text as resource_type, id, name 
                 FROM tools 
-                WHERE tenant_id = $1
+                WHERE tenant_id = $1 AND deleted_at IS NULL
             )
             SELECT 
                 r.resource_type,

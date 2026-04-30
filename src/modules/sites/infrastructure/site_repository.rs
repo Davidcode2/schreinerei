@@ -82,7 +82,7 @@ impl SiteRepository {
             r#"
             SELECT id, tenant_id, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
             FROM sites
-            WHERE id = $1 AND tenant_id = $2
+            WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#
         )
         .bind(id.0)
@@ -105,7 +105,7 @@ impl SiteRepository {
                     r#"
                     SELECT id, tenant_id, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
                     FROM sites
-                    WHERE tenant_id = $1 AND status = $2
+                    WHERE tenant_id = $1 AND status = $2 AND deleted_at IS NULL
                     ORDER BY created_at DESC
                     "#
                 )
@@ -119,7 +119,7 @@ impl SiteRepository {
                     r#"
                     SELECT id, tenant_id, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
                     FROM sites
-                    WHERE tenant_id = $1
+                    WHERE tenant_id = $1 AND deleted_at IS NULL
                     ORDER BY created_at DESC
                     "#
                 )
@@ -185,6 +185,56 @@ impl SiteRepository {
         .ok_or_else(|| AppError::NotFound("Site not found".to_string()))?;
 
         Ok(site.into_site())
+    }
+
+    /// Count active reservations for a site (for delete dependency check)
+    pub async fn count_active_reservations(
+        &self,
+        site_id: SiteId,
+        tenant_id: TenantId,
+    ) -> Result<i64, AppError> {
+        let count: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*) FROM reservations
+            WHERE tenant_id = $1 
+              AND site_id = $2 
+              AND status NOT IN ('cancelled', 'completed')
+              AND end_time > NOW()
+            "#
+        )
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(count)
+    }
+
+    /// Soft delete a site by setting deleted_at timestamp
+    pub async fn delete_site(
+        &self,
+        id: SiteId,
+        tenant_id: TenantId,
+    ) -> Result<(), AppError> {
+        let result = sqlx::query(
+            r#"
+            UPDATE sites
+            SET deleted_at = NOW(), updated_at = NOW()
+            WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
+            "#
+        )
+        .bind(id.0)
+        .bind(tenant_id.0)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        if result.rows_affected() == 0 {
+            return Err(AppError::NotFound("Site not found".to_string()));
+        }
+
+        Ok(())
     }
 
     // === Assignment operations ===

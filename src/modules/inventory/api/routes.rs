@@ -30,7 +30,7 @@ pub fn create_router() -> Router<AppState> {
         
         // Materials
         .route("/api/v1/inventory/materials", get(list_materials).post(create_material))
-        .route("/api/v1/inventory/materials/{id}", get(get_material))
+        .route("/api/v1/inventory/materials/{id}", get(get_material).delete(delete_material))
         .route("/api/v1/inventory/materials/{id}/withdraw", post(withdraw_material))
         .route("/api/v1/inventory/materials/{id}/adjust", post(adjust_stock))
         .route("/api/v1/inventory/materials/{id}/qr", post(generate_qr_code))
@@ -347,6 +347,25 @@ pub async fn get_material(
     let material = service.get_material(material_id, &ctx).await?;
     
     Ok(Json(MaterialResponse::from(material)))
+}
+
+pub async fn delete_material(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = InventoryService::new(
+        crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+    
+    let material_id = Uuid::parse_str(&id)
+        .map(MaterialId)
+        .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
+    
+    service.delete_material(material_id, &ctx).await?;
+    
+    Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
 }
 
 pub async fn withdraw_material(

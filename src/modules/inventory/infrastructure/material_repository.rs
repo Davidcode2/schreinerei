@@ -161,7 +161,7 @@ impl MaterialRepository {
                     r#"
                     SELECT id, tenant_id, category_id, name, description, unit, quantity, min_quantity, location, qr_code, created_at, updated_at
                     FROM materials
-                    WHERE tenant_id = $1 AND category_id = $2
+                    WHERE tenant_id = $1 AND category_id = $2 AND deleted_at IS NULL
                     ORDER BY name
                     "#
                 )
@@ -175,7 +175,7 @@ impl MaterialRepository {
                     r#"
                     SELECT id, tenant_id, category_id, name, description, unit, quantity, min_quantity, location, qr_code, created_at, updated_at
                     FROM materials
-                    WHERE tenant_id = $1
+                    WHERE tenant_id = $1 AND deleted_at IS NULL
                     ORDER BY name
                     "#
                 )
@@ -198,7 +198,7 @@ impl MaterialRepository {
             r#"
             SELECT id, tenant_id, category_id, name, description, unit, quantity, min_quantity, location, qr_code, created_at, updated_at
             FROM materials
-            WHERE id = $1 AND tenant_id = $2
+            WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#
         )
         .bind(id.0)
@@ -219,7 +219,7 @@ impl MaterialRepository {
             r#"
             SELECT id, tenant_id, category_id, name, description, unit, quantity, min_quantity, location, qr_code, created_at, updated_at
             FROM materials
-            WHERE qr_code = $1 AND tenant_id = $2
+            WHERE qr_code = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#
         )
         .bind(qr_code)
@@ -406,7 +406,7 @@ impl MaterialRepository {
             r#"
             SELECT id, tenant_id, category_id, name, description, unit, quantity, min_quantity, location, qr_code, created_at, updated_at
             FROM materials
-            WHERE tenant_id = $1 AND quantity <= min_quantity
+            WHERE tenant_id = $1 AND quantity <= min_quantity AND deleted_at IS NULL
             ORDER BY quantity ASC
             "#
         )
@@ -416,6 +416,53 @@ impl MaterialRepository {
         .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(materials.into_iter().map(|m| m.into_material()).collect())
+    }
+
+    /// Count pending order requests for a material (for delete dependency check)
+    pub async fn count_pending_order_requests(
+        &self,
+        material_id: MaterialId,
+        tenant_id: TenantId,
+    ) -> Result<i64, AppError> {
+        let count: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*) FROM order_requests
+            WHERE tenant_id = $1 AND material_id = $2 AND status = 'pending'
+            "#
+        )
+        .bind(tenant_id.0)
+        .bind(material_id.0)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(count)
+    }
+
+    /// Soft delete a material by setting deleted_at timestamp
+    pub async fn delete_material(
+        &self,
+        id: MaterialId,
+        tenant_id: TenantId,
+    ) -> Result<(), AppError> {
+        let result = sqlx::query(
+            r#"
+            UPDATE materials
+            SET deleted_at = NOW(), updated_at = NOW()
+            WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
+            "#
+        )
+        .bind(id.0)
+        .bind(tenant_id.0)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        if result.rows_affected() == 0 {
+            return Err(AppError::NotFound("Material not found".to_string()));
+        }
+
+        Ok(())
     }
 
     // === Order Request operations ===

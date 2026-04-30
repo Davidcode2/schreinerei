@@ -112,6 +112,33 @@ impl SiteService {
         self.site_repo.list_sites(ctx.tenant_id, status).await
     }
 
+    /// Delete a site (soft delete)
+    /// Returns Conflict error if there are active reservations
+    pub async fn delete_site(
+        &self,
+        site_id: SiteId,
+        ctx: &TenantContext,
+    ) -> Result<(), AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+
+        // Verify site exists
+        self.site_repo.find_site_by_id(ctx.tenant_id, site_id).await?
+            .ok_or_else(|| AppError::NotFound("Site not found".to_string()))?;
+
+        // Check for active reservations
+        let active_count = self.site_repo.count_active_reservations(site_id, ctx.tenant_id).await?;
+        if active_count > 0 {
+            return Err(AppError::Conflict(
+                format!("Cannot delete: {} active reservation(s) exist", active_count)
+            ));
+        }
+
+        // Perform soft delete
+        self.site_repo.delete_site(site_id, ctx.tenant_id).await
+    }
+
     // === Assignment operations ===
 
     pub async fn assign_user(

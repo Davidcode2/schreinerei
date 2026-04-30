@@ -28,6 +28,9 @@ pub enum AppError {
 
     #[error("Unauthorized: {0}")]
     Unauthorized(String),
+
+    #[error("Conflict: {0}")]
+    Conflict(String),
 }
 
 impl From<String> for AppError {
@@ -52,6 +55,7 @@ impl IntoResponse for AppError {
             }
             AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
             AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
+            AppError::Conflict(msg) => (StatusCode::CONFLICT, msg),
         };
 
         let body = Json(json!({

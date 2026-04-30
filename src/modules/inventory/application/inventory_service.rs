@@ -245,6 +245,33 @@ impl InventoryService {
         self.material_repo.list_low_stock_materials(ctx.tenant_id).await
     }
 
+    /// Delete a material (soft delete)
+    /// Returns Conflict error if there are pending order requests
+    pub async fn delete_material(
+        &self,
+        material_id: MaterialId,
+        ctx: &TenantContext,
+    ) -> Result<(), AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+
+        // Check for pending order requests
+        let pending_count = self.material_repo.count_pending_order_requests(material_id, ctx.tenant_id).await?;
+        if pending_count > 0 {
+            return Err(AppError::Conflict(
+                format!("Cannot delete: {} pending order request(s) exist", pending_count)
+            ));
+        }
+
+        // Verify material exists
+        self.material_repo.find_material_by_id(material_id, ctx.tenant_id).await?
+            .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
+
+        // Perform soft delete
+        self.material_repo.delete_material(material_id, ctx.tenant_id).await
+    }
+
     // === QR Code operations ===
 
     pub async fn generate_qr_code(

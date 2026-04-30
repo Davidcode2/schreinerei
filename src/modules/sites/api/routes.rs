@@ -25,7 +25,7 @@ pub fn create_router() -> Router<AppState> {
     Router::new()
         // Sites
         .route("/api/v1/sites", get(list_sites).post(create_site))
-        .route("/api/v1/sites/{id}", get(get_site).patch(update_site))
+        .route("/api/v1/sites/{id}", get(get_site).patch(update_site).delete(delete_site))
         
         // Assignments
         .route("/api/v1/sites/{id}/assign", post(assign_user))
@@ -272,6 +272,25 @@ pub async fn update_site(
     let site = service.update_site(site_id, update, &ctx).await?;
     
     Ok(Json(SiteResponse::from(site)))
+}
+
+pub async fn delete_site(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+    
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+    
+    service.delete_site(site_id, &ctx).await?;
+    
+    Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
 }
 
 pub async fn assign_user(
