@@ -1,292 +1,401 @@
-# Stack Research
+# Technology Stack
 
-**Domain:** Testing & Quality Foundation for Schreinerei SaaS
+**Project:** Schreinerei SaaS - v1.6 User Experience & Missing Functionality
 **Researched:** 2026-04-30
-**Confidence:** HIGH
+**Milestone Focus:** Delete buttons, edit capabilities, reservation workflow, UX improvements, E2E tests
 
-## Existing Stack (No Changes Needed)
+## Executive Summary
 
-These are already in place and working:
+This milestone requires **minimal new stack additions**. The existing infrastructure supports all planned features:
+
+- **Delete confirmations:** Add shadcn/ui AlertDialog component (CLI install only)
+- **Backend gaps:** Add missing DELETE/PATCH routes for sites, materials, time entries
+- **Form validation:** No new libraries needed — use existing controlled input pattern with inline error state
+- **Calendar click-to-create:** No library needed — add onClick handlers to custom calendar
+- **Low stock alerts:** Use existing Badge component + sonner toast
+- **E2E tests:** Use existing Playwright patterns
+
+**Critical finding:** Backend is missing routes for site/material/time-entry deletion and editing. Frontend has all required UI libraries.
+
+---
+
+## Required Stack Additions
+
+### Frontend Components
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `@radix-ui/react-alert-dialog` | ^1.1.2 | Delete confirmation dialogs | Standard shadcn/ui pattern, consistent with existing dialog usage |
+
+**Installation:**
+```bash
+cd frontend
+npx shadcn@latest add alert-dialog
+```
+
+This adds the AlertDialog component to `frontend/src/components/ui/alert-dialog.tsx`. No npm package installation needed — shadcn/ui copies component code into your project.
+
+### Backend Routes (Rust)
+
+| Route | Method | Module | Status |
+|-------|--------|--------|--------|
+| `/api/v1/sites/{id}` | DELETE | sites | ❌ MISSING |
+| `/api/v1/inventory/materials/{id}` | DELETE | inventory | ❌ MISSING |
+| `/api/v1/inventory/materials/{id}` | PATCH | inventory | ❌ MISSING |
+| `/api/v1/time-entries/{id}` | DELETE | sites | ❌ MISSING |
+| `/api/v1/time-entries/{id}` | PATCH | sites | ❌ MISSING |
+| `/api/v1/fleet/vehicles/{id}` | DELETE | fleet | ✅ EXISTS |
+| `/api/v1/fleet/tools/{id}` | DELETE | fleet | ✅ EXISTS |
+| `/api/v1/fleet/reservations/{id}` | PATCH | fleet | ✅ EXISTS |
+| `/api/v1/fleet/reservations/{id}` | DELETE | fleet | ✅ EXISTS |
+
+---
+
+## Existing Stack (No Changes Required)
+
+The following are **already in place** and support the milestone features:
+
+### Core Frontend
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| Playwright | ^1.59.1 | E2E testing |
-| SQLx test macros | 0.8 | Database integration tests |
-| Rust built-in test | Stable | Unit test framework |
-| Tokio test | 1 | Async test runtime |
+| React | ^19.2.5 | UI framework |
+| Vite | ^7.3.2 | Build tool |
+| TypeScript | ~6.0.2 | Type safety |
+| Tailwind CSS | ^4.2.4 | Styling |
 
-## Recommended Additions
+### UI Components (shadcn/ui)
 
-### Rust Backend Testing
+| Component | Location | Use Case |
+|-----------|----------|----------|
+| Dialog | `components/ui/dialog.tsx` | Edit/create dialogs |
+| Button | `components/ui/button.tsx` | Actions, status transitions |
+| Badge | `components/ui/badge.tsx` | Low stock indicators, status badges |
+| Input | `components/ui/input.tsx` | Form fields |
+| Label | `components/ui/label.tsx` | Form labels |
+| DropdownMenu | `components/ui/dropdown-menu.tsx` | Actions menus |
 
-| Library | Version | Purpose | Why Recommended |
-|---------|---------|---------|-----------------|
-| tower | 0.5 | Service trait for testing Axum | Industry standard for testing Axum handlers without HTTP server |
-| http-body-util | 0.1 | Body extraction utilities | Required for reading response bodies in tower tests |
-| testcontainers | 0.27 | Docker containers for integration tests | Real PostgreSQL for true integration tests, better than mocks |
-| wiremock | 0.6 | HTTP mocking for external services | Mock Keycloak responses in tests, no real Keycloak needed |
-| mockall | 0.14 | Trait mocking | For unit testing domain logic with mocked repositories |
+### Notifications & Feedback
 
-### React Frontend Testing
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| sonner | ^2.0.7 | Toast notifications (success/error feedback) |
+| lucide-react | ^1.12.0 | Icons (AlertCircle, Trash, Edit, etc.) |
 
-| Library | Version | Purpose | Why Recommended |
-|---------|---------|---------|-----------------|
-| vitest | ^4.1 | Test runner with Vite integration | Native Vite support, fast, Jest-compatible API |
-| @testing-library/react | ^16.3 | React component testing | React 19 compatible, user-centric testing approach |
-| @testing-library/user-event | ^14.6 | Realistic user interactions | Better than fireEvent, simulates real browser events |
-| @testing-library/jest-dom | ^6.9 | Extended DOM matchers | Readable assertions like `toBeInTheDocument()` |
-| jsdom | ^29.1 | DOM environment for tests | Required for component testing without browser |
-| msw | ^2.14 | API mocking | Intercept fetch/XHR, works with React Query |
-| @vitest/coverage-v8 | ^4.1 | Code coverage | Native V8 coverage, fast |
+### State & Data
 
-## Installation
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| @tanstack/react-query | ^5.100.6 | Server state, mutations, cache invalidation |
+| zustand | ^5.0.12 | Client state |
 
-### Rust Backend
+### E2E Testing
 
-```toml
-# Cargo.toml - add to [dev-dependencies]
-[dev-dependencies]
-tower = "0.5"
-http-body-util = "0.1"
-testcontainers = "0.27"
-testcontainers-modules = { version = "0.12", features = ["postgres"] }
-wiremock = "0.6"
-mockall = "0.14"
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| @playwright/test | ^1.59.1 | E2E testing |
+| @testing-library/react | ^16.3.2 | Component testing |
+| @testing-library/user-event | ^14.6.1 | User interaction simulation |
+
+### QR Code
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| html5-qrcode | ^2.3.8 | QR scanning (already installed) |
+
+---
+
+## NOT Recommended (Explicitly Avoid)
+
+| Technology | Why Not |
+|------------|---------|
+| react-hook-form | Overkill for existing simple dialogs. Current pattern uses controlled inputs with useState. Adding would require refactoring 7+ existing dialogs without clear benefit. |
+| zod | Not needed without react-hook-form. Existing validation is backend-driven with toast errors. Add inline validation state locally instead. |
+| Full calendar library (react-big-calendar, fullcalendar) | Custom calendar already built. Just needs onClick handlers for empty slots. No need to replace working code. |
+| Additional testing libraries | Playwright patterns already established. Use existing helpers in `tests/helpers/`. |
+
+---
+
+## Integration Points
+
+### 1. Delete Flow Pattern
+
+```
+User clicks delete button
+    ↓
+Open AlertDialog (confirmation)
+    ↓
+User confirms
+    ↓
+Call DELETE mutation (react-query)
+    ↓
+On success: toast.success + invalidate queries
+On error: toast.error
 ```
 
-```bash
-cargo add --dev tower http-body-util testcontainers testcontainers-modules --features testcontainers-modules/postgres wiremock mockall
+**Example implementation:**
+```tsx
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useDeleteSite } from "@/lib/api/hooks"
+import { toast } from "sonner"
+
+function DeleteSiteButton({ siteId }: { siteId: string }) {
+  const deleteMutation = useDeleteSite()
+  
+  const handleDelete = () => {
+    deleteMutation.mutate(siteId, {
+      onSuccess: () => toast.success("Baustelle gelöscht"),
+      onError: () => toast.error("Löschen fehlgeschlagen"),
+    })
+  }
+  
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Baustelle löschen?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Diese Aktion kann nicht rückgängig gemacht werden.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDelete}>Löschen</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
 ```
 
-### React Frontend
+### 2. Inline Validation Pattern
 
-```bash
-cd frontend
+Use local state for validation, display errors below inputs:
 
-# Core testing
-npm install -D vitest @vitest/coverage-v8 jsdom
+```tsx
+const [hoursError, setHoursError] = useState<string | null>(null)
 
-# React Testing Library
-npm install -D @testing-library/react @testing-library/user-event @testing-library/jest-dom
+const validateHours = (value: string) => {
+  const num = parseFloat(value)
+  if (isNaN(num) || num <= 0) {
+    setHoursError("Stunden müssen größer als 0 sein")
+    return false
+  }
+  setHoursError(null)
+  return true
+}
 
-# API mocking
-npm install -D msw
+return (
+  <div className="space-y-2">
+    <Label>Stunden</Label>
+    <Input
+      type="number"
+      value={hours}
+      onChange={(e) => {
+        setHours(parseFloat(e.target.value) || 0)
+        validateHours(e.target.value)
+      }}
+    />
+    {hoursError && (
+      <p className="text-sm text-destructive">{hoursError}</p>
+    )}
+  </div>
+)
 ```
 
-## What NOT to Use
+### 3. Calendar Click-to-Create
 
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| Jest | Slow with Vite, requires complex config | Vitest (native Vite integration) |
-| Enzyme | Deprecated, doesn't work with React 18+ | @testing-library/react |
-| Cypress | Playwright already in use, redundant | Extend Playwright coverage |
-| Nock | Node.js only, doesn't work in browser | MSW (works in both) |
-| sinon | Verbose mock setup | mockall (auto-generates mocks) |
-| Mock database with handwritten fakes | Time-consuming, error-prone | testcontainers (real DB) |
+Add onClick to calendar grid cells:
 
-## Test Patterns by Layer
+```tsx
+// In CalendarView.tsx, modify the day cell div:
+<div
+  key={i}
+  className="p-2 min-h-[60px] border-l last:border-r cursor-pointer hover:bg-muted/50"
+  onClick={() => {
+    // Open reservation dialog for this date/resource
+    setDialogDate(dateStr)
+    setDialogResourceId(entry.resource_id)
+    setDialogResourceType(entry.resource_type)
+    setReservationDialogOpen(true)
+  }}
+>
+```
 
-### Domain Layer (Rust)
-- **Unit tests** with `#[test]` and `mockall`
-- Mock repositories and external services
-- Test business rules in isolation
+### 4. Low Stock Alert UI
+
+Add badge indicator to material list items:
+
+```tsx
+{material.is_low_stock && (
+  <Badge variant="destructive" className="ml-2">
+    <AlertTriangle className="h-3 w-3 mr-1" />
+    Niedrig
+  </Badge>
+)}
+```
+
+Toast notification on dashboard load:
+```tsx
+const { data: lowStock } = useLowStockMaterials()
+
+useEffect(() => {
+  if (lowStock && lowStock.length > 0) {
+    toast.warning(`${lowStock.length} Materialien unter Mindestbestand`)
+  }
+}, [lowStock])
+```
+
+---
+
+## Backend Implementation Notes
+
+### Required Route Additions
+
+**Sites module (`src/modules/sites/api/routes.rs`):**
 
 ```rust
-#[cfg(test)]
-mod tests {
-    use mockall::predicate::*;
+// Add to create_router():
+.route("/api/v1/sites/{id}", delete(delete_site))
+
+// Add handler:
+pub async fn delete_site(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(SiteRepository::new(state.pool));
+    let ctx = TenantContext::from_auth(&auth);
     
-    #[test]
-    fn test_material_stock_cannot_go_negative() {
-        // Pure domain logic test
-    }
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+    
+    service.delete_site(site_id, &ctx).await?;
+    
+    Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
 }
 ```
 
-### Application Layer (Rust)
-- **Unit tests** with mocked ports (repositories, external APIs)
-- Use `mockall` to generate mock implementations
+**Inventory module (`src/modules/inventory/api/routes.rs`):**
 
 ```rust
-#[automock]
-pub trait MaterialRepository: Send + Sync {
-    async fn find_by_id(&self, id: Uuid) -> Result<Option<Material>>;
-}
+// Add to create_router():
+.route("/api/v1/inventory/materials/{id}", patch(update_material).delete(delete_material))
 
-#[tokio::test]
-async fn test_reserve_material_decreases_stock() {
-    let mut mock_repo = MockMaterialRepository::new();
-    mock_repo.expect_find_by_id()
-        .returning(|_| Ok(Some(test_material())));
-    // Test use case with mocked repo
-}
+// Add handlers similar to fleet module patterns
 ```
 
-### Infrastructure Layer (Rust)
-- **Integration tests** with `testcontainers` for real PostgreSQL
-- **API tests** with `tower::Service` (no HTTP server needed)
+**Time Entries (sites module):**
 
 ```rust
-use tower::ServiceExt; // for oneshot
+// Add to create_router():
+.route("/api/v1/time-entries/{id}", patch(update_time_entry).delete(delete_time_entry))
 
-#[tokio::test]
-async fn test_get_material_endpoint() {
-    let app = create_test_app().await;
-    
-    let response = app
-        .oneshot(Request::builder()
-            .uri("/api/materials/test-id")
-            .body(Body::empty())
-            .unwrap())
-        .await
-        .unwrap();
-    
-    assert_eq!(response.status(), StatusCode::OK);
-}
+// Add handlers for update/delete
 ```
 
-### External Services (Rust)
-- **Wiremock** for mocking Keycloak HTTP responses
+---
 
-```rust
-use wiremock::{MockServer, Mock, ResponseTemplate};
-use wiremock::matchers::{method, path};
+## E2E Test Patterns
 
-#[tokio::test]
-async fn test_keycloak_token_validation() {
-    let mock_server = MockServer::start().await;
-    
-    Mock::given(method("GET"))
-        .and(path("/.well-known/openid-configuration"))
-        .respond_with(ResponseTemplate::new(200)
-            .set_body_json(keycloak_config()))
-        .mount(&mock_server)
-        .await;
-    
-    // Test with mocked Keycloak
-}
-```
-
-### React Components
-- **Vitest + Testing Library** for unit/component tests
+Use existing helper patterns in `frontend/tests/helpers/api.ts`:
 
 ```typescript
-// vitest.config.ts
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./tests/setup.ts'],
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
-  },
+// Example: Test site delete
+test('should delete site', async ({ page }) => {
+  const site = await createSite(page, {
+    name: uniqueName('To Delete'),
+    customer_name: 'Customer',
+    location: 'Location',
+  })
+  track.site(site.id)
+  
+  // Navigate to site
+  await page.goto(`/sites/${site.id}`)
+  
+  // Click delete button
+  await page.click('button:has([data-testid="delete-site"])')
+  
+  // Confirm in dialog
+  await page.click('button:has-text("Löschen")')
+  
+  // Verify toast
+  await expect(page.locator('[data-sonner-toast]')).toContainText('gelöscht')
+  
+  // Verify site no longer exists
+  const response = await page.request.get(`/api/v1/sites/${site.id}`)
+  expect(response.status()).toBe(404)
 })
 ```
 
-```typescript
-// tests/setup.ts
-import '@testing-library/jest-dom'
-import { server } from './mocks/server'
+---
 
-beforeAll(() => server.listen())
-afterEach(() => server.resetHandlers())
-afterAll(() => server.close())
-```
+## Files to Create/Modify
 
-### React API Integration
-- **MSW** for mocking backend API in tests
+### New Files
 
-```typescript
-// tests/mocks/handlers.ts
-import { http, HttpResponse } from 'msw'
+| File | Purpose |
+|------|---------|
+| `frontend/src/components/ui/alert-dialog.tsx` | shadcn/ui AlertDialog component |
+| `frontend/tests/reservations.spec.ts` | E2E tests for reservation workflow |
+| `frontend/tests/update-delete.spec.ts` | E2E tests for update/delete operations |
 
-export const handlers = [
-  http.get('/api/materials', () => {
-    return HttpResponse.json([
-      { id: '1', name: 'Test Material', stock: 10 }
-    ])
-  }),
-]
-```
+### Modified Files
 
-```typescript
-// tests/mocks/server.ts
-import { setupServer } from 'msw/node'
-import { handlers } from './handlers'
-
-export const server = setupServer(...handlers)
-```
-
-### E2E Tests (Playwright)
-- **Extend existing tests** with more scenarios
-- Keep using existing helper patterns
-
-```typescript
-// Already established pattern - extend it
-test('should create material via dialog', async ({ page }) => {
-  await login(page);
-  await page.goto('/inventory');
-  
-  await page.click('button:has-text("Material hinzufügen")');
-  await page.fill('input[name="name"]', 'Test Material');
-  await page.fill('input[name="quantity"]', '10');
-  await page.click('button:has-text("Speichern")');
-  
-  await expect(page.locator('text=Test Material')).toBeVisible();
-});
-```
-
-## Version Compatibility
-
-| Package | Compatible With | Notes |
-|---------|-----------------|-------|
-| vitest ^4.1 | Vite ^6.0 \|\| ^7.0 \|\| ^8.0 | Native Vite integration |
-| @testing-library/react ^16.3 | React ^18.0 \|\| ^19.0 | React 19 support confirmed |
-| testcontainers 0.27 | tokio 1.x | Async runtime required |
-| wiremock 0.6 | tokio 1.x | Async runtime required |
-| msw 2.x | All modern browsers + Node | Works with Service Worker |
-
-## Test Strategy Summary
-
-| Layer | Test Type | Tools | Speed |
-|-------|-----------|-------|-------|
-| Domain | Unit | Rust + mockall | Fast |
-| Application | Unit | Rust + mockall | Fast |
-| Infrastructure | Integration | testcontainers + tower | Medium |
-| External APIs | Unit | wiremock | Fast |
-| React Components | Unit | Vitest + Testing Library | Fast |
-| React API Calls | Unit | MSW | Fast |
-| Full Stack | E2E | Playwright | Slow |
-
-## Integration with Existing Architecture
-
-The testing stack integrates with the hexagonal architecture:
-
-```
-Domain Layer        → Unit tests with mockall
-Application Layer   → Unit tests with mockall  
-Infrastructure Layer → Integration tests with testcontainers
-                    → API tests with tower::Service
-                    
-Frontend Components → Vitest + Testing Library
-Frontend API Calls  → MSW mocking backend
-E2E Flows          → Playwright (real backend + real Keycloak)
-```
-
-## Sources
-
-- /vitest-dev/vitest — React testing setup, configuration
-- /testing-library/react-testing-library — Render, queries, userEvent patterns
-- /mswjs/msw — Node.js integration, handler setup
-- /testcontainers/testcontainers-rs — PostgreSQL async setup, wait strategies
-- /lukemathwalker/wiremock-rs — HTTP mocking, request matching
-- /asomers/mockall — Trait mocking, automock attribute
-- npm registry — Version verification for all npm packages
-- crates.io — Version verification for all Rust crates
+| File | Change |
+|------|--------|
+| `frontend/src/pages/sites/SitesListPage.tsx` | Add delete button with AlertDialog |
+| `frontend/src/pages/inventory/InventoryListPage.tsx` | Add delete button, wire QR button |
+| `frontend/src/pages/fleet/FleetPage.tsx` | Add delete buttons for vehicles/tools |
+| `frontend/src/pages/fleet/CalendarView.tsx` | Add click-to-create on empty slots |
+| `frontend/src/pages/fleet/ReservationDialog.tsx` | Add edit mode, status transition buttons |
+| `frontend/src/pages/sites/TimeEntryDialog.tsx` | Add edit mode, inline validation |
+| `frontend/src/lib/api/hooks.ts` | Add delete/update mutation hooks |
+| `src/modules/sites/api/routes.rs` | Add DELETE route for sites |
+| `src/modules/inventory/api/routes.rs` | Add DELETE/PATCH routes for materials |
+| `src/modules/sites/domain/mod.rs` | Add DeleteSite, UpdateTimeEntry commands |
+| `src/modules/inventory/domain/mod.rs` | Add UpdateMaterial command |
 
 ---
-*Stack research for: Schreinerei Testing & Quality Foundation*
-*Researched: 2026-04-30*
+
+## Confidence Assessment
+
+| Area | Confidence | Reason |
+|------|------------|--------|
+| AlertDialog addition | HIGH | Standard shadcn/ui pattern, matches existing Dialog usage |
+| Backend routes | HIGH | Existing patterns in fleet module to follow |
+| Form validation | HIGH | Local state pattern sufficient for simple dialogs |
+| Calendar click-to-create | HIGH | Simple onClick handler, no library needed |
+| E2E test patterns | HIGH | Existing helpers and patterns to follow |
+
+---
+
+## Summary
+
+**What to add:**
+1. `shadcn/ui AlertDialog` component (CLI install)
+2. Backend DELETE/PATCH routes for sites, materials, time entries
+
+**What NOT to add:**
+1. react-hook-form — existing controlled input pattern sufficient
+2. zod — backend validation handles errors
+3. Calendar library — custom calendar works, just needs onClick
+4. Any new testing libraries — Playwright patterns established
+
+**The milestone is primarily about wiring existing infrastructure, not adding new dependencies.**

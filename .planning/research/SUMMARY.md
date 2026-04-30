@@ -1,189 +1,186 @@
 # Project Research Summary
 
-**Project:** Schreinerei SaaS — Construction Site Management Platform
-**Domain:** Testing & Quality Foundation for Rust/React Multi-Tenant SaaS
+**Project:** Schreinerei SaaS - v1.6 User Experience & Missing Functionality
+**Domain:** Construction management SaaS (CRUD operations, offline-first PWA)
 **Researched:** 2026-04-30
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This research focuses on establishing a comprehensive testing strategy for a Rust hexagonal architecture backend paired with a React PWA frontend. The project already has Playwright E2E tests (18 tests) and a single tenant isolation test in place. The recommended approach layers testing from fast unit tests at the domain layer through integration tests with real databases, to full E2E tests.
+This milestone focuses on completing missing CRUD functionality (delete, edit, status transitions) in an existing construction management SaaS. The application uses a well-structured Hexagonal Architecture with DDD bounded contexts, and the existing infrastructure supports all planned features with minimal additions.
 
-Key risks include frontend-backend type drift (mitigated by ts-rs for automatic type generation), multi-tenant isolation gaps (mitigated by mandatory cross-tenant test scenarios), and untested SQLx runtime queries (mitigated by `#[sqlx::test]` integration tests for every route). The testing architecture respects the hexagonal pattern: domain tests are pure unit tests, application tests mock infrastructure via traits, and infrastructure tests use real databases.
+The recommended approach is backend-first implementation: add missing DELETE/PATCH routes with soft-delete semantics, then build frontend UI components that follow established patterns (AlertDialog for confirmations, mode-prop dialogs for edit vs create). Key risks include foreign key constraint handling during deletes (users need clear error messages about why deletes fail), and status transition race conditions (needs database-level conditional updates).
+
+Critical finding: Backend is missing DELETE/PATCH routes for sites, materials, and time entries. Fleet module has all routes but frontend doesn't use them. Low stock alerts exist in backend but have no UI visibility.
 
 ## Key Findings
 
-### Recommended Stack Additions
+### Recommended Stack
 
-The existing stack (Playwright for E2E, SQLx test macros, Rust built-in tests, Tokio test) is solid. Research recommends targeted additions to complete the testing pyramid:
+The milestone requires **minimal new dependencies**. The existing React + Rust + PostgreSQL stack handles all planned features. Only one frontend component addition is needed.
 
-**Rust Backend Testing:**
+**Core technologies:**
+- **AlertDialog (shadcn/ui)** — Delete confirmations — Standard shadcn pattern, install via `npx shadcn@latest add alert-dialog`
+- **React Query mutations** — Delete/update operations — Already in use, add optimistic updates for better UX
+- **Sonner toasts** — User feedback — Already integrated, extend to new operations
+- **Playwright E2E** — Testing — Already established patterns in `tests/helpers/`
 
-| Library | Version | Purpose | Why Recommended |
-|---------|---------|---------|-----------------|
-| tower | 0.5 | Service trait for testing Axum | Test handlers without HTTP server |
-| http-body-util | 0.1 | Body extraction utilities | Read response bodies in tower tests |
-| testcontainers | 0.27 | Docker containers for integration | Real PostgreSQL, better than mocks |
-| wiremock | 0.6 | HTTP mocking | Mock Keycloak responses |
-| mockall | 0.14 | Trait mocking | Auto-generate mocks for ports |
-
-**React Frontend Testing:**
-
-| Library | Version | Purpose | Why Recommended |
-|---------|---------|---------|-----------------|
-| vitest | ^4.1 | Test runner | Native Vite integration, Jest-compatible API |
-| @testing-library/react | ^16.3 | Component testing | React 19 compatible, user-centric |
-| @testing-library/user-event | ^14.6 | User interactions | Simulates real browser events |
-| @testing-library/jest-dom | ^6.9 | DOM matchers | Readable assertions |
-| jsdom | ^29.1 | DOM environment | Required for component testing |
-| msw | ^2.14 | API mocking | Intercepts fetch/XHR, works with React Query |
-| @vitest/coverage-v8 | ^4.1 | Code coverage | Native V8 coverage |
-
-**What NOT to use:** Jest (slow with Vite), Enzyme (deprecated), Cypress (redundant with Playwright), Nock (Node.js only), sinon (verbose).
+**NOT recommended:**
+- react-hook-form — Existing controlled input pattern is sufficient for simple dialogs
+- zod — Backend validation handles errors, add inline state locally instead
+- Calendar library — Custom calendar works, just needs onClick handlers
 
 ### Expected Features
 
-**Must have (table stakes) — v1.5:**
-- Backend unit tests for domain layer — pure business logic validation without DB dependency
-- Backend integration tests for each module — Inventory, Sites, Fleet with real database
-- Frontend unit tests for critical components — forms, dialogs, navigation
-- E2E offline scenario tests — PWA works without network
-- CI integration — tests run on every push to main
-- Multi-tenant isolation tests — tenant data never leaks
+**Must have (table stakes):**
+- Delete confirmation dialogs — Prevents accidental data loss, users expect this in all CRUD apps
+- Edit existing records — Users make mistakes, must be correctable
+- Inline validation feedback — Users need to know what's wrong BEFORE submitting
+- Hours > 0 validation — Fix BUG-TIME-001, zero/negative hours make no sense
+- Status transition buttons — If status exists, users expect to change it
 
-**Should have (differentiators) — v1.x:**
-- Test fixtures factory — builder pattern for consistent test data
-- Frontend-backend contract tests — ts-rs generated types from Rust structs
-- Performance regression tests — query execution time thresholds
+**Should have (competitive):**
+- Low stock alerts (proactive) — Users know when to reorder without manual checks
+- Calendar click-to-create — Faster reservation creation via direct interaction
 
-**Defer (v2+):**
-- Mutation testing — verify tests actually catch bugs
-- Chaos testing — database failover, network latency
-- Load testing — API performance under load
-- Security testing automation — SQL injection, XSS attempts
+**Defer (v1.7+):**
+- Undo for destructive actions — Requires soft-delete + restore, complexity deferred
+- Calendar overlap conflict details — Requires backend response changes
+- Bulk operations — Not needed for pilot
 
 ### Architecture Approach
 
-Testing a hexagonal architecture requires distinct strategies for each layer. Domain layer tests are pure unit tests with no dependencies. Application layer tests mock infrastructure using trait-based ports (generated by mockall). Infrastructure layer tests are integration tests with real PostgreSQL (managed by `#[sqlx::test]`). Frontend tests use Vitest + React Testing Library + MSW for component isolation.
+The application uses Hexagonal Architecture with three layers per module: API (routes.rs), Application (service.rs), Domain (entities, state machines), and Infrastructure (repository.rs). Each bounded context (iam, inventory, sites, fleet) is independent, enabling parallel development.
 
-**Major test categories:**
-1. **Domain tests** — Inline `#[test]` functions testing pure business logic (fast, no DB)
-2. **Application tests** — Mock repository traits with `mockall::automock`, test orchestration and authorization
-3. **Infrastructure tests** — `#[sqlx::test]` integration tests with real database, test SQL and transactions
-4. **Frontend component tests** — Vitest + Testing Library, MSW for API mocking
-5. **E2E tests** — Playwright (existing), extend with offline scenarios and data assertions
+**Major components:**
+1. **Backend API routes** — Add DELETE/PATCH for sites, materials, time entries following fleet module patterns
+2. **Frontend mutation hooks** — React Query hooks with optimistic updates for delete/update operations
+3. **Status state machines** — Existing `can_transition_to()` methods in domain, needs UI to trigger transitions
+4. **Soft delete layer** — Add `deleted_at` column to all deletable entities for audit trail
 
 ### Critical Pitfalls
 
-1. **Frontend-Backend Type Drift** — TypeScript types are manually maintained copies of Rust DTOs. Use ts-rs to generate TypeScript types from Rust structs automatically. CI should fail if generated types differ from committed.
+1. **Delete without soft delete breaks audit trails** — Add `deleted_at` column before exposing delete API, never use hard delete in production
 
-2. **Incomplete Multi-Tenant Test Coverage** — Tests verify happy paths but miss cross-tenant data leakage. Every test that queries data must test with two tenants and verify queries only return current tenant's data.
+2. **Foreign key constraints block deletes without clear UX** — Check dependencies before delete, return meaningful errors like "Cannot delete: 12 time entries exist. Archive instead?"
 
-3. **SQLx Runtime Queries Untested** — Queries with wrong syntax compile fine but fail at runtime. Every route handler must have at least one `#[sqlx::test]` integration test.
+3. **Status transition race conditions** — Use database-level conditional updates (`WHERE status = 'confirmed'`) or version column to prevent concurrent modification
 
-4. **React Query Cache Interference** — Tests share QueryClient, causing flaky tests. Create fresh QueryClient for each test and clear cache in `afterEach`.
+4. **Delete UI without confirmation leads to accidental data loss** — AlertDialog required for all delete operations, no default focus, specific item name in message
 
-5. **Missing Error State Tests** — Tests only verify happy paths. Every API call needs success AND error test cases using MSW error handlers.
-
-6. **E2E Tests Don't Assert Data** — Tests verify UI presence but not actual functionality. Every E2E test must verify data persistence via API calls or database queries.
+5. **Backend routes exist but frontend doesn't use them** — Fleet has DELETE routes for vehicles/tools but no UI buttons. Track API-UI gaps in issue tracker.
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure for v1.5 milestone:
+Based on research, suggested phase structure:
 
-### Phase 1: TEST-01 — Backend Unit Tests
-**Rationale:** Domain layer tests are fastest and have zero dependencies. Establish patterns first.
-**Delivers:** Domain entity tests, value object tests, validation tests for all modules
-**Addresses:** Backend unit tests (table stakes), domain layer testing
-**Avoids:** Over-mocking in domain tests, testing private methods
+### Phase 1: Bug Fixes (Low Risk)
+**Rationale:** No backend changes, immediate UX improvement, builds confidence
+**Delivers:** Hours validation fix, QR button wiring
+**Addresses:** BUG-TIME-001, BUG-INV-002
+**Avoids:** Pitfall 8 (validation only after submit)
 
-### Phase 2: TEST-02 — Frontend Test Infrastructure
-**Rationale:** Frontend tests require infrastructure setup (Vitest, MSW, Testing Library). Set up once, then write tests.
-**Delivers:** Vitest configuration, MSW handlers for all API endpoints, test utilities, QueryClient setup
-**Addresses:** Frontend unit tests (table stakes)
-**Avoids:** React Query cache interference, missing error state tests
+### Phase 2: Backend Delete Routes (Medium Risk)
+**Rationale:** Backend-first enables parallel frontend work, establishes patterns for remaining phases
+**Delivers:** DELETE routes for sites, materials, time entries with soft delete semantics
+**Uses:** Existing fleet module patterns, SQLx queries
+**Implements:** Soft delete with `deleted_at` column, dependency checks before delete
+**Avoids:** Pitfall 1 (no audit trail), Pitfall 2 (unclear FK errors)
 
-### Phase 3: TEST-03 — Inventory Module Integration Tests
-**Rationale:** Most complex module with materials, categories, stock operations. Start here to establish integration test patterns.
-**Delivers:** Full integration test coverage for Inventory module with real database
-**Addresses:** Integration tests (table stakes), SQLx runtime query testing
-**Avoids:** Incomplete multi-tenant tests (requires cross-tenant scenarios)
+### Phase 3: Backend Update Routes (Medium Risk)
+**Rationale:** Enables edit functionality, status transitions already validated by domain layer
+**Delivers:** PATCH routes for materials, time entries with partial update support
+**Uses:** Existing update patterns from sites module
+**Implements:** Conditional status transitions with version checking
+**Avoids:** Pitfall 4 (status race conditions)
 
-### Phase 4: TEST-04 — Sites Module Integration Tests
-**Rationale:** Second module, apply patterns from TEST-03.
-**Delivers:** Integration test coverage for Sites module
-**Addresses:** Integration tests continuation
+### Phase 4: Frontend Delete UI (Low Risk)
+**Rationale:** Backend complete, reusable AlertDialog component first, then specific implementations
+**Delivers:** Delete buttons with confirmation dialogs for all entity types
+**Uses:** shadcn/ui AlertDialog, React Query mutations with optimistic updates
+**Avoids:** Pitfall 5 (accidental data loss), Pitfall 6 (unused backend routes)
 
-### Phase 5: TEST-05 — Fleet Module Integration Tests
-**Rationale:** Third module, complete integration coverage.
-**Delivers:** Integration test coverage for Fleet module
-**Addresses:** Integration tests completion
+### Phase 5: Frontend Edit UI (Medium Risk)
+**Rationale:** Refactor existing dialogs for edit mode, wire update mutations
+**Delivers:** Edit capability for time entries, reservations, materials
+**Uses:** Mode-prop pattern for create/edit dialogs
+**Avoids:** Pitfall 7 (dialog without mode distinction)
 
-### Phase 6: TEST-06 — E2E Coverage Extended
-**Rationale:** E2E tests run against full stack. Extend existing 18 tests with offline scenarios and data assertions.
-**Delivers:** Offline scenario tests, data assertion patterns, multi-tenant E2E verification
-**Addresses:** E2E offline tests (table stakes)
-**Avoids:** E2E tests that don't assert critical data
+### Phase 6: Status Transitions UI (Medium Risk)
+**Rationale:** Backend validates transitions, UI just needs to show valid options
+**Delivers:** Status transition buttons for reservations (Pending→Confirmed→InUse→Completed)
+**Uses:** Existing `can_transition_to()` state machine logic
+**Avoids:** Pitfall 12 (missing status UI), Pitfall 4 (race conditions via conditional updates)
 
-### Phase 7: TEST-07 — CI Integration
-**Rationale:** Tests must run automatically. Wire everything into GitHub Actions.
-**Delivers:** GitHub Actions workflow with PostgreSQL service, coverage reports
-**Addresses:** CI integration (table stakes)
+### Phase 7: Low Stock & Calendar Enhancements (Low Risk)
+**Rationale:** Backend and hooks exist, just needs UI components
+**Delivers:** Low stock badges/alerts, calendar click-to-create
+**Uses:** Existing `/api/v1/inventory/low-stock` endpoint, ReservationDialog
+**Avoids:** Pitfall 9 (unused low stock feature), Pitfall 10 (calendar without context)
+
+### Phase 8: E2E Tests (Medium Risk)
+**Rationale:** Tests after implementation ensures coverage, catches integration issues
+**Delivers:** E2E tests for delete, edit, status transitions, calendar interactions
+**Uses:** Playwright, existing test helpers
+**Avoids:** All pitfalls verified through UI flow testing
 
 ### Phase Ordering Rationale
 
-- **Domain tests first:** Fastest feedback loop, zero dependencies, establishes patterns
-- **Frontend infrastructure second:** Independent of backend integration tests, can parallelize
-- **Integration tests by module:** Each module is independent, can parallelize after TEST-03 establishes patterns
-- **E2E extension late:** Depends on integration tests being stable
-- **CI last:** All tests must exist before wiring into CI
+- **Backend before frontend:** Deleting entities requires backend routes with proper validation first
+- **Bug fixes first:** Immediate value, no dependencies, builds momentum
+- **Delete before edit:** Simpler operation, establishes confirmation patterns
+- **Status transitions late:** Requires both update routes and UI patterns to be solid
+- **Tests last:** Full coverage requires all features implemented
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **TEST-03:** Complex integration, may need testcontainers research for Docker setup
-- **TEST-06:** Offline PWA testing patterns may need investigation
+- **Phase 3 (Update routes):** Time entry update semantics — can users edit any field or only hours?
+- **Phase 6 (Status UI):** Permission model for status transitions — who can confirm/cancel?
 
 Phases with standard patterns (skip research-phase):
-- **TEST-01:** Well-documented Rust unit testing, domain layer already isolated
-- **TEST-02:** Standard Vitest + MSW setup, extensive documentation
-- **TEST-04/05:** Apply patterns from TEST-03
-- **TEST-07:** Standard GitHub Actions with PostgreSQL service
+- **Phase 1 (Bug fixes):** Simple validation wiring, existing patterns
+- **Phase 4 (Delete UI):** AlertDialog pattern well-documented in shadcn/ui
+- **Phase 8 (E2E tests):** Playwright patterns already established in codebase
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All packages verified on crates.io and npm, version compatibility confirmed |
-| Features | HIGH | Based on standard testing pyramid, aligned with hexagonal architecture |
-| Architecture | HIGH | Patterns well-documented in Rust/React ecosystems, Context7 sources are authoritative |
-| Pitfalls | HIGH | All pitfalls have concrete prevention strategies with code examples |
+| Stack | HIGH | Existing infrastructure fully supports features, minimal additions needed |
+| Features | HIGH | Clear table stakes from CRUD patterns, specific bugs documented in issue backlog |
+| Architecture | HIGH | Well-structured codebase with established patterns to follow |
+| Pitfalls | HIGH | Based on codebase analysis + established CRUD/CRUD UX best practices |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **ts-rs integration:** Needs validation that ts-rs works with current Axum DTO setup. May need serde configuration adjustments.
-- **testcontainers setup:** Docker-in-Docker or Docker-outside-of-Docker for CI. Needs CI-specific research.
-- **Keycloak mocking:** Wiremock patterns for OIDC need verification against actual Keycloak responses.
+**Permission model:** Research doesn't clarify who can delete/edit what. During planning:
+- Define ownership rules (users can only edit own time entries? admins can edit all?)
+- Implement role checks in service layer
+
+**Offline sync strategy:** Known tech debt (no conflict resolution). Defer to v1.7+ as noted in PROJECT.md:
+- Queue soft-delete operations for offline sync
+- Implement tombstone pattern for deleted records
+
+**QR button destination:** BUG-INV-002 notes QR button has no onClick. During implementation:
+- Decide: opens scanner dialog or shows material QR code?
+- Check if QR scanning feature is fully designed
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Context7 /vitest-dev/vitest — Vitest configuration, React testing setup
-- Context7 /testing-library/react-testing-library — Render, queries, userEvent patterns
-- Context7 /mswjs/msw — Node.js integration, handler setup
-- Context7 /testcontainers/testcontainers-rs — PostgreSQL async setup, wait strategies
-- Context7 /asomers/mockall — Trait mocking, automock attribute
-- crates.io — Version verification for all Rust crates
-- npm registry — Version verification for all npm packages
+- **Codebase analysis** — Backend routes, domain logic, frontend dialogs, existing patterns
+- **shadcn/ui documentation** — AlertDialog component patterns
+- **NN/G Confirmation Dialog Guidelines** — UX best practices for destructive action confirmations
 
 ### Secondary (MEDIUM confidence)
-- Context7 /launchbadge/sqlx — SQLx testing patterns, `#[sqlx::test]` macro
-- Project codebase — Existing test patterns in `tests/tenant_isolation_test.rs`, `frontend/tests/*.spec.ts`
+- **ISSUE-BACKLOG.md** — Documented 24 gaps and bugs across modules
+- **PROJECT.md** — Known tech debt, offline-first architecture constraints
 
 ### Tertiary (LOW confidence)
-- None — all findings have multiple authoritative sources
+- **State machine testing patterns** — Assumed based on domain layer structure, verify during implementation
 
 ---
 *Research completed: 2026-04-30*

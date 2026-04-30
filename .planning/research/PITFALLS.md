@@ -1,371 +1,560 @@
-# Pitfalls Research
+# Domain Pitfalls: Adding Delete/Edit/Status Transitions to Existing CRUD App
 
-**Domain:** Testing & Quality Foundation for Rust/React Multi-Tenant SaaS
+**Project:** Schreinerei SaaS v1.6
+**Domain:** Construction management SaaS with offline-first PWA
 **Researched:** 2026-04-30
-**Confidence:** HIGH
+**Confidence:** HIGH (based on codebase analysis + established patterns)
+
+---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Frontend-Backend Type Drift
+### Pitfall 1: Delete Without Soft Delete Breaks Audit Trails
 
 **What goes wrong:**
-Frontend TypeScript types (`frontend/src/types/inventory.ts`) are manually maintained copies of backend Rust DTOs (`src/modules/inventory/api/routes.rs`). When backend changes a field name, type, or adds a new field, the frontend type doesn't update automatically, causing runtime errors or silent data mismatches.
+Hard delete permanently removes records. Users accidentally delete sites, materials, or reservations, losing historical data (time entries, stock withdrawal history, reservation patterns). Cannot recover from mistakes.
 
 **Why it happens:**
-No automated type synchronization. Developers update backend DTOs and forget to update corresponding frontend types, or vice versa. The types look similar but aren't guaranteed to match.
+Developers start with simple `DELETE FROM` thinking "users won't make mistakes." Later, business requirements for audit trails emerge but data is already gone.
 
 **How to avoid:**
-1. **Use ts-rs** to generate TypeScript types from Rust structs:
+- Add `deleted_at` timestamp column to all deletable entities
+- Modify queries to exclude `WHERE deleted_at IS NULL`
+- Keep FK constraints intact (soft-deleted records still satisfy FKs)
+- Implement `restore` endpoint for accidental deletions
+
+**Warning signs:**
+- Backend has `DELETE` routes (fleet has them) but no `deleted_at` column
+- Users ask "can I undo this?" before deleting
+- Time entries reference deleted sites → orphaned records
+
+**Phase to address:** Backend delete implementation phase (before UI)
+
+---
+
+### Pitfall 2: Foreign Key Constraints Block Deletes Without Clear UX
+
+**What goes wrong:**
+User tries to delete a site that has time entries, or a vehicle with active reservations. Backend returns FK violation error, frontend shows generic "Delete failed" toast. User doesn't understand WHY delete failed.
+
+**Why it happens:**
+Database FK constraints exist but aren't checked before delete attempt. Frontend doesn't know what "dependent entities" exist.
+
+**How to avoid:**
+1. **Before delete, check dependencies:**
    ```rust
-   #[derive(TS, Serialize)]
-   #[ts(export)]
-   pub struct MaterialResponse {
-       pub id: String,
-       pub category_id: String,
-       // ... fields auto-sync to TypeScript
+   // In service layer, before delete
+   let has_time_entries = repo.has_time_entries(site_id).await?;
+   if has_time_entries {
+       return Err(AppError::Conflict("Site has time entries. Archive instead?"));
    }
    ```
-2. Run `cargo test` to regenerate TypeScript bindings
-3. Import generated types in frontend instead of manual definitions
-4. CI check: fail build if generated types differ from committed types
 
-**Warning signs:**
-- Frontend receives `undefined` for expected fields
-- API calls return data that frontend can't display
-- TypeScript compilation passes but runtime errors occur
-- Backend adds field, frontend doesn't show it for weeks
-
-**Phase to address:** TEST-01 (Backend Unit Tests) — Add ts-rs derive macros and type generation
-
----
-
-### Pitfall 2: Incomplete Multi-Tenant Test Coverage
-
-**What goes wrong:**
-Tests verify happy paths but miss cross-tenant data leakage. A developer adds a new query that forgets `WHERE tenant_id = $1`, and existing tests pass because they only test single-tenant scenarios.
-
-**Why it happens:**
-Testing multi-tenant isolation requires explicit cross-tenant test scenarios. Most tests create one tenant and verify functionality, not isolation. SQLx compile-time checks don't verify tenant scoping.
-
-**How to avoid:**
-1. Every test that queries data must test cross-tenant isolation
-2. Create two tenants with similar data, verify queries only return current tenant's data
-3. Test pattern from existing `tenant_isolation_test.rs`:
-   ```rust
-   // Create tenant A and B with users
-   let tenant_a = create_test_tenant(&pool, "Tenant A").await;
-   let tenant_b = create_test_tenant(&pool, "Tenant B").await;
-   
-   // Query with tenant_a context, verify no tenant_b data
-   let count = sqlx::query_scalar::<_, i64>(
-       "SELECT COUNT(*) FROM users WHERE tenant_id = $1"
-   )
-   .bind(tenant_a)  // MUST be in every query
-   .fetch_one(&pool)
-   .await?;
-   
-   assert_eq!(count, expected_tenant_a_count);
-   ```
-4. Add test macro or helper that enforces tenant context in all queries
-
-**Warning signs:**
-- New query doesn't have `tenant_id` in WHERE clause
-- Test only creates one tenant
-- Integration tests skip tenant parameter
-- Admin features that "see all data" bypass tenant check
-
-**Phase to address:** TEST-03/04/05 (Integration Tests) — Require cross-tenant test for each module
-
----
-
-### Pitfall 3: SQLx Runtime Queries Untested
-
-**What goes wrong:**
-SQLx is configured with runtime queries (not compile-time checked) for this project. Queries with wrong syntax, missing parameters, or incorrect types compile fine but fail at runtime in production.
-
-**Why it happens:**
-Compile-time checked queries require database at build time. Project uses `DATABASE_URL` with runtime checking, which defers validation to when queries actually execute.
-
-**How to avoid:**
-1. Use `#[sqlx::test]` macro which creates isolated test databases:
-   ```rust
-   #[sqlx::test]
-   async fn test_query(pool: PgPool) -> sqlx::Result<()> {
-       let result = sqlx::query("SELECT * FROM materials WHERE tenant_id = $1")
-           .bind(tenant_id)
-           .fetch_all(&pool)
-           .await?;
-       Ok(())
+2. **Return dependency info to frontend:**
+   ```typescript
+   // DELETE response
+   { 
+     success: false, 
+     error: "CONFLICT",
+     dependencies: { time_entries: 12, activities: 3 }
    }
    ```
-2. Every route handler must have at least one integration test
-3. Test query success AND failure cases
-4. CI runs `cargo test` against real PostgreSQL instance
+
+3. **UI shows clear message:** "Cannot delete: 12 time entries exist. Archive site instead?"
 
 **Warning signs:**
-- Query compiles but fails at runtime
-- Missing `DATABASE_URL` environment variable
-- Tests only mock database calls, don't execute real queries
-- New route added without integration test
+- Delete button exists but sometimes fails silently
+- Users report "delete doesn't work"
+- Database logs show FK constraint violations
 
-**Phase to address:** TEST-03/04/05 (Integration Tests) — Every route needs at least one test
+**Phase to address:** Backend delete implementation (dependency checks)
 
 ---
 
-### Pitfall 4: React Query Cache Interference in Tests
+### Pitfall 3: Offline Delete Sync Conflicts
 
 **What goes wrong:**
-Tests pass individually but fail when run together. One test's data appears in another test. Queries return stale data. Tests are flaky and inconsistent.
+User A deletes a vehicle while offline. User B creates a reservation for that vehicle. When A syncs, the vehicle is deleted but B's reservation now references a non-existent vehicle. OR: Both users edit the same reservation offline → last-write-wins, losing changes.
 
 **Why it happens:**
-React Query (TanStack Query) caches responses. Tests share the same QueryClient instance. One test's mutation or query pollutes another test's cache.
+Offline-first apps queue operations in IndexedDB. No conflict resolution strategy exists. Sync applies operations in arrival order, not causal order.
+
+**Current state (from PROJECT.md):**
+> "No conflict resolution for offline edits" — Known tech debt
 
 **How to avoid:**
-1. Create fresh QueryClient for each test:
+1. **Soft delete prevents orphan FKs:** Deleted records still exist, satisfy FK constraints
+2. **Version vectors or timestamps:** Add `version` column, reject updates with stale version
+   ```rust
+   UPDATE reservations SET ... WHERE id = $1 AND version = $2
+   // If 0 rows affected → conflict occurred
+   ```
+3. **Conflict detection in sync:**
    ```typescript
-   const queryClient = new QueryClient({
-     defaultOptions: {
-       queries: { retry: false },
-     },
-   });
+   // In sync worker
+   if (serverVersion > localVersion) {
+     // Prompt user or auto-merge
+   }
+   ```
+4. **Tombstone for deletes:** Sync `deleted_at` timestamp, not actual delete
+
+**Warning signs:**
+- Offline operations occasionally fail on sync
+- Users report "my changes disappeared"
+- Data inconsistency between devices
+
+**Phase to address:** Offline sync refactor (defer to v1.7+ as per tech debt)
+
+---
+
+### Pitfall 4: Status Transition Race Conditions
+
+**What goes wrong:**
+Two users view same reservation (status: Confirmed). User A clicks "Start Use", User B clicks "Cancel". Both requests hit backend. Depending on order, status ends up in wrong state or one user sees error.
+
+**Why it happens:**
+No optimistic locking. Backend checks `can_transition_to()` but between check and update, another request changes status.
+
+**Current code (reservation.rs:37-55):**
+```rust
+pub fn can_transition_to(&self, new_status: ReservationStatus) -> bool {
+    // This checks CURRENT state, not concurrent state
+}
+```
+
+**How to avoid:**
+1. **Database-level check in UPDATE:**
+   ```sql
+   UPDATE reservations 
+   SET status = 'in_use', version = version + 1
+   WHERE id = $1 AND status = 'confirmed'  -- Conditional update
+   -- If 0 rows affected, status changed by another transaction
+   ```
+
+2. **Or use version column:**
+   ```sql
+   UPDATE reservations 
+   SET status = $1, version = version + 1
+   WHERE id = $2 AND version = $3
+   -- If 0 rows, another client modified it
+   ```
+
+3. **Frontend refreshes on conflict:**
+   ```typescript
+   try {
+     await updateReservation(...)
+   } catch (ConflictError) {
+     toast.error("Reservation was modified. Refreshing...")
+     refetch()
+   }
+   ```
+
+**Warning signs:**
+- Intermittent "invalid status transition" errors
+- Status shows one thing in list, another in detail view
+- Users report "I clicked but nothing happened"
+
+**Phase to address:** Backend status transition implementation
+
+---
+
+### Pitfall 5: Delete UI Without Confirmation Leads to Accidental Data Loss
+
+**What goes wrong:**
+User accidentally clicks delete button (fat finger, double-click). Data immediately gone. No undo. User frustration, support tickets.
+
+**Why it happens:**
+Delete button implemented as simple `onClick={handleDelete}` without confirmation dialog. "Delete quickly" sounds efficient until accidents happen.
+
+**How to avoid:**
+1. **Confirmation dialog for destructive actions:**
+   ```tsx
+   <AlertDialog>
+     <AlertDialogTrigger asChild>
+       <Button variant="destructive">Löschen</Button>
+     </AlertDialogTrigger>
+     <AlertDialogContent>
+       <AlertDialogHeader>
+         <AlertDialogTitle>Site wirklich löschen?</AlertDialogTitle>
+         <AlertDialogDescription>
+           Diese Aktion kann nicht rückgängig gemacht werden.
+         </AlertDialogDescription>
+       </AlertDialogHeader>
+       <AlertDialogFooter>
+         <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+         <AlertDialogAction onClick={handleDelete}>Löschen</AlertDialogAction>
+       </AlertDialogFooter>
+     </AlertDialogContent>
+   </AlertDialog>
+   ```
+
+2. **Type-to-confirm for critical deletions:**
+   ```
+   Type the site name "Müller Baustelle" to confirm deletion:
+   [_________________________]
+   [Delete] [Cancel]
+   ```
+
+**Warning signs:**
+- Delete button is same size/prominence as edit button
+- No AlertDialog component imported in list pages
+- Users ask "is there an undo?"
+
+**Phase to address:** Frontend delete UI implementation
+
+---
+
+## Moderate Pitfalls
+
+### Pitfall 6: Backend Delete Routes Exist But Frontend Doesn't Use Them
+
+**What goes wrong:**
+Fleet API has `DELETE /api/v1/fleet/vehicles/{id}` and `DELETE /api/v1/fleet/tools/{id}` routes. Frontend has no delete buttons for vehicles/tools. Code is written but unreachable.
+
+**Why it happens:**
+Backend-first development. API implemented but UI never connected. Tests pass for API but E2E tests don't cover UI flow.
+
+**How to avoid:**
+- Track API-UI gaps in issue tracker (already done in ISSUE-BACKLOG.md: MISSING-FLEET-001)
+- E2E tests should verify user can complete operation through UI, not just API
+- Code review checklist: "Does every backend route have a UI entry point?"
+
+**Warning signs:**
+- API routes without corresponding frontend hooks
+- E2E tests use API helpers to create data, not UI dialogs
+- Feature marked "done" but users can't find it in app
+
+**Phase to address:** Frontend delete UI (connect existing routes)
+
+---
+
+### Pitfall 7: Edit Dialog Reuses Create Dialog Without Mode Distinction
+
+**What goes wrong:**
+Edit dialog is Create dialog with pre-filled values. Dialog title still says "Create". Submit button says "Save" but calls create API, not update API. User creates duplicate instead of editing.
+
+**Why it happens:**
+Duplicating dialog component seems faster than adding mode prop. "I'll add that later" → never added.
+
+**Current pattern (TimeEntryDialog.tsx, ReservationDialog.tsx):**
+Both dialogs only support create. No `entry` or `reservation` prop for edit mode.
+
+**How to avoid:**
+1. **Pass entity to edit:**
+   ```tsx
+   interface TimeEntryDialogProps {
+     entry?: TimeEntry  // If provided, edit mode
+     onCreate: (data: CreateTimeEntry) => void
+     onUpdate: (id: string, data: UpdateTimeEntry) => void
+   }
+   ```
+
+2. **Conditional title and submit:**
+   ```tsx
+   <DialogTitle>
+     {entry ? "Zeiteintrag bearbeiten" : "Zeit buchen"}
+   </DialogTitle>
+   <Button onClick={entry ? handleUpdate : handleCreate}>
+     {entry ? "Aktualisieren" : "Speichern"}
+   </Button>
+   ```
+
+3. **Initialize form with existing values:**
+   ```tsx
+   const [hours, setHours] = useState(entry?.hours ?? 1)
+   ```
+
+**Warning signs:**
+- Dialog title doesn't change when editing
+- Clicking "save" creates duplicate entries
+- Edit operation requires delete + recreate
+
+**Phase to address:** Frontend edit dialogs
+
+---
+
+### Pitfall 8: Input Validation Feedback Only After Submit
+
+**What goes wrong:**
+User fills form, clicks submit, backend returns validation error, toast shows generic "Operation failed". User doesn't know which field is wrong. Resubmits multiple times, same error.
+
+**Current state (from BUG-TIME-002):**
+> "The TimeEntryDialog shows no inline validation messages. Users only see a generic toast error after submission fails."
+
+**Why it happens:**
+Frontend relies entirely on backend validation. "Backend is source of truth" → but UX suffers.
+
+**How to avoid:**
+1. **Client-side validation mirrors backend:**
+   ```tsx
+   const [errors, setErrors] = useState<Record<string, string>>({})
    
-   const wrapper = ({ children }) => (
-     <QueryClientProvider client={queryClient}>
-       {children}
-     </QueryClientProvider>
-   );
+   const validate = (): boolean => {
+     const newErrors: Record<string, string> = {}
+     if (hours <= 0) newErrors.hours = "Stunden müssen größer als 0 sein"
+     if (!workDate) newErrors.workDate = "Datum ist erforderlich"
+     setErrors(newErrors)
+     return Object.keys(newErrors).length === 0
+   }
    ```
-2. Clear cache between tests:
-   ```typescript
-   afterEach(() => {
-     queryClient.clear();
-   });
+
+2. **Inline error display:**
+   ```tsx
+   <div className="space-y-2">
+     <Label>Stunden</Label>
+     <Input ... />
+     {errors.hours && (
+       <p className="text-sm text-destructive">{errors.hours}</p>
+     )}
+   </div>
    ```
-3. Use MSW (Mock Service Worker) for API mocking:
-   ```typescript
-   import { setupServer } from 'msw/node';
-   const server = setupServer(...handlers);
-   beforeAll(() => server.listen());
-   afterEach(() => server.resetHandlers());
-   afterAll(() => server.close());
+
+3. **Disable submit until valid:**
+   ```tsx
+   <Button disabled={!isValid || mutation.isPending}>
    ```
 
 **Warning signs:**
-- Tests fail when run in different order
-- Tests pass in isolation, fail in full suite
-- Stale data appears in tests
-- Flaky tests that sometimes pass, sometimes fail
+- Users submit 3+ times before getting it right
+- Support tickets asking "what format does X field accept?"
+- Backend logs show high validation error rate
 
-**Phase to address:** TEST-02 (Frontend Unit Tests) — Establish testing patterns
+**Phase to address:** Frontend validation (BUG-TIME-001, BUG-TIME-002)
 
 ---
 
-### Pitfall 5: Missing Error State Tests
+### Pitfall 9: Low Stock Alerts Not Shown in UI
 
 **What goes wrong:**
-Tests only verify happy paths. Error handling code is untested. Frontend shows wrong error messages, or swallows errors silently. Backend error responses don't match what frontend expects.
+Backend has `min_quantity`, `is_low_stock()`, and `/api/v1/inventory/low-stock` endpoint. Frontend doesn't show any visual indicator. Materials run out without warning.
+
+**Current state:**
+- Material domain has `is_low_stock()` method
+- API has `list_low_stock` route
+- Frontend has no visual indicator
 
 **Why it happens:**
-Developers focus on "it works" scenarios. Error states are harder to trigger in tests. MSW makes it easy but developers don't add error handlers.
+Backend implemented feature, frontend backlog didn't prioritize. "Works in API" ≠ "Users can see it".
 
 **How to avoid:**
-1. Every API call needs success AND error test cases:
-   ```typescript
-   // Success case
-   test('creates material successfully', async () => {
-     server.use(
-       http.post('/api/v1/inventory/materials', () => 
-         HttpResponse.json({ id: '123', ... }, { status: 201 })
-       )
-     );
-     // ... test success
-   });
-   
-   // Error case
-   test('handles validation error', async () => {
-     server.use(
-       http.post('/api/v1/inventory/materials', () => 
-         HttpResponse.json({ message: 'Invalid category' }, { status: 400 })
-       )
-     );
-     // ... test error handling
-   });
+1. **Visual indicator in list:**
+   ```tsx
+   {material.is_low_stock && (
+     <Badge variant="destructive" className="gap-1">
+       <AlertTriangle className="h-3 w-3" />
+       Niedrig
+     </Badge>
+   )}
    ```
-2. Test loading states
-3. Test network failure scenarios
-4. Verify error messages are user-friendly, not technical
+
+2. **Dedicated low-stock view:**
+   ```tsx
+   // In navigation
+   <NavLink to="/inventory/low-stock">
+     Inventory {lowStockCount > 0 && `(${lowStockCount})`}
+   </NavLink>
+   ```
+
+3. **Toast on stock withdrawal that triggers low:**
+   ```tsx
+   if (result.material.is_low_stock) {
+     toast.warning(`${material.name} ist niedrig (${material.quantity} verbleibend)`)
+   }
+   ```
 
 **Warning signs:**
-- Test file only has happy path tests
-- `catch` blocks are untested
-- Frontend shows generic "Something went wrong"
-- Backend returns 500 when it should return 400
+- Backend has feature, frontend doesn't use it
+- Users manually track reorder points in spreadsheets
+- Stockouts surprise users
 
-**Phase to address:** TEST-02 (Frontend Unit Tests) — Mandate error state tests
+**Phase to address:** Low stock UI implementation
 
 ---
 
-### Pitfall 6: E2E Tests Don't Assert Critical Data
+### Pitfall 10: Calendar Click-to-Create Doesn't Pre-fill Time/Resource
 
 **What goes wrong:**
-E2E tests verify navigation and UI presence but not actual functionality. "Submit button exists" but not "submit actually creates the record". Tests pass but feature is broken.
+Calendar shows empty slot. User clicks. ReservationDialog opens but `resourceId` and `startTime` are empty. User has to re-select what they just clicked.
+
+**Current state (from BUG-RES-002):**
+> "Calendar view shows reservations but clicking on empty time slots does nothing."
 
 **Why it happens:**
-UI tests are easier to write than data verification. Requires API calls or database queries to verify. Tests focus on visible elements.
+Calendar component renders slots but has no `onClick` handler. Or handler opens dialog without passing context.
 
 **How to avoid:**
-1. Every E2E test must verify data persistence:
-   ```typescript
-   test('should create material', async ({ page, request }) => {
-     await page.goto('/inventory');
-     await page.click('button:has-text("Material hinzufügen")');
-     await page.fill('input[name="name"]', 'Test Material');
-     await page.click('button[type="submit"]');
-     
-     // DON'T STOP HERE - verify data was created
-     const response = await request.get('/api/v1/inventory/materials');
-     const materials = await response.json();
-     expect(materials.find(m => m.name === 'Test Material')).toBeDefined();
-   });
+1. **Pass click context to dialog:**
+   ```tsx
+   const handleSlotClick = (resourceId: string, startTime: Date) => {
+     setReservationDialog({
+       open: true,
+       resourceId,
+       startTime: startTime.toISOString(),
+       endTime: new Date(startTime.getTime() + 2 * 60 * 60 * 1000).toISOString()
+     })
+   }
    ```
-2. Use Playwright's `request` context for API verification
-3. Assert specific field values, not just existence
-4. Clean up test data after test
+
+2. **Dialog accepts initial values:**
+   ```tsx
+   <ReservationDialog
+     open={dialog.open}
+     resourceId={dialog.resourceId}
+     startTime={dialog.startTime}
+     endTime={dialog.endTime}
+   />
+   ```
 
 **Warning signs:**
-- E2E tests only check `toBeVisible()`
-- No API calls in E2E tests
-- Tests pass but feature doesn't work
-- Tests don't verify database state
+- Users navigate away from calendar to create reservations
+- Calendar is read-only, not interactive
+- "Nice view but useless" feedback
 
-**Phase to address:** TEST-06 (E2E Coverage Extended) — Require data assertions
+**Phase to address:** Calendar click-to-create
 
 ---
 
-## Technical Debt Patterns
+## Minor Pitfalls
 
-Shortcuts that seem reasonable but create long-term problems.
+### Pitfall 11: QR Button Exists But Does Nothing
 
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Manual type sync between frontend/backend | No build step changes, fast initial development | Silent type mismatches, runtime errors, debugging nightmare | Never — use ts-rs from day one |
-| Skip cross-tenant tests | Faster test writing, simpler test setup | Security vulnerabilities, data leakage incidents | Never — multi-tenant is core architecture |
-| Mock database in all tests | Faster tests, no DB setup | SQLx queries untested, runtime query failures | Unit tests only — integration tests must use real DB |
-| Copy-paste test setup | Quick to add new test | Divergent patterns, hard to change, test tech debt | Prototyping only — extract shared helpers |
+**What goes wrong:**
+QR button in InventoryListPage renders but has no onClick. User clicks, nothing happens. Feature appears broken.
+
+**Current state (from BUG-INV-002):**
+> "QR code button exists but has no onClick handler - it's a static button."
+
+**How to avoid:**
+- Wire button to scanner dialog or QR detail view
+- If feature not ready, hide button or show "coming soon" tooltip
+- E2E test should verify button is functional
+
+**Phase to address:** QR button wiring
+
+---
+
+### Pitfall 12: Status Transition UI Missing Despite Backend Support
+
+**What goes wrong:**
+Reservation has status (Pending → Confirmed → InUse → Completed/Cancelled). Backend validates transitions. Frontend has no buttons to trigger transitions. Reservations stuck in initial state.
+
+**Current state (from MISSING-RES-002):**
+> "No UI buttons to confirm, start, complete, or cancel reservations."
+
+**How to avoid:**
+1. **Action buttons based on current status:**
+   ```tsx
+   {reservation.status === 'pending' && (
+     <>
+       <Button onClick={() => updateStatus('confirmed')}>Bestätigen</Button>
+       <Button variant="destructive" onClick={() => updateStatus('cancelled')}>Stornieren</Button>
+     </>
+   )}
+   {reservation.status === 'confirmed' && (
+     <Button onClick={() => updateStatus('in_use')}>Starten</Button>
+   )}
+   ```
+
+2. **Status badge shows current state:**
+   ```tsx
+   <Badge variant={statusVariant[res.status]}>
+     {statusLabels[res.status]}
+   </Badge>
+   ```
+
+**Phase to address:** Reservation status UI
+
+---
+
+## Phase-Specific Warnings
+
+| Phase Topic | Likely Pitfall | Mitigation |
+|-------------|----------------|------------|
+| Backend delete routes | Soft delete not implemented, hard delete loses audit trail | Add `deleted_at` column before exposing delete API |
+| Frontend delete UI | Accidental deletions without confirmation | AlertDialog required for all delete operations |
+| Time entry edit | Dialog reused without mode distinction | Pass existing entry to dialog, conditional title/submit |
+| Reservation status UI | Race conditions on status update | Database-level status check in UPDATE WHERE clause |
+| Low stock alerts | Backend endpoint unused | Poll `/low-stock` or subscribe to events |
+| Calendar click-to-create | Dialog doesn't receive click context | Pass resourceId and time from slot click |
+| E2E tests | Tests use API helpers, don't verify UI flow | Test full user journey through UI |
+| Offline sync (v1.7+) | Delete conflicts with offline edits | Tombstone sync, version vectors |
 
 ---
 
 ## Integration Gotchas
 
-Common mistakes when connecting frontend and backend.
-
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| API routes | Backend expects `category_id`, frontend sends `categoryId` (camelCase) | Use same field names — derive `serde(rename = "...")` only when needed, document the rename |
-| UUIDs | Backend returns UUID as string, frontend expects different format | Backend serializes UUIDs as strings (`"uuid"`) — frontend must parse as strings, not validate format |
-| Pagination | Backend returns `{ items, total, page, pageSize }`, frontend expects `{ data, count, offset, limit }` | Agree on pagination format upfront, use shared types |
-| Dates | Backend returns RFC3339, frontend expects ISO8601 | RFC3339 is ISO8601 subset — frontend can parse both, but document the format |
-| Errors | Backend returns `{ message, code }`, frontend expects `{ error, details }` | Standardize error response format, use ts-rs to generate error types |
-| Null vs undefined | Backend sends `null`, TypeScript uses `undefined` for optional | TypeScript `| null` union for nullable fields, explicit null checks |
+| Backend delete → Frontend UI | API exists, UI doesn't connect | Track in issue tracker, E2E test UI flow |
+| ts-rs types | Generated types drift from API responses | Run `cargo test --features ts-rs/export` after DTO changes |
+| IndexedDB sync | Delete operations not queued for offline | Queue soft-delete operation, sync `deleted_at` |
+| Multi-tenant delete | TenantId not validated on delete | Always include `WHERE tenant_id = $1` in delete queries |
+| Status transitions | Frontend allows invalid transitions | Backend rejects but frontend doesn't disable invalid buttons |
 
 ---
 
-## Performance Traps
+## Technical Debt Patterns
 
-Patterns that work at small scale but fail as usage grows.
-
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| N+1 queries in tests | Tests slow, 100+ DB queries per test | Assert query count in tests, use `sqlx::query_as!` with JOINs | 100+ test records |
-| No pagination in list endpoints | Test returns all 5 records fine, production returns 50,000 | Add pagination from start, test with 100+ records | 1000+ records |
-| Frontend fetches all data | Test uses 10 items, production renders 5000 items in dropdown | Test with large datasets, add virtualization | 100+ items in any list |
-| Sync tests in parallel | Tests pass in sequence, fail when parallelized | Ensure test isolation (separate tenants, cleanup) | Any parallel test execution |
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Hard delete | Simpler queries | No audit trail, no recovery | Never in production app |
+| Delete without confirmation | Faster to implement | Accidental data loss, support burden | Never for destructive actions |
+| Edit via delete+create | Reuses create dialog | Orphaned references, lost metadata | Never |
+| Client-side only validation | Faster feedback | Backend validation bypassed | Never - always validate both sides |
+| Skip E2E for "simple" CRUD | Faster tests | Regression bugs in "simple" features | Never - CRUD is exactly what needs testing |
 
 ---
 
 ## Security Mistakes
 
-Domain-specific security issues beyond general web security.
-
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Missing tenant_id in query | Data leakage between tenants | Every query MUST include `WHERE tenant_id = $1` — test all queries with cross-tenant scenarios |
-| Admin endpoint without tenant check | Admin sees all tenants' data | Admin endpoints also need tenant context — test with multiple tenants |
-| QR code includes tenant ID | Cross-tenant QR code usage | QR codes must include tenant prefix or validate tenant on lookup |
-| JWT tenant_id trusted blindly | Tenant spoofing via crafted JWT | Validate JWT signature, verify organization claim matches database tenant |
-
----
-
-## Testing Anti-Patterns
-
-Common testing mistakes specific to this stack.
-
-| Anti-Pattern | Why Bad | Instead |
-|--------------|---------|---------|
-| Testing implementation details | Breaks on refactor, doesn't verify behavior | Test behavior through public API |
-| Mocking what you don't own | Mock doesn't match real behavior | Use real dependencies (DB) or official test utilities (`#[sqlx::test]`) |
-| One giant test function | Hard to debug, unclear what failed | One test per scenario, descriptive test names |
-| Skipping assertions to make test pass | False confidence | Every test must have meaningful assertions |
-| Testing private functions | Brittle, tests coupling not behavior | Test through public interface |
-| Only testing success path | Errors go unhandled in production | Test success, error, and edge cases |
-| Using production DB for tests | Data corruption, unreliable tests | Use `#[sqlx::test]` which creates isolated test databases |
+| Delete without tenant check | Cross-tenant data deletion | `WHERE tenant_id = $1` in every delete query |
+| Edit without ownership check | User modifies another user's data | `WHERE user_id = $1` or role-based check |
+| Status transition without authorization | User confirms own reservation | Check permissions: `can_confirm_reservation(user, reservation)` |
+| No rate limiting on delete | API abuse, mass deletion | Rate limit at infrastructure level (noted as tech debt) |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-Things that appear complete but are missing critical pieces.
+Before marking delete/edit/status features complete:
 
-- [ ] **Backend Tests:** Often missing cross-tenant isolation tests — verify with two tenants
-- [ ] **Frontend Tests:** Often missing error state tests — verify error UI shows
-- [ ] **E2E Tests:** Often missing data persistence verification — verify API/database state
-- [ ] **Type Definitions:** Often missing generated types from ts-rs — verify types auto-generated
-- [ ] **Query Tests:** Often missing tenant_id parameter — verify all queries include it
-- [ ] **Auth Tests:** Often missing multi-tenant auth tests — verify user can't access other tenant
-- [ ] **Offline Tests:** Often missing sync conflict tests — verify conflict resolution
+- [ ] **Delete button:** AlertDialog confirms before deletion
+- [ ] **Delete backend:** Returns meaningful error if FK constraints block delete
+- [ ] **Delete sync:** Soft delete works offline (tombstone sync)
+- [ ] **Edit dialog:** Title changes to "Edit" when editing existing entity
+- [ ] **Edit submit:** Calls PATCH/PUT, not POST
+- [ ] **Validation:** Inline errors shown before submit, not just toast after
+- [ ] **Status buttons:** Only valid transitions shown as buttons
+- [ ] **Status race:** Concurrent updates handled (version check or conditional update)
+- [ ] **E2E tests:** Test delete, edit, status through UI, not just API helpers
+- [ ] **Multi-tenant:** Delete/update queries include tenant_id filter
 
 ---
 
 ## Recovery Strategies
 
-When pitfalls occur despite prevention, how to recover.
-
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Type drift detected | MEDIUM | 1. Add ts-rs to affected types 2. Run `cargo test` to generate 3. Update frontend imports 4. Remove manual types |
-| Cross-tenant data leak | HIGH | 1. Audit ALL queries for tenant_id 2. Add integration tests for each query 3. Consider data migration if leak occurred 4. Notify affected tenants |
-| Flaky tests from cache | LOW | 1. Add QueryClient cleanup to each test 2. Use MSW instead of real API 3. Run tests in isolation to identify culprit |
-| Missing error handling | MEDIUM | 1. Add error test cases to existing tests 2. Verify error UI components exist 3. Add error boundaries 4. Test error scenarios in E2E |
-| Untested queries failing | MEDIUM | 1. Add `#[sqlx::test]` for each route 2. Set up CI with DATABASE_URL 3. Run integration tests in CI pipeline |
-
----
-
-## Pitfall-to-Phase Mapping
-
-How milestone phases should address these pitfalls.
-
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| Frontend-Backend Type Drift | TEST-01 (Backend) | `cargo test` generates types, CI checks for drift |
-| Incomplete Multi-Tenant Tests | TEST-03/04/05 (Integration) | Every module has cross-tenant test |
-| SQLx Runtime Queries Untested | TEST-03/04/05 (Integration) | Every route has integration test |
-| React Query Cache Interference | TEST-02 (Frontend) | All tests use fresh QueryClient |
-| Missing Error State Tests | TEST-02 (Frontend) | Every hook has error test |
-| E2E Tests Don't Assert Data | TEST-06 (E2E Extended) | Every E2E test verifies API/DB state |
+| Hard delete used, data lost | HIGH | Restore from backup, no granular recovery possible |
+| Soft delete implemented after data exists | MEDIUM | Add `deleted_at NULL`, backfill NULL for existing records |
+| Edit creates duplicates | LOW | Teach users to use correct button, delete duplicates |
+| Status race condition | LOW | Refresh UI, retry operation with current status |
+| Offline sync conflict | MEDIUM | Manual merge or "server wins" resolution |
 
 ---
 
 ## Sources
 
-- Context7 documentation for ts-rs: https://github.com/aleph-alpha/ts-rs
-- Context7 documentation for SQLx testing: https://github.com/launchbadge/sqlx
-- Context7 documentation for Vitest with MSW: https://github.com/vitest-dev/vitest
-- Context7 documentation for Playwright API testing: https://github.com/microsoft/playwright
-- Existing test patterns: `tests/tenant_isolation_test.rs`
-- Existing E2E tests: `frontend/tests/*.spec.ts`
-- API types: `frontend/src/types/inventory.ts`, `src/modules/inventory/api/routes.rs`
+- Codebase analysis: Backend API routes, domain logic, frontend dialogs
+- ISSUE-BACKLOG.md: Documented gaps and bugs
+- PROJECT.md: Known tech debt (no conflict resolution for offline edits)
+- Established patterns: State machine tests in domain layer, ts-rs type generation
+- shadcn/ui patterns: AlertDialog for confirmations
 
 ---
 
-*Pitfalls research for: Testing & Quality Foundation (v1.5)*
+*Pitfalls research for: Schreinerei SaaS v1.6 - User Experience & Missing Functionality*
 *Researched: 2026-04-30*
+*Confidence: HIGH (based on codebase inspection + established domain patterns)*
