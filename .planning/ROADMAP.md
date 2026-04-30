@@ -54,7 +54,13 @@
   3. System clears preference if Baustelle becomes invalid (archived/deleted)
   4. Material deductions can be linked to a Baustelle (FK column added)
   5. Deduction details include Baustelle name when linked
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 22-01-PLAN.md — UserPreferences Repository & Service with validation
+- [ ] 22-02-PLAN.md — Add site_id to WithdrawMaterial command
+- [ ] 22-03-PLAN.md — API endpoints for preferences (GET/PATCH)
+- [ ] 22-04-PLAN.md — Deduction history with Baustelle name
 
 ### Phase 23: Frontend UI & Auto-Assignment
 **Goal**: Users can see and change their active Baustelle, with auto-assignment to forms
@@ -87,7 +93,7 @@
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 22. Backend Foundation | v1.7 | 0/TBD | Not started | - |
+| 22. Backend Foundation | v1.7 | 0/4 | Ready to execute | - |
 | 23. Frontend UI & Auto-Assignment | v1.7 | 0/TBD | Not started | - |
 | 24. Opt-Out Dialog & E2E Tests | v1.7 | 0/TBD | Not started | - |
 
