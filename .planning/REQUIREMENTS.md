@@ -24,8 +24,8 @@ Testing & Quality Foundation — comprehensive testing strategy and issue docume
 
 ### E2E Data Assertions
 
-- [ ] **TEST-10**: E2E tests verify data persisted via API calls
-- [ ] **TEST-11**: Data assertions pattern documented for future E2E tests
+- [x] **TEST-10**: E2E tests verify data persisted via API calls
+- [x] **TEST-11**: Data assertions pattern documented for future E2E tests
 
 ### Agent QA Playbook
 
@@ -99,8 +99,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-07 | Phase 15 | Pending |
 | TEST-08 | Phase 15 | Pending |
 | TEST-09 | Phase 15 | Pending |
-| TEST-10 | Phase 16 | Pending |
-| TEST-11 | Phase 16 | Pending |
+| TEST-10 | Phase 16 | ✓ Complete |
+| TEST-11 | Phase 16 | ✓ Complete |
 | AUDIT-01 | Phase 17 | Pending |
 | AUDIT-02 | Phase 17 | Pending |
 | AUDIT-03 | Phase 17 | Pending |
@@ -112,7 +112,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 - v1.5 requirements: 21 total
 - Mapped to phases: 21
 - Unmapped: 0
-- Complete: 3/21
+- Complete: 15/21
 
 ---
 *Requirements defined: 2026-04-30*

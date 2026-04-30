@@ -16,7 +16,7 @@ Establish comprehensive testing strategy, document all issues in existing featur
 - [x] **Phase 13: Agent QA Playbook** — Document validation procedures for future efficiency
 - [x] **Phase 14: Frontend Test Infrastructure** — Vitest setup and key component tests
 - [x] **Phase 15: ts-rs Type Generation** — Auto-generate TypeScript types from Rust DTOs
-- [ ] **Phase 16: E2E Data Assertions** — Verify data persistence in E2E tests
+- [x] **Phase 16: E2E Data Assertions** — Verify data persistence in E2E tests
 - [ ] **Phase 17: Feature Audit** — Audit all features and document issues
 
 ## Phase Details
@@ -89,7 +89,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 16-01-PLAN.md — API helpers, cleanup tracking, and data assertion tests
+- [x] 16-01-PLAN.md — API helpers, cleanup tracking, and data assertion tests
 
 ### Phase 17: Feature Audit
 **Goal:** All existing features audited with bugs, issues, and missing functionality documented
@@ -112,7 +112,7 @@ Plans:
 | 13. Agent QA Playbook | 1/1 | ✓ Complete | 2026-04-30 |
 | 14. Frontend Test Infrastructure | 2/2 | ✓ Complete | 2026-04-30 |
 | 15. ts-rs Type Generation | 1/1 | ✓ Complete | 2026-04-30 |
-| 16. E2E Data Assertions | 0/1 | ◆ Planned | - |
+| 16. E2E Data Assertions | 1/1 | ✓ Complete | 2026-04-30 |
 | 17. Feature Audit | 0/1 | Not started | - |
 
 ## Coverage
@@ -123,10 +123,10 @@ Plans:
 | Agent QA Playbook | QA-01, QA-02, QA-03, QA-04 | Phase 13 ✓ |
 | Frontend Testing | TEST-04, TEST-05, TEST-06 | Phase 14 ✓ |
 | ts-rs Type Generation | TEST-07, TEST-08, TEST-09 | Phase 15 ✓ |
-| E2E Data Assertions | TEST-10, TEST-11 | Phase 16 |
+| E2E Data Assertions | TEST-10, TEST-11 | Phase 16 ✓ |
 | Feature Audit | AUDIT-01 to AUDIT-06 | Phase 17 |
 
-**Total:** 13/21 requirements complete
+**Total:** 15/21 requirements complete
 
 ## Dependencies
 
@@ -154,3 +154,4 @@ Phase 13 ─┬─► Phase 14
 *Phase 13 completed: 2026-04-30*
 *Phase 14 completed: 2026-04-30*
 *Phase 15 completed: 2026-04-30*
+*Phase 16 completed: 2026-04-30*

@@ -8,7 +8,7 @@
 
 ## Current Position
 
-**Phase:** 15 — ts-rs Type Generation
+**Phase:** 16 — E2E Data Assertions
 **Status:** Complete
 **Progress:** ██████████ 100%
 
@@ -17,7 +17,7 @@ Phase 12 [██████████] Complete ✓
 Phase 13 [██████████] Complete ✓
 Phase 14 [██████████] Complete ✓
 Phase 15 [██████████] Complete ✓
-Phase 16 [░░░░░░░░░░] Not started
+Phase 16 [██████████] Complete ✓
 Phase 17 [░░░░░░░░░░] Not started
 ```
 
@@ -26,10 +26,10 @@ Phase 17 [░░░░░░░░░░] Not started
 | Metric | Value |
 |--------|-------|
 | Milestone | v1.5 |
-| Phases Complete | 4/6 |
-| Requirements Complete | 13/21 |
+| Phases Complete | 5/6 |
+| Requirements Complete | 15/21 |
 | Days in Milestone | 0 |
-| Tests Added | 116 (backend) + 28 (frontend) |
+| Tests Added | 116 (backend) + 28 (frontend) + 6 (E2E data assertions) |
 | DTOs with ts-rs | 49 |
 
 ## Accumulated Context
@@ -59,8 +59,8 @@ Phase 17 [░░░░░░░░░░] Not started
 
 ## Session Continuity
 
-**Last Session:** 2026-04-30 — Phase 15 complete
-**Next Action:** `/gsd-plan-phase 16`
+**Last Session:** 2026-04-30 — Phase 16 complete
+**Next Action:** `/gsd-plan-phase 17`
 
 ### Quick Context
 - Project: Schreinerei SaaS (multi-tenant construction site management)
@@ -83,3 +83,4 @@ Phase 17 [░░░░░░░░░░] Not started
 *Phase 13 completed: 2026-04-30*
 *Phase 14 completed: 2026-04-30*
 *Phase 15 completed: 2026-04-30*
+*Phase 16 completed: 2026-04-30*
