@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-04-30)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
-**Current focus:** Phase 21 — E2E Test Coverage
+**Current focus:** v1.6 Complete — Ready for v1.7 planning
 
 ## Current Position
 
-Phase: 21 of 21 (E2E Test Coverage)
-Plan: 0 of 4 in current phase
-Status: Ready to plan
-Last activity: 2026-04-30 — Transitioned to Phase 21
+Milestone: v1.6 Complete
+Phase: 21 of 21 (All phases complete)
+Status: Milestone Shipped
+Last activity: 2026-04-30 — v1.6 shipped with all E2E tests
 
-Progress: [████████████████████] 95% (20/21 phases complete)
+Progress: [████████████████████] 100% (21/21 phases, v1.6 complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 47
-- Average duration: ~27 min
+- Total plans completed: 51
+- Average duration: ~25 min
 - Total execution time: ~21 hours
 
 **By Phase:**
@@ -36,6 +36,7 @@ Progress: [████████████████████] 95% (20
 | v1.6 (18) | 2 | ~2min | ~1min |
 | v1.6 (19) | 3 | ~30min | ~10min |
 | v1.6 (20) | 4 | ~52min | ~13min |
+| v1.6 (21) | 4 | ~20min | ~5min |
 
 **Recent Trend:**
 - Last 5 phases: faster execution (experience + good planning)
@@ -77,7 +78,7 @@ Items acknowledged and carried forward from v1.5 milestone close:
 ## Session Continuity
 
 Last session: 2026-04-30
-Stopped at: Phase 21 ready to plan
+Stopped at: v1.6 shipped, ready for v1.7 planning
 Resume file: None
 
 ---

@@ -10,17 +10,9 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## Current Milestone: v1.6 User Experience & Missing Functionality
+## Current State
 
-**Goal:** Make the app user-friendly and complete missing core functionalities identified in the feature audit.
-
-**Target features:**
-- Bug fixes: Hours validation (HIGH), input validation feedback
-- Add delete buttons for Sites, Materials, Vehicles, Tools
-- Add edit/delete capabilities for Time entries and Reservations
-- Reservation workflow: Status transitions UI, edit dialog, calendar click-to-create
-- E2E tests: Reservations, update/delete operations across all features
-- UX improvements: Low stock alerts, QR button wiring, overlap warning details
+**v1.6 shipped on 2026-04-30.** All milestones complete.
 
 All core features working:
 - ✅ Material management with stock tracking and QR codes
@@ -29,13 +21,23 @@ All core features working:
 - ✅ Mobile PWA with offline support
 - ✅ Organization-based multi-tenancy via Keycloak
 - ✅ All frontend dialogs functional
-- ✅ E2E test coverage (18 tests)
+- ✅ Full CRUD operations on all entities
+- ✅ Reservation status workflow
+- ✅ E2E test coverage (22 tests)
 
 ## Requirements
 
 ### Validated
 
 All v1.x requirements validated:
+
+**v1.6 User Experience & Missing Functionality (19 requirements):**
+- ✓ FIX-01, FIX-02 — Validation bugs fixed
+- ✓ DEL-01 to DEL-05 — Delete operations with soft delete
+- ✓ EDIT-01 to EDIT-03 — Edit operations for time entries and reservations
+- ✓ RESV-01 to RESV-03 — Reservation workflow complete
+- ✓ UX-01, UX-02 — UX improvements
+- ✓ TEST-12 to TEST-15 — E2E test coverage
 
 **v1.5 Testing & Quality Foundation (21 requirements):**
 - ✓ TEST-01 to TEST-03 — Backend domain tests
@@ -73,7 +75,7 @@ All v1.x requirements validated:
 
 ### Active
 
-(To be defined — see REQUIREMENTS.md for v1.6 scope)
+None. All v1.x milestones complete.
 
 ### Future (v1.7+)
 
@@ -193,4 +195,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-04-30 after v1.5 milestone, v1.6 milestone started*
+*Last updated: 2026-04-30 after v1.6 milestone shipped*

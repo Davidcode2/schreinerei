@@ -2,6 +2,46 @@
 
 ---
 
+## v1.6 User Experience & Missing Functionality
+
+**Shipped:** 2026-04-30
+**Phases:** 4 | **Plans:** 13
+
+### Summary
+
+Completed missing CRUD functionality, reservation workflow, and comprehensive E2E test coverage. App is now fully functional with user-friendly features.
+
+### Accomplishments
+
+1. Validation bugs fixed (hours > 0, inline error messages)
+2. Delete operations on all entities with confirmation dialogs and soft delete
+3. Edit operations for time entries and reservations
+4. Reservation status workflow (pending → confirmed → active → completed/cancelled)
+5. Calendar click-to-create for quick reservation creation
+6. Conflict details showing which reservation overlaps
+7. 4 new E2E tests for all new functionality
+
+### Stats
+
+- **Timeline:** 1 day (2026-04-30)
+- **LOC:** ~12,290 Rust + ~9,200 TypeScript
+- **Tests:** 116 backend + 28 frontend + 22 E2E
+- **Requirements:** 19/19 complete
+
+### Key Decisions
+
+- Soft delete for all entities (offline sync compatibility)
+- Client-side validation mirrors backend rules
+- Calendar defaults to 8am-5pm for new reservations
+- Only owner or admin can modify time entries
+
+### Archives
+
+- `.planning/milestones/v1.6-ROADMAP.md`
+- `.planning/milestones/v1.6-REQUIREMENTS.md`
+
+---
+
 ## v1.5 Testing & Quality Foundation
 
 **Shipped:** 2026-04-30

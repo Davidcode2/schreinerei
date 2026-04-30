@@ -40,10 +40,10 @@ Requirements for completing missing CRUD functionality and improving UX.
 
 ### E2E Test Coverage
 
-- [ ] **TEST-12**: E2E test for delete operations on all entity types
-- [ ] **TEST-13**: E2E test for edit operations on time entries and reservations
-- [ ] **TEST-14**: E2E test for reservation status transitions
-- [ ] **TEST-15**: E2E test for calendar click-to-create reservation
+- [x] **TEST-12**: E2E test for delete operations on all entity types ✓
+- [x] **TEST-13**: E2E test for edit operations on time entries and reservations ✓
+- [x] **TEST-14**: E2E test for reservation status transitions ✓
+- [x] **TEST-15**: E2E test for calendar click-to-create reservation ✓
 
 ## v1.7+ Requirements
 
@@ -103,10 +103,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RESV-03 | Phase 20 | Complete ✓ |
 | UX-01 | Phase 18 | Complete (pre-existing) |
 | UX-02 | Phase 18 | Complete ✓ |
-| TEST-12 | Phase 21 | Pending |
-| TEST-13 | Phase 21 | Pending |
-| TEST-14 | Phase 21 | Pending |
-| TEST-15 | Phase 21 | Pending |
+| TEST-12 | Phase 21 | Complete ✓ |
+| TEST-13 | Phase 21 | Complete ✓ |
+| TEST-14 | Phase 21 | Complete ✓ |
+| TEST-15 | Phase 21 | Complete ✓ |
 
 **Coverage:**
 - v1.6 requirements: 19 total

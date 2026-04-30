@@ -8,7 +8,7 @@
 - ✅ **v1.3 Bug Fixes** - Phases 8-10 (shipped 2026-04-29)
 - ✅ **v1.4 Core Feature Fixes** - Phases 11-13 (shipped 2026-04-30)
 - ✅ **v1.5 Testing & Quality Foundation** - Phases 14-17 (shipped 2026-04-30)
-- 🚧 **v1.6 User Experience & Missing Functionality** - Phases 18-21 (in progress)
+- ✅ **v1.6 User Experience & Missing Functionality** - Phases 18-21 (shipped 2026-04-30)
 
 ## Phases
 
@@ -244,7 +244,7 @@ Plans:
 - [x] 20-03: Reservation edit & status transitions UI (EDIT-03, RESV-01)
 - [x] 20-04: Calendar click-to-create & conflict details (RESV-02, RESV-03)
 
-#### Phase 21: E2E Test Coverage
+### ✅ Phase 21: E2E Test Coverage (Complete)
 **Goal**: All new functionality verified through E2E tests
 **Depends on**: Phase 20
 **Requirements**: TEST-12, TEST-13, TEST-14, TEST-15
@@ -256,10 +256,10 @@ Plans:
 **Plans**: 4 plans in 1 wave (parallel execution)
 
 Plans:
-- [ ] 21-01-PLAN.md — Delete operations E2E tests (TEST-12)
-- [ ] 21-02-PLAN.md — Edit operations E2E tests (TEST-13)
-- [ ] 21-03-PLAN.md — Reservation status transitions E2E tests (TEST-14)
-- [ ] 21-04-PLAN.md — Calendar click-to-create E2E tests (TEST-15)
+- [x] 21-01-PLAN.md — Delete operations E2E tests (TEST-12)
+- [x] 21-02-PLAN.md — Edit operations E2E tests (TEST-13)
+- [x] 21-03-PLAN.md — Reservation status transitions E2E tests (TEST-14)
+- [x] 21-04-PLAN.md — Calendar click-to-create E2E tests (TEST-15)
 
 ## Progress
 
@@ -288,7 +288,7 @@ Phases execute in numeric order: 1 → 2 → ... → 17 → 18 → 19 → 20 →
 | 18. Bug Fixes & UX | v1.6 | 2/2 | Complete | 2026-04-30 |
 | 19. Delete Ops | v1.6 | 3/3 | Complete | 2026-04-30 |
 | 20. Edit & Resv | v1.6 | 4/4 | Complete | 2026-04-30 |
-| 21. E2E Tests | v1.6 | 0/4 | Not started | - |
+| 21. E2E Tests | v1.6 | 4/4 | Complete | 2026-04-30 |
 
 ---
 *Last updated: 2026-04-30*
