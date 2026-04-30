@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Search, Plus, QrCode } from "lucide-react"
@@ -14,6 +15,7 @@ import { AddMaterialDialog } from "./AddMaterialDialog"
 import type { Material } from "@/types/inventory"
 
 export default function InventoryListPage() {
+  const navigate = useNavigate()
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>()
   const [searchQuery, setSearchQuery] = useState("")
   const [addMaterialOpen, setAddMaterialOpen] = useState(false)
@@ -65,7 +67,12 @@ export default function InventoryListPage() {
             className="pl-10"
           />
         </div>
-        <Button variant="outline" size="icon" className="flex-shrink-0">
+        <Button
+          variant="outline"
+          size="icon"
+          className="flex-shrink-0"
+          onClick={() => navigate("/scan")}
+        >
           <QrCode className="h-4 w-4" />
         </Button>
       </div>
