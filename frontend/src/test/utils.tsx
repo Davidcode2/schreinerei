@@ -2,6 +2,7 @@ import { ReactElement, ReactNode } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
+import { Toaster } from 'sonner';
 
 // Create a fresh QueryClient for each test
 function createTestQueryClient() {
@@ -26,6 +27,7 @@ function AllProviders({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         {children}
+        <Toaster position="top-right" />
       </BrowserRouter>
     </QueryClientProvider>
   );

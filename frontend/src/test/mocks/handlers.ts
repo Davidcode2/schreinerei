@@ -14,13 +14,13 @@ export const mockData = {
 };
 
 export const handlers = [
-  // Materials
-  http.get(`${API_BASE}/materials`, async () => {
+  // Materials (inventory module)
+  http.get(`${API_BASE}/inventory/materials`, async () => {
     await delay(10);
     return HttpResponse.json(mockData.materials);
   }),
 
-  http.post(`${API_BASE}/materials`, async ({ request }) => {
+  http.post(`${API_BASE}/inventory/materials`, async ({ request }) => {
     const body = await request.json();
     const newMaterial = {
       id: crypto.randomUUID(),
@@ -34,13 +34,13 @@ export const handlers = [
     return HttpResponse.json(newMaterial, { status: 201 });
   }),
 
-  // Categories
-  http.get(`${API_BASE}/categories`, async () => {
+  // Categories (inventory module)
+  http.get(`${API_BASE}/inventory/categories`, async () => {
     await delay(10);
     return HttpResponse.json(mockData.categories);
   }),
 
-  http.post(`${API_BASE}/categories`, async ({ request }) => {
+  http.post(`${API_BASE}/inventory/categories`, async ({ request }) => {
     const body = await request.json() as any;
     const newCategory = {
       id: crypto.randomUUID(),
@@ -75,13 +75,13 @@ export const handlers = [
     return HttpResponse.json(newSite, { status: 201 });
   }),
 
-  // Vehicles
-  http.get(`${API_BASE}/vehicles`, async () => {
+  // Vehicles (fleet module)
+  http.get(`${API_BASE}/fleet/vehicles`, async () => {
     await delay(10);
     return HttpResponse.json(mockData.vehicles);
   }),
 
-  http.post(`${API_BASE}/vehicles`, async ({ request }) => {
+  http.post(`${API_BASE}/fleet/vehicles`, async ({ request }) => {
     const body = await request.json();
     const newVehicle = {
       id: crypto.randomUUID(),
@@ -98,13 +98,13 @@ export const handlers = [
     return HttpResponse.json(newVehicle, { status: 201 });
   }),
 
-  // Tools
-  http.get(`${API_BASE}/tools`, async () => {
+  // Tools (fleet module)
+  http.get(`${API_BASE}/fleet/tools`, async () => {
     await delay(10);
     return HttpResponse.json(mockData.tools);
   }),
 
-  http.post(`${API_BASE}/tools`, async ({ request }) => {
+  http.post(`${API_BASE}/fleet/tools`, async ({ request }) => {
     const body = await request.json();
     const newTool = {
       id: crypto.randomUUID(),
@@ -121,13 +121,13 @@ export const handlers = [
     return HttpResponse.json(newTool, { status: 201 });
   }),
 
-  // Reservations
-  http.get(`${API_BASE}/reservations`, async () => {
+  // Reservations (fleet module)
+  http.get(`${API_BASE}/fleet/reservations`, async () => {
     await delay(10);
     return HttpResponse.json(mockData.reservations);
   }),
 
-  http.post(`${API_BASE}/reservations`, async ({ request }) => {
+  http.post(`${API_BASE}/fleet/reservations`, async ({ request }) => {
     const body = await request.json();
     const newReservation = {
       id: crypto.randomUUID(),
@@ -145,6 +145,11 @@ export const handlers = [
 
   // Time Entries
   http.get(`${API_BASE}/time-entries`, async () => {
+    await delay(10);
+    return HttpResponse.json(mockData.timeEntries);
+  }),
+
+  http.get(`${API_BASE}/time-entries/my`, async () => {
     await delay(10);
     return HttpResponse.json(mockData.timeEntries);
   }),
