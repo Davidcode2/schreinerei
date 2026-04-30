@@ -9,36 +9,32 @@ See: .planning/PROJECT.md (updated 2026-04-30)
 
 ## Current Position
 
-Milestone: v1.7 Active Project Context
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-30 — Milestone v1.7 started
+Phase: 22 of 24 (Backend Foundation & User Preferences)
+Plan: — of —
+Status: Ready to plan
+Last activity: 2026-04-30 — v1.7 roadmap created
 
-Progress: [░░░░░░░░░░░░░░░░░░░░] 0% (0 phases, v1.7 started)
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 51
-- Average duration: ~25 min
-- Total execution time: ~21 hours
+- Total plans completed: 0 (v1.7 milestone)
+- Average duration: —
+- Total execution time: —
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| v1.0 (1-5) | 12 | ~6h | ~30min |
-| v1.1 (6) | 3 | ~1.5h | ~30min |
-| v1.2 (7) | 3 | ~1.5h | ~30min |
-| v1.3 (8-10) | 9 | ~4.5h | ~30min |
-| v1.4 (11-13) | 6 | ~3h | ~30min |
-| v1.5 (14-17) | 8 | ~4h | ~30min |
-| v1.6 (18-21) | 13 | ~1.7h | ~8min |
+| 22. Backend Foundation | 0 | TBD | — |
+| 23. Frontend UI & Auto-Assignment | 0 | TBD | — |
+| 24. Opt-Out Dialog & E2E Tests | 0 | TBD | — |
 
 **Recent Trend:**
-- Last 5 phases: faster execution (experience + good planning)
-- Trend: Improving
+- No v1.7 plans completed yet
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
@@ -47,17 +43,13 @@ Progress: [░░░░░░░░░░░░░░░░░░░░] 0% (0 p
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- Phase 20: Time entries use hard delete (no audit requirement)
-- Phase 20: Only owner or admin can modify time entries
-- Phase 20: Calendar click-to-create defaults to 8am-5pm
-- Phase 18: Client-side validation mirrors backend rules (hours > 0, <= 24)
-- Phase 17: E2E data assertions through API calls (not just UI checks)
-- Phase 16: MSW for API mocking at network level
-- Phase 15: ts-rs v12 for type generation (prevents frontend-backend drift)
+- v1.7 planning: Active Baustelle is user-scoped (not global)
+- v1.7 planning: Deterministic hash-based colors (no manual selection)
+- v1.7 planning: Opt-out dialog with 5-second auto-confirm
 
 ### Pending Todos
 
-None.
+None yet.
 
 ### Blockers/Concerns
 
@@ -65,19 +57,18 @@ None yet.
 
 ## Deferred Items
 
-Items acknowledged and carried forward from v1.5 milestone close:
+Items acknowledged and carried forward from v1.6 close:
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| Tech Debt | No integration tests with real database | Deferred | v1.5 |
-| Tech Debt | No conflict resolution for offline edits | Deferred | v1.0 |
-| Feature | Restore UI for soft-deleted items | Deferred | v1.5 |
+| Offline | Active preference in IndexedDB for offline access | v2.0 scope | 2026-04-30 |
+| Offline | Preference sync when connectivity restored | v2.0 scope | 2026-04-30 |
+| Offline | Stale active project handling during offline | v2.0 scope | 2026-04-30 |
+| Dashboard | Filter by active Baustelle | v2.0 scope | 2026-04-30 |
+| Dashboard | Active Baustelle statistics | v2.0 scope | 2026-04-30 |
 
 ## Session Continuity
 
 Last session: 2026-04-30
-Stopped at: v1.7 milestone started, defining requirements
+Stopped at: Roadmap created for v1.7, ready to plan Phase 22
 Resume file: None
-
----
-*Updated: 2026-04-30*

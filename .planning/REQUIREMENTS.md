@@ -85,36 +85,36 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PREF-01 | — | Pending |
-| PREF-02 | — | Pending |
-| PREF-03 | — | Pending |
-| DEDU-01 | — | Pending |
-| DEDU-02 | — | Pending |
-| DEDU-03 | — | Pending |
-| ACTV-01 | — | Pending |
-| ACTV-02 | — | Pending |
-| ACTV-03 | — | Pending |
-| ACTV-04 | — | Pending |
-| ACTV-05 | — | Pending |
-| ACTV-06 | — | Pending |
-| ACTV-07 | — | Pending |
-| AUTO-01 | — | Pending |
-| AUTO-02 | — | Pending |
-| AUTO-03 | — | Pending |
-| AUTO-04 | — | Pending |
-| DLOG-01 | — | Pending |
-| DLOG-02 | — | Pending |
-| DLOG-03 | — | Pending |
-| DLOG-04 | — | Pending |
-| DLOG-05 | — | Pending |
-| TEST-16 | — | Pending |
-| TEST-17 | — | Pending |
-| TEST-18 | — | Pending |
+| PREF-01 | 22 | Pending |
+| PREF-02 | 22 | Pending |
+| PREF-03 | 22 | Pending |
+| DEDU-01 | 22 | Pending |
+| DEDU-02 | 22 | Pending |
+| DEDU-03 | 22 | Pending |
+| ACTV-01 | 23 | Pending |
+| ACTV-02 | 23 | Pending |
+| ACTV-03 | 23 | Pending |
+| ACTV-04 | 23 | Pending |
+| ACTV-05 | 23 | Pending |
+| ACTV-06 | 23 | Pending |
+| ACTV-07 | 23 | Pending |
+| AUTO-01 | 23 | Pending |
+| AUTO-02 | 23 | Pending |
+| AUTO-03 | 23 | Pending |
+| AUTO-04 | 23 | Pending |
+| DLOG-01 | 24 | Pending |
+| DLOG-02 | 24 | Pending |
+| DLOG-03 | 24 | Pending |
+| DLOG-04 | 24 | Pending |
+| DLOG-05 | 24 | Pending |
+| TEST-16 | 24 | Pending |
+| TEST-17 | 24 | Pending |
+| TEST-18 | 24 | Pending |
 
 **Coverage:**
 - v1.7 requirements: 25 total
-- Mapped to phases: 0
-- Unmapped: 25 ⚠️
+- Mapped to phases: 25
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-30*

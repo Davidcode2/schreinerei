@@ -6,289 +6,91 @@
 - ✅ **v1.1 Organization-Based Tenancy** - Phase 6 (shipped 2026-04-29)
 - ✅ **v1.2 Frontend Polish** - Phase 7 (shipped 2026-04-29)
 - ✅ **v1.3 Bug Fixes** - Phases 8-10 (shipped 2026-04-29)
-- ✅ **v1.4 Core Feature Fixes** - Phases 11-13 (shipped 2026-04-30)
-- ✅ **v1.5 Testing & Quality Foundation** - Phases 14-17 (shipped 2026-04-30)
+- ✅ **v1.4 Core Feature Fixes** - Phase 11 (shipped 2026-04-30)
+- ✅ **v1.5 Testing & Quality Foundation** - Phases 12-17 (shipped 2026-04-30)
 - ✅ **v1.6 User Experience & Missing Functionality** - Phases 18-21 (shipped 2026-04-30)
+- 🚧 **v1.7 Active Project Context** - Phases 22-24 (in progress)
 
 ## Phases
 
+### ✅ Completed Milestones
+
 <details>
-<summary>✅ v1.0 MVP (Phases 1-5) - SHIPPED 2026-04-29</summary>
+<summary>v1.0-v1.6 (Phases 1-21) — SHIPPED</summary>
 
-### Phase 1: Setup & Auth Foundation
-**Goal**: Project scaffolding and multi-tenant authentication
-**Plans**: 3 plans
+**v1.0 MVP (Phases 1-5):** Complete SaaS application with multi-tenant auth, inventory, sites, fleet, and PWA.
 
-Plans:
-- [x] 01-01: Project structure and dependencies
-- [x] 01-02: Keycloak JWT validation
-- [x] 01-03: Tenant context middleware
+**v1.1 Organization-Based Tenancy (Phase 6):** Keycloak Organizations for native multi-tenant isolation.
 
-### Phase 2: Inventory Module
-**Goal**: Material management with QR codes and stock tracking
-**Plans**: 3 plans
+**v1.2 Frontend Polish (Phase 7):** Connected UI dialogs to backend APIs.
 
-Plans:
-- [x] 02-01: Inventory domain and repository
-- [x] 02-02: Inventory API routes
-- [x] 02-03: QR code generation
+**v1.3 Bug Fixes (Phases 8-10):** Authentication fixes, UI bugs, and API integration.
 
-### Phase 3: Sites Module
-**Goal**: Construction site management with time tracking
-**Plans**: 2 plans
+**v1.4 Core Feature Fixes (Phase 11):** FK constraint resolution, user ID mapping.
 
-Plans:
-- [x] 03-01: Sites domain and API
-- [x] 03-02: Time tracking functionality
+**v1.5 Testing & Quality Foundation (Phases 12-17):** Domain tests, ts-rs, E2E assertions, QA playbook.
 
-### Phase 4: Fleet Module
-**Goal**: Vehicle and tool reservations with calendar
-**Plans**: 2 plans
-
-Plans:
-- [x] 04-01: Fleet domain and API
-- [x] 04-02: Reservation system
-
-### Phase 5: PWA Frontend
-**Goal**: Mobile-first progressive web app with offline support
-**Plans**: 2 plans
-
-Plans:
-- [x] 05-01: React PWA setup with routing
-- [x] 05-02: Offline sync with IndexedDB
+**v1.6 User Experience & Missing Functionality (Phases 18-21):** Delete/edit operations, reservation workflow, E2E coverage.
 
 </details>
 
-<details>
-<summary>✅ v1.1 Organization-Based Tenancy (Phase 6) - SHIPPED 2026-04-29</summary>
+### 🚧 v1.7 Active Project Context (In Progress)
 
-### Phase 6: Keycloak Organizations
-**Goal**: Migrate to Keycloak Organizations for native multi-tenant isolation
-**Plans**: 3 plans
+**Milestone Goal:** Enable automatic assignment of materials/tools to the currently active construction site.
 
-Plans:
-- [x] 06-01: Database migration for organization ID
-- [x] 06-02: Backend JWT organization claim
-- [x] 06-03: Frontend organization scope request
+- [ ] **Phase 22: Backend Foundation & User Preferences** - Store and validate user's active Baustelle preference
+- [ ] **Phase 23: Frontend UI & Auto-Assignment** - Persistent indicator, toggle, and form pre-fill
+- [ ] **Phase 24: Opt-Out Dialog & E2E Tests** - Confirmation dialog with auto-confirm and test coverage
 
-</details>
+## Phase Details
 
-<details>
-<summary>✅ v1.2 Frontend Polish (Phase 7) - SHIPPED 2026-04-29</summary>
-
-### Phase 7: Dialog Implementation
-**Goal**: All create dialogs functional and connected to APIs
-**Plans**: 3 plans
-
-Plans:
-- [x] 07-01: Material and site dialogs
-- [x] 07-02: Vehicle and tool dialogs
-- [x] 07-03: User invitation dialog
-
-</details>
-
-<details>
-<summary>✅ v1.3 Bug Fixes (Phases 8-10) - SHIPPED 2026-04-29</summary>
-
-### Phase 8: Auth Fixes
-**Goal**: Token exchange and authentication flow stable
-**Plans**: 3 plans
-
-Plans:
-- [x] 08-01: Token exchange retry logic
-- [x] 08-02: Session persistence
-- [x] 08-03: E2E auth tests
-
-### Phase 9: UI Fixes
-**Goal**: Fleet dropdown and user management working
-**Plans**: 3 plans
-
-Plans:
-- [x] 09-01: Fleet "Neu" dropdown menu
-- [x] 09-02: User management with real data
-- [x] 09-03: Sync status toasts
-
-### Phase 10: E2E Test Suite
-**Goal**: 18 E2E tests for regression prevention
-**Plans**: 3 plans
-
-Plans:
-- [x] 10-01: Inventory E2E tests
-- [x] 10-02: Sites and time tracking E2E tests
-- [x] 10-03: Fleet and reservation E2E tests
-
-</details>
-
-<details>
-<summary>✅ v1.4 Core Feature Fixes (Phases 11-13) - SHIPPED 2026-04-30</summary>
-
-### Phase 11: FK Constraint Resolution
-**Goal**: Resolve Keycloak user ID to local user ID for all FK references
-**Plans**: 3 plans
-
-Plans:
-- [x] 11-01: User resolution pattern
-- [x] 11-02: Auto-provisioning users
-- [x] 11-03: WorkType enum alignment
-
-### Phase 12: Calendar & Reservation Fixes
-**Goal**: Calendar accepts multiple date formats, nullable user names
-**Plans**: 2 plans
-
-Plans:
-- [x] 12-01: Date format flexibility
-- [x] 12-02: Nullable user name handling
-
-### Phase 13: Integration Verification
-**Goal**: All core features working end-to-end
-**Plans**: 1 plan
-
-Plans:
-- [x] 13-01: Full integration test
-
-</details>
-
-<details>
-<summary>✅ v1.5 Testing & Quality Foundation (Phases 14-17) - SHIPPED 2026-04-30</summary>
-
-### Phase 14: Backend Domain Tests
-**Goal**: 116 backend tests for domain logic validation
-**Plans**: 2 plans
-
-Plans:
-- [x] 14-01: Domain entity tests
-- [x] 14-02: State machine tests
-
-### Phase 15: ts-rs Type Generation
-**Goal**: Auto-generate TypeScript types from Rust DTOs
-**Plans**: 2 plans
-
-Plans:
-- [x] 15-01: Add ts-rs to all DTOs
-- [x] 15-02: Frontend type imports
-
-### Phase 16: Frontend Testing
-**Goal**: Vitest + MSW + Testing Library infrastructure
-**Plans**: 2 plans
-
-Plans:
-- [x] 16-01: MSW handlers setup
-- [x] 16-02: Component tests
-
-### Phase 17: E2E Data Assertions
-**Goal**: E2E tests verify data persistence through API calls
-**Plans**: 2 plans
-
-Plans:
-- [x] 17-01: API-based assertions
-- [x] 17-02: QA Playbook documentation
-
-</details>
-
-### 🚧 v1.6 User Experience & Missing Functionality (In Progress)
-
-**Milestone Goal:** Make the app user-friendly and complete missing core functionalities.
-
-#### ✅ Phase 18: Bug Fixes & UX Improvements (Complete)
-**Goal**: Fix validation bugs and wire existing UX features
-**Depends on**: Phase 17
-**Requirements**: FIX-01, FIX-02, UX-02
+### Phase 22: Backend Foundation & User Preferences
+**Goal**: Backend stores and validates user's active Baustelle preference
+**Depends on**: Phase 21 (v1.6 complete)
+**Requirements**: PREF-01, PREF-02, PREF-03, DEDU-01, DEDU-02, DEDU-03
 **Success Criteria** (what must be TRUE):
-  1. User cannot submit time entry with zero or negative hours
-  2. User sees inline error messages below form fields when input is invalid
-  3. User can initiate QR scan by clicking QR code button on inventory page
-**Plans**: 2 plans
+  1. User can set their active Baustelle preference via API
+  2. System validates Baustelle exists and is accessible (tenant-scoped)
+  3. System clears preference if Baustelle becomes invalid (archived/deleted)
+  4. Material deductions can be linked to a Baustelle (FK column added)
+  5. Deduction details include Baustelle name when linked
+**Plans**: TBD
+
+### Phase 23: Frontend UI & Auto-Assignment
+**Goal**: Users can see and change their active Baustelle, with auto-assignment to forms
+**Depends on**: Phase 22
+**Requirements**: ACTV-01, ACTV-02, ACTV-03, ACTV-04, ACTV-05, ACTV-06, ACTV-07, AUTO-01, AUTO-02, AUTO-03, AUTO-04
+**Success Criteria** (what must be TRUE):
+  1. User sees persistent indicator showing active Baustelle name and color
+  2. User can toggle active Baustelle from overview page or dashboard
+  3. Only one Baustelle can be active per user at a time
+  4. Active state persists across page navigation and browser refresh
+  5. Material, reservation, and time entry forms pre-fill active Baustelle (changeable)
+**Plans**: TBD
 **UI hint**: yes
 
-> **Note:** UX-01 (low stock badge) is already implemented in MaterialCard.tsx - shows AlertTriangle icon and StatusBadge when `is_low_stock` is true.
-
-Plans:
-- [x] 18-01: TimeEntryDialog validation improvements (FIX-01, FIX-02)
-- [x] 18-02: QR button wiring (UX-02)
-
-#### ✅ Phase 19: Delete Operations (Complete)
-**Goal**: Users can safely delete entities with confirmation and clear error feedback
-**Depends on**: Phase 18
-**Requirements**: DEL-01, DEL-02, DEL-03, DEL-04, DEL-05
+### Phase 24: Opt-Out Dialog & E2E Tests
+**Goal**: Users can confirm or change auto-assignments with unobtrusive dialog, verified by tests
+**Depends on**: Phase 23
+**Requirements**: DLOG-01, DLOG-02, DLOG-03, DLOG-04, DLOG-05, TEST-16, TEST-17, TEST-18
 **Success Criteria** (what must be TRUE):
-  1. User can delete a site with confirmation dialog (soft delete)
-  2. User can delete a material with confirmation dialog (soft delete)
-  3. User can delete a vehicle with confirmation dialog (soft delete)
-  4. User can delete a tool with confirmation dialog (soft delete)
-  5. User sees dependency conflict message when delete is blocked by FK constraints
-**Plans**: 3 plans
+  1. Confirmation dialog shows on auto-assignment (non-blocking)
+  2. Dialog auto-confirms after 5 seconds if user takes no action
+  3. User can change project or dismiss to leave unassigned from dialog
+  4. E2E tests verify active Baustelle workflow end-to-end
+**Plans**: TBD
 **UI hint**: yes
-
-Plans:
-- [x] 19-01: Soft delete migration + DELETE routes for materials and sites (DEL-01, DEL-02, DEL-05)
-- [x] 19-02: Fleet dependency checks for vehicles and tools (DEL-03, DEL-04, DEL-05)
-- [x] 19-03: Frontend AlertDialog + delete buttons with error handling (DEL-01, DEL-02, DEL-03, DEL-04, DEL-05)
-
-#### ✅ Phase 20: Edit & Reservation Workflow (Complete)
-**Goal**: Users can edit records and manage reservations through complete workflow
-**Depends on**: Phase 19
-**Requirements**: EDIT-01, EDIT-02, EDIT-03, RESV-01, RESV-02, RESV-03
-**Success Criteria** (what must be TRUE):
-  1. User can edit an existing time entry (hours, work type, notes)
-  2. User can delete their own time entries
-  3. User can edit an existing reservation (dates, resource, notes)
-  4. User can transition reservation status via UI buttons (confirm, start, complete, cancel)
-  5. User can create a reservation by clicking empty time slots in calendar view
-  6. User sees which existing reservation conflicts when availability warning appears
-**Plans**: 4 plans in 2 waves
-**UI hint**: yes
-
-Plans:
-- [x] 20-01: Backend time entry PATCH/DELETE routes (EDIT-01, EDIT-02)
-- [x] 20-02: Frontend time entry edit/delete UI (EDIT-01, EDIT-02)
-- [x] 20-03: Reservation edit & status transitions UI (EDIT-03, RESV-01)
-- [x] 20-04: Calendar click-to-create & conflict details (RESV-02, RESV-03)
-
-### ✅ Phase 21: E2E Test Coverage (Complete)
-**Goal**: All new functionality verified through E2E tests
-**Depends on**: Phase 20
-**Requirements**: TEST-12, TEST-13, TEST-14, TEST-15
-**Success Criteria** (what must be TRUE):
-  1. E2E tests verify delete operations on all entity types
-  2. E2E tests verify edit operations on time entries and reservations
-  3. E2E tests verify reservation status transitions
-  4. E2E tests verify calendar click-to-create reservation
-**Plans**: 4 plans in 1 wave (parallel execution)
-
-Plans:
-- [x] 21-01-PLAN.md — Delete operations E2E tests (TEST-12)
-- [x] 21-02-PLAN.md — Edit operations E2E tests (TEST-13)
-- [x] 21-03-PLAN.md — Reservation status transitions E2E tests (TEST-14)
-- [x] 21-04-PLAN.md — Calendar click-to-create E2E tests (TEST-15)
 
 ## Progress
 
-**Execution Order:**
-Phases execute in numeric order: 1 → 2 → ... → 17 → 18 → 19 → 20 → 21
+**Execution Order:** Phases execute in numeric order: 22 → 23 → 24
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Setup & Auth | v1.0 | 3/3 | Complete | 2026-04-29 |
-| 2. Inventory | v1.0 | 3/3 | Complete | 2026-04-29 |
-| 3. Sites | v1.0 | 2/2 | Complete | 2026-04-29 |
-| 4. Fleet | v1.0 | 2/2 | Complete | 2026-04-29 |
-| 5. PWA Frontend | v1.0 | 2/2 | Complete | 2026-04-29 |
-| 6. Keycloak Orgs | v1.1 | 3/3 | Complete | 2026-04-29 |
-| 7. Dialogs | v1.2 | 3/3 | Complete | 2026-04-29 |
-| 8. Auth Fixes | v1.3 | 3/3 | Complete | 2026-04-29 |
-| 9. UI Fixes | v1.3 | 3/3 | Complete | 2026-04-29 |
-| 10. E2E Suite | v1.3 | 3/3 | Complete | 2026-04-29 |
-| 11. FK Resolution | v1.4 | 3/3 | Complete | 2026-04-30 |
-| 12. Calendar Fixes | v1.4 | 2/2 | Complete | 2026-04-30 |
-| 13. Integration | v1.4 | 1/1 | Complete | 2026-04-30 |
-| 14. Backend Tests | v1.5 | 2/2 | Complete | 2026-04-30 |
-| 15. ts-rs Types | v1.5 | 2/2 | Complete | 2026-04-30 |
-| 16. Frontend Tests | v1.5 | 2/2 | Complete | 2026-04-30 |
-| 17. E2E Data | v1.5 | 2/2 | Complete | 2026-04-30 |
-| 18. Bug Fixes & UX | v1.6 | 2/2 | Complete | 2026-04-30 |
-| 19. Delete Ops | v1.6 | 3/3 | Complete | 2026-04-30 |
-| 20. Edit & Resv | v1.6 | 4/4 | Complete | 2026-04-30 |
-| 21. E2E Tests | v1.6 | 4/4 | Complete | 2026-04-30 |
+| 22. Backend Foundation | v1.7 | 0/TBD | Not started | - |
+| 23. Frontend UI & Auto-Assignment | v1.7 | 0/TBD | Not started | - |
+| 24. Opt-Out Dialog & E2E Tests | v1.7 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-04-30*
+
+*Roadmap updated: 2026-04-30 — v1.7 Active Project Context started*
