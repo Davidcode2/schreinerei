@@ -209,3 +209,139 @@ export async function createCategory(
   }
   return response.json();
 }
+
+// === Time Entry ===
+
+export type WorkType = 'workshop' | 'site' | 'travel' | 'other';
+
+interface TimeEntryData {
+  site_id?: string;
+  work_type: WorkType;
+  hours: number;
+  work_date: string;
+  notes?: string;
+}
+
+interface TimeEntryResponse {
+  id: string;
+  site_id: string | null;
+  user_id: string;
+  work_type: WorkType;
+  hours: number;
+  work_date: string;
+  notes: string | null;
+  created_at: string;
+}
+
+export async function createTimeEntry(
+  page: Page,
+  data: TimeEntryData
+): Promise<TimeEntryResponse> {
+  const response = await page.request.post('/api/v1/time-entries', { data });
+  if (!response.ok()) {
+    throw new Error(`Failed to create time entry: ${response.status()}`);
+  }
+  return response.json();
+}
+
+export async function getTimeEntry(
+  page: Page,
+  id: string
+): Promise<TimeEntryResponse> {
+  const response = await page.request.get(`/api/v1/time-entries/${id}`);
+  return response.json();
+}
+
+export async function updateTimeEntry(
+  page: Page,
+  id: string,
+  data: Partial<TimeEntryData>
+): Promise<TimeEntryResponse> {
+  const response = await page.request.patch(`/api/v1/time-entries/${id}`, { data });
+  if (!response.ok()) {
+    throw new Error(`Failed to update time entry: ${response.status()}`);
+  }
+  return response.json();
+}
+
+export async function deleteTimeEntry(page: Page, id: string): Promise<void> {
+  await page.request.delete(`/api/v1/time-entries/${id}`).catch(() => {});
+}
+
+// === Reservation ===
+
+export type ReservationStatus = 'pending' | 'confirmed' | 'in_use' | 'completed' | 'cancelled';
+export type ResourceType = 'vehicle' | 'tool';
+
+interface ReservationData {
+  resource_type: ResourceType;
+  resource_id: string;
+  site_id?: string;
+  start_time: string;
+  end_time: string;
+  notes?: string;
+}
+
+interface ReservationResponse {
+  id: string;
+  resource_type: ResourceType;
+  resource_id: string;
+  resource_name: string;
+  user_id: string;
+  user_name: string;
+  site_id: string | null;
+  site_name: string | null;
+  start_time: string;
+  end_time: string;
+  status: ReservationStatus;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function createReservation(
+  page: Page,
+  data: ReservationData
+): Promise<ReservationResponse> {
+  const response = await page.request.post('/api/v1/fleet/reservations', { data });
+  if (!response.ok()) {
+    throw new Error(`Failed to create reservation: ${response.status()}`);
+  }
+  return response.json();
+}
+
+export async function getReservation(
+  page: Page,
+  id: string
+): Promise<ReservationResponse> {
+  const response = await page.request.get(`/api/v1/fleet/reservations/${id}`);
+  return response.json();
+}
+
+export async function updateReservation(
+  page: Page,
+  id: string,
+  data: Partial<ReservationData> & { status?: ReservationStatus }
+): Promise<ReservationResponse> {
+  const response = await page.request.patch(`/api/v1/fleet/reservations/${id}`, { data });
+  if (!response.ok()) {
+    throw new Error(`Failed to update reservation: ${response.status()}`);
+  }
+  return response.json();
+}
+
+export async function deleteReservation(page: Page, id: string): Promise<void> {
+  await page.request.delete(`/api/v1/fleet/reservations/${id}`).catch(() => {});
+}
+
+export async function listReservations(
+  page: Page,
+  query?: { resource_id?: string; resource_type?: ResourceType }
+): Promise<ReservationResponse[]> {
+  const params = new URLSearchParams();
+  if (query?.resource_id) params.append('resource_id', query.resource_id);
+  if (query?.resource_type) params.append('resource_type', query.resource_type);
+  const url = `/api/v1/fleet/reservations${params.toString() ? `?${params}` : ''}`;
+  const response = await page.request.get(url);
+  return response.json();
+}
