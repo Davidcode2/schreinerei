@@ -89,18 +89,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-01 | Phase 12 | Pending |
 | TEST-02 | Phase 12 | Pending |
 | TEST-03 | Phase 12 | Pending |
-| TEST-04 | Phase 13 | Pending |
-| TEST-05 | Phase 13 | Pending |
-| TEST-06 | Phase 13 | Pending |
-| TEST-07 | Phase 14 | Pending |
-| TEST-08 | Phase 14 | Pending |
-| TEST-09 | Phase 14 | Pending |
-| TEST-10 | Phase 15 | Pending |
-| TEST-11 | Phase 15 | Pending |
-| QA-01 | Phase 16 | Pending |
-| QA-02 | Phase 16 | Pending |
-| QA-03 | Phase 16 | Pending |
-| QA-04 | Phase 16 | Pending |
+| QA-01 | Phase 13 | Pending |
+| QA-02 | Phase 13 | Pending |
+| QA-03 | Phase 13 | Pending |
+| QA-04 | Phase 13 | Pending |
+| TEST-04 | Phase 14 | Pending |
+| TEST-05 | Phase 14 | Pending |
+| TEST-06 | Phase 14 | Pending |
+| TEST-07 | Phase 15 | Pending |
+| TEST-08 | Phase 15 | Pending |
+| TEST-09 | Phase 15 | Pending |
+| TEST-10 | Phase 16 | Pending |
+| TEST-11 | Phase 16 | Pending |
 | AUDIT-01 | Phase 17 | Pending |
 | AUDIT-02 | Phase 17 | Pending |
 | AUDIT-03 | Phase 17 | Pending |
@@ -115,4 +115,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-30*
-*Last updated: 2026-04-30 after v1.5 milestone started*
+*Last updated: 2026-04-30 after phase reordering*

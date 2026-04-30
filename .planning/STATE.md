@@ -1,84 +1,71 @@
-# Project State
-
-**Project:** Schreinerei SaaS
-**Current Milestone:** v1.5 Testing & Quality Foundation
-**Status:** Planning
-
----
-
-## Current Position
-
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-30 — Milestone v1.5 started
-
----
+# Project State: Schreinerei SaaS
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-30)
+**Core Value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
 
-**Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
-**Current focus:** Testing & Quality Foundation
+**Current Focus:** v1.5 Testing & Quality Foundation — Establishing test infrastructure and documenting issues
 
----
+## Current Position
+
+**Phase:** 12 — Backend Domain Tests
+**Status:** Ready to Plan
+**Progress:** ░░░░░░░░░░ 0%
+
+```
+Phase 12 [░░░░░░░░░░] Not started
+Phase 13 [░░░░░░░░░░] Not started
+Phase 14 [░░░░░░░░░░] Not started
+Phase 15 [░░░░░░░░░░] Not started
+Phase 16 [░░░░░░░░░░] Not started
+Phase 17 [░░░░░░░░░░] Not started
+```
+
+## Performance Metrics
+
+| Metric | Value |
+|--------|-------|
+| Milestone | v1.5 |
+| Phases Complete | 0/6 |
+| Requirements Complete | 0/21 |
+| Days in Milestone | 0 |
 
 ## Accumulated Context
 
-### Decisions Summary
+### Decisions
+- Phase numbering continues from Phase 12 (v1.4 ended at Phase 11)
+- ts-rs chosen for type generation (prevents frontend-backend drift)
+- Domain tests inline in domain files (zero mocking, fast feedback)
+- E2E tests verify data persistence, not just UI presence
 
-Full decision log in PROJECT.md. Key decisions:
-- Rust Backend with Axum 0.8, SQLx 0.8
-- DDD layering: domain/application/infrastructure/api
-- Multi-tenant via TenantId in all queries
-- Keycloak OAuth2 PKCE for SPA auth
-- IndexedDB (Dexie.js) for offline storage
-- Keycloak Organizations for tenant isolation (v1.1)
-- User ID resolution: Keycloak ID → local users.id for FK references
+### Active Patterns
+- Backend: Hexagonal architecture (domain → application → infrastructure)
+- Frontend: React + Vite PWA with offline support
+- Auth: Keycloak with organization claim for multi-tenancy
+- Testing: Rust built-in tests, Vitest, Playwright
 
-### Completed Work
+### Blockers
+- None
 
-v1.x series complete with 30 plans across 11 phases:
-- Auth & IAM (Phase 1)
-- Inventory Management (Phase 2)
-- Sites Management (Phase 3)
-- Fleet Management (Phase 4)
-- PWA & Mobile (Phase 5)
-- Organization-Based Tenancy (Phase 6)
-- Frontend Polish (Phase 7)
-- Bug Fixes (Phases 8-10)
-- Core Feature Fixes (Phase 11)
+## Session Continuity
 
-### Blockers/Concerns
+**Last Session:** 2026-04-30 — v1.5 milestone initialized
+**Next Action:** `/gsd-plan-phase 12`
 
-None - v1.4 complete and shipped.
+### Quick Context
+- Project: Schreinerei SaaS (multi-tenant construction site management)
+- Stack: Rust/Axum/SQLx + Vite/React/PWA + Keycloak
+- LOC: ~8,900 Rust + ~8,000 TypeScript
+- Previous milestones: v1.0-v1.4 shipped (37+ requirements complete)
 
----
-
-## History
-
-| Date | Event | Details |
-|------|-------|---------|
-| 2026-04-28 | Project Initialized | PROJECT.md, REQUIREMENTS.md, ROADMAP.md created |
-| 2026-04-28 | Phase 1 Complete | Auth & IAM Foundation finished |
-| 2026-04-28 | Phase 2 Complete | Inventory Management finished |
-| 2026-04-28 | Phase 3 Complete | Baustellen Management finished |
-| 2026-04-28 | Phase 4 Complete | Fuhrpark & Werkzeuge finished |
-| 2026-04-29 | Phase 5 Complete | PWA & Mobile finished |
-| 2026-04-29 | v1.0 Complete | MVP shipped |
-| 2026-04-29 | v1.1 Complete | Organization-Based Tenancy shipped |
-| 2026-04-29 | v1.2 Complete | Frontend Polish shipped |
-| 2026-04-29 | v1.3 Complete | Bug Fixes shipped |
-| 2026-04-30 | v1.4 Complete | Core Feature Fixes shipped |
-| 2026-04-30 | v1.5 Started | Testing & Quality Foundation milestone |
+### Key Files
+| File | Purpose |
+|------|---------|
+| `.planning/PROJECT.md` | Project vision and context |
+| `.planning/REQUIREMENTS.md` | v1.5 requirements (21 total) |
+| `.planning/ROADMAP.md` | Phase structure (Phase 12-17) |
+| `.planning/STATE.md` | This file |
 
 ---
 
-## Next Action
-
-Run `/gsd-plan-phase 12` to start execution.
-
----
-
-*Last updated: 2026-04-30 after v1.5 milestone started*
+*State initialized: 2026-04-30*
