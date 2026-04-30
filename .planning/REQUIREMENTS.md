@@ -1,86 +1,82 @@
-# Requirements: Schreinerei SaaS v1.6
+# Requirements: Schreinerei SaaS v1.7
 
 **Defined:** 2026-04-30
-**Milestone:** v1.6 User Experience & Missing Functionality
-**Core Value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
+**Core Value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## v1.6 Requirements
+## v1.7 Requirements
 
-Requirements for completing missing CRUD functionality and improving UX.
+Active Project Context — auto-assign materials, reservations, and time entries to the currently active Baustelle.
 
-### Bug Fixes
+### Backend — User Preferences
 
-- [x] **FIX-01**: User cannot submit time entry with hours <= 0 (validation blocks invalid input) ✓
-- [x] **FIX-02**: User sees inline validation error messages below form fields when input is invalid ✓
+- [ ] **PREF-01**: User can store their active Baustelle preference server-side
+- [ ] **PREF-02**: System validates active Baustelle exists and is not archived/deleted
+- [ ] **PREF-03**: System clears preference automatically if Baustelle becomes invalid
 
-### Delete Operations
+### Backend — Material Deductions
 
-- [x] **DEL-01**: User can delete a site with confirmation dialog (soft delete) ✓
-- [x] **DEL-02**: User can delete a material with confirmation dialog (soft delete) ✓
-- [x] **DEL-03**: User can delete a vehicle with confirmation dialog (soft delete) ✓
-- [x] **DEL-04**: User can delete a tool with confirmation dialog (soft delete) ✓
-- [x] **DEL-05**: User sees dependency conflict message when delete is blocked by FK constraints ✓
+- [ ] **DEDU-01**: Material deductions can be linked to a Baustelle (FK column)
+- [ ] **DEDU-02**: WithdrawMaterial command accepts optional site_id parameter
+- [ ] **DEDU-03**: Deduction details include Baustelle name when linked
 
-### Edit Operations
+### Frontend — Active Site UI
 
-- [x] **EDIT-01**: User can edit an existing time entry (hours, work type, notes) ✓
-- [x] **EDIT-02**: User can delete their own time entries ✓
-- [x] **EDIT-03**: User can edit an existing reservation (dates, resource, notes) ✓
+- [ ] **ACTV-01**: User sees persistent indicator showing active Baustelle name and color
+- [ ] **ACTV-02**: User can toggle active Baustelle from overview page
+- [ ] **ACTV-03**: User can toggle active Baustelle from dashboard view
+- [ ] **ACTV-04**: Only one Baustelle can be active per user at a time
+- [ ] **ACTV-05**: Baustellen have auto-assigned colors (hash-based, no manual selection)
+- [ ] **ACTV-06**: Active state persists across page navigation and browser refresh
 
-### Reservation Workflow
+### Auto-Assignment
 
-- [x] **RESV-01**: User can transition reservation status (confirm, start, complete, cancel) via UI buttons ✓
-- [x] **RESV-02**: User can create a reservation by clicking empty time slots in calendar view ✓
-- [x] **RESV-03**: User sees which existing reservation conflicts when availability warning appears ✓
+- [ ] **AUTO-01**: Material withdrawal form pre-fills active Baustelle
+- [ ] **AUTO-02**: Tool/vehicle reservation form pre-fills active Baustelle
+- [ ] **AUTO-03**: Time entry form pre-fills active Baustelle when work_type is 'site'
+- [ ] **AUTO-04**: User can change or remove assignment before submission
 
-### UX Improvements
+### Opt-Out Dialog
 
-- [x] **UX-01**: User sees low stock warning badge when material quantity falls below minimum ✓ (already implemented in MaterialCard.tsx)
-- [x] **UX-02**: User can initiate QR scan by clicking QR code button on inventory page ✓
+- [ ] **DLOG-01**: Confirmation dialog shows on auto-assignment (unobtrusive, non-blocking)
+- [ ] **DLOG-02**: Dialog auto-confirms after 5 seconds if user takes no action
+- [ ] **DLOG-03**: User can change project from the dialog
+- [ ] **DLOG-04**: User can dismiss to leave unassigned
+- [ ] **DLOG-05**: Dialog does not block other app actions
 
-### E2E Test Coverage
+### E2E Tests
 
-- [x] **TEST-12**: E2E test for delete operations on all entity types ✓
-- [x] **TEST-13**: E2E test for edit operations on time entries and reservations ✓
-- [x] **TEST-14**: E2E test for reservation status transitions ✓
-- [x] **TEST-15**: E2E test for calendar click-to-create reservation ✓
+- [ ] **TEST-16**: E2E test for setting active Baustelle
+- [ ] **TEST-17**: E2E test for auto-assignment on material withdrawal
+- [ ] **TEST-18**: E2E test for opt-out dialog interaction
 
-## v1.7+ Requirements
+## v2.0 Requirements
 
-Deferred to future milestone.
+Deferred to future release.
 
-### Integration Tests
+### Baustelle Lifecycle
 
-- **INT-01**: Integration tests with real PostgreSQL for inventory module
-- **INT-02**: Integration tests for sites module
-- **INT-03**: Integration tests for fleet module
-- **INT-04**: Multi-tenant isolation tests for all modules
+- **LIFE-01**: Restrict active context to 'active' status Baustellen only
+- **LIFE-02**: Define status transition workflow (currently Planned → Active → Completed → Archived exists but no UI to change status)
 
-### Self-Service Registration
+### Offline Enhancement
 
-- **SS-01**: Public website with organization registration
-- **SS-02**: Self-service organization creation flow
-- **SS-03**: Organization admin dashboard
-- **SS-04**: Member invitation via email
-- **EXT-01**: Organization identity provider support
-- **EXT-02**: Multi-organization user support
+- **OFFL-01**: Active preference stored in IndexedDB for offline access
+- **OFFL-02**: Preference syncs when connectivity restored
+- **OFFL-03**: System handles stale active project during offline operations
 
-### Restore Functionality
+### Dashboard Integration
 
-- **REST-01**: Admin can restore soft-deleted items
-- **REST-02**: Soft-deleted items excluded from lists but retained in database
+- **DASH-01**: Dashboard filters by active Baustelle
+- **DASH-02**: Dashboard shows active Baustelle statistics
 
 ## Out of Scope
 
-Explicitly excluded. Documented to prevent scope creep.
-
 | Feature | Reason |
 |---------|--------|
-| Hard delete | Soft delete required for offline sync compatibility |
-| Restore UI | Admin-only feature, defer to v1.7+ |
-| Optimistic locking | Status transition race conditions deferred to v1.7+ |
-| Offline conflict resolution | Known tech debt, requires deeper design |
-| Native mobile app | PWA-first strategy, later consideration |
+| Manual color selection | Hash-based auto-assignment is simpler, no user decisions |
+| Global active project | Per-user context is correct; teams work different sites |
+| Active project for non-site work | work_type 'workshop', 'travel', 'other' should not auto-assign |
+| Status-based active restriction | Deferred — Baustelle status lifecycle needs more thought (no UI to change status currently) |
 
 ## Traceability
 
@@ -88,31 +84,36 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FIX-01 | Phase 18 | Complete ✓ |
-| FIX-02 | Phase 18 | Complete ✓ |
-| DEL-01 | Phase 19 | Complete ✓ |
-| DEL-02 | Phase 19 | Complete ✓ |
-| DEL-03 | Phase 19 | Complete ✓ |
-| DEL-04 | Phase 19 | Complete ✓ |
-| DEL-05 | Phase 19 | Complete ✓ |
-| EDIT-01 | Phase 20 | Complete ✓ |
-| EDIT-02 | Phase 20 | Complete ✓ |
-| EDIT-03 | Phase 20 | Complete ✓ |
-| RESV-01 | Phase 20 | Complete ✓ |
-| RESV-02 | Phase 20 | Complete ✓ |
-| RESV-03 | Phase 20 | Complete ✓ |
-| UX-01 | Phase 18 | Complete (pre-existing) |
-| UX-02 | Phase 18 | Complete ✓ |
-| TEST-12 | Phase 21 | Complete ✓ |
-| TEST-13 | Phase 21 | Complete ✓ |
-| TEST-14 | Phase 21 | Complete ✓ |
-| TEST-15 | Phase 21 | Complete ✓ |
+| PREF-01 | — | Pending |
+| PREF-02 | — | Pending |
+| PREF-03 | — | Pending |
+| DEDU-01 | — | Pending |
+| DEDU-02 | — | Pending |
+| DEDU-03 | — | Pending |
+| ACTV-01 | — | Pending |
+| ACTV-02 | — | Pending |
+| ACTV-03 | — | Pending |
+| ACTV-04 | — | Pending |
+| ACTV-05 | — | Pending |
+| ACTV-06 | — | Pending |
+| AUTO-01 | — | Pending |
+| AUTO-02 | — | Pending |
+| AUTO-03 | — | Pending |
+| AUTO-04 | — | Pending |
+| DLOG-01 | — | Pending |
+| DLOG-02 | — | Pending |
+| DLOG-03 | — | Pending |
+| DLOG-04 | — | Pending |
+| DLOG-05 | — | Pending |
+| TEST-16 | — | Pending |
+| TEST-17 | — | Pending |
+| TEST-18 | — | Pending |
 
 **Coverage:**
-- v1.6 requirements: 19 total
-- Mapped to phases: 19
-- Unmapped: 0 ✓
+- v1.7 requirements: 24 total
+- Mapped to phases: 0
+- Unmapped: 24 ⚠️
 
 ---
 *Requirements defined: 2026-04-30*
-*Last updated: 2026-04-30 for v1.6 milestone*
+*Last updated: 2026-04-30 after v1.7 requirements defined*
