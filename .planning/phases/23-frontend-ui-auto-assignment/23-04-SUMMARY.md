@@ -9,7 +9,7 @@ requires:
 provides:
   - FK-safe tenant-local user mapping for preferences reads and writes
   - regression integration coverage for preferences/user ID mapping
-affects: [phase-23, phase-24, active-site-toggle]
+affects: [phase-23, active-site-toggle]
 tech-stack:
   added: []
   patterns: [resolve local user from auth subject before FK writes]
@@ -73,7 +73,7 @@ None - no external service configuration required.
 ## Next Phase Readiness
 
 - Phase 23 backend blocker for active-site toggle is closed with regression evidence.
-- Phase 24 can proceed with opt-out dialog and E2E coverage.
+- No follow-up phase is required for v1.7; this closes the active-site toggle milestone scope.
 
 ## Self-Check: PASSED
 

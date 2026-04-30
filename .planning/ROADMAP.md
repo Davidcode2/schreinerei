@@ -9,7 +9,7 @@
 - ✅ **v1.4 Core Feature Fixes** - Phase 11 (shipped 2026-04-30)
 - ✅ **v1.5 Testing & Quality Foundation** - Phases 12-17 (shipped 2026-04-30)
 - ✅ **v1.6 User Experience & Missing Functionality** - Phases 18-21 (shipped 2026-04-30)
-- 🚧 **v1.7 Active Project Context** - Phases 22-24 (in progress)
+- ✅ **v1.7 Active Project Context** - Phases 22-23 (shipped 2026-04-30)
 
 ## Phases
 
@@ -40,7 +40,6 @@
 
 - [x] **Phase 22: Backend Foundation & User Preferences** - Store and validate user's active Baustelle preference ✅
 - [x] **Phase 23: Frontend UI & Auto-Assignment** - Persistent indicator, toggle, and form pre-fill ✅
-- [ ] **Phase 24: Opt-Out Dialog & E2E Tests** - Confirmation dialog with auto-confirm and test coverage
 
 ## Phase Details
 
@@ -81,32 +80,15 @@ Plans:
 - [x] 23-04-PLAN.md — Fix preferences FK-safe local-user mapping for active-site toggle (UAT gap closure)
 **UI hint**: yes
 
-### Phase 24: Opt-Out Dialog & E2E Tests
-**Goal**: Users can confirm or change auto-assignments with unobtrusive dialog, verified by tests
-**Depends on**: Phase 23
-**Requirements**: DLOG-01, DLOG-02, DLOG-03, DLOG-04, DLOG-05, TEST-16, TEST-17, TEST-18
-**Success Criteria** (what must be TRUE):
-  1. Confirmation dialog shows on auto-assignment (non-blocking)
-  2. Dialog auto-confirms after 5 seconds if user takes no action
-  3. User can change project or dismiss to leave unassigned from dialog
-  4. E2E tests verify active Baustelle workflow end-to-end
-**Plans**: 3 plans
-Plans:
-- [ ] 24-01-PLAN.md — Shared auto-assignment confirmation contracts (types, hook, dialog)
-- [ ] 24-02-PLAN.md — Integrate confirmation flow into withdraw/reservation/time-entry dialogs
-- [ ] 24-03-PLAN.md — Add E2E coverage for active-site workflow and opt-out behavior
-**UI hint**: yes
-
 ## Progress
 
-**Execution Order:** Phases execute in numeric order: 22 → 23 → 24
+**Execution Order:** Phases execute in numeric order: 22 → 23
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 22. Backend Foundation | v1.7 | 4/4 | ✅ Complete | 2026-04-30 |
 | 23. Frontend UI & Auto-Assignment | v1.7 | 4/4 | ✅ Complete | 2026-04-30 |
-| 24. Opt-Out Dialog & E2E Tests | v1.7 | 0/3 | Planned | - |
 
 ---
 
-*Roadmap updated: 2026-04-30 — Phase 23 completed including 23-04 FK mapping gap closure*
+*Roadmap updated: 2026-04-30 — Phase 24 removed from planning; v1.7 now includes phases 22-23 only*

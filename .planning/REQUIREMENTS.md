@@ -36,20 +36,6 @@ Active Project Context — auto-assign materials, reservations, and time entries
 - [x] **AUTO-03**: Time entry form pre-fills active Baustelle when work_type is 'site'
 - [x] **AUTO-04**: User can change or remove assignment before submission
 
-### Opt-Out Dialog
-
-- [ ] **DLOG-01**: Confirmation dialog shows on auto-assignment (unobtrusive, non-blocking)
-- [ ] **DLOG-02**: Dialog auto-confirms after 5 seconds if user takes no action
-- [ ] **DLOG-03**: User can change project from the dialog
-- [ ] **DLOG-04**: User can dismiss to leave unassigned
-- [ ] **DLOG-05**: Dialog does not block other app actions
-
-### E2E Tests
-
-- [ ] **TEST-16**: E2E test for setting active Baustelle
-- [ ] **TEST-17**: E2E test for auto-assignment on material withdrawal
-- [ ] **TEST-18**: E2E test for opt-out dialog interaction
-
 ## v2.0 Requirements
 
 Deferred to future release.
@@ -102,20 +88,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTO-02 | 23 | Complete |
 | AUTO-03 | 23 | Complete |
 | AUTO-04 | 23 | Complete |
-| DLOG-01 | 24 | Pending |
-| DLOG-02 | 24 | Pending |
-| DLOG-03 | 24 | Pending |
-| DLOG-04 | 24 | Pending |
-| DLOG-05 | 24 | Pending |
-| TEST-16 | 24 | Pending |
-| TEST-17 | 24 | Pending |
-| TEST-18 | 24 | Pending |
 
 **Coverage:**
-- v1.7 requirements: 25 total
-- Mapped to phases: 25
+- v1.7 requirements: 17 total
+- Mapped to phases: 17
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-30*
-*Last updated: 2026-04-30 after Phase 23 completion*
+*Last updated: 2026-04-30 after removing obsolete Phase 24 scope*
