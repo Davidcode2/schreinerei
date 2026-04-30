@@ -67,6 +67,15 @@ impl UserService {
         self.user_repo.create(&create_user, tenant_id).await
     }
 
+    /// Resolve tenant-local user id from authenticated identity.
+    pub async fn get_or_create_user_id_from_auth(
+        &self,
+        auth: &AuthenticatedUser,
+    ) -> Result<UserId, AppError> {
+        let user = self.get_or_create_from_auth(auth).await?;
+        Ok(user.id)
+    }
+
     /// Get current user by ID
     pub async fn get_user(
         &self,

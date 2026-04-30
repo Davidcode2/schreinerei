@@ -222,9 +222,9 @@ pub async fn get_preferences(
     let user_service = UserService::new(UserRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
 
-    let user = user_service.get_or_create_from_auth(&auth).await?;
+    let user_id = user_service.get_or_create_user_id_from_auth(&auth).await?;
     let preferences = service
-        .get_validated_preferences(user.id, ctx.tenant_id)
+        .get_validated_preferences(user_id, ctx.tenant_id)
         .await?;
     
     Ok(Json(PreferencesResponse::from(preferences)))
@@ -240,7 +240,7 @@ pub async fn update_preferences(
     let user_service = UserService::new(UserRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
 
-    let user = user_service.get_or_create_from_auth(&auth).await?;
+    let user_id = user_service.get_or_create_user_id_from_auth(&auth).await?;
 
     let preferences = match request.active_site_id {
         Some(site_id_str) => {
@@ -248,11 +248,11 @@ pub async fn update_preferences(
             let site_id = SiteId::parse(&site_id_str)
                 .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
 
-            service.set_active_site(user.id, ctx.tenant_id, site_id).await?
+            service.set_active_site(user_id, ctx.tenant_id, site_id).await?
         }
         None => {
             // Clear active site
-            service.clear_active_site(user.id, ctx.tenant_id).await?
+            service.clear_active_site(user_id, ctx.tenant_id).await?
         }
     };
     
