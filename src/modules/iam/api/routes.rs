@@ -12,9 +12,11 @@ use uuid::Uuid;
 
 use crate::auth::extractor::AuthenticatedUser;
 use crate::common::error::AppError;
-use crate::common::types::UserId;
+use crate::common::types::{SiteId, UserId};
+use crate::modules::iam::application::user_preferences_service::UserPreferencesService;
 use crate::modules::iam::application::user_service::{TenantContext, UserService};
 use crate::modules::iam::domain::user::{InviteUser, UpdateProfile};
+use crate::modules::iam::domain::user_preferences::UserPreferenceRecord;
 use crate::AppState;
 
 /// Create the IAM API router
@@ -23,6 +25,9 @@ pub fn create_router() -> Router<AppState> {
         // Current user endpoints (any authenticated user)
         .route("/api/v1/auth/me", get(get_current_user))
         .route("/api/v1/users/me", patch(update_own_profile))
+        
+        // Preferences endpoints
+        .route("/api/v1/preferences", get(get_preferences).patch(update_preferences))
         
         // User management endpoints (admin only)
         .route("/api/v1/users", get(list_users))
@@ -75,6 +80,28 @@ pub struct UpdateRoleRequest {
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct UpdateProfileRequest {
     pub name: Option<String>,
+}
+
+/// Response DTO for user preferences
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct PreferencesResponse {
+    pub active_site_id: Option<String>,
+}
+
+impl From<UserPreferenceRecord> for PreferencesResponse {
+    fn from(record: UserPreferenceRecord) -> Self {
+        Self {
+            active_site_id: record.preferences.active_site_id,
+        }
+    }
+}
+
+/// Request DTO for updating preferences
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct UpdatePreferencesRequest {
+    pub active_site_id: Option<String>,
 }
 
 /// GET /api/v1/auth/me - Get current user profile
@@ -183,4 +210,43 @@ pub async fn update_own_profile(
     let user = service.update_profile(update, &ctx).await?;
     
     Ok(Json(UserResponse::from(user)))
+}
+
+/// GET /api/v1/preferences - Get current user's preferences
+pub async fn get_preferences(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+) -> Result<impl IntoResponse, AppError> {
+    let service = UserPreferencesService::new(state.pool);
+    let ctx = TenantContext::from_auth(&auth);
+    
+    let preferences = service.get_validated_preferences(ctx.user_id, ctx.tenant_id).await?;
+    
+    Ok(Json(PreferencesResponse::from(preferences)))
+}
+
+/// PATCH /api/v1/preferences - Update user's active site
+pub async fn update_preferences(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Json(request): Json<UpdatePreferencesRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = UserPreferencesService::new(state.pool);
+    let ctx = TenantContext::from_auth(&auth);
+    
+    let preferences = match request.active_site_id {
+        Some(site_id_str) => {
+            // Parse and validate site_id
+            let site_id = SiteId::parse(&site_id_str)
+                .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+            
+            service.set_active_site(ctx.user_id, ctx.tenant_id, site_id).await?
+        }
+        None => {
+            // Clear active site
+            service.clear_active_site(ctx.user_id, ctx.tenant_id).await?
+        }
+    };
+    
+    Ok(Json(PreferencesResponse::from(preferences)))
 }

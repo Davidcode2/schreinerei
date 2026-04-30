@@ -85,6 +85,8 @@ export type TimeEntryResponse = { id: string, site_id: string | null, user_id: s
 
 export type ToolResponse = { id: string, name: string, category: string | null, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
 
+export type UpdatePreferences = { active_site_id: string | null, };
+
 /**
  * Request DTO for updating profile
  */
@@ -105,6 +107,8 @@ export type UpdateToolRequest = { name: string | null, category: string | null, 
 
 export type UpdateVehicleRequest = { name: string | null, license_plate: string | null, vehicle_type: string | null, description: string | null, status: string | null, location: string | null, qr_code: string | null, };
 
+export type UserPreferences = { active_site_id: string | null, };
+
 /**
  * Response DTO for user data
  */
@@ -112,4 +116,4 @@ export type UserResponse = { id: string, email: string, name: string | null, rol
 
 export type VehicleResponse = { id: string, name: string, license_plate: string | null, vehicle_type: string, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
 
-export type WithdrawRequest = { quantity: number, notes: string | null, };
+export type WithdrawRequest = { quantity: number, notes: string | null, site_id: string | null, };
