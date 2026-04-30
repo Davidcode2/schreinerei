@@ -75,6 +75,9 @@ mod submodule;  // Looks for src/module_name/submodule.rs
 - PWA with Service Worker
 - Offline-first with IndexedDB
 
+**Type Generation:**
+- ts-rs (Rust → TypeScript)
+
 **Auth:**
 - Keycloak (existing instance in cluster)
 
@@ -85,6 +88,45 @@ mod submodule;  // Looks for src/module_name/submodule.rs
 ### Multi-Tenancy
 
 Every query MUST be scoped to TenantId. Use request context to extract TenantId from Keycloak JWT.
+
+### ts-rs Type Generation
+
+Backend DTOs use `ts-rs` to auto-generate TypeScript types, preventing frontend-backend type drift.
+
+**Adding ts-rs to a new DTO:**
+
+1. Add derive macro to struct:
+```rust
+use ts_rs::TS;
+use serde::Serialize;
+
+#[derive(Serialize, TS)]
+#[ts(export)]
+pub struct CreateMaterialRequest {
+    pub name: String,
+    pub quantity: i32,
+    pub category_id: Uuid,
+}
+```
+
+2. Run type generation:
+```bash
+cargo test --features ts-rs/export
+```
+
+3. Types are generated to `frontend/src/types/generated.ts`
+
+4. Import in frontend:
+```typescript
+import { CreateMaterialRequest } from './types/generated';
+```
+
+**Guidelines:**
+- Add `#[ts(export)]` to all request/response DTOs
+- Run generation after modifying DTOs
+- CI should fail if generated types differ from committed
+
+**Phase 15** will add ts-rs to all existing DTOs.
 
 ### Architecture
 
