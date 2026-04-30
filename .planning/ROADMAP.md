@@ -59,7 +59,7 @@
 Plans:
 - [ ] 22-01-PLAN.md — UserPreferences Repository & Service with validation
 - [ ] 22-02-PLAN.md — Add site_id to WithdrawMaterial command
-- [ ] 22-03-PLAN.md — API endpoints for preferences (GET/PATCH)
+- [x] 22-03-PLAN.md — API endpoints for preferences (GET/PATCH)
 - [ ] 22-04-PLAN.md — Deduction history with Baustelle name
 
 ### Phase 23: Frontend UI & Auto-Assignment
@@ -93,10 +93,10 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 22. Backend Foundation | v1.7 | 0/4 | Ready to execute | - |
+| 22. Backend Foundation | v1.7 | 1/4 | In progress | 22-03 |
 | 23. Frontend UI & Auto-Assignment | v1.7 | 0/TBD | Not started | - |
 | 24. Opt-Out Dialog & E2E Tests | v1.7 | 0/TBD | Not started | - |
 
 ---
 
-*Roadmap updated: 2026-04-30 — v1.7 Active Project Context started*
+*Roadmap updated: 2026-04-30 — Plan 22-03 completed*

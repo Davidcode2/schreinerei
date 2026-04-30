@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-04-30)
 ## Current Position
 
 Phase: 22 of 24 (Backend Foundation & User Preferences)
-Plan: — of —
-Status: Ready to plan
-Last activity: 2026-04-30 — v1.7 roadmap created
+Plan: 03 of 04 (Preferences API Endpoints)
+Status: Ready to execute
+Last activity: 2026-04-30 — Plan 22-03 completed (preferences API endpoints)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 25% (Phase 22)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0 (v1.7 milestone)
-- Average duration: —
-- Total execution time: —
+- Total plans completed: 1 (v1.7 milestone)
+- Average duration: ~5 minutes
+- Total execution time: ~5 minutes
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 22. Backend Foundation | 0 | TBD | — |
+| 22. Backend Foundation | 1 | 4 | ~5 min |
 | 23. Frontend UI & Auto-Assignment | 0 | TBD | — |
 | 24. Opt-Out Dialog & E2E Tests | 0 | TBD | — |
 
 **Recent Trend:**
-- No v1.7 plans completed yet
+- 22-03 completed in ~5 minutes
 
 *Updated after each plan completion*
 
@@ -46,6 +46,7 @@ Recent decisions affecting current work:
 - v1.7 planning: Active Baustelle is user-scoped (not global)
 - v1.7 planning: Deterministic hash-based colors (no manual selection)
 - v1.7 planning: Opt-out dialog with 5-second auto-confirm
+- 22-03: Use SiteId::parse() instead of Uuid::parse_str() for cleaner code
 
 ### Pending Todos
 
@@ -70,5 +71,5 @@ Items acknowledged and carried forward from v1.6 close:
 ## Session Continuity
 
 Last session: 2026-04-30
-Stopped at: Roadmap created for v1.7, ready to plan Phase 22
+Stopped at: Plan 22-03 completed, ready for 22-04
 Resume file: None
