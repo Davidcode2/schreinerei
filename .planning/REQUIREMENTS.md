@@ -15,11 +15,11 @@ Requirements for completing missing CRUD functionality and improving UX.
 
 ### Delete Operations
 
-- [ ] **DEL-01**: User can delete a site with confirmation dialog (soft delete)
-- [ ] **DEL-02**: User can delete a material with confirmation dialog (soft delete)
-- [ ] **DEL-03**: User can delete a vehicle with confirmation dialog (soft delete)
-- [ ] **DEL-04**: User can delete a tool with confirmation dialog (soft delete)
-- [ ] **DEL-05**: User sees dependency conflict message when delete is blocked by FK constraints
+- [x] **DEL-01**: User can delete a site with confirmation dialog (soft delete) ✓
+- [x] **DEL-02**: User can delete a material with confirmation dialog (soft delete) ✓
+- [x] **DEL-03**: User can delete a vehicle with confirmation dialog (soft delete) ✓
+- [x] **DEL-04**: User can delete a tool with confirmation dialog (soft delete) ✓
+- [x] **DEL-05**: User sees dependency conflict message when delete is blocked by FK constraints ✓
 
 ### Edit Operations
 
@@ -90,11 +90,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | FIX-01 | Phase 18 | Complete ✓ |
 | FIX-02 | Phase 18 | Complete ✓ |
-| DEL-01 | Phase 19 | Pending |
-| DEL-02 | Phase 19 | Pending |
-| DEL-03 | Phase 19 | Pending |
-| DEL-04 | Phase 19 | Pending |
-| DEL-05 | Phase 19 | Pending |
+| DEL-01 | Phase 19 | Complete ✓ |
+| DEL-02 | Phase 19 | Complete ✓ |
+| DEL-03 | Phase 19 | Complete ✓ |
+| DEL-04 | Phase 19 | Complete ✓ |
+| DEL-05 | Phase 19 | Complete ✓ |
 | EDIT-01 | Phase 20 | Pending |
 | EDIT-02 | Phase 20 | Pending |
 | EDIT-03 | Phase 20 | Pending |
