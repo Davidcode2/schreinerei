@@ -10,9 +10,25 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## Current State: v1.4 Shipped
+## Current Milestone: v1.5 Testing & Quality Foundation
 
-**Last Shipped:** 2026-04-30
+**Goal:** Establish comprehensive testing strategy, document all issues in existing features, and create an agent QA playbook for future development
+
+**Target features:**
+- Backend unit test strategy (framework, patterns, coverage)
+- Frontend test strategy (unit + extended E2E)
+- Integration tests for each feature module
+- Playwright exploration → persistent learnings file
+- Agent QA Playbook: How to validate features efficiently (run tests, frontend/backend, check logs, navigate UI)
+- Frontend-backend parameter mismatch documentation + prevention strategy
+- Feature audit: record bugs, functional issues, missing functionality
+- Create issue backlog (NOT fix issues in this milestone)
+
+**Scope:** Existing features only (Baustellen, Inventory, Time Booking, Vehicles/Machines, Reservations)
+
+## Previous Milestones
+
+### v1.4 Core Feature Fixes (Shipped 2026-04-30)
 
 All core features working:
 - ✅ Material management with stock tracking and QR codes
@@ -56,7 +72,30 @@ All v1.x requirements validated:
 **v1.4 Core Feature Fixes (4 requirements):**
 - ✓ CORE-01 to CORE-04 — FK constraints resolved
 
-### Future (v1.3+)
+### Active (v1.5)
+
+**Testing Strategy:**
+- [ ] TEST-01: Backend unit test framework and patterns established
+- [ ] TEST-02: Frontend unit test framework and patterns established
+- [ ] TEST-03: Integration tests for Inventory module
+- [ ] TEST-04: Integration tests for Sites module
+- [ ] TEST-05: Integration tests for Fleet module
+- [ ] TEST-06: E2E test coverage extended for existing features
+
+**Agent Efficiency:**
+- [ ] QA-01: Playwright exploration learnings documented
+- [ ] QA-02: Agent QA Playbook created (run tests, logs, navigation)
+- [ ] QA-03: Frontend-backend parameter mismatch prevention strategy
+
+**Issue Backlog:**
+- [ ] AUDIT-01: Baustellen feature audit complete
+- [ ] AUDIT-02: Inventory feature audit complete
+- [ ] AUDIT-03: Time Booking feature audit complete
+- [ ] AUDIT-04: Vehicles/Machines feature audit complete
+- [ ] AUDIT-05: Reservations feature audit complete
+- [ ] AUDIT-06: Comprehensive issue backlog documented
+
+### Future (v1.6+)
 
 **Self-Service Registration:**
 
@@ -143,6 +182,23 @@ src/
 | Organization → tenant_id mapping | Minimal codebase changes | ✓ Frontend maps at extraction |
 | Keycloak ID → local user ID | FK constraint resolution | ✓ find_or_create_by_keycloak_id() |
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
 ---
 
-*Last updated: 2026-04-30 after v1.4 milestone completion*
+*Last updated: 2026-04-30 after v1.5 milestone started*

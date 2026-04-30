@@ -1,17 +1,17 @@
 # Project State
 
 **Project:** Schreinerei SaaS
-**Current Milestone:** None (v1.4 shipped)
-**Status:** Milestone complete
+**Current Milestone:** v1.5 Testing & Quality Foundation
+**Status:** Planning
 
 ---
 
 ## Current Position
 
-Phase: 11 — Core Feature Fixes (complete)
-Plan: All complete
-Status: Ready for next milestone
-Last activity: 2026-04-30 — v1.4 shipped, milestone archived
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-30 — Milestone v1.5 started
 
 ---
 
@@ -20,7 +20,7 @@ Last activity: 2026-04-30 — v1.4 shipped, milestone archived
 See: .planning/PROJECT.md (updated 2026-04-30)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
-**Current focus:** Ready for v1.5 Self-Service or other next steps
+**Current focus:** Testing & Quality Foundation
 
 ---
 
@@ -52,7 +52,7 @@ v1.x series complete with 30 plans across 11 phases:
 
 ### Blockers/Concerns
 
-None - v1.x series complete and shipped.
+None - v1.4 complete and shipped.
 
 ---
 
@@ -71,19 +71,14 @@ None - v1.x series complete and shipped.
 | 2026-04-29 | v1.2 Complete | Frontend Polish shipped |
 | 2026-04-29 | v1.3 Complete | Bug Fixes shipped |
 | 2026-04-30 | v1.4 Complete | Core Feature Fixes shipped |
-| 2026-04-30 | v1.x Archived | Milestones archived to .planning/milestones/ |
+| 2026-04-30 | v1.5 Started | Testing & Quality Foundation milestone |
 
 ---
 
 ## Next Action
 
-v1.x series complete. Options:
-
-1. `/gsd-new-milestone` — Start v1.5 Self-Service milestone
-2. Deploy to production
-3. Manual testing with pilot customer
-4. Review archived milestones in `.planning/milestones/`
+Run `/gsd-plan-phase 12` to start execution.
 
 ---
 
-*Last updated: 2026-04-30 after v1.4 milestone archived*
+*Last updated: 2026-04-30 after v1.5 milestone started*
