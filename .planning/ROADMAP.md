@@ -38,29 +38,30 @@
 
 **Milestone Goal:** Enable automatic assignment of materials/tools to the currently active construction site.
 
-- [ ] **Phase 22: Backend Foundation & User Preferences** - Store and validate user's active Baustelle preference
+- [x] **Phase 22: Backend Foundation & User Preferences** - Store and validate user's active Baustelle preference ✅
 - [ ] **Phase 23: Frontend UI & Auto-Assignment** - Persistent indicator, toggle, and form pre-fill
 - [ ] **Phase 24: Opt-Out Dialog & E2E Tests** - Confirmation dialog with auto-confirm and test coverage
 
 ## Phase Details
 
-### Phase 22: Backend Foundation & User Preferences
+### ✅ Phase 22: Backend Foundation & User Preferences
 **Goal**: Backend stores and validates user's active Baustelle preference
 **Depends on**: Phase 21 (v1.6 complete)
 **Requirements**: PREF-01, PREF-02, PREF-03, DEDU-01, DEDU-02, DEDU-03
-**Success Criteria** (what must be TRUE):
-  1. User can set their active Baustelle preference via API
-  2. System validates Baustelle exists and is accessible (tenant-scoped)
-  3. System clears preference if Baustelle becomes invalid (archived/deleted)
-  4. Material deductions can be linked to a Baustelle (FK column added)
-  5. Deduction details include Baustelle name when linked
-**Plans**: 4 plans
+**Completed**: 2026-04-30
 
-Plans:
-- [ ] 22-01-PLAN.md — UserPreferences Repository & Service with validation
-- [ ] 22-02-PLAN.md — Add site_id to WithdrawMaterial command
-- [x] 22-03-PLAN.md — API endpoints for preferences (GET/PATCH)
-- [ ] 22-04-PLAN.md — Deduction history with Baustelle name
+**Success Criteria Met:**
+1. ✅ User can set their active Baustelle preference via API
+2. ✅ System validates Baustelle exists and is accessible (tenant-scoped)
+3. ✅ System clears preference if Baustelle becomes invalid (archived/deleted)
+4. ✅ Material deductions can be linked to a Baustelle (FK column added)
+5. ✅ Deduction details include Baustelle name when linked
+
+**Plans Completed:**
+- [x] 22-01 — UserPreferences Repository & Service with validation
+- [x] 22-02 — Add site_id to WithdrawMaterial command
+- [x] 22-03 — API endpoints for preferences (GET/PATCH)
+- [x] 22-04 — Deduction history with Baustelle name
 
 ### Phase 23: Frontend UI & Auto-Assignment
 **Goal**: Users can see and change their active Baustelle, with auto-assignment to forms
@@ -93,10 +94,10 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 22. Backend Foundation | v1.7 | 1/4 | In progress | 22-03 |
-| 23. Frontend UI & Auto-Assignment | v1.7 | 0/TBD | Not started | - |
+| 22. Backend Foundation | v1.7 | 4/4 | ✅ Complete | 2026-04-30 |
+| 23. Frontend UI & Auto-Assignment | v1.7 | 0/TBD | Ready to plan | - |
 | 24. Opt-Out Dialog & E2E Tests | v1.7 | 0/TBD | Not started | - |
 
 ---
 
-*Roadmap updated: 2026-04-30 — Plan 22-03 completed*
+*Roadmap updated: 2026-04-30 — Phase 22 complete*
