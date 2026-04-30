@@ -192,20 +192,19 @@ Plans:
 #### Phase 18: Bug Fixes & UX Improvements
 **Goal**: Fix validation bugs and wire existing UX features
 **Depends on**: Phase 17
-**Requirements**: FIX-01, FIX-02, UX-01, UX-02
+**Requirements**: FIX-01, FIX-02, UX-02
 **Success Criteria** (what must be TRUE):
   1. User cannot submit time entry with zero or negative hours
   2. User sees inline error messages below form fields when input is invalid
-  3. User sees low stock warning badge when material quantity falls below minimum
-  4. User can initiate QR scan by clicking QR code button on inventory page
-**Plans**: TBD
+  3. User can initiate QR scan by clicking QR code button on inventory page
+**Plans**: 2 plans
 **UI hint**: yes
 
+> **Note:** UX-01 (low stock badge) is already implemented in MaterialCard.tsx - shows AlertTriangle icon and StatusBadge when `is_low_stock` is true.
+
 Plans:
-- [ ] 18-01: Hours validation fix
-- [ ] 18-02: Inline validation feedback
-- [ ] 18-03: Low stock alert badge
-- [ ] 18-04: QR button wiring
+- [ ] 18-01: TimeEntryDialog validation improvements (FIX-01, FIX-02)
+- [ ] 18-02: QR button wiring (UX-02)
 
 #### Phase 19: Delete Operations
 **Goal**: Users can safely delete entities with confirmation and clear error feedback

@@ -35,7 +35,7 @@ Requirements for completing missing CRUD functionality and improving UX.
 
 ### UX Improvements
 
-- [ ] **UX-01**: User sees low stock warning badge when material quantity falls below minimum
+- [x] **UX-01**: User sees low stock warning badge when material quantity falls below minimum ✓ (already implemented in MaterialCard.tsx)
 - [ ] **UX-02**: User can initiate QR scan by clicking QR code button on inventory page
 
 ### E2E Test Coverage
@@ -101,7 +101,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RESV-01 | Phase 20 | Pending |
 | RESV-02 | Phase 20 | Pending |
 | RESV-03 | Phase 20 | Pending |
-| UX-01 | Phase 18 | Pending |
+| UX-01 | Phase 18 | Complete (pre-existing) |
 | UX-02 | Phase 18 | Pending |
 | TEST-12 | Phase 21 | Pending |
 | TEST-13 | Phase 21 | Pending |
