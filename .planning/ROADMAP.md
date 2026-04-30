@@ -85,8 +85,11 @@ Plans:
 **Requirements:** TEST-10, TEST-11
 **Success Criteria** (what must be TRUE):
   1. Existing E2E tests verify data persisted via API calls after UI actions
-  2. Data assertion pattern documented in `tests/e2e/README.md` for future tests
-**Plans:** TBD
+  2. Data assertion pattern documented in `frontend/tests/README.md` for future tests
+**Plans:** 1 plan
+
+Plans:
+- [ ] 16-01-PLAN.md — API helpers, cleanup tracking, and data assertion tests
 
 ### Phase 17: Feature Audit
 **Goal:** All existing features audited with bugs, issues, and missing functionality documented
@@ -109,7 +112,7 @@ Plans:
 | 13. Agent QA Playbook | 1/1 | ✓ Complete | 2026-04-30 |
 | 14. Frontend Test Infrastructure | 2/2 | ✓ Complete | 2026-04-30 |
 | 15. ts-rs Type Generation | 1/1 | ✓ Complete | 2026-04-30 |
-| 16. E2E Data Assertions | 0/1 | ◆ Ready | - |
+| 16. E2E Data Assertions | 0/1 | ◆ Planned | - |
 | 17. Feature Audit | 0/1 | Not started | - |
 
 ## Coverage
