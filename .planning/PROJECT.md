@@ -10,21 +10,13 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## Current Milestone: v1.5 Testing & Quality Foundation
+## Current State
 
-**Goal:** Establish comprehensive testing strategy, document all issues in existing features, and create an agent QA playbook for future development
+**Shipped:** v1.5 Testing & Quality Foundation (2026-04-30)
 
-**Target features:**
-- Backend unit test strategy (framework, patterns, coverage)
-- Frontend test strategy (unit + extended E2E)
-- Integration tests for each feature module
-- Playwright exploration → persistent learnings file
-- Agent QA Playbook: How to validate features efficiently (run tests, frontend/backend, check logs, navigate UI)
-- Frontend-backend parameter mismatch documentation + prevention strategy
-- Feature audit: record bugs, functional issues, missing functionality
-- Create issue backlog (NOT fix issues in this milestone)
+**Next Milestone:** v1.6 (planning required)
 
-**Scope:** Existing features only (Baustellen, Inventory, Time Booking, Vehicles/Machines, Reservations)
+See `.planning/ISSUE-BACKLOG.md` for 24 documented issues prioritized for v1.6+.
 
 ## Previous Milestones
 
@@ -44,6 +36,13 @@ All core features working:
 ### Validated
 
 All v1.x requirements validated:
+
+**v1.5 Testing & Quality Foundation (21 requirements):**
+- ✓ TEST-01 to TEST-03 — Backend domain tests
+- ✓ TEST-04 to TEST-09 — Frontend testing and ts-rs
+- ✓ TEST-10, TEST-11 — E2E data assertions
+- ✓ QA-01 to QA-04 — Agent QA Playbook
+- ✓ AUDIT-01 to AUDIT-06 — Feature audit
 
 **v1.0 MVP (37 requirements):**
 - ✓ ARCH-01 to ARCH-06 — Phase 1
@@ -72,30 +71,23 @@ All v1.x requirements validated:
 **v1.4 Core Feature Fixes (4 requirements):**
 - ✓ CORE-01 to CORE-04 — FK constraints resolved
 
-### Active (v1.5)
+### Active
 
-**Testing Strategy:**
-- [ ] TEST-01: Backend unit test framework and patterns established
-- [ ] TEST-02: Frontend unit test framework and patterns established
-- [ ] TEST-03: Integration tests for Inventory module
-- [ ] TEST-04: Integration tests for Sites module
-- [ ] TEST-05: Integration tests for Fleet module
-- [ ] TEST-06: E2E test coverage extended for existing features
-
-**Agent Efficiency:**
-- [ ] QA-01: Playwright exploration learnings documented
-- [ ] QA-02: Agent QA Playbook created (run tests, logs, navigation)
-- [ ] QA-03: Frontend-backend parameter mismatch prevention strategy
-
-**Issue Backlog:**
-- [ ] AUDIT-01: Baustellen feature audit complete
-- [ ] AUDIT-02: Inventory feature audit complete
-- [ ] AUDIT-03: Time Booking feature audit complete
-- [ ] AUDIT-04: Vehicles/Machines feature audit complete
-- [ ] AUDIT-05: Reservations feature audit complete
-- [ ] AUDIT-06: Comprehensive issue backlog documented
+(None — v1.5 complete, planning v1.6)
 
 ### Future (v1.6+)
+
+**From Issue Backlog:**
+- Fix BUG-TIME-001: Hours validation in TimeEntryDialog
+- Add E2E tests for update/delete operations
+- Implement site delete UI
+- Add time entry edit/delete functionality
+
+**Integration Tests:**
+- INT-01: Integration tests with real PostgreSQL for inventory module
+- INT-02: Integration tests for sites module
+- INT-03: Integration tests for fleet module
+- INT-04: Multi-tenant isolation tests for all modules
 
 **Self-Service Registration:**
 
@@ -119,12 +111,15 @@ All v1.x requirements validated:
 **Pilot-Kunde:** Eine Schreinerei wird als erster Kunde die Software testen.
 
 **Tech Stack:**
-- Backend: Rust, Axum 0.8, SQLx 0.8, PostgreSQL (~8,900 LOC)
-- Frontend: Vite 6, React 18, TypeScript, Tailwind CSS 4, shadcn/ui (~8,000 LOC)
+- Backend: Rust, Axum 0.8, SQLx 0.8, PostgreSQL (~12,290 LOC)
+- Frontend: Vite 6, React 18, TypeScript, Tailwind CSS 4, shadcn/ui (~8,991 LOC)
 - Auth: Keycloak with OAuth2 PKCE
 - Offline: Workbox, Dexie.js (IndexedDB)
+- Testing: Vitest, MSW, Playwright
 
 **Known Tech Debt:**
+- 24 issues documented in ISSUE-BACKLOG.md
+- No integration tests with real database (deferred to v1.6)
 - No rate limiting (infrastructure level)
 - Event polling vs pub/sub
 - No conflict resolution for offline edits
@@ -181,6 +176,10 @@ src/
 | Manual Keycloak ops | No automation needed for pilot | ✓ User manages orgs in Admin Console |
 | Organization → tenant_id mapping | Minimal codebase changes | ✓ Frontend maps at extraction |
 | Keycloak ID → local user ID | FK constraint resolution | ✓ find_or_create_by_keycloak_id() |
+| Tests inline in domain files | Zero friction, fast feedback | ✓ 116 backend tests |
+| ts-rs v12 for type generation | Prevents frontend-backend drift | ✓ 49 DTOs exported |
+| Vitest over Jest | Native Vite integration | ✓ 28 frontend tests |
+| MSW for API mocking | Network-level mocking | ✓ No axios mocking |
 
 ## Evolution
 
@@ -201,4 +200,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-04-30 after v1.5 milestone started*
+*Last updated: 2026-04-30 after v1.5 milestone*

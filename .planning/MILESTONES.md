@@ -2,6 +2,47 @@
 
 ---
 
+## v1.5 Testing & Quality Foundation
+
+**Shipped:** 2026-04-30
+**Phases:** 6 | **Plans:** 10
+
+### Summary
+
+Established comprehensive testing strategy with backend domain tests, frontend test infrastructure, ts-rs type generation, E2E data assertions, and feature audit documenting 24 issues for future roadmap.
+
+### Accomplishments
+
+1. Backend domain tests (116 tests, zero dependencies, inline in domain files)
+2. QA Playbook for future agent efficiency
+3. Frontend test infrastructure with Vitest + MSW + Testing Library
+4. TypeScript types auto-generated from Rust DTOs (49 types, type drift prevented)
+5. E2E tests now verify data persistence through API calls
+6. Feature audit documented 24 issues in ISSUE-BACKLOG.md
+
+### Stats
+
+- **Timeline:** 2 days (2026-04-28 → 2026-04-30)
+- **LOC:** ~12,290 Rust + ~8,991 TypeScript
+- **Tests:** 116 backend + 28 frontend + 6 E2E
+- **DTOs with ts-rs:** 49
+- **Issues documented:** 24
+- **Requirements:** 21/21 complete
+
+### Key Decisions
+
+- Tests inline in domain files for zero friction
+- ts-rs v12 instead of v10 (v10 lacks export functionality)
+- Vitest over Jest for frontend testing (native Vite integration)
+- MSW for API mocking at network level (no axios mocking)
+
+### Archives
+
+- `.planning/milestones/v1.5-ROADMAP.md`
+- `.planning/milestones/v1.5-REQUIREMENTS.md`
+
+---
+
 ## v1.4 Core Feature Fixes
 
 **Shipped:** 2026-04-30
