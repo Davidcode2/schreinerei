@@ -347,21 +347,21 @@ impl FromStr for SiteStatus {
 
 /// Work type for time entries
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "lowercase")]
 pub enum WorkType {
-    SiteWork,
+    Site,
     Workshop,
-    Cnc,
-    Delivery,
+    Travel,
+    Other,
 }
 
 impl WorkType {
     pub fn as_str(&self) -> &'static str {
         match self {
-            WorkType::SiteWork => "site_work",
+            WorkType::Site => "site",
             WorkType::Workshop => "workshop",
-            WorkType::Cnc => "cnc",
-            WorkType::Delivery => "delivery",
+            WorkType::Travel => "travel",
+            WorkType::Other => "other",
         }
     }
 }
@@ -377,10 +377,10 @@ impl FromStr for WorkType {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "site_work" | "sitework" => Ok(WorkType::SiteWork),
+            "site" => Ok(WorkType::Site),
             "workshop" => Ok(WorkType::Workshop),
-            "cnc" => Ok(WorkType::Cnc),
-            "delivery" => Ok(WorkType::Delivery),
+            "travel" => Ok(WorkType::Travel),
+            "other" => Ok(WorkType::Other),
             _ => Err(format!("Invalid work type: {}", s)),
         }
     }

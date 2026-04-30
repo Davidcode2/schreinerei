@@ -28,6 +28,10 @@ impl FleetRepository {
         }
     }
 
+    pub fn pool(&self) -> PgPool {
+        self.pool.clone()
+    }
+
     // === Vehicle operations ===
 
     pub async fn create_vehicle(
@@ -1052,7 +1056,7 @@ pub struct ReservationSummary {
     pub id: ReservationId,
     pub start_time: DateTime<Utc>,
     pub end_time: DateTime<Utc>,
-    pub user_name: String,
+    pub user_name: Option<String>,
     pub site_name: Option<String>,
     pub status: ReservationStatus,
 }
@@ -1084,7 +1088,7 @@ struct ReservationSummaryRow {
     id: Uuid,
     start_time: DateTime<Utc>,
     end_time: DateTime<Utc>,
-    user_name: String,
+    user_name: Option<String>,
     site_name: Option<String>,
     status: String,
 }
@@ -1130,7 +1134,7 @@ struct ReservationDetailsRow {
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
     resource_name: String,
-    user_name: String,
+    user_name: Option<String>,
     site_name: Option<String>,
 }
 

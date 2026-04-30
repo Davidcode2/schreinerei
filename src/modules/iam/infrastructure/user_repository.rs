@@ -142,6 +142,40 @@ impl UserRepository {
         Ok(user.into_user())
     }
 
+    /// Find or create user by Keycloak ID
+    /// Returns existing user or creates new one from Keycloak info
+    pub async fn find_or_create_by_keycloak_id(
+        &self,
+        keycloak_user_id: &str,
+        tenant_id: TenantId,
+        email: &str,
+        role: Role,
+    ) -> Result<User, AppError> {
+        if let Some(user) = self.find_by_keycloak_id(keycloak_user_id, tenant_id).await? {
+            return Ok(user);
+        }
+
+        let create = CreateUser {
+            keycloak_user_id: keycloak_user_id.to_string(),
+            email: email.to_string(),
+            name: None,
+            role,
+        };
+
+        self.create(&create, tenant_id).await
+    }
+
+    /// Get local user ID from Keycloak user ID
+    pub async fn get_local_user_id(
+        &self,
+        keycloak_user_id: &str,
+        tenant_id: TenantId,
+    ) -> Result<Uuid, AppError> {
+        let user = self.find_by_keycloak_id(keycloak_user_id, tenant_id).await?
+            .ok_or_else(|| AppError::NotFound("User not found in local database".to_string()))?;
+        Ok(user.id.0)
+    }
+
     /// Update a user's profile (name) within a tenant
     pub async fn update_profile(
         &self,

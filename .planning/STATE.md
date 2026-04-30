@@ -1,26 +1,26 @@
 # Project State
 
 **Project:** Schreinerei SaaS
-**Current Milestone:** v1.4 Core Feature Fixes
-**Status:** Not started
+**Current Milestone:** None (v1.4 shipped)
+**Status:** Milestone complete
 
 ---
 
 ## Current Position
 
-Phase: 11 — Core Feature Fixes
-Plan: Not started
-Status: Planned - 3 plans created in 2 waves
-Last activity: 2026-04-29 — Phase 11 planned for FK constraint fixes
+Phase: 11 — Core Feature Fixes (complete)
+Plan: All complete
+Status: Ready for next milestone
+Last activity: 2026-04-30 — v1.4 shipped, milestone archived
 
 ---
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-29)
+See: .planning/PROJECT.md (updated 2026-04-30)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
-**Current focus:** E2E testing infrastructure complete, config bugs discovered
+**Current focus:** Ready for v1.5 Self-Service or other next steps
 
 ---
 
@@ -35,28 +35,24 @@ Full decision log in PROJECT.md. Key decisions:
 - Keycloak OAuth2 PKCE for SPA auth
 - IndexedDB (Dexie.js) for offline storage
 - Keycloak Organizations for tenant isolation (v1.1)
+- User ID resolution: Keycloak ID → local users.id for FK references
 
-### Roadmap Evolution
+### Completed Work
 
-- Phase 8 added: Fix all frontend-accessible functionalities
-- Phase 8 complete: Backend and frontend bugs resolved
-- Phase 9 added: Comprehensive frontend testing with playwright-cli
-- Phase 9 complete: 18 E2E tests, 2 bugs discovered
-- Phase 10 added: Bug fixes for 8 bugs discovered in testing
-- Phase 10 complete: All auth and UI bugs fixed
-- Phase 11 added: Fix core features with FK constraint violations
-
-### Pending Todos
-
-Investigate and fix FK constraint violations in Phase 11:
-- CORE-01: stock_entries_user_id_fkey violation on material withdrawal
-- CORE-02: reservations_user_id_fkey violation on reservation creation
-- CORE-03: Time entries POST returns 400
-- CORE-04: Fleet calendar GET returns 400
+v1.x series complete with 30 plans across 11 phases:
+- Auth & IAM (Phase 1)
+- Inventory Management (Phase 2)
+- Sites Management (Phase 3)
+- Fleet Management (Phase 4)
+- PWA & Mobile (Phase 5)
+- Organization-Based Tenancy (Phase 6)
+- Frontend Polish (Phase 7)
+- Bug Fixes (Phases 8-10)
+- Core Feature Fixes (Phase 11)
 
 ### Blockers/Concerns
 
-User ID foreign key constraints failing - likely the user_id being passed doesn't exist in users table or is a Keycloak ID that needs mapping.
+None - v1.x series complete and shipped.
 
 ---
 
@@ -72,30 +68,22 @@ User ID foreign key constraints failing - likely the user_id being passed doesn'
 | 2026-04-29 | Phase 5 Complete | PWA & Mobile finished |
 | 2026-04-29 | v1.0 Complete | MVP shipped |
 | 2026-04-29 | v1.1 Complete | Organization-Based Tenancy shipped |
-| 2026-04-29 | v1.2 Started | Frontend Polish milestone |
-| 2026-04-29 | Phase 7 Planned | 3 plans created in 3 waves |
-| 2026-04-29 | Phase 7 Complete | Material/Site/Fleet dialogs, User management, QR scanner |
-| 2026-04-29 | Phase 8 Added | Bug fixes phase for end-to-end functionality |
-| 2026-04-29 | Phase 8 Planned | 2 plans created for backend and frontend bug fixes |
-| 2026-04-29 | Phase 8 Complete | Dashboard API, VehicleType, logout, category creation, reservation dates fixed |
-| 2026-04-29 | Phase 9 Added | Comprehensive frontend testing with playwright-cli |
-| 2026-04-29 | Phase 9 Complete | 18 E2E tests created, 2 config bugs discovered |
-| 2026-04-29 | Phase 10 Added | Bug fixes for 8 bugs discovered in testing |
-| 2026-04-29 | Phase 10 Planned | 4 plans created in 2 waves |
-| 2026-04-29 | Phase 10 Complete | All 8 bugs fixed |
-| 2026-04-29 | Phase 11 Added | Core feature FK constraint fixes |
-| 2026-04-29 | Phase 11 Planned | 3 plans created for user ID resolution |
+| 2026-04-29 | v1.2 Complete | Frontend Polish shipped |
+| 2026-04-29 | v1.3 Complete | Bug Fixes shipped |
+| 2026-04-30 | v1.4 Complete | Core Feature Fixes shipped |
+| 2026-04-30 | v1.x Archived | Milestones archived to .planning/milestones/ |
 
 ---
 
 ## Next Action
 
-Plan Phase 11 to fix core feature FK constraint violations:
+v1.x series complete. Options:
 
-1. Run `/gsd-plan-phase 11` to create plans for fixing core features
-2. Investigate user_id FK violations in stock_entries and reservations tables
-3. Check if user_id from JWT is being stored correctly
+1. `/gsd-new-milestone` — Start v1.5 Self-Service milestone
+2. Deploy to production
+3. Manual testing with pilot customer
+4. Review archived milestones in `.planning/milestones/`
 
 ---
 
-*Last updated: 2026-04-29 after Phase 11 added*
+*Last updated: 2026-04-30 after v1.4 milestone archived*

@@ -1,6 +1,7 @@
 use crate::common::error::AppError;
-use crate::common::types::{MaterialId, CategoryId, OrderRequestId};
+use crate::common::types::{MaterialId, CategoryId, OrderRequestId, UserId, Role};
 use crate::modules::iam::application::user_service::TenantContext;
+use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::inventory::domain::{
     Category, Material, CreateCategory, CreateMaterial, WithdrawMaterial, AdjustStock,
     OrderRequest, OrderStatus, CreateOrderRequest, ApproveOrderRequest, FulfillOrderRequest,
@@ -10,15 +11,31 @@ use crate::modules::inventory::domain::{
 use crate::modules::inventory::infrastructure::MaterialRepository;
 use qrcode::render::svg;
 use qrcode::QrCode;
+use sqlx::PgPool;
 
 /// Service for inventory business logic
 pub struct InventoryService {
     material_repo: MaterialRepository,
+    pool: PgPool,
 }
 
 impl InventoryService {
     pub fn new(material_repo: MaterialRepository) -> Self {
-        Self { material_repo }
+        let pool = material_repo.pool();
+        Self { material_repo, pool }
+    }
+
+    async fn resolve_local_user_id(&self, ctx: &TenantContext) -> Result<UserId, AppError> {
+        let user_repo = UserRepository::new(self.pool.clone());
+        let user = user_repo
+            .find_or_create_by_keycloak_id(
+                &ctx.user_id.to_string(),
+                ctx.tenant_id,
+                &ctx.email,
+                if ctx.is_admin() { Role::Admin } else { Role::Employee },
+            )
+            .await?;
+        Ok(user.id)
     }
 
     // === Category operations ===
@@ -126,11 +143,13 @@ impl InventoryService {
     ) -> Result<Material, AppError> {
         withdraw.validate()?;
 
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+
         let material = self.material_repo
             .withdraw_stock(
                 withdraw.material_id,
                 withdraw.quantity,
-                ctx.user_id,
+                local_user_id,
                 withdraw.notes.clone(),
                 ctx.tenant_id,
             )
@@ -142,7 +161,7 @@ impl InventoryService {
             material_name: material.name.clone(),
             quantity_withdrawn: withdraw.quantity,
             quantity_after: material.quantity,
-            withdrawn_by: ctx.user_id,
+            withdrawn_by: local_user_id,
             notes: withdraw.notes,
             is_last_unit: material.is_last_unit(),
         }.into_event(ctx.tenant_id);
@@ -156,7 +175,7 @@ impl InventoryService {
                 material_name: material.name.clone(),
                 current_quantity: material.quantity,
                 min_quantity: material.min_quantity,
-                triggered_by_user_id: Some(ctx.user_id),
+                triggered_by_user_id: Some(local_user_id),
             }.into_event(ctx.tenant_id);
 
             self.material_repo.publish_event(&low_event).await?;
@@ -176,12 +195,14 @@ impl InventoryService {
 
         adjust.validate()?;
 
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+
         let material = self.material_repo
             .adjust_stock(
                 adjust.material_id,
                 adjust.quantity,
                 &adjust.reason,
-                ctx.user_id,
+                local_user_id,
                 ctx.tenant_id,
             )
             .await?;
@@ -193,7 +214,7 @@ impl InventoryService {
             quantity_change: adjust.quantity,
             quantity_after: material.quantity,
             reason: adjust.reason,
-            adjusted_by: ctx.user_id,
+            adjusted_by: local_user_id,
         }.into_event(ctx.tenant_id);
 
         self.material_repo.publish_event(&event).await?;
@@ -205,7 +226,7 @@ impl InventoryService {
                 material_name: material.name.clone(),
                 current_quantity: material.quantity,
                 min_quantity: material.min_quantity,
-                triggered_by_user_id: Some(ctx.user_id),
+                triggered_by_user_id: Some(local_user_id),
             }.into_event(ctx.tenant_id);
 
             self.material_repo.publish_event(&low_event).await?;
@@ -285,11 +306,12 @@ impl InventoryService {
     ) -> Result<OrderRequest, AppError> {
         create.validate()?;
 
-        // Verify material exists
         let material = self.get_material(create.material_id, ctx).await?;
 
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+
         let order = self.material_repo
-            .create_order_request(&create, ctx.user_id, ctx.tenant_id)
+            .create_order_request(&create, local_user_id, ctx.tenant_id)
             .await?;
 
         // Emit OrderRequestCreated event
@@ -298,7 +320,7 @@ impl InventoryService {
             material_id: material.id,
             material_name: material.name,
             quantity_requested: create.quantity,
-            requested_by: ctx.user_id,
+            requested_by: local_user_id,
             reason: create.reason.clone(),
         }.into_event(ctx.tenant_id);
 
@@ -338,8 +360,9 @@ impl InventoryService {
         if !ctx.is_admin() {
             return Err(AppError::Forbidden("Admin access required".to_string()));
         }
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
         self.material_repo
-            .approve_order_request(id, ctx.user_id, approve.notes, ctx.tenant_id)
+            .approve_order_request(id, local_user_id, approve.notes, ctx.tenant_id)
             .await
     }
 

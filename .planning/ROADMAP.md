@@ -2,7 +2,6 @@
 
 **Project:** Schreinerei SaaS
 **Core Value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
-**Timeline:** 1 day
 
 ---
 
@@ -12,217 +11,45 @@
 - ✅ **v1.1 Organization-Based Tenancy** — Phase 6 (shipped 2026-04-29)
 - ✅ **v1.2 Frontend Polish** — Phase 7 (shipped 2026-04-29)
 - ✅ **v1.3 Bug Fixes** — Phases 8-10 (shipped 2026-04-29)
-- 🚧 **v1.4 Core Feature Fixes** — Phase 11 (in progress)
+- ✅ **v1.4 Core Feature Fixes** — Phase 11 (shipped 2026-04-30)
+- 📋 **v1.5 Self-Service** — Phases 12+ (planned)
 
 ---
 
 ## Phases
 
 <details>
-<summary>✅ v1.0 MVP (Phases 1-5) — SHIPPED 2026-04-29</summary>
+<summary>✅ v1.0-v1.4 (Phases 1-11) — SHIPPED 2026-04-30</summary>
 
 - [x] Phase 1: Auth & IAM Foundation (2/2 plans) — completed 2026-04-28
 - [x] Phase 2: Inventar Management (2/2 plans) — completed 2026-04-28
 - [x] Phase 3: Baustellen Management (2/2 plans) — completed 2026-04-28
 - [x] Phase 4: Fuhrpark & Werkzeuge (2/2 plans) — completed 2026-04-28
 - [x] Phase 5: PWA & Mobile (4/4 plans) — completed 2026-04-29
-
-</details>
-
-<details>
-<summary>✅ v1.1 Organization-Based Tenancy (Phase 6) — SHIPPED 2026-04-29</summary>
-
 - [x] Phase 6: Organization-Based Tenancy (3/3 plans) — completed 2026-04-29
+- [x] Phase 7: Frontend Polish (3/3 plans) — completed 2026-04-29
+- [x] Phase 8: Bug Fixes (2/2 plans) — completed 2026-04-29
+- [x] Phase 9: Frontend Testing (3/3 plans) — completed 2026-04-29
+- [x] Phase 10: Bug Fixes Round 2 (4/4 plans) — completed 2026-04-29
+- [x] Phase 11: Core Feature Fixes (3/3 plans) — completed 2026-04-30
 
 </details>
 
 ---
 
-## Phase 7: Frontend Polish ✅
+## v1.5 Self-Service (Planned)
 
-**Goal:** Fix non-functional buttons and connect UI to backend APIs
+**Goal:** Enable self-service organization registration and onboarding
 
-**Requirements:** INVT-08, INVT-09, SITE-09, FLEET-08, FLEET-09, USER-01, USER-02, ERR-01, ERR-02
+**Target Features:**
+- Public landing page with registration
+- Self-service organization creation
+- Organization admin dashboard
+- Member invitation flow
 
-**Plans:** 3 plans (3/3 complete)
+**Requirements:** SS-01, SS-02, SS-03, SS-04, EXT-01, EXT-02
 
-**Duration:** 1 day
-
-**Status:** Complete (2026-04-29)
-
-### Plans
-
-**Wave 1**
-- [x] 07-01 — Add Material & Site Dialogs (INVT-08, INVT-09, SITE-09)
-
-**Wave 2**
-- [x] 07-02 — Add Fleet Dialogs (FLEET-08, FLEET-09)
-
-**Wave 3**
-- [x] 07-03 — User Management & Error Handling (USER-01, USER-02, ERR-01, ERR-02)
-
----
-
-## Phase 8: Bug Fixes ✅
-
-**Goal:** Fix all frontend-accessible functionalities - ensure end-to-end flows work correctly
-
-**Issues discovered during Phase 7 testing:**
-- Dashboard sites API 500 error (NUMERIC vs FLOAT8 type mismatch)
-- Logout button non-functional
-- Vehicle creation 400 error ("Invalid vehicle type: van")
-- Cannot create materials - no category selection/creation available
-- Calendar reservation 400 error (date format)
-
-**Plans:** 2 plans (2/2 complete)
-
-**Duration:** 1 day
-
-**Status:** Complete (2026-04-29)
-
-### Plans
-
-**Wave 1**
-- [x] 08-01 — Backend Bug Fixes (Dashboard type mismatch, VehicleType enum)
-
-**Wave 2**
-- [x] 08-02 — Frontend Bug Fixes (Logout, Category creation, Date format)
-
-### Success Criteria
-
-1. User can add material via dialog with name, quantity, unit, location
-2. User can create site via dialog with name, customer, location
-3. User can add vehicle via dialog with name, plate, status
-4. User can add tool via dialog with name, status
-5. Admin can invite user via email dialog
-6. Settings displays real users from API (not mock data)
-7. QR scanner shows friendly error when camera denied
-8. QR scanner provides retry button after error
-
----
-
-## Phase 9: Frontend Testing ✅
-
-**Goal:** Comprehensive frontend testing with Playwright to discover remaining bugs
-
-**Requirements:** TEST-01, TEST-02, TEST-03, TEST-04, TEST-05, TEST-06
-
-**Plans:** 3 plans (3/3 complete)
-
-**Duration:** 1 day
-
-**Status:** Complete (2026-04-29)
-
-### Plans
-
-**Wave 1**
-- [x] 09-01 — Playwright Setup & Auth/Inventory Tests (TEST-01, TEST-02)
-
-**Wave 2**
-- [x] 09-02 — Fleet, Sites & Dashboard Tests (TEST-03, TEST-04, TEST-05)
-
-**Wave 3**
-- [x] 09-03 — Run Tests & Document Bugs (TEST-06)
-
-### Success Criteria
-
-1. ✅ Playwright installed and configured
-2. ✅ All user flows have E2E tests (18 tests)
-3. ⚠️ Tests can authenticate with Keycloak (blocked by config)
-4. ✅ Bug report generated with findings (2 bugs found)
-
-### Bugs Discovered
-
-| Bug | Description | Severity |
-|-----|-------------|----------|
-| BUG-01 | Keycloak redirect_uri invalid for port 5174 | High |
-| BUG-02 | Port 5173 occupied by unknown process | Medium |
-
----
-
-## Phase 10: Bug Fixes Round 2 ✅
-
-**Goal:** Fix all 8 bugs discovered during Phase 9 automated Playwright testing
-
-**Requirements:** BUG-001, BUG-002, BUG-003, BUG-004, BUG-005, BUG-006, BUG-007, BUG-008
-
-**Plans:** 4 plans (4/4 complete)
-
-**Duration:** 1 day
-
-**Status:** Complete (2026-04-29)
-
-### Plans
-
-**Wave 1 (Parallel)**
-- [x] 10-01 — Authentication Fixes (BUG-001, BUG-002)
-- [x] 10-02 — Fleet Button Fix (BUG-004)
-- [x] 10-03 — PWA & Query Fixes (BUG-003, BUG-005)
-
-**Wave 2**
-- [x] 10-04 — User Management & Sync (BUG-006, BUG-007, BUG-008)
-
-### Success Criteria
-
-1. Token exchange succeeds on first attempt (no double-exchange failures)
-2. Token refresh retries before logout (exponential backoff)
-3. API calls go through Vite proxy correctly
-4. Fleet "Neu" button opens dropdown with Vehicle/Tool options
-5. No redundant API calls within 30 second window
-6. User list displays users from API
-7. Admin can invite users via email dialog
-8. Sync status visible to user with toast notifications
-
-### Bugs to Fix
-
-| Bug | Description | Severity | Location |
-|-----|-------------|----------|----------|
-| BUG-001 | Token Exchange Failure During Auth Callback | Critical | keycloak.ts, AuthCallback.tsx |
-| BUG-002 | Token Refresh Cascade Failure | Critical | client.ts |
-| BUG-003 | Wrong API URL (Frontend Port Instead of Backend) | High | vite.config.ts |
-| BUG-004 | Fleet "Neu" Button Non-Functional | High | FleetPage.tsx |
-| BUG-005 | Redundant API Calls | Medium | hooks/*.ts |
-| BUG-006 | User List Not Displaying (Loading State Stuck) | Medium | UserManagementSection.tsx |
-| BUG-007 | No Email Invite Dialog | Medium | UserManagementSection.tsx |
-| BUG-008 | Offline Sync Fails Silently | Medium | sync.ts |
-
----
-
-## Phase 11: Core Feature Fixes
-
-**Goal:** Fix core features that fail due to user_id foreign key constraint violations and validation errors
-
-**Issues discovered during manual testing:**
-- Stock withdrawal fails with FK constraint violation (stock_entries_user_id_fkey)
-- Fleet reservation creation fails with FK constraint violation (reservations_user_id_fkey)
-- Time entries POST returns 400 (validation error)
-- Fleet calendar GET returns 400 (validation error)
-
-**Root Cause:** Backend passes Keycloak user IDs directly to FK columns that expect local users.id values.
-
-**Requirements:** CORE-01, CORE-02, CORE-03, CORE-04
-
-**Plans:** 3 plans (0/3 complete)
-
-**Duration:** 1 day
-
-**Status:** Planned (2026-04-29)
-
-### Plans
-
-**Wave 1 (Parallel)**
-- [ ] 11-01 — Fix Material Withdrawal FK (CORE-01)
-- [ ] 11-02 — Fix Fleet Reservation FK (CORE-02)
-
-**Wave 2**
-- [ ] 11-03 — Fix Time Entries & Calendar (CORE-03, CORE-04)
-
-### Success Criteria
-
-1. User can withdraw materials from inventory
-2. User can create fleet reservations
-3. User can create time entries
-4. Fleet calendar displays reservations correctly
+**Status:** Not started
 
 ---
 
@@ -240,22 +67,24 @@
 | 8. Bug Fixes | v1.3 | 2/2 | Complete | 2026-04-29 |
 | 9. Frontend Testing | v1.3 | 3/3 | Complete | 2026-04-29 |
 | 10. Bug Fixes Round 2 | v1.3 | 4/4 | Complete | 2026-04-29 |
-| 11. Core Feature Fixes | v1.4 | 0/3 | Planned | - |
+| 11. Core Feature Fixes | v1.4 | 3/3 | Complete | 2026-04-30 |
 
 ---
 
-## Summary
+## Backlog
 
-| Phase | Goal | Duration | Requirements |
-|-------|------|----------|--------------|
-| 7 | Frontend Polish | 1 day | 9 |
-| 8 | Bug Fixes | 1 day | 5 bugs |
-| 9 | Frontend Testing | 1 day | 6 test requirements |
-| 10 | Bug Fixes Round 2 | 1 day | 8 bugs |
-| 11 | Core Feature Fixes | 1 day | 4 core issues |
+Features for future milestones:
 
-**Total for v1.2-v1.4:** 5 days
+| ID | Feature | Milestone | Priority |
+|----|---------|-----------|----------|
+| 999.1 | Self-service registration | v1.5 | High |
+| 999.2 | Organization admin dashboard | v1.5 | High |
+| 999.3 | Public landing page | v1.5 | Medium |
+| 999.4 | Rate limiting | v1.6 | Medium |
+| 999.5 | Event pub/sub | v1.6 | Low |
+| 999.6 | Offline conflict resolution | v1.6 | Low |
+| 999.7 | Native mobile app | v2.0 | Low |
 
 ---
 
-*Last updated: 2026-04-29 after Phase 11 added*
+*Last updated: 2026-04-30 after v1.4 milestone completion*

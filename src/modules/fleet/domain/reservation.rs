@@ -131,6 +131,6 @@ impl UpdateReservation {
 pub struct ReservationWithDetails {
     pub reservation: Reservation,
     pub resource_name: String,
-    pub user_name: String,
+    pub user_name: Option<String>,
     pub site_name: Option<String>,
 }

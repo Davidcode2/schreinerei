@@ -2,6 +2,99 @@
 
 ---
 
+## v1.4 Core Feature Fixes
+
+**Shipped:** 2026-04-30
+**Phases:** 1 | **Plans:** 3
+
+### Summary
+
+Fixed FK constraint violations in core features by resolving Keycloak user IDs to local database user IDs. Also fixed WorkType enum mismatch and nullable user_name in reservations.
+
+### Accomplishments
+
+1. User ID resolution: Keycloak ID → local users.id before all FK inserts
+2. Auto-provisioning users on first FK reference
+3. WorkType enum aligned with frontend (site, workshop, travel, other)
+4. Calendar accepts both RFC3339 and YYYY-MM-DD date formats
+5. Nullable user_name in reservation details for users without names
+
+### Stats
+
+- **Timeline:** 1 day (2026-04-30)
+- **LOC:** ~8,900 Rust + ~8,000 TypeScript
+- **Requirements:** 4/4 complete
+
+### Key Decisions
+
+- find_or_create_by_keycloak_id() pattern for user resolution
+- email added to TenantContext for user provisioning
+- pool access added to all services for UserRepository access
+
+### Archives
+
+- `.planning/milestones/v1.4-ROADMAP.md`
+- `.planning/milestones/v1.4-REQUIREMENTS.md`
+
+---
+
+## v1.3 Bug Fixes
+
+**Shipped:** 2026-04-29
+**Phases:** 3 | **Plans:** 9
+
+### Summary
+
+Comprehensive bug fixes after E2E testing with Playwright. Fixed authentication issues, UI bugs, and API integration problems.
+
+### Accomplishments
+
+1. Token exchange with retry logic (no more double-exchange failures)
+2. Fleet "Neu" button dropdown menu
+3. User management with real API data
+4. Email invite dialog for admins
+5. Sync status with toast notifications
+6. 18 E2E tests created for regression prevention
+
+### Stats
+
+- **Timeline:** 1 day (2026-04-29)
+- **Requirements:** 8/8 complete
+
+### Archives
+
+- Phase 8-10 summaries in `.planning/phases/`
+
+---
+
+## v1.2 Frontend Polish
+
+**Shipped:** 2026-04-29
+**Phases:** 1 | **Plans:** 3
+
+### Summary
+
+Fixed non-functional buttons and connected UI to backend APIs. Added dialogs for creating materials, sites, vehicles, tools.
+
+### Accomplishments
+
+1. Material dialog with form submission
+2. Site dialog with customer selection
+3. Vehicle/Tool dialogs with status selection
+4. User invitation via email dialog
+5. QR scanner error handling with retry
+
+### Stats
+
+- **Timeline:** 1 day (2026-04-29)
+- **Requirements:** 9/9 complete
+
+### Archives
+
+- Phase 7 summaries in `.planning/phases/`
+
+---
+
 ## v1.1 Organization-Based Tenancy
 
 **Shipped:** 2026-04-29
@@ -32,8 +125,8 @@ Migrated from attribute-based multi-tenancy to Keycloak Organizations for native
 
 ### Archives
 
-- `.planning/milestones/v1.1-ROADMAP.md`
-- `.planning/milestones/v1.1-REQUIREMENTS.md`
+- `.planning/milestones/v1-ROADMAP.md`
+- `.planning/milestones/v1-REQUIREMENTS.md`
 
 ---
 

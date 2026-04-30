@@ -9,6 +9,7 @@ use crate::modules::iam::infrastructure::user_repository::UserRepository;
 pub struct TenantContext {
     pub tenant_id: TenantId,
     pub user_id: UserId,
+    pub email: String,
     pub roles: Vec<Role>,
 }
 
@@ -18,6 +19,7 @@ impl TenantContext {
         Self {
             tenant_id: auth.tenant_id,
             user_id: auth.user_id,
+            email: auth.email.clone(),
             roles: auth.roles.clone(),
         }
     }

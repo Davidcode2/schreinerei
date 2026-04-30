@@ -1,21 +1,38 @@
 use crate::common::error::AppError;
-use crate::common::types::{SiteId, UserId};
+use crate::common::types::{SiteId, UserId, Role};
 use crate::common::events::EventType;
 use crate::modules::iam::application::user_service::TenantContext;
+use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::sites::domain::{
     Site, TimeEntry, Activity, CreateSite, UpdateSite, CreateTimeEntry, AssignUser, CreateActivity,
     SiteCreatedPayload, SiteStatusChangedPayload, UserAssignedToSitePayload, TimeEntryCreatedPayload,
 };
 use crate::modules::sites::infrastructure::site_repository::{SiteRepository, DashboardSite};
+use sqlx::PgPool;
 
 /// Service for site business logic
 pub struct SiteService {
     site_repo: SiteRepository,
+    pool: PgPool,
 }
 
 impl SiteService {
     pub fn new(site_repo: SiteRepository) -> Self {
-        Self { site_repo }
+        let pool = site_repo.pool();
+        Self { site_repo, pool }
+    }
+
+    async fn resolve_local_user_id(&self, ctx: &TenantContext) -> Result<UserId, AppError> {
+        let user_repo = UserRepository::new(self.pool.clone());
+        let user = user_repo
+            .find_or_create_by_keycloak_id(
+                &ctx.user_id.to_string(),
+                ctx.tenant_id,
+                &ctx.email,
+                if ctx.is_admin() { Role::Admin } else { Role::Employee },
+            )
+            .await?;
+        Ok(user.id)
     }
 
     // === Site operations ===
@@ -165,8 +182,10 @@ impl SiteService {
             let _site = self.get_site(site_id, ctx).await?;
         }
 
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+
         let entry = self.site_repo
-            .create_time_entry(ctx.tenant_id, ctx.user_id, &create)
+            .create_time_entry(ctx.tenant_id, local_user_id, &create)
             .await?;
 
         // Emit TimeEntryCreated event
@@ -201,7 +220,8 @@ impl SiteService {
         &self,
         ctx: &TenantContext,
     ) -> Result<Vec<TimeEntry>, AppError> {
-        self.site_repo.list_time_entries(ctx.tenant_id, None, Some(ctx.user_id)).await
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+        self.site_repo.list_time_entries(ctx.tenant_id, None, Some(local_user_id)).await
     }
 
     // === Activity operations ===
@@ -217,8 +237,10 @@ impl SiteService {
         // Verify site exists in same tenant
         let _site = self.get_site(create.site_id, ctx).await?;
 
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+
         let activity = self.site_repo
-            .create_activity(ctx.tenant_id, ctx.user_id, &create)
+            .create_activity(ctx.tenant_id, local_user_id, &create)
             .await?;
 
         // Publish ActivityAdded event

@@ -27,6 +27,10 @@ impl SiteRepository {
         }
     }
 
+    pub fn pool(&self) -> PgPool {
+        self.pool.clone()
+    }
+
     // === Site operations ===
 
     pub async fn create_site(
@@ -540,7 +544,7 @@ impl TimeEntryRow {
             tenant_id: TenantId(self.tenant_id),
             site_id: self.site_id.map(SiteId),
             user_id: UserId(self.user_id),
-            work_type: self.work_type.parse().unwrap_or(WorkType::SiteWork),
+            work_type: self.work_type.parse().unwrap_or(WorkType::Site),
             hours: self.hours,
             work_date: self.work_date,
             notes: self.notes,

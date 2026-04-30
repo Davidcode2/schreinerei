@@ -1,6 +1,7 @@
 use crate::common::error::AppError;
-use crate::common::types::{VehicleId, ToolId, ResourceType, ReservationId, ReservationStatus, UserId};
+use crate::common::types::{VehicleId, ToolId, ResourceType, ReservationId, ReservationStatus, UserId, Role};
 use crate::modules::iam::application::user_service::TenantContext;
+use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::fleet::domain::{
     Vehicle, Tool, CreateVehicle, UpdateVehicle, CreateTool, UpdateTool,
     VehicleCreatedPayload, ToolCreatedPayload, ResourceStatusChangedPayload,
@@ -10,15 +11,31 @@ use crate::modules::fleet::domain::{
 use crate::modules::fleet::infrastructure::fleet_repository::{
     FleetRepository, CalendarEntry, ResourceStatusInfo,
 };
+use sqlx::PgPool;
 
 /// Service for fleet business logic
 pub struct FleetService {
     fleet_repo: FleetRepository,
+    pool: PgPool,
 }
 
 impl FleetService {
     pub fn new(fleet_repo: FleetRepository) -> Self {
-        Self { fleet_repo }
+        let pool = fleet_repo.pool();
+        Self { fleet_repo, pool }
+    }
+
+    async fn resolve_local_user_id(&self, ctx: &TenantContext) -> Result<UserId, AppError> {
+        let user_repo = UserRepository::new(self.pool.clone());
+        let user = user_repo
+            .find_or_create_by_keycloak_id(
+                &ctx.user_id.to_string(),
+                ctx.tenant_id,
+                &ctx.email,
+                if ctx.is_admin() { Role::Admin } else { Role::Employee },
+            )
+            .await?;
+        Ok(user.id)
     }
 
     // === Vehicle operations ===
@@ -248,8 +265,10 @@ impl FleetService {
             ));
         }
 
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+
         // Create the reservation with Confirmed status (skip Pending for V1)
-        let reservation = self.fleet_repo.create_reservation(&create, ctx.tenant_id, ctx.user_id).await?;
+        let reservation = self.fleet_repo.create_reservation(&create, ctx.tenant_id, local_user_id).await?;
 
         // Emit ReservationCreated event
         let event = ReservationCreatedPayload {
@@ -279,8 +298,10 @@ impl FleetService {
             .await?
             .ok_or_else(|| AppError::NotFound("Reservation not found".to_string()))?;
 
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+
         // Check ownership or admin role
-        if current.user_id != ctx.user_id && !ctx.is_admin() {
+        if current.user_id != local_user_id && !ctx.is_admin() {
             return Err(AppError::Forbidden("You can only update your own reservations".to_string()));
         }
 
@@ -349,8 +370,10 @@ impl FleetService {
             .await?
             .ok_or_else(|| AppError::NotFound("Reservation not found".to_string()))?;
 
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+
         // Check ownership or admin role
-        if current.user_id != ctx.user_id && !ctx.is_admin() {
+        if current.user_id != local_user_id && !ctx.is_admin() {
             return Err(AppError::Forbidden("You can only cancel your own reservations".to_string()));
         }
 
@@ -398,7 +421,7 @@ impl FleetService {
     ) -> Result<Vec<ReservationWithDetails>, AppError> {
         // For non-admin users, only show their own reservations
         let filter_user_id = if !ctx.is_admin() {
-            Some(ctx.user_id)
+            Some(self.resolve_local_user_id(ctx).await?)
         } else {
             user_id
         };
@@ -426,7 +449,8 @@ impl FleetService {
         &self,
         ctx: &TenantContext,
     ) -> Result<Vec<ReservationWithDetails>, AppError> {
-        self.list_reservations(Some(ctx.user_id), None, None, ctx).await
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+        self.list_reservations(Some(local_user_id), None, None, ctx).await
     }
 
     /// Get calendar data for a date range

@@ -24,6 +24,10 @@ impl MaterialRepository {
         }
     }
 
+    pub fn pool(&self) -> PgPool {
+        self.pool.clone()
+    }
+
     // === Category operations ===
 
     pub async fn create_category(

@@ -6,7 +6,7 @@ use axum::{
     Router,
     routing::get,
 };
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Utc, NaiveDate};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -167,7 +167,7 @@ pub struct ReservationResponse {
     pub resource_id: String,
     pub resource_name: String,
     pub user_id: String,
-    pub user_name: String,
+    pub user_name: Option<String>,
     pub site_id: Option<String>,
     pub site_name: Option<String>,
     pub start_time: String,
@@ -254,7 +254,7 @@ pub struct ReservationSummaryResponse {
     pub id: String,
     pub start_time: String,
     pub end_time: String,
-    pub user_name: String,
+    pub user_name: Option<String>,
     pub site_name: Option<String>,
     pub status: String,
 }
@@ -717,13 +717,11 @@ pub async fn get_calendar(
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
     
-    let start_date = DateTime::parse_from_rfc3339(&query.start_date)
-        .map_err(|_| AppError::Validation("Invalid start_date format".to_string()))?
-        .with_timezone(&Utc);
+    let start_date = parse_date_time(&query.start_date, 0, 0, 0)
+        .map_err(|_| AppError::Validation("Invalid start_date format. Use YYYY-MM-DD or RFC3339".to_string()))?;
     
-    let end_date = DateTime::parse_from_rfc3339(&query.end_date)
-        .map_err(|_| AppError::Validation("Invalid end_date format".to_string()))?
-        .with_timezone(&Utc);
+    let end_date = parse_date_time(&query.end_date, 23, 59, 59)
+        .map_err(|_| AppError::Validation("Invalid end_date format. Use YYYY-MM-DD or RFC3339".to_string()))?;
     
     let resource_type = query.resource_type
         .map(|s| s.parse::<ResourceType>())
@@ -736,6 +734,16 @@ pub async fn get_calendar(
     };
     
     Ok(Json(response))
+}
+
+fn parse_date_time(s: &str, default_hour: u32, default_minute: u32, default_second: u32) -> Result<DateTime<Utc>, ()> {
+    DateTime::parse_from_rfc3339(s)
+        .map(|dt| dt.with_timezone(&Utc))
+        .or_else(|_| {
+            NaiveDate::parse_from_str(s, "%Y-%m-%d")
+                .map(|d| d.and_hms_opt(default_hour, default_minute, default_second).unwrap().and_utc())
+        })
+        .map_err(|_| ())
 }
 
 // === Availability Handler ===

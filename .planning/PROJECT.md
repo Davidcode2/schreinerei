@@ -10,61 +10,51 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## Current Milestone: v1.2 Frontend Polish
+## Current State: v1.4 Shipped
 
-**Goal:** Fix non-functional buttons and missing UI interactions across the app
+**Last Shipped:** 2026-04-30
 
-**Target features:**
-- Add material dialog with form submission
-- Add site dialog with form submission
-- Add vehicle/tool dialog with form submission
-- User invitation dialog with email submission
-- QR scanner graceful error handling
-- Real user data from API in settings
+All core features working:
+- ✅ Material management with stock tracking and QR codes
+- ✅ Construction site management with time tracking
+- ✅ Vehicle and tool reservations with calendar
+- ✅ Mobile PWA with offline support
+- ✅ Organization-based multi-tenancy via Keycloak
+- ✅ All frontend dialogs functional
+- ✅ E2E test coverage (18 tests)
 
 ## Requirements
 
 ### Validated
 
-All 37 v1 requirements + 10 v1.1 requirements validated:
+All v1.x requirements validated:
 
-**Architecture:**
+**v1.0 MVP (37 requirements):**
 - ✓ ARCH-01 to ARCH-06 — Phase 1
-
-**Authentication:**
 - ✓ AUTH-01 to AUTH-05 — Phase 1
-
-**Inventar:**
 - ✓ INVT-01 to INVT-07 — Phase 2
-
-**Baustellen:**
 - ✓ SITE-01 to SITE-08 — Phase 3
-
-**Fuhrpark:**
 - ✓ FLEET-01 to FLEET-07 — Phase 4
-
-**PWA:**
 - ✓ PWA-01 to PWA-04 — Phase 5
 
-**Organization-Based Tenancy (v1.1):**
-- ✓ KC-01, KC-02 — Keycloak Organizations enabled and scoped
-- ✓ ORG-01, ORG-02, ORG-03 — Organizations created and users migrated
+**v1.1 Organization-Based Tenancy (10 requirements):**
+- ✓ KC-01, KC-02 — Keycloak Organizations enabled
+- ✓ ORG-01, ORG-02, ORG-03 — Organizations created and migrated
 - ✓ BE-01, BE-02, BE-03 — Backend uses organization claim
 - ✓ FE-01, FE-02 — Frontend requests organization scope
 
-### Active
+**v1.2 Frontend Polish (9 requirements):**
+- ✓ INVT-08, INVT-09 — Material dialog and QR navigation
+- ✓ SITE-09 — Site dialog
+- ✓ FLEET-08, FLEET-09 — Vehicle/Tool dialogs
+- ✓ USER-01, USER-02 — User invitation and listing
+- ✓ ERR-01, ERR-02 — QR scanner error handling
 
-**v1.2 Requirements (Frontend Polish):**
+**v1.3 Bug Fixes (8 requirements):**
+- ✓ BUG-001 to BUG-008 — All E2E discovered bugs fixed
 
-- INVT-08: User can add new material via dialog form
-- INVT-09: User can scan QR code to navigate to material detail
-- SITE-09: User can create new site via dialog form
-- FLEET-08: User can add new vehicle via dialog form
-- FLEET-09: User can add new tool via dialog form
-- USER-01: Admin can invite user via email dialog
-- USER-02: Settings page displays real users from API
-- ERR-01: QR scanner shows graceful error when camera denied
-- ERR-02: QR scanner provides retry option after error
+**v1.4 Core Feature Fixes (4 requirements):**
+- ✓ CORE-01 to CORE-04 — FK constraints resolved
 
 ### Future (v1.3+)
 
@@ -87,11 +77,11 @@ All 37 v1 requirements + 10 v1.1 requirements validated:
 
 ## Context
 
-**Pilot-Kunde:** Eine Schreinerei wird als erster Kunde die Software testen. Ziel: Frühes Feedback für iterative Verbesserung.
+**Pilot-Kunde:** Eine Schreinerei wird als erster Kunde die Software testen.
 
 **Tech Stack:**
-- Backend: Rust, Axum 0.8, SQLx 0.8, PostgreSQL
-- Frontend: Vite 6, React 18, TypeScript, Tailwind CSS 4, shadcn/ui
+- Backend: Rust, Axum 0.8, SQLx 0.8, PostgreSQL (~8,900 LOC)
+- Frontend: Vite 6, React 18, TypeScript, Tailwind CSS 4, shadcn/ui (~8,000 LOC)
 - Auth: Keycloak with OAuth2 PKCE
 - Offline: Workbox, Dexie.js (IndexedDB)
 
@@ -102,7 +92,7 @@ All 37 v1 requirements + 10 v1.1 requirements validated:
 
 ## Constraints
 
-- **Timeline**: V1 shipped in 2 days
+- **Timeline**: V1.x shipped in 3 days
 - **Architecture**: Hexagonal Architecture (Ports & Adapters) mit Modular Monolith und DDD Bounded Contexts
 - **Multi-Tenancy**: TenantId in jeder Query
 - **Deployment**: Kubernetes cluster
@@ -137,7 +127,7 @@ src/
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Rust Backend | Sicherheit, Performance, 10+ Jahre Wartbarkeit | ✓ Axum 0.8, SQLx 0.8 working |
-| Vite + React PWA | Einfach, schnell, Offline-Support möglich | ✓ v1 shipped |
+| Vite + React PWA | Einfach, schnell, Offline-Support möglich | ✓ v1.4 shipped |
 | Keycloak (bestehend) | Bereits im Cluster, SSO, Multi-Tenant-ready | ✓ JWT validation with JWKS caching |
 | Modularer Monolith | Klare Trennung, später extrahierbar | ✓ DDD structure established |
 | Multi-Tenant ab Tag 1 | Architektur mitdenken, nicht nachrüsten | ✓ TenantId in all tables |
@@ -151,26 +141,8 @@ src/
 | Keycloak Organizations | Native multi-tenant isolation | ✓ v1.1 organization claim |
 | Manual Keycloak ops | No automation needed for pilot | ✓ User manages orgs in Admin Console |
 | Organization → tenant_id mapping | Minimal codebase changes | ✓ Frontend maps at extraction |
+| Keycloak ID → local user ID | FK constraint resolution | ✓ find_or_create_by_keycloak_id() |
 
 ---
 
-## Evolution
-
-This document evolves at phase transitions and milestone boundaries.
-
-**After each phase transition** (via `/gsd-transition`):
-1. Requirements invalidated? → Move to Out of Scope with reason
-2. Requirements validated? → Move to Validated with phase reference
-3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
-5. "What This Is" still accurate? → Update if drifted
-
-**After each milestone** (via `/gsd-complete-milestone`):
-1. Full review of all sections
-2. Core Value check — still the right priority?
-3. Audit Out of Scope — reasons still valid?
-4. Update Context with current state
-
----
-
-*Last updated: 2026-04-29 after v1.1 milestone completion*
+*Last updated: 2026-04-30 after v1.4 milestone completion*
