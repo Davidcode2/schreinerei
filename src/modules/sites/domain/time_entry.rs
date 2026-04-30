@@ -52,6 +52,38 @@ impl CreateTimeEntry {
     }
 }
 
+/// Command to update a time entry (partial update)
+/// Option<Option<T>> distinguishes between "not provided" (None) and "set to null" (Some(None))
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct UpdateTimeEntry {
+    pub site_id: Option<Option<SiteId>>,  // None = not provided, Some(None) = set to null
+    pub work_type: Option<WorkType>,
+    pub hours: Option<f64>,
+    pub work_date: Option<NaiveDate>,
+    pub notes: Option<Option<String>>,
+}
+
+impl UpdateTimeEntry {
+    /// Validate the update time entry command
+    pub fn validate(&self) -> Result<(), String> {
+        if let Some(hours) = self.hours {
+            if hours <= 0.0 {
+                return Err("Hours must be positive".to_string());
+            }
+            if hours > 24.0 {
+                return Err("Hours cannot exceed 24 per day".to_string());
+            }
+        }
+        if let Some(work_date) = self.work_date {
+            let today = chrono::Local::now().date_naive();
+            if work_date > today {
+                return Err("Work date cannot be in the future".to_string());
+            }
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

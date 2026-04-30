@@ -13,10 +13,10 @@ use uuid::Uuid;
 
 use crate::auth::extractor::AuthenticatedUser;
 use crate::common::error::AppError;
-use crate::common::types::{SiteId, UserId, SiteStatus, AssignmentRole, WorkType};
+use crate::common::types::{SiteId, UserId, SiteStatus, AssignmentRole, WorkType, TimeEntryId};
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::sites::application::site_service::SiteService;
-use crate::modules::sites::domain::{CreateSite, UpdateSite, CreateTimeEntry, AssignUser, CreateActivity, ActivityType};
+use crate::modules::sites::domain::{CreateSite, UpdateSite, CreateTimeEntry, UpdateTimeEntry, AssignUser, CreateActivity, ActivityType};
 use crate::modules::sites::infrastructure::site_repository::DashboardSite;
 use crate::AppState;
 
@@ -36,6 +36,7 @@ pub fn create_router() -> Router<AppState> {
         .route("/api/v1/sites/{id}/time-entries", get(list_site_time_entries))
         .route("/api/v1/time-entries", post(create_time_entry))
         .route("/api/v1/time-entries/my", get(list_my_time_entries))
+        .route("/api/v1/time-entries/{id}", get(get_time_entry).patch(update_time_entry).delete(delete_time_entry))
         
         // Activities
         .route("/api/v1/sites/{id}/activities", get(list_activities).post(create_activity))
@@ -173,6 +174,16 @@ pub struct CreateTimeEntryRequest {
     pub work_type: String,
     pub hours: f64,
     pub work_date: String,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct UpdateTimeEntryRequest {
+    pub site_id: Option<String>,
+    pub work_type: Option<String>,
+    pub hours: Option<f64>,
+    pub work_date: Option<String>,
     pub notes: Option<String>,
 }
 
@@ -435,6 +446,93 @@ pub async fn list_my_time_entries(
     let response: Vec<TimeEntryResponse> = entries.into_iter().map(TimeEntryResponse::from).collect();
     
     Ok(Json(response))
+}
+
+pub async fn get_time_entry(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+    
+    let entry_id = Uuid::parse_str(&id)
+        .map(TimeEntryId)
+        .map_err(|_| AppError::Validation("Invalid time entry ID".to_string()))?;
+    
+    let entry = service.get_time_entry(entry_id, &ctx).await?;
+    
+    Ok(Json(TimeEntryResponse::from(entry)))
+}
+
+pub async fn update_time_entry(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+    Json(request): Json<UpdateTimeEntryRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+    
+    let entry_id = Uuid::parse_str(&id)
+        .map(TimeEntryId)
+        .map_err(|_| AppError::Validation("Invalid time entry ID".to_string()))?;
+    
+    let site_id = request.site_id
+        .map(|s| {
+            if s.is_empty() {
+                Ok(None)
+            } else {
+                Uuid::parse_str(&s).map(|u| Some(SiteId(u)))
+            }
+        })
+        .transpose()
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+    
+    let work_type = request.work_type
+        .map(|s| s.parse::<WorkType>())
+        .transpose()
+        .map_err(|e: String| AppError::Validation(e))?;
+    
+    let work_date = request.work_date
+        .map(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d"))
+        .transpose()
+        .map_err(|_| AppError::Validation("Invalid work date format (expected YYYY-MM-DD)".to_string()))?;
+    
+    let update = UpdateTimeEntry {
+        site_id,
+        work_type,
+        hours: request.hours,
+        work_date,
+        notes: request.notes.map(Some),
+    };
+    
+    let entry = service.update_time_entry(entry_id, update, &ctx).await?;
+    
+    Ok(Json(TimeEntryResponse::from(entry)))
+}
+
+pub async fn delete_time_entry(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+    
+    let entry_id = Uuid::parse_str(&id)
+        .map(TimeEntryId)
+        .map_err(|_| AppError::Validation("Invalid time entry ID".to_string()))?;
+    
+    service.delete_time_entry(entry_id, &ctx).await?;
+    
+    Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
 }
 
 // === Activity DTOs ===

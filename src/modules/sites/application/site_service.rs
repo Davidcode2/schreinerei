@@ -1,10 +1,10 @@
 use crate::common::error::AppError;
-use crate::common::types::{SiteId, UserId, Role};
+use crate::common::types::{SiteId, UserId, Role, TimeEntryId};
 use crate::common::events::EventType;
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::sites::domain::{
-    Site, TimeEntry, Activity, CreateSite, UpdateSite, CreateTimeEntry, AssignUser, CreateActivity,
+    Site, TimeEntry, Activity, CreateSite, UpdateSite, CreateTimeEntry, UpdateTimeEntry, AssignUser, CreateActivity,
     SiteCreatedPayload, SiteStatusChangedPayload, UserAssignedToSitePayload, TimeEntryCreatedPayload,
 };
 use crate::modules::sites::infrastructure::site_repository::{SiteRepository, DashboardSite};
@@ -249,6 +249,66 @@ impl SiteService {
     ) -> Result<Vec<TimeEntry>, AppError> {
         let local_user_id = self.resolve_local_user_id(ctx).await?;
         self.site_repo.list_time_entries(ctx.tenant_id, None, Some(local_user_id)).await
+    }
+
+    pub async fn get_time_entry(
+        &self,
+        entry_id: TimeEntryId,
+        ctx: &TenantContext,
+    ) -> Result<TimeEntry, AppError> {
+        self.site_repo
+            .find_time_entry_by_id(ctx.tenant_id, entry_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Time entry not found".to_string()))
+    }
+
+    pub async fn update_time_entry(
+        &self,
+        entry_id: TimeEntryId,
+        update: UpdateTimeEntry,
+        ctx: &TenantContext,
+    ) -> Result<TimeEntry, AppError> {
+        // Validate update
+        update.validate()?;
+
+        // Fetch existing entry to check ownership
+        let existing = self.site_repo
+            .find_time_entry_by_id(ctx.tenant_id, entry_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Time entry not found".to_string()))?;
+
+        // Check ownership: only the owner or admin can edit
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+        if existing.user_id != local_user_id && !ctx.is_admin() {
+            return Err(AppError::Forbidden("Can only edit own time entries".to_string()));
+        }
+
+        // If site_id is being set (not None), verify site exists
+        if let Some(Some(site_id)) = update.site_id {
+            let _site = self.get_site(site_id, ctx).await?;
+        }
+
+        self.site_repo.update_time_entry(ctx.tenant_id, entry_id, &update).await
+    }
+
+    pub async fn delete_time_entry(
+        &self,
+        entry_id: TimeEntryId,
+        ctx: &TenantContext,
+    ) -> Result<(), AppError> {
+        // Fetch existing entry to check ownership
+        let existing = self.site_repo
+            .find_time_entry_by_id(ctx.tenant_id, entry_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Time entry not found".to_string()))?;
+
+        // Check ownership: only the owner or admin can delete
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+        if existing.user_id != local_user_id && !ctx.is_admin() {
+            return Err(AppError::Forbidden("Can only delete own time entries".to_string()));
+        }
+
+        self.site_repo.delete_time_entry(ctx.tenant_id, entry_id).await
     }
 
     // === Activity operations ===

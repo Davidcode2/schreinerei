@@ -10,7 +10,7 @@ use crate::common::types::{
 };
 use crate::modules::sites::domain::{
     Site, SiteAssignment, TimeEntry,
-    CreateSite, UpdateSite, CreateTimeEntry, Activity, CreateActivity,
+    CreateSite, UpdateSite, CreateTimeEntry, UpdateTimeEntry, Activity, CreateActivity,
 };
 
 /// Repository for site data access with tenant isolation
@@ -416,6 +416,98 @@ impl SiteRepository {
         .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(entries.into_iter().map(|e| e.into_time_entry()).collect())
+    }
+
+    pub async fn find_time_entry_by_id(
+        &self,
+        tenant_id: TenantId,
+        id: TimeEntryId,
+    ) -> Result<Option<TimeEntry>, AppError> {
+        let entry = sqlx::query_as::<_, TimeEntryRow>(
+            r#"
+            SELECT id, tenant_id, site_id, user_id, work_type, hours, work_date, notes, created_at
+            FROM time_entries
+            WHERE id = $1 AND tenant_id = $2
+            "#
+        )
+        .bind(id.0)
+        .bind(tenant_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(entry.map(|e| e.into_time_entry()))
+    }
+
+    pub async fn update_time_entry(
+        &self,
+        tenant_id: TenantId,
+        id: TimeEntryId,
+        update: &UpdateTimeEntry,
+    ) -> Result<TimeEntry, AppError> {
+        // Build dynamic update query based on which fields are provided
+        // For notes: we need to handle Option<Option<String>> where:
+        // - None = don't update notes field
+        // - Some(None) = set notes to null
+        // - Some(Some(value)) = set notes to value
+        let notes_update = update.notes.clone();
+        let should_update_notes = notes_update.is_some();
+        let notes_value = notes_update.flatten();
+
+        let entry = sqlx::query_as::<_, TimeEntryRow>(
+            r#"
+            UPDATE time_entries
+            SET 
+                site_id = COALESCE($1, site_id),
+                work_type = COALESCE($2, work_type),
+                hours = COALESCE($3, hours),
+                work_date = COALESCE($4, work_date),
+                notes = CASE 
+                    WHEN $5::boolean THEN $6 
+                    ELSE notes 
+                END
+            WHERE id = $7 AND tenant_id = $8
+            RETURNING id, tenant_id, site_id, user_id, work_type, hours, work_date, notes, created_at
+            "#
+        )
+        .bind(update.site_id.as_ref().and_then(|opt| opt.as_ref().map(|s| s.0)))  // Flatten Option<Option<SiteId>> to Option<Uuid>
+        .bind(update.work_type.as_ref().map(|wt| wt.as_str()))
+        .bind(update.hours)
+        .bind(update.work_date)
+        .bind(should_update_notes)  // Flag to indicate if notes should be updated
+        .bind(notes_value)  // The actual notes value (None = null, Some(value) = value)
+        .bind(id.0)
+        .bind(tenant_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Time entry not found".to_string()))?;
+
+        Ok(entry.into_time_entry())
+    }
+
+    pub async fn delete_time_entry(
+        &self,
+        tenant_id: TenantId,
+        id: TimeEntryId,
+    ) -> Result<(), AppError> {
+        let result = sqlx::query(
+            r#"
+            DELETE FROM time_entries
+            WHERE id = $1 AND tenant_id = $2
+            "#
+        )
+        .bind(id.0)
+        .bind(tenant_id.0)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        if result.rows_affected() == 0 {
+            return Err(AppError::NotFound("Time entry not found".to_string()));
+        }
+
+        Ok(())
     }
 
     // === Activity operations ===

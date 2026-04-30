@@ -97,6 +97,8 @@ export type UpdateRoleRequest = { role: string, };
 
 export type UpdateSiteRequest = { name: string | null, customer_name: string | null, location: string | null, description: string | null, status: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, };
 
+export type UpdateTimeEntryRequest = { site_id: string | null, work_type: string | null, hours: number | null, work_date: string | null, notes: string | null, };
+
 export type UpdateToolRequest = { name: string | null, category: string | null, description: string | null, status: string | null, location: string | null, qr_code: string | null, };
 
 export type UpdateVehicleRequest = { name: string | null, license_plate: string | null, vehicle_type: string | null, description: string | null, status: string | null, location: string | null, qr_code: string | null, };
