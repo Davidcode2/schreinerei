@@ -151,6 +151,7 @@ impl InventoryService {
                 withdraw.quantity,
                 local_user_id,
                 withdraw.notes.clone(),
+                withdraw.site_id,  // Pass site_id from command
                 ctx.tenant_id,
             )
             .await?;
