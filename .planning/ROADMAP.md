@@ -253,13 +253,13 @@ Plans:
   2. E2E tests verify edit operations on time entries and reservations
   3. E2E tests verify reservation status transitions
   4. E2E tests verify calendar click-to-create reservation
-**Plans**: TBD
+**Plans**: 4 plans in 1 wave (parallel execution)
 
 Plans:
-- [ ] 21-01: Delete operations E2E tests
-- [ ] 21-02: Edit operations E2E tests
-- [ ] 21-03: Status transitions E2E tests
-- [ ] 21-04: Calendar click-to-create E2E tests
+- [ ] 21-01-PLAN.md — Delete operations E2E tests (TEST-12)
+- [ ] 21-02-PLAN.md — Edit operations E2E tests (TEST-13)
+- [ ] 21-03-PLAN.md — Reservation status transitions E2E tests (TEST-14)
+- [ ] 21-04-PLAN.md — Calendar click-to-create E2E tests (TEST-15)
 
 ## Progress
 
