@@ -83,3 +83,119 @@ pub struct UpdateVehicle {
     pub location: Option<String>,
     pub qr_code: Option<String>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_vehicle(status: ResourceStatus) -> Vehicle {
+        Vehicle {
+            id: VehicleId::new(),
+            tenant_id: TenantId::new(),
+            name: "Test Vehicle".to_string(),
+            license_plate: Some("AB-123-CD".to_string()),
+            vehicle_type: VehicleType::Van,
+            description: None,
+            status,
+            location: None,
+            qr_code: None,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+
+    // State machine tests
+    #[test]
+    fn vehicle_can_transition_from_available_to_reserved() {
+        let v = test_vehicle(ResourceStatus::Available);
+        assert!(v.can_transition_to(ResourceStatus::Reserved));
+    }
+
+    #[test]
+    fn vehicle_can_transition_from_available_to_in_use() {
+        let v = test_vehicle(ResourceStatus::Available);
+        assert!(v.can_transition_to(ResourceStatus::InUse));
+    }
+
+    #[test]
+    fn vehicle_can_transition_from_available_to_maintenance() {
+        let v = test_vehicle(ResourceStatus::Available);
+        assert!(v.can_transition_to(ResourceStatus::Maintenance));
+    }
+
+    #[test]
+    fn vehicle_can_transition_from_reserved_to_in_use() {
+        let v = test_vehicle(ResourceStatus::Reserved);
+        assert!(v.can_transition_to(ResourceStatus::InUse));
+    }
+
+    #[test]
+    fn vehicle_can_transition_from_reserved_to_available() {
+        let v = test_vehicle(ResourceStatus::Reserved);
+        assert!(v.can_transition_to(ResourceStatus::Available));
+    }
+
+    #[test]
+    fn vehicle_can_transition_from_in_use_to_available() {
+        let v = test_vehicle(ResourceStatus::InUse);
+        assert!(v.can_transition_to(ResourceStatus::Available));
+    }
+
+    #[test]
+    fn vehicle_can_transition_from_maintenance_to_available() {
+        let v = test_vehicle(ResourceStatus::Maintenance);
+        assert!(v.can_transition_to(ResourceStatus::Available));
+    }
+
+    #[test]
+    fn vehicle_cannot_transition_from_maintenance_to_in_use() {
+        let v = test_vehicle(ResourceStatus::Maintenance);
+        assert!(!v.can_transition_to(ResourceStatus::InUse));
+    }
+
+    #[test]
+    fn vehicle_can_transition_to_same_status() {
+        let v = test_vehicle(ResourceStatus::Available);
+        assert!(v.can_transition_to(ResourceStatus::Available));
+    }
+
+    // CreateVehicle validation tests
+    #[test]
+    fn create_vehicle_validate_succeeds_with_valid_data() {
+        let cmd = CreateVehicle {
+            name: "Transporter".to_string(),
+            license_plate: Some("AB-123-CD".to_string()),
+            vehicle_type: VehicleType::Van,
+            description: None,
+            location: None,
+            qr_code: None,
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn create_vehicle_validate_fails_with_empty_name() {
+        let cmd = CreateVehicle {
+            name: "".to_string(),
+            license_plate: None,
+            vehicle_type: VehicleType::Van,
+            description: None,
+            location: None,
+            qr_code: None,
+        };
+        assert_eq!(cmd.validate(), Err("Vehicle name is required".to_string()));
+    }
+
+    #[test]
+    fn create_vehicle_validate_fails_with_empty_license_plate() {
+        let cmd = CreateVehicle {
+            name: "Transporter".to_string(),
+            license_plate: Some("".to_string()),
+            vehicle_type: VehicleType::Van,
+            description: None,
+            location: None,
+            qr_code: None,
+        };
+        assert_eq!(cmd.validate(), Err("License plate cannot be empty if provided".to_string()));
+    }
+}

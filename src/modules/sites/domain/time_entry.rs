@@ -51,3 +51,104 @@ impl CreateTimeEntry {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn today() -> NaiveDate {
+        chrono::Local::now().date_naive()
+    }
+
+    fn yesterday() -> NaiveDate {
+        today() - chrono::Duration::days(1)
+    }
+
+    fn tomorrow() -> NaiveDate {
+        today() + chrono::Duration::days(1)
+    }
+
+    #[test]
+    fn create_time_entry_validate_succeeds_with_valid_hours() {
+        let cmd = CreateTimeEntry {
+            site_id: None,
+            work_type: WorkType::Site,
+            hours: 8.0,
+            work_date: today(),
+            notes: None,
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn create_time_entry_validate_fails_with_zero_hours() {
+        let cmd = CreateTimeEntry {
+            site_id: None,
+            work_type: WorkType::Site,
+            hours: 0.0,
+            work_date: today(),
+            notes: None,
+        };
+        assert_eq!(cmd.validate(), Err("Hours must be positive".to_string()));
+    }
+
+    #[test]
+    fn create_time_entry_validate_fails_with_negative_hours() {
+        let cmd = CreateTimeEntry {
+            site_id: None,
+            work_type: WorkType::Site,
+            hours: -1.0,
+            work_date: today(),
+            notes: None,
+        };
+        assert_eq!(cmd.validate(), Err("Hours must be positive".to_string()));
+    }
+
+    #[test]
+    fn create_time_entry_validate_fails_with_hours_exceeding_24() {
+        let cmd = CreateTimeEntry {
+            site_id: None,
+            work_type: WorkType::Site,
+            hours: 25.0,
+            work_date: today(),
+            notes: None,
+        };
+        assert_eq!(cmd.validate(), Err("Hours cannot exceed 24 per day".to_string()));
+    }
+
+    #[test]
+    fn create_time_entry_validate_succeeds_with_exactly_24_hours() {
+        let cmd = CreateTimeEntry {
+            site_id: None,
+            work_type: WorkType::Site,
+            hours: 24.0,
+            work_date: today(),
+            notes: None,
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn create_time_entry_validate_succeeds_with_yesterday_date() {
+        let cmd = CreateTimeEntry {
+            site_id: None,
+            work_type: WorkType::Site,
+            hours: 8.0,
+            work_date: yesterday(),
+            notes: None,
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn create_time_entry_validate_fails_with_future_date() {
+        let cmd = CreateTimeEntry {
+            site_id: None,
+            work_type: WorkType::Site,
+            hours: 8.0,
+            work_date: tomorrow(),
+            notes: None,
+        };
+        assert_eq!(cmd.validate(), Err("Work date cannot be in the future".to_string()));
+    }
+}

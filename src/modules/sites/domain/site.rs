@@ -103,3 +103,145 @@ pub struct AssignUser {
     pub user_id: UserId,
     pub role: AssignmentRole,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_site(status: SiteStatus) -> Site {
+        Site {
+            id: SiteId::new(),
+            tenant_id: TenantId::new(),
+            name: "Test Site".to_string(),
+            customer_name: "Test Customer".to_string(),
+            location: None,
+            description: None,
+            status,
+            start_date: None,
+            end_date: None,
+            estimated_days: None,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+
+    // State machine tests
+    #[test]
+    fn site_can_transition_from_planned_to_active() {
+        let site = test_site(SiteStatus::Planned);
+        assert!(site.can_transition_to(SiteStatus::Active));
+    }
+
+    #[test]
+    fn site_cannot_transition_from_planned_to_completed() {
+        let site = test_site(SiteStatus::Planned);
+        assert!(!site.can_transition_to(SiteStatus::Completed));
+    }
+
+    #[test]
+    fn site_cannot_transition_from_planned_to_archived() {
+        let site = test_site(SiteStatus::Planned);
+        assert!(!site.can_transition_to(SiteStatus::Archived));
+    }
+
+    #[test]
+    fn site_can_transition_from_active_to_completed() {
+        let site = test_site(SiteStatus::Active);
+        assert!(site.can_transition_to(SiteStatus::Completed));
+    }
+
+    #[test]
+    fn site_cannot_transition_from_active_to_planned() {
+        let site = test_site(SiteStatus::Active);
+        assert!(!site.can_transition_to(SiteStatus::Planned));
+    }
+
+    #[test]
+    fn site_can_transition_from_completed_to_archived() {
+        let site = test_site(SiteStatus::Completed);
+        assert!(site.can_transition_to(SiteStatus::Archived));
+    }
+
+    #[test]
+    fn site_cannot_transition_from_completed_to_active() {
+        let site = test_site(SiteStatus::Completed);
+        assert!(!site.can_transition_to(SiteStatus::Active));
+    }
+
+    #[test]
+    fn site_can_transition_to_same_status() {
+        let site = test_site(SiteStatus::Planned);
+        assert!(site.can_transition_to(SiteStatus::Planned));
+    }
+
+    // CreateSite validation tests
+    #[test]
+    fn create_site_validate_succeeds_with_valid_data() {
+        let cmd = CreateSite {
+            name: "New Site".to_string(),
+            customer_name: "Customer".to_string(),
+            location: None,
+            description: None,
+            start_date: None,
+            end_date: None,
+            estimated_days: None,
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn create_site_validate_fails_with_empty_name() {
+        let cmd = CreateSite {
+            name: "".to_string(),
+            customer_name: "Customer".to_string(),
+            location: None,
+            description: None,
+            start_date: None,
+            end_date: None,
+            estimated_days: None,
+        };
+        assert_eq!(cmd.validate(), Err("Site name is required".to_string()));
+    }
+
+    #[test]
+    fn create_site_validate_fails_with_empty_customer_name() {
+        let cmd = CreateSite {
+            name: "Site".to_string(),
+            customer_name: "".to_string(),
+            location: None,
+            description: None,
+            start_date: None,
+            end_date: None,
+            estimated_days: None,
+        };
+        assert_eq!(cmd.validate(), Err("Customer name is required".to_string()));
+    }
+
+    #[test]
+    fn create_site_validate_fails_with_end_date_before_start_date() {
+        let cmd = CreateSite {
+            name: "Site".to_string(),
+            customer_name: "Customer".to_string(),
+            location: None,
+            description: None,
+            start_date: Some(NaiveDate::from_ymd_opt(2024, 12, 15).unwrap()),
+            end_date: Some(NaiveDate::from_ymd_opt(2024, 12, 1).unwrap()),
+            estimated_days: None,
+        };
+        assert_eq!(cmd.validate(), Err("End date cannot be before start date".to_string()));
+    }
+
+    #[test]
+    fn create_site_validate_fails_with_negative_estimated_days() {
+        let cmd = CreateSite {
+            name: "Site".to_string(),
+            customer_name: "Customer".to_string(),
+            location: None,
+            description: None,
+            start_date: None,
+            end_date: None,
+            estimated_days: Some(-5),
+        };
+        assert_eq!(cmd.validate(), Err("Estimated days cannot be negative".to_string()));
+    }
+}

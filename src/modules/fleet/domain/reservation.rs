@@ -134,3 +134,195 @@ pub struct ReservationWithDetails {
     pub user_name: Option<String>,
     pub site_name: Option<String>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Timelike;
+
+    fn test_time(hour: u8) -> DateTime<Utc> {
+        Utc::now()
+            .with_hour(hour as u32)
+            .unwrap()
+            .with_minute(0)
+            .unwrap()
+            .with_second(0)
+            .unwrap()
+    }
+
+    fn test_reservation(start_hour: u8, end_hour: u8, status: ReservationStatus) -> Reservation {
+        Reservation {
+            id: ReservationId::new(),
+            tenant_id: TenantId::new(),
+            resource_type: ResourceType::Vehicle,
+            resource_id: Uuid::new_v4(),
+            user_id: UserId::new(),
+            site_id: None,
+            start_time: test_time(start_hour),
+            end_time: test_time(end_hour),
+            status,
+            notes: None,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+
+    // Overlap detection tests
+    #[test]
+    fn reservation_overlaps_when_ranges_intersect() {
+        let r1 = test_reservation(10, 12, ReservationStatus::Pending);
+        let r2 = test_reservation(11, 13, ReservationStatus::Pending);
+        assert!(r1.overlaps(&r2));
+    }
+
+    #[test]
+    fn reservation_does_not_overlap_when_adjacent() {
+        let r1 = test_reservation(10, 12, ReservationStatus::Pending);
+        let r2 = test_reservation(12, 14, ReservationStatus::Pending);
+        assert!(!r1.overlaps(&r2));
+    }
+
+    #[test]
+    fn reservation_overlaps_when_one_contains_other() {
+        let r1 = test_reservation(10, 14, ReservationStatus::Pending);
+        let r2 = test_reservation(11, 12, ReservationStatus::Pending);
+        assert!(r1.overlaps(&r2));
+    }
+
+    #[test]
+    fn reservation_does_not_overlap_when_disjoint() {
+        let r1 = test_reservation(10, 12, ReservationStatus::Pending);
+        let r2 = test_reservation(14, 16, ReservationStatus::Pending);
+        assert!(!r1.overlaps(&r2));
+    }
+
+    // State machine tests
+    #[test]
+    fn reservation_can_transition_from_pending_to_confirmed() {
+        let r = test_reservation(10, 12, ReservationStatus::Pending);
+        assert!(r.can_transition_to(ReservationStatus::Confirmed));
+    }
+
+    #[test]
+    fn reservation_can_transition_from_pending_to_cancelled() {
+        let r = test_reservation(10, 12, ReservationStatus::Pending);
+        assert!(r.can_transition_to(ReservationStatus::Cancelled));
+    }
+
+    #[test]
+    fn reservation_cannot_transition_from_pending_to_in_use() {
+        let r = test_reservation(10, 12, ReservationStatus::Pending);
+        assert!(!r.can_transition_to(ReservationStatus::InUse));
+    }
+
+    #[test]
+    fn reservation_can_transition_from_confirmed_to_in_use() {
+        let r = test_reservation(10, 12, ReservationStatus::Confirmed);
+        assert!(r.can_transition_to(ReservationStatus::InUse));
+    }
+
+    #[test]
+    fn reservation_can_transition_from_confirmed_to_cancelled() {
+        let r = test_reservation(10, 12, ReservationStatus::Confirmed);
+        assert!(r.can_transition_to(ReservationStatus::Cancelled));
+    }
+
+    #[test]
+    fn reservation_cannot_transition_from_confirmed_to_pending() {
+        let r = test_reservation(10, 12, ReservationStatus::Confirmed);
+        assert!(!r.can_transition_to(ReservationStatus::Pending));
+    }
+
+    #[test]
+    fn reservation_can_transition_from_in_use_to_completed() {
+        let r = test_reservation(10, 12, ReservationStatus::InUse);
+        assert!(r.can_transition_to(ReservationStatus::Completed));
+    }
+
+    #[test]
+    fn reservation_cannot_transition_from_cancelled_to_anything() {
+        let r = test_reservation(10, 12, ReservationStatus::Cancelled);
+        assert!(!r.can_transition_to(ReservationStatus::Confirmed));
+        assert!(!r.can_transition_to(ReservationStatus::Pending));
+        assert!(!r.can_transition_to(ReservationStatus::InUse));
+    }
+
+    #[test]
+    fn reservation_can_transition_to_same_status() {
+        let r = test_reservation(10, 12, ReservationStatus::Pending);
+        assert!(r.can_transition_to(ReservationStatus::Pending));
+    }
+
+    // CreateReservation validation tests
+    #[test]
+    fn create_reservation_validate_succeeds_with_valid_times() {
+        let future_start = Utc::now() + chrono::Duration::hours(1);
+        let future_end = future_start + chrono::Duration::hours(2);
+        let cmd = CreateReservation {
+            resource_type: ResourceType::Vehicle,
+            resource_id: Uuid::new_v4(),
+            site_id: None,
+            start_time: future_start,
+            end_time: future_end,
+            notes: None,
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn create_reservation_validate_fails_when_end_equals_start() {
+        let future_time = Utc::now() + chrono::Duration::hours(1);
+        let cmd = CreateReservation {
+            resource_type: ResourceType::Vehicle,
+            resource_id: Uuid::new_v4(),
+            site_id: None,
+            start_time: future_time,
+            end_time: future_time,
+            notes: None,
+        };
+        assert_eq!(cmd.validate(), Err("End time must be after start time".to_string()));
+    }
+
+    #[test]
+    fn create_reservation_validate_fails_when_start_in_past() {
+        let past_start = Utc::now() - chrono::Duration::hours(1);
+        let future_end = Utc::now() + chrono::Duration::hours(1);
+        let cmd = CreateReservation {
+            resource_type: ResourceType::Vehicle,
+            resource_id: Uuid::new_v4(),
+            site_id: None,
+            start_time: past_start,
+            end_time: future_end,
+            notes: None,
+        };
+        assert_eq!(cmd.validate(), Err("Start time cannot be in the past".to_string()));
+    }
+
+    // UpdateReservation validation tests
+    #[test]
+    fn update_reservation_validate_succeeds_with_valid_times() {
+        let current = test_reservation(10, 12, ReservationStatus::Pending);
+        let new_end = test_time(14);
+        let update = UpdateReservation {
+            start_time: None,
+            end_time: Some(new_end),
+            site_id: None,
+            notes: None,
+            status: None,
+        };
+        assert!(update.validate(&current).is_ok());
+    }
+
+    #[test]
+    fn update_reservation_validate_fails_with_invalid_status_transition() {
+        let current = test_reservation(10, 12, ReservationStatus::Pending);
+        let update = UpdateReservation {
+            start_time: None,
+            end_time: None,
+            site_id: None,
+            notes: None,
+            status: Some(ReservationStatus::InUse),
+        };
+        assert!(update.validate(&current).is_err());
+    }
+}

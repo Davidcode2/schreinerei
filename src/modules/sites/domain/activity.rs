@@ -78,3 +78,103 @@ impl CreateActivity {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_site_id() -> SiteId {
+        SiteId::new()
+    }
+
+    #[test]
+    fn activity_type_as_str_returns_correct_strings() {
+        assert_eq!(ActivityType::Photo.as_str(), "photo");
+        assert_eq!(ActivityType::Note.as_str(), "note");
+        assert_eq!(ActivityType::StatusChange.as_str(), "status_change");
+    }
+
+    #[test]
+    fn activity_type_from_str_parses_valid_strings() {
+        let photo: Result<ActivityType, String> = "photo".parse();
+        assert_eq!(photo, Ok(ActivityType::Photo));
+
+        let note: Result<ActivityType, String> = "note".parse();
+        assert_eq!(note, Ok(ActivityType::Note));
+
+        let status_change: Result<ActivityType, String> = "status_change".parse();
+        assert_eq!(status_change, Ok(ActivityType::StatusChange));
+    }
+
+    #[test]
+    fn activity_type_from_str_fails_with_invalid_string() {
+        let result: Result<ActivityType, String> = "invalid".parse();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn create_activity_validate_succeeds_for_photo_with_url() {
+        let cmd = CreateActivity {
+            site_id: test_site_id(),
+            activity_type: ActivityType::Photo,
+            content: None,
+            photo_url: Some("https://example.com/photo.jpg".to_string()),
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn create_activity_validate_fails_for_photo_without_url() {
+        let cmd = CreateActivity {
+            site_id: test_site_id(),
+            activity_type: ActivityType::Photo,
+            content: None,
+            photo_url: None,
+        };
+        assert_eq!(cmd.validate(), Err("Photo URL is required for photo activity".to_string()));
+    }
+
+    #[test]
+    fn create_activity_validate_succeeds_for_note_with_content() {
+        let cmd = CreateActivity {
+            site_id: test_site_id(),
+            activity_type: ActivityType::Note,
+            content: Some("This is a note".to_string()),
+            photo_url: None,
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn create_activity_validate_fails_for_note_without_content() {
+        let cmd = CreateActivity {
+            site_id: test_site_id(),
+            activity_type: ActivityType::Note,
+            content: None,
+            photo_url: None,
+        };
+        assert_eq!(cmd.validate(), Err("Content is required for note activity".to_string()));
+    }
+
+    #[test]
+    fn create_activity_validate_fails_for_note_with_empty_content() {
+        let cmd = CreateActivity {
+            site_id: test_site_id(),
+            activity_type: ActivityType::Note,
+            content: Some("   ".to_string()),
+            photo_url: None,
+        };
+        assert_eq!(cmd.validate(), Err("Content is required for note activity".to_string()));
+    }
+
+    #[test]
+    fn create_activity_validate_fails_for_status_change() {
+        let cmd = CreateActivity {
+            site_id: test_site_id(),
+            activity_type: ActivityType::StatusChange,
+            content: None,
+            photo_url: None,
+        };
+        assert_eq!(cmd.validate(), Err("Cannot manually create status change activity".to_string()));
+    }
+}
