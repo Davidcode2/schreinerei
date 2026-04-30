@@ -10,8 +10,8 @@ Requirements for completing missing CRUD functionality and improving UX.
 
 ### Bug Fixes
 
-- [ ] **FIX-01**: User cannot submit time entry with hours <= 0 (validation blocks invalid input)
-- [ ] **FIX-02**: User sees inline validation error messages below form fields when input is invalid
+- [x] **FIX-01**: User cannot submit time entry with hours <= 0 (validation blocks invalid input) ✓
+- [x] **FIX-02**: User sees inline validation error messages below form fields when input is invalid ✓
 
 ### Delete Operations
 
@@ -36,7 +36,7 @@ Requirements for completing missing CRUD functionality and improving UX.
 ### UX Improvements
 
 - [x] **UX-01**: User sees low stock warning badge when material quantity falls below minimum ✓ (already implemented in MaterialCard.tsx)
-- [ ] **UX-02**: User can initiate QR scan by clicking QR code button on inventory page
+- [x] **UX-02**: User can initiate QR scan by clicking QR code button on inventory page ✓
 
 ### E2E Test Coverage
 
@@ -88,8 +88,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FIX-01 | Phase 18 | Pending |
-| FIX-02 | Phase 18 | Pending |
+| FIX-01 | Phase 18 | Complete ✓ |
+| FIX-02 | Phase 18 | Complete ✓ |
 | DEL-01 | Phase 19 | Pending |
 | DEL-02 | Phase 19 | Pending |
 | DEL-03 | Phase 19 | Pending |
@@ -102,7 +102,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RESV-02 | Phase 20 | Pending |
 | RESV-03 | Phase 20 | Pending |
 | UX-01 | Phase 18 | Complete (pre-existing) |
-| UX-02 | Phase 18 | Pending |
+| UX-02 | Phase 18 | Complete ✓ |
 | TEST-12 | Phase 21 | Pending |
 | TEST-13 | Phase 21 | Pending |
 | TEST-14 | Phase 21 | Pending |

@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-04-30)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
-**Current focus:** Phase 18 — Bug Fixes & UX Improvements
+**Current focus:** Phase 18 — Bug Fixes & UX Improvements (Complete)
 
 ## Current Position
 
 Phase: 18 of 21 (Bug Fixes & UX Improvements)
-Plan: 0 of 4 in current phase
-Status: Ready to plan
-Last activity: 2026-04-30 — v1.6 roadmap created
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-04-30 — Phase 18 executed
 
-Progress: [░░░░░░░░░░░░░░░░░░] 76% (17/21 phases complete)
+Progress: [██████████████████░░] 86% (18/21 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 41
+- Total plans completed: 43
 - Average duration: ~30 min
-- Total execution time: ~20.5 hours
+- Total execution time: ~21.5 hours
 
 **By Phase:**
 
@@ -33,6 +33,7 @@ Progress: [░░░░░░░░░░░░░░░░░░] 76% (17/21 ph
 | v1.3 (8-10) | 9 | ~4.5h | ~30min |
 | v1.4 (11-13) | 6 | ~3h | ~30min |
 | v1.5 (14-17) | 8 | ~4h | ~30min |
+| v1.6 (18) | 2 | ~2min | ~1min |
 
 **Recent Trend:**
 - Last 5 phases: stable execution
@@ -45,6 +46,7 @@ Progress: [░░░░░░░░░░░░░░░░░░] 76% (17/21 ph
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- Phase 18: Client-side validation mirrors backend rules (hours > 0, <= 24)
 - Phase 17: E2E data assertions through API calls (not just UI checks)
 - Phase 16: MSW for API mocking at network level
 - Phase 15: ts-rs v12 for type generation (prevents frontend-backend drift)
@@ -70,7 +72,7 @@ Items acknowledged and carried forward from v1.5 milestone close:
 ## Session Continuity
 
 Last session: 2026-04-30
-Stopped at: v1.6 roadmap created, ready for Phase 18 planning
+Stopped at: Phase 18 complete, ready for Phase 19
 Resume file: None
 
 ---
