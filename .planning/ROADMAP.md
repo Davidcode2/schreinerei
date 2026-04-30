@@ -102,7 +102,12 @@ Plans:
   4. Vehicles/Machines feature audit complete with documented issues
   5. Reservations feature audit complete with documented issues
   6. Comprehensive issue backlog in `.planning/ISSUE-BACKLOG.md`
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 17-01-PLAN.md — Baustellen and Time Booking audit
+- [ ] 17-02-PLAN.md — Inventory audit
+- [ ] 17-03-PLAN.md — Fleet and Reservations audit + Issue Backlog consolidation
 
 ## Progress
 
@@ -113,7 +118,7 @@ Plans:
 | 14. Frontend Test Infrastructure | 2/2 | ✓ Complete | 2026-04-30 |
 | 15. ts-rs Type Generation | 1/1 | ✓ Complete | 2026-04-30 |
 | 16. E2E Data Assertions | 1/1 | ✓ Complete | 2026-04-30 |
-| 17. Feature Audit | 0/1 | Not started | - |
+| 17. Feature Audit | 0/3 | Ready to execute | - |
 
 ## Coverage
 
