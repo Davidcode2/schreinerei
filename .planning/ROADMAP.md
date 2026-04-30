@@ -59,8 +59,11 @@ Plans:
   2. Test utilities exist (render with providers, mock data factories, QueryClient setup)
   3. Key components tested (material form, site dialog, vehicle/tool dialogs)
   4. Tests run in CI without flaky failures
-**Plans:** TBD
-**UI hint:** yes
+**Plans:** 2 plans
+
+Plans:
+- [ ] 14-01-PLAN.md — Vitest setup with test utilities and MSW handlers
+- [ ] 14-02-PLAN.md — Component tests for key dialogs
 
 ### Phase 15: ts-rs Type Generation
 **Goal:** TypeScript types are auto-generated from Rust DTOs, preventing frontend-backend type drift
@@ -101,7 +104,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 12. Backend Domain Tests | 2/2 | ✓ Complete | 2026-04-30 |
 | 13. Agent QA Playbook | 1/1 | ✓ Complete | 2026-04-30 |
-| 14. Frontend Test Infrastructure | 0/1 | ◆ Ready | - |
+| 14. Frontend Test Infrastructure | 0/2 | ◆ Ready | - |
 | 15. ts-rs Type Generation | 0/1 | Not started | - |
 | 16. E2E Data Assertions | 0/1 | Not started | - |
 | 17. Feature Audit | 0/1 | Not started | - |
