@@ -387,6 +387,7 @@ pub async fn withdraw_material(
         material_id,
         quantity: request.quantity,
         notes: request.notes,
+        site_id: None,  // Will be populated in Task 4
     };
     
     let material = service.withdraw_material(withdraw, &ctx).await?;

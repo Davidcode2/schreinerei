@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::common::types::{TenantId, MaterialId, CategoryId, Unit};
+use crate::common::types::{TenantId, MaterialId, CategoryId, Unit, SiteId};
 
 /// Material aggregate with stock information
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -71,6 +71,7 @@ pub struct WithdrawMaterial {
     pub material_id: MaterialId,
     pub quantity: i32,
     pub notes: Option<String>,
+    pub site_id: Option<SiteId>,  // Optional link to Baustelle
 }
 
 impl WithdrawMaterial {
@@ -227,6 +228,7 @@ mod tests {
             material_id: MaterialId::new(),
             quantity: 1,
             notes: None,
+            site_id: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -237,6 +239,7 @@ mod tests {
             material_id: MaterialId::new(),
             quantity: 0,
             notes: None,
+            site_id: None,
         };
         assert_eq!(cmd.validate(), Err("Withdrawal quantity must be positive".to_string()));
     }
@@ -247,6 +250,7 @@ mod tests {
             material_id: MaterialId::new(),
             quantity: -1,
             notes: None,
+            site_id: None,
         };
         assert_eq!(cmd.validate(), Err("Withdrawal quantity must be positive".to_string()));
     }
