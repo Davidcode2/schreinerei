@@ -7,6 +7,7 @@ use axum::{
     routing::{get, post, delete},
 };
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 use chrono::NaiveDate;
 use uuid::Uuid;
 
@@ -45,7 +46,8 @@ pub fn create_router() -> Router<AppState> {
 
 // === DTOs ===
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct SiteResponse {
     pub id: String,
     pub name: String,
@@ -76,7 +78,8 @@ impl From<crate::modules::sites::domain::Site> for SiteResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CreateSiteRequest {
     pub name: String,
     pub customer_name: String,
@@ -87,7 +90,8 @@ pub struct CreateSiteRequest {
     pub estimated_days: Option<i32>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct UpdateSiteRequest {
     pub name: Option<String>,
     pub customer_name: Option<String>,
@@ -99,12 +103,14 @@ pub struct UpdateSiteRequest {
     pub estimated_days: Option<i32>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ListSitesQuery {
     pub status: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct AssignmentResponse {
     pub id: String,
     pub site_id: String,
@@ -125,13 +131,15 @@ impl From<crate::modules::sites::domain::SiteAssignment> for AssignmentResponse 
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct AssignUserRequest {
     pub user_id: String,
     pub role: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct TimeEntryResponse {
     pub id: String,
     pub site_id: Option<String>,
@@ -158,7 +166,8 @@ impl From<crate::modules::sites::domain::TimeEntry> for TimeEntryResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CreateTimeEntryRequest {
     pub site_id: Option<String>,
     pub work_type: String,
@@ -411,7 +420,8 @@ pub async fn list_my_time_entries(
 
 // === Activity DTOs ===
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ActivityResponse {
     pub id: String,
     pub site_id: String,
@@ -436,21 +446,24 @@ impl From<crate::modules::sites::domain::Activity> for ActivityResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CreateActivityRequest {
     pub activity_type: String,  // "photo" or "note"
     pub content: Option<String>,
     pub photo_url: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ActivityQuery {
     pub limit: Option<i32>,
 }
 
 // === Dashboard DTOs ===
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct DashboardSiteResponse {
     pub id: String,
     pub name: String,
