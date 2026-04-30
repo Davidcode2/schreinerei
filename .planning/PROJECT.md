@@ -10,17 +10,17 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## Current State
+## Current Milestone: v1.6 User Experience & Missing Functionality
 
-**Shipped:** v1.5 Testing & Quality Foundation (2026-04-30)
+**Goal:** Make the app user-friendly and complete missing core functionalities identified in the feature audit.
 
-**Next Milestone:** v1.6 (planning required)
-
-See `.planning/ISSUE-BACKLOG.md` for 24 documented issues prioritized for v1.6+.
-
-## Previous Milestones
-
-### v1.4 Core Feature Fixes (Shipped 2026-04-30)
+**Target features:**
+- Bug fixes: Hours validation (HIGH), input validation feedback
+- Add delete buttons for Sites, Materials, Vehicles, Tools
+- Add edit/delete capabilities for Time entries and Reservations
+- Reservation workflow: Status transitions UI, edit dialog, calendar click-to-create
+- E2E tests: Reservations, update/delete operations across all features
+- UX improvements: Low stock alerts, QR button wiring, overlap warning details
 
 All core features working:
 - ✅ Material management with stock tracking and QR codes
@@ -73,15 +73,9 @@ All v1.x requirements validated:
 
 ### Active
 
-(None — v1.5 complete, planning v1.6)
+(To be defined — see REQUIREMENTS.md for v1.6 scope)
 
-### Future (v1.6+)
-
-**From Issue Backlog:**
-- Fix BUG-TIME-001: Hours validation in TimeEntryDialog
-- Add E2E tests for update/delete operations
-- Implement site delete UI
-- Add time entry edit/delete functionality
+### Future (v1.7+)
 
 **Integration Tests:**
 - INT-01: Integration tests with real PostgreSQL for inventory module
@@ -90,7 +84,6 @@ All v1.x requirements validated:
 - INT-04: Multi-tenant isolation tests for all modules
 
 **Self-Service Registration:**
-
 - SS-01: Public website with organization registration
 - SS-02: Self-service organization creation flow
 - SS-03: Organization admin dashboard
@@ -200,4 +193,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-04-30 after v1.5 milestone*
+*Last updated: 2026-04-30 after v1.5 milestone, v1.6 milestone started*
