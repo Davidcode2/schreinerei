@@ -114,6 +114,9 @@ Plans:
 **Goal**: Wire frontend consumption/rendering of deduction history `site_name` so backend producer is consumed end-to-end.
 **Depends on**: Phase 24
 **Requirements**: DEDU-03
+**Plans**: 1 plan
+Plans:
+- [ ] 25-01-PLAN.md — Add inventory history hook, render site_name in detail history UI, and lock with regression tests
 **Gap Closure**: Closes integration + flow gap where history endpoint data is not consumed by frontend.
 
 ---
