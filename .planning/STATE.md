@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-04-30)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
-**Current focus:** Phase 19 — Delete Operations
+**Current focus:** Phase 20 — Edit & Reservation Workflow
 
 ## Current Position
 
-Phase: 19 of 21 (Delete Operations)
-Plan: 0 of 3 in current phase
+Phase: 20 of 21 (Edit & Reservation Workflow)
+Plan: 0 of 5 in current phase
 Status: Ready to plan
-Last activity: 2026-04-30 — Transitioned to Phase 19
+Last activity: 2026-04-30 — Transitioned to Phase 20
 
-Progress: [██████████████████░░] 86% (18/21 phases complete)
+Progress: [███████████████████░] 90% (19/21 phases complete)
 
 ## Performance Metrics
 
@@ -34,7 +34,7 @@ Progress: [██████████████████░░] 86% (18
 | v1.4 (11-13) | 6 | ~3h | ~30min |
 | v1.5 (14-17) | 8 | ~4h | ~30min |
 | v1.6 (18) | 2 | ~2min | ~1min |
-| v1.6 (19) | 0 | - | - |
+| v1.6 (19) | 3 | ~30min | ~10min |
 
 **Recent Trend:**
 - Last 5 phases: stable execution
@@ -73,7 +73,7 @@ Items acknowledged and carried forward from v1.5 milestone close:
 ## Session Continuity
 
 Last session: 2026-04-30
-Stopped at: Phase 19 ready to plan
+Stopped at: Phase 20 ready to plan
 Resume file: None
 
 ---

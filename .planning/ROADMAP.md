@@ -206,7 +206,7 @@ Plans:
 - [x] 18-01: TimeEntryDialog validation improvements (FIX-01, FIX-02)
 - [x] 18-02: QR button wiring (UX-02)
 
-#### Phase 19: Delete Operations
+#### ✅ Phase 19: Delete Operations (Complete)
 **Goal**: Users can safely delete entities with confirmation and clear error feedback
 **Depends on**: Phase 18
 **Requirements**: DEL-01, DEL-02, DEL-03, DEL-04, DEL-05
@@ -216,13 +216,13 @@ Plans:
   3. User can delete a vehicle with confirmation dialog (soft delete)
   4. User can delete a tool with confirmation dialog (soft delete)
   5. User sees dependency conflict message when delete is blocked by FK constraints
-**Plans**: TBD
+**Plans**: 3 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 19-01: Backend delete routes with soft delete
-- [ ] 19-02: Frontend delete UI with AlertDialog
-- [ ] 19-03: Dependency conflict handling
+- [x] 19-01: Soft delete migration + DELETE routes for materials and sites (DEL-01, DEL-02, DEL-05)
+- [x] 19-02: Fleet dependency checks for vehicles and tools (DEL-03, DEL-04, DEL-05)
+- [x] 19-03: Frontend AlertDialog + delete buttons with error handling (DEL-01, DEL-02, DEL-03, DEL-04, DEL-05)
 
 #### Phase 20: Edit & Reservation Workflow
 **Goal**: Users can edit records and manage reservations through complete workflow
@@ -287,7 +287,7 @@ Phases execute in numeric order: 1 → 2 → ... → 17 → 18 → 19 → 20 →
 | 16. Frontend Tests | v1.5 | 2/2 | Complete | 2026-04-30 |
 | 17. E2E Data | v1.5 | 2/2 | Complete | 2026-04-30 |
 | 18. Bug Fixes & UX | v1.6 | 2/2 | Complete | 2026-04-30 |
-| 19. Delete Ops | v1.6 | 0/3 | Not started | - |
+| 19. Delete Ops | v1.6 | 3/3 | Complete | 2026-04-30 |
 | 20. Edit & Resv | v1.6 | 0/5 | Not started | - |
 | 21. E2E Tests | v1.6 | 0/4 | Not started | - |
 
