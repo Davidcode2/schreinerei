@@ -38,6 +38,7 @@ fn auth_user(keycloak_subject: Uuid, tenant_id: Uuid, email: &str) -> Authentica
 
 #[sqlx::test]
 async fn preferences_mapping_uses_tenant_local_user_id(pool: PgPool) {
+    // Regression for Phase 23 UAT gap: preferences writes must target local users.id.
     let tenant_id = create_test_tenant(&pool, "Tenant Mapping").await;
     let keycloak_subject = Uuid::new_v4();
     let auth = auth_user(keycloak_subject, tenant_id, "mapping@test.com");
