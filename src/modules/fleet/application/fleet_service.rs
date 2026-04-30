@@ -124,6 +124,19 @@ impl FleetService {
             return Err(AppError::Forbidden("Admin access required".to_string()));
         }
 
+        // Check for active reservations
+        let active_count = self.fleet_repo.count_active_reservations(
+            ctx.tenant_id,
+            ResourceType::Vehicle,
+            vehicle_id.0,
+        ).await?;
+
+        if active_count > 0 {
+            return Err(AppError::Conflict(
+                format!("Cannot delete: {} active reservation(s) exist", active_count)
+            ));
+        }
+
         self.fleet_repo.delete_vehicle(ctx.tenant_id, vehicle_id).await
     }
 
@@ -212,6 +225,19 @@ impl FleetService {
     ) -> Result<(), AppError> {
         if !ctx.is_admin() {
             return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+
+        // Check for active reservations
+        let active_count = self.fleet_repo.count_active_reservations(
+            ctx.tenant_id,
+            ResourceType::Tool,
+            tool_id.0,
+        ).await?;
+
+        if active_count > 0 {
+            return Err(AppError::Conflict(
+                format!("Cannot delete: {} active reservation(s) exist", active_count)
+            ));
         }
 
         self.fleet_repo.delete_tool(ctx.tenant_id, tool_id).await

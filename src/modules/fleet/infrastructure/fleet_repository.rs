@@ -210,6 +210,33 @@ impl FleetRepository {
         Ok(())
     }
 
+    /// Count active reservations for a resource (for delete dependency check)
+    pub async fn count_active_reservations(
+        &self,
+        tenant_id: TenantId,
+        resource_type: ResourceType,
+        resource_id: Uuid,
+    ) -> Result<i64, AppError> {
+        let count: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*) FROM reservations
+            WHERE tenant_id = $1 
+              AND resource_type = $2 
+              AND resource_id = $3 
+              AND status NOT IN ('cancelled', 'completed')
+              AND end_time > NOW()
+            "#
+        )
+        .bind(tenant_id.0)
+        .bind(resource_type.as_str())
+        .bind(resource_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(count)
+    }
+
     pub async fn find_vehicle_by_qr_code(
         &self,
         tenant_id: TenantId,
