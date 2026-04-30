@@ -1,401 +1,319 @@
-# Technology Stack
+# Stack Research: Active Project Context
 
-**Project:** Schreinerei SaaS - v1.6 User Experience & Missing Functionality
+**Domain:** User-scoped active Baustelle state with auto-assignment
 **Researched:** 2026-04-30
-**Milestone Focus:** Delete buttons, edit capabilities, reservation workflow, UX improvements, E2E tests
+**Confidence:** HIGH
 
-## Executive Summary
+## Summary
 
-This milestone requires **minimal new stack additions**. The existing infrastructure supports all planned features:
+The Active Project Context feature requires **NO new libraries**. All capabilities are already present in the existing stack:
 
-- **Delete confirmations:** Add shadcn/ui AlertDialog component (CLI install only)
-- **Backend gaps:** Add missing DELETE/PATCH routes for sites, materials, time entries
-- **Form validation:** No new libraries needed — use existing controlled input pattern with inline error state
-- **Calendar click-to-create:** No library needed — add onClick handlers to custom calendar
-- **Low stock alerts:** Use existing Badge component + sonner toast
-- **E2E tests:** Use existing Playwright patterns
-
-**Critical finding:** Backend is missing routes for site/material/time-entry deletion and editing. Frontend has all required UI libraries.
+- **Zustand with persist middleware** — Already used for auth, same pattern for active site
+- **Tailwind CSS color palette** — Deterministic color assignment from site ID hash
+- **TanStack Query** — Already used for API calls and cache invalidation
+- **Backend stack** — Axum 0.8, SQLx 0.8 already support the needed endpoints
 
 ---
 
-## Required Stack Additions
+## Recommended Stack
 
-### Frontend Components
+### Frontend State Management
 
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| `@radix-ui/react-alert-dialog` | ^1.1.2 | Delete confirmation dialogs | Standard shadcn/ui pattern, consistent with existing dialog usage |
+| Zustand | 5.0.12 | Active site state store | Already in use for auth with `persist` middleware. Same pattern applies. |
+| Zustand persist | (built-in) | LocalStorage persistence | Built into Zustand, used by authStore.ts. Survives page refresh. |
 
-**Installation:**
+### Color Generation
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Tailwind CSS colors | 4.2.4 (existing) | Deterministic site colors | Use predefined palette (rose, orange, amber, emerald, teal, cyan, blue, indigo, violet). Hash site ID → index into palette. No new library. |
+
+### Backend
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Axum | 0.8 | API endpoints | Already in use. Add GET/PUT `/api/v1/users/me/active-site` |
+| SQLx | 0.8 | Database queries | Already in use. Add migration for user preferences |
+| ts-rs | 12 | Type generation | Already in use. Add DTOs for active site preference |
+
+---
+
+## No New Dependencies Required
+
+**The feature can be implemented entirely with existing libraries:**
+
 ```bash
-cd frontend
-npx shadcn@latest add alert-dialog
+# No npm install needed
+# No cargo add needed
 ```
 
-This adds the AlertDialog component to `frontend/src/components/ui/alert-dialog.tsx`. No npm package installation needed — shadcn/ui copies component code into your project.
-
-### Backend Routes (Rust)
-
-| Route | Method | Module | Status |
-|-------|--------|--------|--------|
-| `/api/v1/sites/{id}` | DELETE | sites | ❌ MISSING |
-| `/api/v1/inventory/materials/{id}` | DELETE | inventory | ❌ MISSING |
-| `/api/v1/inventory/materials/{id}` | PATCH | inventory | ❌ MISSING |
-| `/api/v1/time-entries/{id}` | DELETE | sites | ❌ MISSING |
-| `/api/v1/time-entries/{id}` | PATCH | sites | ❌ MISSING |
-| `/api/v1/fleet/vehicles/{id}` | DELETE | fleet | ✅ EXISTS |
-| `/api/v1/fleet/tools/{id}` | DELETE | fleet | ✅ EXISTS |
-| `/api/v1/fleet/reservations/{id}` | PATCH | fleet | ✅ EXISTS |
-| `/api/v1/fleet/reservations/{id}` | DELETE | fleet | ✅ EXISTS |
-
 ---
 
-## Existing Stack (No Changes Required)
+## Implementation Components
 
-The following are **already in place** and support the milestone features:
+### 1. Frontend: Active Site Store
 
-### Core Frontend
+Create a new Zustand store following the existing `authStore.ts` pattern:
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| React | ^19.2.5 | UI framework |
-| Vite | ^7.3.2 | Build tool |
-| TypeScript | ~6.0.2 | Type safety |
-| Tailwind CSS | ^4.2.4 | Styling |
+```typescript
+// frontend/src/lib/stores/activeSiteStore.ts
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
-### UI Components (shadcn/ui)
+interface ActiveSiteState {
+  activeSiteId: string | null
+  setActiveSite: (id: string | null) => void
+}
 
-| Component | Location | Use Case |
-|-----------|----------|----------|
-| Dialog | `components/ui/dialog.tsx` | Edit/create dialogs |
-| Button | `components/ui/button.tsx` | Actions, status transitions |
-| Badge | `components/ui/badge.tsx` | Low stock indicators, status badges |
-| Input | `components/ui/input.tsx` | Form fields |
-| Label | `components/ui/label.tsx` | Form labels |
-| DropdownMenu | `components/ui/dropdown-menu.tsx` | Actions menus |
+export const useActiveSiteStore = create<ActiveSiteState>()(
+  persist(
+    (set) => ({
+      activeSiteId: null,
+      setActiveSite: (id) => set({ activeSiteId: id }),
+    }),
+    {
+      name: 'active-site-storage',
+      partialize: (state) => ({
+        activeSiteId: state.activeSiteId,
+      }),
+    }
+  )
+)
+```
 
-### Notifications & Feedback
+### 2. Frontend: Color Generation
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| sonner | ^2.0.7 | Toast notifications (success/error feedback) |
-| lucide-react | ^1.12.0 | Icons (AlertCircle, Trash, Edit, etc.) |
+Use a simple hash function with Tailwind's color palette:
 
-### State & Data
+```typescript
+// frontend/src/lib/utils/siteColor.ts
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| @tanstack/react-query | ^5.100.6 | Server state, mutations, cache invalidation |
-| zustand | ^5.0.12 | Client state |
+// Tailwind color palette indices (matching Tailwind 500 shades for good contrast)
+const SITE_COLORS = [
+  'bg-rose-500',
+  'bg-orange-500', 
+  'bg-amber-500',
+  'bg-emerald-500',
+  'bg-teal-500',
+  'bg-cyan-500',
+  'bg-blue-500',
+  'bg-indigo-500',
+  'bg-violet-500',
+] as const
 
-### E2E Testing
+// Deterministic color from UUID
+export function getSiteColor(siteId: string): string {
+  // Simple hash: sum char codes, mod length
+  const hash = siteId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
+  return SITE_COLORS[hash % SITE_COLORS.length]
+}
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| @playwright/test | ^1.59.1 | E2E testing |
-| @testing-library/react | ^16.3.2 | Component testing |
-| @testing-library/user-event | ^14.6.1 | User interaction simulation |
+// Also export text variants for accessibility
+export function getSiteColorText(siteId: string): string {
+  return getSiteColor(siteId).replace('bg-', 'text-')
+}
+```
 
-### QR Code
+### 3. Frontend: Active Site Status Component
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| html5-qrcode | ^2.3.8 | QR scanning (already installed) |
+```typescript
+// frontend/src/components/active-site/ActiveSiteIndicator.tsx
+import { useActiveSiteStore } from '@/lib/stores/activeSiteStore'
+import { useSite } from '@/lib/api/hooks/useSites'
+import { Building2, X } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { getSiteColor } from '@/lib/utils/siteColor'
 
----
+export function ActiveSiteIndicator() {
+  const { activeSiteId, setActiveSite } = useActiveSiteStore()
+  const { data: site } = useSite(activeSiteId || '')
 
-## NOT Recommended (Explicitly Avoid)
+  if (!activeSiteId || !site) return null
 
-| Technology | Why Not |
-|------------|---------|
-| react-hook-form | Overkill for existing simple dialogs. Current pattern uses controlled inputs with useState. Adding would require refactoring 7+ existing dialogs without clear benefit. |
-| zod | Not needed without react-hook-form. Existing validation is backend-driven with toast errors. Add inline validation state locally instead. |
-| Full calendar library (react-big-calendar, fullcalendar) | Custom calendar already built. Just needs onClick handlers for empty slots. No need to replace working code. |
-| Additional testing libraries | Playwright patterns already established. Use existing helpers in `tests/helpers/`. |
+  return (
+    <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+      <div className={`w-3 h-3 rounded-full ${getSiteColor(site.id)}`} />
+      <Building2 className="h-4 w-4" />
+      <span className="font-medium truncate">{site.name}</span>
+      <Badge variant="outline" className="text-xs">Aktiv</Badge>
+      <button onClick={() => setActiveSite(null)} className="ml-auto">
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  )
+}
+```
+
+### 4. Backend: Migration
+
+```sql
+-- migrations/011_add_user_active_site.sql
+ALTER TABLE users ADD COLUMN active_site_id UUID REFERENCES sites(id) ON DELETE SET NULL;
+CREATE INDEX idx_users_active_site ON users(active_site_id);
+```
+
+### 5. Backend: API Endpoint
+
+```rust
+// Add to src/modules/iam/application/user_service.rs
+
+pub async fn get_active_site(
+    user_id: UserId,
+    repo: &dyn UserRepository,
+) -> Result<Option<SiteId>, IamError> {
+    repo.get_active_site(user_id).await
+}
+
+pub async fn set_active_site(
+    user_id: UserId,
+    site_id: Option<SiteId>,
+    repo: &dyn UserRepository,
+) -> Result<(), IamError> {
+    repo.set_active_site(user_id, site_id).await
+}
+```
+
+### 6. Frontend: Auto-Assignment Hook
+
+```typescript
+// frontend/src/hooks/useAutoAssignSite.ts
+import { useActiveSiteStore } from '@/lib/stores/activeSiteStore'
+import { useSite } from '@/lib/api/hooks/useSites'
+
+export function useAutoAssignSite() {
+  const { activeSiteId } = useActiveSiteStore()
+  const { data: activeSite } = useSite(activeSiteId || '')
+
+  return {
+    activeSiteId,
+    activeSite,
+    shouldAutoAssign: !!activeSiteId,
+  }
+}
+```
 
 ---
 
 ## Integration Points
 
-### 1. Delete Flow Pattern
-
-```
-User clicks delete button
-    ↓
-Open AlertDialog (confirmation)
-    ↓
-User confirms
-    ↓
-Call DELETE mutation (react-query)
-    ↓
-On success: toast.success + invalidate queries
-On error: toast.error
-```
-
-**Example implementation:**
-```tsx
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { useDeleteSite } from "@/lib/api/hooks"
-import { toast } from "sonner"
-
-function DeleteSiteButton({ siteId }: { siteId: string }) {
-  const deleteMutation = useDeleteSite()
-  
-  const handleDelete = () => {
-    deleteMutation.mutate(siteId, {
-      onSuccess: () => toast.success("Baustelle gelöscht"),
-      onError: () => toast.error("Löschen fehlgeschlagen"),
-    })
-  }
-  
-  return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Baustelle löschen?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Diese Aktion kann nicht rückgängig gemacht werden.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete}>Löschen</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  )
-}
-```
-
-### 2. Inline Validation Pattern
-
-Use local state for validation, display errors below inputs:
-
-```tsx
-const [hoursError, setHoursError] = useState<string | null>(null)
-
-const validateHours = (value: string) => {
-  const num = parseFloat(value)
-  if (isNaN(num) || num <= 0) {
-    setHoursError("Stunden müssen größer als 0 sein")
-    return false
-  }
-  setHoursError(null)
-  return true
-}
-
-return (
-  <div className="space-y-2">
-    <Label>Stunden</Label>
-    <Input
-      type="number"
-      value={hours}
-      onChange={(e) => {
-        setHours(parseFloat(e.target.value) || 0)
-        validateHours(e.target.value)
-      }}
-    />
-    {hoursError && (
-      <p className="text-sm text-destructive">{hoursError}</p>
-    )}
-  </div>
-)
-```
-
-### 3. Calendar Click-to-Create
-
-Add onClick to calendar grid cells:
-
-```tsx
-// In CalendarView.tsx, modify the day cell div:
-<div
-  key={i}
-  className="p-2 min-h-[60px] border-l last:border-r cursor-pointer hover:bg-muted/50"
-  onClick={() => {
-    // Open reservation dialog for this date/resource
-    setDialogDate(dateStr)
-    setDialogResourceId(entry.resource_id)
-    setDialogResourceType(entry.resource_type)
-    setReservationDialogOpen(true)
-  }}
->
-```
-
-### 4. Low Stock Alert UI
-
-Add badge indicator to material list items:
-
-```tsx
-{material.is_low_stock && (
-  <Badge variant="destructive" className="ml-2">
-    <AlertTriangle className="h-3 w-3 mr-1" />
-    Niedrig
-  </Badge>
-)}
-```
-
-Toast notification on dashboard load:
-```tsx
-const { data: lowStock } = useLowStockMaterials()
-
-useEffect(() => {
-  if (lowStock && lowStock.length > 0) {
-    toast.warning(`${lowStock.length} Materialien unter Mindestbestand`)
-  }
-}, [lowStock])
-```
-
----
-
-## Backend Implementation Notes
-
-### Required Route Additions
-
-**Sites module (`src/modules/sites/api/routes.rs`):**
-
-```rust
-// Add to create_router():
-.route("/api/v1/sites/{id}", delete(delete_site))
-
-// Add handler:
-pub async fn delete_site(
-    State(state): State<AppState>,
-    auth: AuthenticatedUser,
-    Path(id): Path<String>,
-) -> Result<impl IntoResponse, AppError> {
-    let service = SiteService::new(SiteRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
-    
-    let site_id = Uuid::parse_str(&id)
-        .map(SiteId)
-        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
-    
-    service.delete_site(site_id, &ctx).await?;
-    
-    Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
-}
-```
-
-**Inventory module (`src/modules/inventory/api/routes.rs`):**
-
-```rust
-// Add to create_router():
-.route("/api/v1/inventory/materials/{id}", patch(update_material).delete(delete_material))
-
-// Add handlers similar to fleet module patterns
-```
-
-**Time Entries (sites module):**
-
-```rust
-// Add to create_router():
-.route("/api/v1/time-entries/{id}", patch(update_time_entry).delete(delete_time_entry))
-
-// Add handlers for update/delete
-```
-
----
-
-## E2E Test Patterns
-
-Use existing helper patterns in `frontend/tests/helpers/api.ts`:
+### Material Withdrawal
 
 ```typescript
-// Example: Test site delete
-test('should delete site', async ({ page }) => {
-  const site = await createSite(page, {
-    name: uniqueName('To Delete'),
-    customer_name: 'Customer',
-    location: 'Location',
-  })
-  track.site(site.id)
-  
-  // Navigate to site
-  await page.goto(`/sites/${site.id}`)
-  
-  // Click delete button
-  await page.click('button:has([data-testid="delete-site"])')
-  
-  // Confirm in dialog
-  await page.click('button:has-text("Löschen")')
-  
-  // Verify toast
-  await expect(page.locator('[data-sonner-toast]')).toContainText('gelöscht')
-  
-  // Verify site no longer exists
-  const response = await page.request.get(`/api/v1/sites/${site.id}`)
-  expect(response.status()).toBe(404)
-})
+// In WithdrawDialog.tsx
+const { activeSiteId, shouldAutoAssign } = useAutoAssignSite()
+const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+
+// Pre-fill notes with active site
+const defaultNotes = shouldAutoAssign 
+  ? `Baustelle: ${activeSite?.name}` 
+  : ''
+
+// On submit, show opt-out dialog if auto-assigning
+const handleSubmit = () => {
+  if (shouldAutoAssign) {
+    setShowConfirmDialog(true)
+  } else {
+    onConfirm(quantity, notes)
+  }
+}
+```
+
+### Tool Reservation
+
+```typescript
+// In ReservationDialog.tsx
+const { activeSiteId } = useActiveSiteStore()
+
+// Pre-select site in dropdown if active
+useEffect(() => {
+  if (mode === 'create' && activeSiteId && !siteId) {
+    setSiteId(activeSiteId)
+  }
+}, [mode, activeSiteId])
 ```
 
 ---
 
-## Files to Create/Modify
+## Alternatives Considered
 
-### New Files
+| Recommended | Alternative | Why Not |
+|-------------|-------------|---------|
+| Zustand persist | React Context | Zustand already in use, Context requires more boilerplate for persistence |
+| Zustand persist | localStorage directly | Zustand handles serialization, hydration, and subscriptions automatically |
+| Tailwind colors | color2k library | No need for color manipulation, just palette selection |
+| Tailwind colors | tinycolor2 | Heavier (5kB vs 0kB), overkill for simple palette assignment |
+| Deterministic hash | Random color | Colors must be consistent across page loads and devices |
+| localStorage only | Backend preference | Cross-device sync not required for v1.7, can add later |
 
-| File | Purpose |
-|------|---------|
-| `frontend/src/components/ui/alert-dialog.tsx` | shadcn/ui AlertDialog component |
-| `frontend/tests/reservations.spec.ts` | E2E tests for reservation workflow |
-| `frontend/tests/update-delete.spec.ts` | E2E tests for update/delete operations |
+---
 
-### Modified Files
+## What NOT to Use
 
-| File | Change |
-|------|--------|
-| `frontend/src/pages/sites/SitesListPage.tsx` | Add delete button with AlertDialog |
-| `frontend/src/pages/inventory/InventoryListPage.tsx` | Add delete button, wire QR button |
-| `frontend/src/pages/fleet/FleetPage.tsx` | Add delete buttons for vehicles/tools |
-| `frontend/src/pages/fleet/CalendarView.tsx` | Add click-to-create on empty slots |
-| `frontend/src/pages/fleet/ReservationDialog.tsx` | Add edit mode, status transition buttons |
-| `frontend/src/pages/sites/TimeEntryDialog.tsx` | Add edit mode, inline validation |
-| `frontend/src/lib/api/hooks.ts` | Add delete/update mutation hooks |
-| `src/modules/sites/api/routes.rs` | Add DELETE route for sites |
-| `src/modules/inventory/api/routes.rs` | Add DELETE/PATCH routes for materials |
-| `src/modules/sites/domain/mod.rs` | Add DeleteSite, UpdateTimeEntry commands |
-| `src/modules/inventory/domain/mod.rs` | Add UpdateMaterial command |
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| Redux | Overkill for single value state | Zustand (already in use) |
+| IndexedDB for active site | Auth uses localStorage, consistency matters | Zustand persist (localStorage) |
+| Color generation libraries | Palette selection is trivial | Hash function + Tailwind colors |
+| Server-sent events | Real-time not needed for user preference | TanStack Query cache invalidation |
+| Complex state machines | Two states: null or site ID | Simple Zustand store |
+
+---
+
+## Version Compatibility
+
+All existing versions are compatible:
+
+| Package | Version | Compatible With | Notes |
+|---------|---------|-----------------|-------|
+| zustand | 5.0.12 | React 19.2.5 | Already in use |
+| @tanstack/react-query | 5.100.6 | React 19.2.5 | Already in use |
+| tailwindcss | 4.2.4 | Vite 7.3.2 | Already in use |
+| axum | 0.8 | tokio 1, sqlx 0.8 | Already in use |
+| sqlx | 0.8 | PostgreSQL | Already in use |
+
+---
+
+## Database Schema Addition
+
+```sql
+-- Single column addition to users table
+ALTER TABLE users ADD COLUMN active_site_id UUID REFERENCES sites(id) ON DELETE SET NULL;
+```
+
+**Alternative (user_preferences table):**
+```sql
+CREATE TABLE user_preferences (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    active_site_id UUID REFERENCES sites(id) ON DELETE SET NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+**Recommendation:** Single column on `users` table is simpler for v1.7. Can migrate to separate table later if preferences grow.
+
+---
+
+## Sources
+
+- **Zustand docs** — Context7 `/pmndrs/zustand` — persist middleware with custom storage
+- **Existing codebase** — `frontend/src/lib/auth/authStore.ts` — Pattern for persisted Zustand store
+- **Tailwind CSS colors** — https://tailwindcss.com/docs/customizing-colors — Default color palette
+- **color2k comparison** — https://github.com/ricokahler/color2k — Not needed for this use case
 
 ---
 
 ## Confidence Assessment
 
-| Area | Confidence | Reason |
-|------|------------|--------|
-| AlertDialog addition | HIGH | Standard shadcn/ui pattern, matches existing Dialog usage |
-| Backend routes | HIGH | Existing patterns in fleet module to follow |
-| Form validation | HIGH | Local state pattern sufficient for simple dialogs |
-| Calendar click-to-create | HIGH | Simple onClick handler, no library needed |
-| E2E test patterns | HIGH | Existing helpers and patterns to follow |
+| Area | Level | Reason |
+|------|-------|--------|
+| State Management | HIGH | Zustand persist already used for auth, identical pattern |
+| Color Generation | HIGH | Hash + palette is trivial, no library needed |
+| Backend Integration | HIGH | Standard Axum + SQLx patterns already established |
+| Auto-assignment UI | HIGH | Dialog patterns exist, opt-out is simple countdown |
 
 ---
 
-## Summary
-
-**What to add:**
-1. `shadcn/ui AlertDialog` component (CLI install)
-2. Backend DELETE/PATCH routes for sites, materials, time entries
-
-**What NOT to add:**
-1. react-hook-form — existing controlled input pattern sufficient
-2. zod — backend validation handles errors
-3. Calendar library — custom calendar works, just needs onClick
-4. Any new testing libraries — Playwright patterns established
-
-**The milestone is primarily about wiring existing infrastructure, not adding new dependencies.**
+*Stack research for: Active Project Context (v1.7)*
+*Researched: 2026-04-30*

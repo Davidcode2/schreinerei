@@ -1,186 +1,192 @@
 # Project Research Summary
 
-**Project:** Schreinerei SaaS - v1.6 User Experience & Missing Functionality
-**Domain:** Construction management SaaS (CRUD operations, offline-first PWA)
+**Project:** Schreinerei — Construction Site Management SaaS
+**Domain:** Field Service / Construction — Active Project Context Feature (v1.7)
 **Researched:** 2026-04-30
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This milestone focuses on completing missing CRUD functionality (delete, edit, status transitions) in an existing construction management SaaS. The application uses a well-structured Hexagonal Architecture with DDD bounded contexts, and the existing infrastructure supports all planned features with minimal additions.
+This research covers adding a user-scoped "Active Baustelle" (construction site) context to an existing construction management SaaS. The feature enables workers to set their current project context, which then auto-assigns materials, tool reservations, and time entries to that project with minimal friction. Experts in this domain implement similar features using persistent UI indicators, opt-out dialogs with auto-confirm timers, and offline-first state management that syncs preferences across devices.
 
-The recommended approach is backend-first implementation: add missing DELETE/PATCH routes with soft-delete semantics, then build frontend UI components that follow established patterns (AlertDialog for confirmations, mode-prop dialogs for edit vs create). Key risks include foreign key constraint handling during deletes (users need clear error messages about why deletes fail), and status transition race conditions (needs database-level conditional updates).
+The recommended approach is a **two-phase implementation** using entirely existing libraries (no new dependencies). Store active site preference per-user in a dedicated `user_preferences` table (not in the User aggregate), cache locally with Zustand's persist middleware, and implement auto-assignment with a 5-second opt-out dialog. Key architectural decisions: keep TenantContext focused on auth, separate UserPreferences as its own aggregate, and use deterministic hash-based colors from site IDs rather than storing color values.
 
-Critical finding: Backend is missing DELETE/PATCH routes for sites, materials, and time entries. Fleet module has all routes but frontend doesn't use them. Low stock alerts exist in backend but have no UI visibility.
+The key risks are **context blindness** (users forget their active project) and **stale active project assignments** (project archived/deleted while user is offline). Both are mitigated through prominent color-coded UI indicators, validation during sync operations, and undo functionality for auto-assigned records. The 5-second opt-out dialog must be designed carefully to avoid becoming "wallpaper" that users dismiss without reading.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The milestone requires **minimal new dependencies**. The existing React + Rust + PostgreSQL stack handles all planned features. Only one frontend component addition is needed.
+**NO new dependencies required** — the feature can be implemented entirely with existing libraries already in the codebase. This significantly de-risks the implementation.
 
 **Core technologies:**
-- **AlertDialog (shadcn/ui)** — Delete confirmations — Standard shadcn pattern, install via `npx shadcn@latest add alert-dialog`
-- **React Query mutations** — Delete/update operations — Already in use, add optimistic updates for better UX
-- **Sonner toasts** — User feedback — Already integrated, extend to new operations
-- **Playwright E2E** — Testing — Already established patterns in `tests/helpers/`
-
-**NOT recommended:**
-- react-hook-form — Existing controlled input pattern is sufficient for simple dialogs
-- zod — Backend validation handles errors, add inline state locally instead
-- Calendar library — Custom calendar works, just needs onClick handlers
+- **Zustand 5.0.12 with persist middleware** — Active site state store — Already used for auth (`authStore.ts`), identical pattern applies
+- **Tailwind CSS 4.2.4 color palette** — Deterministic site colors — Hash site ID → index into predefined palette (rose, orange, amber, emerald, teal, cyan, blue, indigo, violet)
+- **TanStack Query 5.100.6** — API calls and cache invalidation — Already used, no changes needed
+- **Axum 0.8 + SQLx 0.8** — Backend API endpoints — Standard patterns already established
+- **ts-rs 12** — Type generation — Add DTOs for active site preference endpoints
 
 ### Expected Features
 
 **Must have (table stakes):**
-- Delete confirmation dialogs — Prevents accidental data loss, users expect this in all CRUD apps
-- Edit existing records — Users make mistakes, must be correctable
-- Inline validation feedback — Users need to know what's wrong BEFORE submitting
-- Hours > 0 validation — Fix BUG-TIME-001, zero/negative hours make no sense
-- Status transition buttons — If status exists, users expect to change it
+- **Persistent status indicator** — Badge/chip in header showing active Baustelle name + color (like Slack workspace indicator)
+- **Easy context switch** — Toggle on overview page + dashboard; dropdown in header as alternative
+- **Auto-assignment visibility** — Show "Wird gebucht auf: [Baustelle Name]" in dialogs; pre-fill field, allow change
+- **Single active project per user** — User-scoped, not global; one user = one active Baustelle at a time
+- **Opt-out capability** — Dialog shows pre-filled Baustelle with option to change or clear; 5-second auto-confirm
 
 **Should have (competitive):**
-- Low stock alerts (proactive) — Users know when to reorder without manual checks
-- Calendar click-to-create — Faster reservation creation via direct interaction
+- **Auto-assigned colors per Baustelle** — Visual distinction at a glance; hash-based from site ID
+- **Context-aware dashboard** — Filter by active Baustelle (defer to v1.8)
 
-**Defer (v1.7+):**
-- Undo for destructive actions — Requires soft-delete + restore, complexity deferred
-- Calendar overlap conflict details — Requires backend response changes
-- Bulk operations — Not needed for pilot
+**Defer (v2+):**
+- **Smart context suggestions** — GPS/calendar-based suggestions require significant integration work
+- **Context history** — Recently active Baustellen for quick switching (v1.8)
+- **Cross-device sync** — Already supported via backend preferences; explicit sync indicator is v1.8
+
+**Anti-features (avoid):**
+- Multiple active Baustellen (cognitive load, confusing UX)
+- Auto-switch based on GPS (GPS drift causes false positives)
+- Forced context with no opt-out (user frustration, workarounds emerge)
+- Global active Baustelle (different users work on different sites)
 
 ### Architecture Approach
 
-The application uses Hexagonal Architecture with three layers per module: API (routes.rs), Application (service.rs), Domain (entities, state machines), and Infrastructure (repository.rs). Each bounded context (iam, inventory, sites, fleet) is independent, enabling parallel development.
+The architecture follows a **modular monolith with DDD bounded contexts**. Active project context is a user preference (not request context), stored in a new `UserPreferences` aggregate within the IAM module. This separation prevents bloating the User aggregate and allows independent lifecycle management.
 
 **Major components:**
-1. **Backend API routes** — Add DELETE/PATCH for sites, materials, time entries following fleet module patterns
-2. **Frontend mutation hooks** — React Query hooks with optimistic updates for delete/update operations
-3. **Status state machines** — Existing `can_transition_to()` methods in domain, needs UI to trigger transitions
-4. **Soft delete layer** — Add `deleted_at` column to all deletable entities for audit trail
+1. **UserPreferences (IAM module)** — New aggregate storing `active_site_id`, `updated_at` per user/tenant; separate from User entity
+2. **preferencesStore (Frontend)** — Zustand store with localStorage persistence; syncs to backend on change
+3. **ActiveSiteIndicator component** — Persistent UI element showing current context with color; clickable for quick switch
+4. **Auto-assignment injection** — Frontend hooks inject `activeSiteId` into WithdrawDialog, ReservationDialog, TimeEntryDialog
+5. **Offline sync extension** — IndexedDB stores user-scoped preferences; sync queue includes site_id for pending actions
+
+**Key integration points:**
+- Reservation already has `site_id` field — just pre-fill from context
+- WithdrawMaterial MISSING `site_id` — requires migration to add column
+- TenantContext should NOT include active_site_id — it's preference, not auth context
 
 ### Critical Pitfalls
 
-1. **Delete without soft delete breaks audit trails** — Add `deleted_at` column before exposing delete API, never use hard delete in production
+1. **Stale Active Project Assignment** — User sets active project, goes offline for days, project gets archived by another user. All offline records become orphaned on sync. **Prevention:** Store `active_project_set_at` timestamp; validate project status during sync; show warning banner if project became invalid.
 
-2. **Foreign key constraints block deletes without clear UX** — Check dependencies before delete, return meaningful errors like "Cannot delete: 12 time entries exist. Archive instead?"
+2. **Context Blindness** — Users forget their active project and create entries for wrong project. Static indicators become "wallpaper." **Prevention:** Color-code ALL affected UI elements (not just indicator); show project name prominently in opt-out dialog; use color as background tint for affected forms.
 
-3. **Status transition race conditions** — Use database-level conditional updates (`WHERE status = 'confirmed'`) or version column to prevent concurrent modification
+3. **Auto-Assignment Without Easy Undo** — User realizes wrong project after deduction but has no quick way to fix. **Prevention:** Show toast with "Undo" button for 5-10 seconds after action; add "Reassign" button immediately visible; support inline project change.
 
-4. **Delete UI without confirmation leads to accidental data loss** — AlertDialog required for all delete operations, no default focus, specific item name in message
+4. **Offline Context Desynchronization** — Multiple users on shared device overwrite each other's context. **Prevention:** Store active project per user in IndexedDB with `user_id` key prefix; load user's preference on login; clear on logout.
 
-5. **Backend routes exist but frontend doesn't use them** — Fleet has DELETE routes for vehicles/tools but no UI buttons. Track API-UI gaps in issue tracker.
+5. **5-Second Dialog Fatigue** — Opt-out dialog appears on every deduction, users dismiss without reading. **Prevention:** Add "Don't ask again for this session" checkbox; track dismissal rate; consider showing opt-out only for suspicious patterns (different location than usual).
 
 ## Implications for Roadmap
 
 Based on research, suggested phase structure:
 
-### Phase 1: Bug Fixes (Low Risk)
-**Rationale:** No backend changes, immediate UX improvement, builds confidence
-**Delivers:** Hours validation fix, QR button wiring
-**Addresses:** BUG-TIME-001, BUG-INV-002
-**Avoids:** Pitfall 8 (validation only after submit)
+### Phase 1: Backend Foundation & User Preferences
 
-### Phase 2: Backend Delete Routes (Medium Risk)
-**Rationale:** Backend-first enables parallel frontend work, establishes patterns for remaining phases
-**Delivers:** DELETE routes for sites, materials, time entries with soft delete semantics
-**Uses:** Existing fleet module patterns, SQLx queries
-**Implements:** Soft delete with `deleted_at` column, dependency checks before delete
-**Avoids:** Pitfall 1 (no audit trail), Pitfall 2 (unclear FK errors)
+**Rationale:** Database schema changes and backend services must exist before frontend can store or retrieve active site preference. Validating site ownership and tenant scope requires backend logic first.
 
-### Phase 3: Backend Update Routes (Medium Risk)
-**Rationale:** Enables edit functionality, status transitions already validated by domain layer
-**Delivers:** PATCH routes for materials, time entries with partial update support
-**Uses:** Existing update patterns from sites module
-**Implements:** Conditional status transitions with version checking
-**Avoids:** Pitfall 4 (status race conditions)
+**Delivers:** 
+- `user_preferences` table with user-scoped `active_site_id`
+- `site_id` column added to `material_deductions` table
+- API endpoints: `GET/PATCH /api/v1/preferences/active-site`
+- Validation logic for site ownership and tenant scope
 
-### Phase 4: Frontend Delete UI (Low Risk)
-**Rationale:** Backend complete, reusable AlertDialog component first, then specific implementations
-**Delivers:** Delete buttons with confirmation dialogs for all entity types
-**Uses:** shadcn/ui AlertDialog, React Query mutations with optimistic updates
-**Avoids:** Pitfall 5 (accidental data loss), Pitfall 6 (unused backend routes)
+**Addresses:** 
+- Features: Single active project per user, Backend preference storage
+- Pitfalls: Stale active project (validation during set), Offline desync (user-scoped storage), Cross-device inconsistency (backend sync)
 
-### Phase 5: Frontend Edit UI (Medium Risk)
-**Rationale:** Refactor existing dialogs for edit mode, wire update mutations
-**Delivers:** Edit capability for time entries, reservations, materials
-**Uses:** Mode-prop pattern for create/edit dialogs
-**Avoids:** Pitfall 7 (dialog without mode distinction)
+**Avoids:** Anti-pattern of adding active_site to TenantContext
 
-### Phase 6: Status Transitions UI (Medium Risk)
-**Rationale:** Backend validates transitions, UI just needs to show valid options
-**Delivers:** Status transition buttons for reservations (Pending→Confirmed→InUse→Completed)
-**Uses:** Existing `can_transition_to()` state machine logic
-**Avoids:** Pitfall 12 (missing status UI), Pitfall 4 (race conditions via conditional updates)
+### Phase 2: Frontend UI & Auto-Assignment
 
-### Phase 7: Low Stock & Calendar Enhancements (Low Risk)
-**Rationale:** Backend and hooks exist, just needs UI components
-**Delivers:** Low stock badges/alerts, calendar click-to-create
-**Uses:** Existing `/api/v1/inventory/low-stock` endpoint, ReservationDialog
-**Avoids:** Pitfall 9 (unused low stock feature), Pitfall 10 (calendar without context)
+**Rationale:** With backend in place, frontend can implement state management, UI indicators, and auto-assignment hooks. This phase depends on Phase 1 API endpoints.
 
-### Phase 8: E2E Tests (Medium Risk)
-**Rationale:** Tests after implementation ensures coverage, catches integration issues
-**Delivers:** E2E tests for delete, edit, status transitions, calendar interactions
-**Uses:** Playwright, existing test helpers
-**Avoids:** All pitfalls verified through UI flow testing
+**Delivers:**
+- Zustand preferencesStore with localStorage persistence
+- ActiveSiteIndicator component (header chip with color)
+- "Als aktiv setzen" button on Baustellen list
+- Auto-assignment to WithdrawDialog, ReservationDialog, TimeEntryDialog
+- 5-second opt-out dialog with auto-confirm timer
+- Color generation utility (hash-based from site ID)
+- Toast notifications with undo option
+
+**Uses:** Zustand persist, TanStack Query for API calls, Tailwind color palette
+
+**Implements:** 
+- Architecture: preferencesStore, ActiveSiteIndicator, auto-assignment injection
+- Features: Persistent status indicator, Context switch toggle, Auto-assignment visibility, Opt-out capability, Color per Baustelle
+
+**Avoids:** Pitfalls of context blindness (color-coded UI), no undo (toast with undo), dialog fatigue (session-persisted dismissal)
+
+### Phase 3: Offline Enhancement & Validation (v1.8)
+
+**Rationale:** Offline scenarios and cross-device sync are important but not MVP-blocking. Phase 3 adds robustness after core functionality is validated.
+
+**Delivers:**
+- IndexedDB extension for user-scoped preferences cache
+- Sync protocol extension for preference synchronization
+- Validation during sync for stale active projects
+- Context-aware dashboard (filter by active Baustelle)
+- Context history (recently active Baustellen)
+
+**Uses:** IndexedDB (Dexie), existing sync infrastructure
+
+**Avoids:** Pitfall of cross-device context inconsistency
 
 ### Phase Ordering Rationale
 
-- **Backend before frontend:** Deleting entities requires backend routes with proper validation first
-- **Bug fixes first:** Immediate value, no dependencies, builds momentum
-- **Delete before edit:** Simpler operation, establishes confirmation patterns
-- **Status transitions late:** Requires both update routes and UI patterns to be solid
-- **Tests last:** Full coverage requires all features implemented
+- **Phase 1 first:** Backend schema changes are foundational; cannot test frontend without API
+- **Phase 2 second:** Depends on Phase 1 endpoints; delivers user-visible functionality
+- **Phase 3 later:** Offline robustness can be added incrementally; MVP works without it
+- **Grouping by layer:** Backend changes together, frontend changes together — cleaner commits and testing
+- **Color generation in Phase 2:** Trivial utility, no external dependencies, adds immediate user value
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 3 (Update routes):** Time entry update semantics — can users edit any field or only hours?
-- **Phase 6 (Status UI):** Permission model for status transitions — who can confirm/cancel?
+- **Phase 1:** IndexedDB schema for user-scoped preferences — need to verify Dexie versioning and migration strategy
+- **Phase 3:** Sync protocol extension — need to research WatermelonDB sync customization for preferences
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1 (Bug fixes):** Simple validation wiring, existing patterns
-- **Phase 4 (Delete UI):** AlertDialog pattern well-documented in shadcn/ui
-- **Phase 8 (E2E tests):** Playwright patterns already established in codebase
+- **Phase 1:** Backend CRUD for preferences — standard Axum + SQLx patterns, well-documented
+- **Phase 2:** Zustand store with persist — identical to existing authStore.ts pattern
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Existing infrastructure fully supports features, minimal additions needed |
-| Features | HIGH | Clear table stakes from CRUD patterns, specific bugs documented in issue backlog |
-| Architecture | HIGH | Well-structured codebase with established patterns to follow |
-| Pitfalls | HIGH | Based on codebase analysis + established CRUD/CRUD UX best practices |
+| Stack | HIGH | No new dependencies; all technologies already in use with established patterns |
+| Features | MEDIUM | Based on codebase analysis + UX patterns from similar apps (Slack, GitHub, Jira); needs user validation |
+| Architecture | HIGH | Based on thorough codebase analysis; existing integration points well-documented |
+| Pitfalls | HIGH | Based on Nielsen Norman heuristics, offline-first patterns, and WatermelonDB sync documentation |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-**Permission model:** Research doesn't clarify who can delete/edit what. During planning:
-- Define ownership rules (users can only edit own time entries? admins can edit all?)
-- Implement role checks in service layer
-
-**Offline sync strategy:** Known tech debt (no conflict resolution). Defer to v1.7+ as noted in PROJECT.md:
-- Queue soft-delete operations for offline sync
-- Implement tombstone pattern for deleted records
-
-**QR button destination:** BUG-INV-002 notes QR button has no onClick. During implementation:
-- Decide: opens scanner dialog or shows material QR code?
-- Check if QR scanning feature is fully designed
+- **Dialog fatigue validation:** Dismissal rate and optimal frequency need real-world testing. Plan A/B test during Phase 2.
+- **Color collision handling:** With 9 colors, collisions occur at 10+ active Baustellen. Need strategy for larger tenants (consider sequential assignment or user override).
+- **Work type edge case:** Time entries with `work_type: "travel"` shouldn't auto-assign to Baustelle. Logic is defined but needs E2E testing.
+- **Multi-device conflict resolution:** If user sets different active sites on different devices before sync, need explicit resolution strategy. Document in Phase 1 planning.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- **Codebase analysis** — Backend routes, domain logic, frontend dialogs, existing patterns
-- **shadcn/ui documentation** — AlertDialog component patterns
-- **NN/G Confirmation Dialog Guidelines** — UX best practices for destructive action confirmations
+- **Context7 `/pmndrs/zustand`** — persist middleware with custom storage, hydration patterns
+- **Existing codebase** — `frontend/src/lib/auth/authStore.ts` (Zustand persist pattern), `src/modules/*/domain/*.rs` (domain models), `frontend/src/lib/offline/queue.ts` (sync queue)
+- **Tailwind CSS docs** — https://tailwindcss.com/docs/customizing-colors — Default color palette
+- **Nielsen Norman Group** — "10 Usability Heuristics for User Interface Design" — Visibility of System Status, User Control and Freedom
 
 ### Secondary (MEDIUM confidence)
-- **ISSUE-BACKLOG.md** — Documented 24 gaps and bugs across modules
-- **PROJECT.md** — Known tech debt, offline-first architecture constraints
+- **Nielsen Norman Group** — "Confirmation Dialogs Can Prevent User Errors" — Guidelines on dialog overuse
+- **WatermelonDB Sync Documentation** — Limitations, conflict resolution patterns
+- **Offline First Community** (offlinefirst.org) — Principles for offline-capable applications
+- **UX patterns** — Slack workspace indicator, GitHub repository context, Jira project selector, Notion workspace switcher
 
 ### Tertiary (LOW confidence)
-- **State machine testing patterns** — Assumed based on domain layer structure, verify during implementation
+- **GPS auto-switch estimates** — Not viable for MVP due to GPS drift; defer to v2+ research
+- **Color collision frequency** — Theoretical estimate based on palette size; needs real-world validation
 
 ---
 *Research completed: 2026-04-30*

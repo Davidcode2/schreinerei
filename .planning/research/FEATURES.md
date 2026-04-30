@@ -1,8 +1,8 @@
-# Feature Research
+# Feature Research: Active Project Context
 
-**Domain:** CRUD Application UX Patterns (Delete, Edit, Status Workflows, Alerts)
+**Domain:** Active Baustelle (Construction Site) Context
 **Researched:** 2026-04-30
-**Confidence:** HIGH
+**Confidence:** MEDIUM (based on codebase analysis + UX patterns from similar apps)
 
 ## Feature Landscape
 
@@ -12,12 +12,11 @@ Features users assume exist. Missing these = product feels incomplete.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Delete confirmation dialog | Prevents accidental data loss. Standard in all CRUD apps since the 1980s. | LOW | AlertDialog component exists in shadcn/ui. Pattern: destructive variant, no default focus. |
-| Edit existing records | Users make mistakes. Must be correctable. Basic CRUD operation. | LOW | Requires: populate form with existing data, submit to PATCH endpoint. |
-| Inline validation feedback | Users need to know what's wrong BEFORE submitting. Generic toast errors after submit = poor UX. | MEDIUM | React state for field errors, display below inputs. TimeEntryDialog currently missing this. |
-| Hours > 0 validation | Zero/negative hours make no sense. Backend already rejects, frontend should prevent. | LOW | Add min={0.5} and disable submit when hours <= 0. TimeEntryDialog bug (BUG-TIME-001). |
-| Status transition buttons | If status exists, users expect to change it. Reservations have Pending→Confirmed→InUse→Completed. | MEDIUM | Requires UI for allowed transitions only. Backend enforces via state machine. |
-| Delete button visibility | If delete endpoint exists, button should be visible. Fleet has endpoints, UI missing. | LOW | Add to dropdown menu or list row actions. Use Trash icon. |
+| Persistent status indicator | Users need to know their current context at all times. Similar to Slack workspace indicator, GitHub repo switcher. | LOW | Badge/chip in header or bottom nav. Shows active Baustelle name + color. |
+| Easy context switch | Users work on multiple projects. Must be able to change active Baustelle quickly. | LOW | Toggle on overview page + dashboard. Dropdown in header as alternative. |
+| Auto-assignment visibility | When actions are auto-assigned, users must SEE this happening. Hidden automation = confusion. | MEDIUM | Show "Wird gebucht auf: [Baustelle Name]" in dialogs. Pre-fill field, allow change. |
+| Single active project per user | One user = one active Baustelle at a time. Industry standard for field workers. | LOW | Store in user preferences or session. User-scoped, not global. |
+| Opt-out capability | Sometimes user needs to book to different project. Must be able to override. | MEDIUM | Dialog shows pre-filled Baustelle with option to change or clear. 5-second auto-confirm with change/dismiss. |
 
 ### Differentiators (Competitive Advantage)
 
@@ -25,11 +24,11 @@ Features that set the product apart. Not required, but valuable.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Low stock alerts (proactive) | Users know when to reorder without checking inventory manually. Reduces stockouts. | MEDIUM | Backend has `is_low_stock` computed field and `/low-stock` endpoint. UI needs badge/warning. |
-| Calendar click-to-create | Faster reservation creation. Direct interaction vs navigating to separate form. | MEDIUM | CalendarView exists. Add onClick for empty slots, pre-fill resource + time. |
-| Overlap conflict details | Users see WHO has the resource booked, not just "not available." Better planning. | MEDIUM | Availability endpoint returns conflicts? If not, need to add to response. |
-| Undo for destructive actions | "Undo delete" for 30 seconds reduces anxiety. Not common in CRUD apps. | HIGH | Requires soft-delete + restore. Defer to v2. |
-| Bulk operations | Delete multiple items at once. Efficiency for power users. | HIGH | Not needed for pilot. |
+| Auto-assigned colors per Baustelle | Visual distinction at a glance. Reduces errors. "I'm on the blue project." | LOW | Hash-based color assignment from Baustelle name or ID. Store in Baustelle entity. |
+| Context-aware dashboard | When active Baustelle is set, dashboard shows project-specific data (hours, materials, reservations). | MEDIUM | Filter existing dashboard queries by active site_id. |
+| Smart context suggestions | Based on GPS location or calendar, suggest which Baustelle to activate. | HIGH | Requires GPS integration or calendar parsing. Defer to v2. |
+| Context history | "Recently active Baustellen" for quick switching. | LOW | Store last 5 active Baustellen per user. Show in dropdown. |
+| Cross-device sync | Active Baustelle syncs across mobile/tablet/desktop. | LOW | Store in backend user preferences, not localStorage. |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
@@ -37,275 +36,369 @@ Features that seem good but create problems.
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| "Are you sure?" for EVERY delete | Prevents accidental deletion | Overuse leads to automation blindness. Users click yes without reading. NN/G: "if you cry wolf too many times, people will stop paying attention" | Use confirmation only for destructive/irreversible actions. For recoverable items, just delete with toast "Deleted. Undo?" |
-| Delete confirmation typing "DELETE" | Extra safety for critical data | Overkill for non-critical items. Adds friction. | Reserve for truly dangerous operations (e.g., delete entire organization). Materials/sites not that critical. |
-| Real-time validation on every keystroke | Immediate feedback | Can be annoying for fields like hours where user is still typing. Validate on blur or after short debounce. | Validate on blur + on submit. |
-| Undo for ALL operations | Users feel safe | Massive complexity. Every operation needs reverse operation. | Implement for delete only (soft delete). Other operations can be re-edited. |
-| Confirm dialog default to "Yes" | Faster workflow | Defeats purpose of confirmation. User can tab+enter without reading. | No default. Force conscious choice. |
+| Multiple active Baustellen | "I work on multiple projects at once" | Cognitive load. Which Baustelle gets the material? Confusing UX. | Single active Baustelle. If truly working on multiple, switch context per action. |
+| Auto-switch based on GPS | "Phone knows which site I'm at" | GPS drift, indoor locations, multiple sites nearby. False positives frustrate users. | Manual switch with location hint ("Near Baustelle X, switch?"). |
+| Forced context (no opt-out) | "Ensures data quality" | User frustration when needing to book to different project. Workarounds emerge. | Pre-fill with easy override. 5-second confirmation dialog allows change. |
+| Global active Baustelle | "Everyone on same project" | Different users work on different sites. One size doesn't fit all. | Per-user active Baustelle. Team leads can see all active contexts if needed. |
+| Permanent assignment | "Always book to same Baustelle" | Forgets to change when switching projects. Data pollution. | Active Baustelle persists until changed, but shows indicator. Nudge to confirm on Mondays. |
 
 ## Feature Dependencies
 
 ```
-[Delete Button UI]
-    └──requires──> [DELETE API endpoint exists]
-                       └──requires──> [Soft delete OR cascade handling]
+[Active Baustelle Status Indicator]
+    └──requires──> [Backend: Store active_site_id per user]
+    └──requires──> [Frontend: User preferences context/hook]
 
-[Status Transition UI]
-    └──requires──> [PATCH endpoint for status field]
-    └──requires──> [State machine validation in backend]
-    └──requires──> [UI knows allowed transitions per current status]
+[Auto-Assignment to Material Withdrawals]
+    └──requires──> [Active Baustelle Status Indicator]
+    └──requires──> [Backend: Add site_id to WithdrawRequest]
+    └──requires──> [Database: Add site_id FK to material_deductions table]
+    └──enhances──> [WithdrawDialog: Pre-fill site_id, show "booking to X"]
 
-[Edit Dialog]
-    └──requires──> [PATCH endpoint exists]
-    └──requires──> [GET by ID to populate form]
-    └──requires──> [Form validation same as create]
+[Auto-Assignment to Reservations]
+    └──requires──> [Active Baustelle Status Indicator]
+    └──requires──> [ReservationDialog: Pre-fill site_id from context] ✓ site_id field exists
+    └──enhances──> [Reservation visibility: Show which Baustelle resources are booked for]
 
-[Inline Validation]
-    └──requires──> [Validation rules defined]
-    └──requires──> [Error state per field]
-    └──enhances──> [Submit button disabled state]
+[Auto-Assignment to Time Entries]
+    └──requires──> [Active Baustelle Status Indicator]
+    └──requires──> [TimeEntryDialog: Pre-fill site_id from context] ✓ site_id field exists
+    └──conflicts──> [work_type: workshop/travel/other] → Don't auto-assign for non-site work types
 
-[Low Stock Alerts UI]
-    └──requires──> [Backend is_low_stock field] ✓ EXISTS
-    └──requires──> [Low stock API endpoint] ✓ EXISTS at /api/v1/inventory/low-stock
+[Color Assignment per Baustelle]
+    └──requires──> [Backend: Add color field to Site entity]
+    └──requires──> [Frontend: Display color in status indicator]
+    └──enhances──> [Visual distinction in lists and calendar]
 
-[Calendar Click-to-Create]
-    └──requires──> [ReservationDialog component] ✓ EXISTS
-    └──requires──> [onClick handler for empty slots]
-    └──requires──> [Pre-fill resourceId, startTime from click position]
+[Opt-out Dialog]
+    └──requires──> [Active Baustelle Status Indicator]
+    └──requires──> [Dialog: 5-second auto-confirm with change/dismiss options]
 ```
 
 ### Dependency Notes
 
-- **Delete Button requires DELETE endpoint:** Sites and Materials lack DELETE endpoints. Must add to backend first.
-- **Time Entry Edit requires PATCH endpoint:** Time entries have no update/delete endpoints. Backend work needed.
-- **Status Transition UI requires state machine:** ReservationStatus already has `can_transition_to()` method. SiteStatus needs similar.
-- **Inline Validation enhances Submit:** Add field-level errors + disable submit when invalid. Prevents API errors.
-
-## Current Backend API Status
-
-| Resource | GET | POST | PATCH | DELETE | Notes |
-|----------|-----|------|-------|--------|-------|
-| Sites | ✓ | ✓ | ✓ | ✗ | Missing DELETE endpoint |
-| Materials | ✓ | ✓ | ✗ | ✗ | Missing PATCH and DELETE |
-| Vehicles | ✓ | ✓ | ✓ | ✓ | All CRUD ready |
-| Tools | ✓ | ✓ | ✓ | ✓ | All CRUD ready |
-| Reservations | ✓ | ✓ | ✓ | ✓ | DELETE = cancel (status change) |
-| Time Entries | ✓ | ✓ | ✗ | ✗ | Missing PATCH and DELETE |
+- **Material withdrawals need backend change:** Current `WithdrawRequest` only has `notes`, no `site_id`. Need to add FK to `material_deductions` table.
+- **Reservations and Time Entries already have site_id:** Frontend just needs to pre-fill from active context.
+- **work_type affects auto-assignment:** Only auto-assign when `work_type === "site"`. For workshop/travel/other, leave site_id empty.
+- **Color assignment:** Can be computed client-side from Baustelle ID (hash-based) OR stored in database. Recommendation: compute client-side for simplicity, no schema change.
 
 ## Expected Behavior by Feature
 
-### 1. Delete Confirmation Dialog
+### 1. Active Baustelle Status Indicator
 
-**Pattern:** AlertDialog (shadcn/ui) with destructive styling.
-
-```
-┌─────────────────────────────────────┐
-│  Material löschen                   │
-│                                     │
-│  Möchten Sie "Schrauben M6x20"      │
-│  wirklich löschen?                  │
-│                                     │
-│  Diese Aktion kann nicht rückgängig │
-│  gemacht werden.                    │
-│                                     │
-│  [Abbrechen]  [Löschen]             │
-│               (destructive)         │
-└─────────────────────────────────────┘
-```
-
-**Implementation Notes:**
-- Use AlertDialog component from shadcn/ui
-- Button variants: outline (cancel), destructive (delete)
-- No default focus (user must consciously choose)
-- Specific item name in message (per NN/G guidelines)
-- Toast on success: "Material gelöscht"
-
-**Complexity:** LOW — AlertDialog exists, pattern straightforward.
-
-### 2. Edit Dialog (Existing Records)
-
-**Pattern:** Reuse create dialog with pre-populated data.
-
-```
-┌─────────────────────────────────────┐
-│  Material bearbeiten                │
-│                                     │
-│  Name: [Schrauben M6x20    ]       │
-│  Menge: [150              ]        │
-│  Min. Bestand: [50       ]         │
-│                                     │
-│  [Abbrechen]  [Speichern]          │
-└─────────────────────────────────────┘
-```
-
-**Implementation Notes:**
-- Dialog should accept `mode: 'create' | 'edit'` and `initialData?: Material`
-- On edit: populate form with existing values
-- Submit to PATCH endpoint with partial update
-- Toast on success: "Material aktualisiert"
-
-**Complexity:** LOW — Reuse existing dialog, add mode prop.
-
-### 3. Status Transition Workflow (Reservations)
-
-**State Machine:**
-```
-                    ┌──────────────┐
-                    │   Pending    │
-                    └──────┬───────┘
-                           │
-              ┌────────────┼────────────┐
-              ▼            │            ▼
-        ┌──────────┐       │      ┌───────────┐
-        │Cancelled │       │      │ Confirmed │
-        └──────────┘       │      └─────┬─────┘
-                           │            │
-                           │      ┌─────┼─────┐
-                           │      ▼           ▼
-                           │  ┌────────┐  ┌────────┐
-                           │  │ InUse  │  │Cancelled│
-                           │  └────┬───┘  └────────┘
-                           │       │
-                           │       ▼
-                           │  ┌───────────┐
-                           └─►│ Completed │
-                              └───────────┘
-```
-
-**UI Pattern:** Status badge + dropdown menu for allowed transitions.
+**Pattern:** Persistent chip/badge in header or bottom navigation.
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  Reservierung #1234                             │
-│  Status: [Bestätigt ▼]                          │
-│          ├── Starten (→ InUse)                  │
-│          └── Stornieren (→ Cancelled)           │
+│  Schreinerei App                    [🏠 Müller] │  ← Header with active Baustelle
+│                                     (blue chip)  │
+├─────────────────────────────────────────────────┤
+│  Dashboard                                       │
+│  ...                                             │
+└─────────────────────────────────────────────────┘
+```
+
+**Alternative (Mobile Bottom Nav):**
+```
+┌─────────────────────────────────────────────────┐
+│  Content...                                      │
+│                                                  │
+├─────────────────────────────────────────────────┤
+│  [Home] [Inventar] [Baustellen] [Fuhrpark]       │
+│                    ▲                             │
+│                    └── Active: Müller (blue)     │
 └─────────────────────────────────────────────────┘
 ```
 
 **Implementation Notes:**
-- Badge color per status (pending=yellow, confirmed=blue, in_use=green, completed=gray, cancelled=red)
-- Dropdown shows only valid transitions (use `can_transition_to()` logic)
-- Call PATCH `/api/v1/fleet/reservations/{id}` with `{status: "in_use"}`
+- Store `activeSiteId` in React context + backend user preferences
+- Fetch on app load, persist on change
+- Color = hash of site ID (consistent across sessions)
+- Clicking opens quick-switch dropdown
 
-**Complexity:** MEDIUM — State machine logic, multiple UI states.
+**Complexity:** LOW — Standard UI pattern, context management.
 
-### 4. Low Stock Alerts
+### 2. Context Switch Toggle
 
-**Pattern:** Badge + dedicated section.
+**Pattern:** Two locations for switching:
 
-```
-┌─────────────────────────────────────┐
-│  Inventar                    [⚠️ 3] │
-├─────────────────────────────────────┤
-│  Schrauben M6x20                    │
-│  Bestand: 15 (Min: 50) ⚠️          │
-│                                     │
-│  Dübel 8mm                          │
-│  Bestand: 0 (Min: 100) 🔴          │
-└─────────────────────────────────────┘
-```
-
-**Implementation Notes:**
-- Badge in navigation showing count of low-stock items
-- Yellow badge for low stock, red for zero stock
-- Dedicated "Nachbestellen" section showing all low-stock
-- Backend already has `/api/v1/inventory/low-stock` endpoint
-
-**Complexity:** MEDIUM — Needs new UI component, notification logic.
-
-### 5. Inline Validation Feedback
-
-**Pattern:** Error message below field, red border, disabled submit.
+1. **Baustellen Overview Page:** Each Baustelle row has "Als aktiv setzen" button
+2. **Dashboard:** Quick-switch dropdown or button
 
 ```
-┌─────────────────────────────────────┐
-│  Zeit buchen                        │
-│                                     │
-│  Stunden: [0        ]               │
-│           ▲ Stunden muss > 0 sein   │
-│                                     │
-│  [Abbrechen]  [Speichern]           │
-│               (disabled)            │
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  Baustellen                          [Müller ▼] │  ← Current active shown
+├─────────────────────────────────────────────────┤
+│  Renovierung Müller                              │
+│  Kunde: Familie Müller                           │
+│  Status: Aktiv                                   │
+│  [Als aktiv setzen] ← Only shown if not active   │
+│                                                  │
+│  Neubau Schmidt                                  │
+│  Kunde: Herr Schmidt                             │
+│  Status: Geplant                                 │
+│  [Als aktiv setzen]                              │
+└─────────────────────────────────────────────────┘
 ```
 
 **Implementation Notes:**
-- Track `errors` state object: `{ hours: "Stunden muss > 0 sein" }`
-- Validate on blur + on change (after first blur)
-- Disable submit when any error exists
-- Red border on input with error
-- Use `<p className="text-sm text-destructive">` for error text
+- Button only shown for Baustellen with status `active` (not `planned`, `completed`, `archived`)
+- On click: Update active context, show toast "Aktive Baustelle: Müller"
+- Refresh any context-dependent views
 
-**Complexity:** MEDIUM — Need error state management, validation logic.
+**Complexity:** LOW — Simple state update + UI feedback.
 
-## MVP Definition for v1.6
+### 3. Auto-Assignment with Opt-out Dialog
+
+**Pattern:** Pre-fill + 5-second confirmation with change/dismiss.
+
+**Scenario: Material Withdrawal**
+```
+┌─────────────────────────────────────────────────┐
+│  Material entnehmen                              │
+│  Entnahme von Schrauben M6x20                    │
+│                                                  │
+│  Menge: [5]                                      │
+│                                                  │
+│  ┌─────────────────────────────────────────────┐ │
+│  │ 📍 Wird gebucht auf: Müller (aktiv)        │ │
+│  │    [Ändern] [Ohne Baustelle]               │ │
+│  └─────────────────────────────────────────────┘ │
+│                                                  │
+│  Notiz: (optional)                               │
+│  [________________________________]              │
+│                                                  │
+│  Wird automatisch bestätigt in 5...              │
+│                                                  │
+│  [Abbrechen]  [5 Stück entnehmen]                │
+└─────────────────────────────────────────────────┘
+```
+
+**Behavior:**
+1. Dialog opens with active Baustelle pre-selected
+2. Shows "Wird gebucht auf: [Name]" message
+3. User can:
+   - Click "Ändern" to select different Baustelle
+   - Click "Ohne Baustelle" to clear assignment
+   - Wait 5 seconds for auto-confirm
+   - Click "Entnehmen" to confirm immediately
+4. On auto-confirm or manual confirm: Submit with site_id
+
+**Implementation Notes:**
+- Timer resets if user interacts (changes Baustelle, types in notes)
+- "Ändern" opens Baustelle selector dropdown
+- Store site_id in withdrawal record
+
+**Complexity:** MEDIUM — Timer logic, multiple interaction paths.
+
+### 4. Work Type Logic for Time Entries
+
+**Pattern:** Auto-assign only for `work_type: "site"`.
+
+```
+┌─────────────────────────────────────────────────┐
+│  Zeit buchen                                     │
+│                                                  │
+│  Art der Arbeit:                                 │
+│  [Baustelle] [Werkstatt] [Fahrt] [Sonstiges]    │
+│     ▲                                            │
+│     └── Selected → Auto-assign to active Baustelle
+│                                                  │
+│  If "Baustelle" selected:                        │
+│  ┌─────────────────────────────────────────────┐ │
+│  │ 📍 Baustelle: Müller (aktiv)               │ │
+│  │    [Ändern]                                │ │
+│  └─────────────────────────────────────────────┘ │
+│                                                  │
+│  If other work type selected:                    │
+│  (No Baustelle field shown)                      │
+│                                                  │
+│  Stunden: [4]                                    │
+│  Datum: [2024-04-30]                             │
+│                                                  │
+│  [Abbrechen]  [Buchen]                           │
+└─────────────────────────────────────────────────┘
+```
+
+**Implementation Notes:**
+- Only show Baustelle selector when `work_type === "site"`
+- Pre-fill with active Baustelle
+- If user switches work_type to non-site, clear site_id
+
+**Complexity:** LOW — Conditional UI, existing site_id field.
+
+### 5. Color Assignment per Baustelle
+
+**Pattern:** Hash-based color from Baustelle ID.
+
+```typescript
+// Generate consistent color from ID
+function getBaustelleColor(id: string): string {
+  const colors = [
+    '#3B82F6', // blue
+    '#10B981', // green
+    '#F59E0B', // amber
+    '#EF4444', // red
+    '#8B5CF6', // purple
+    '#EC4899', // pink
+    '#06B6D4', // cyan
+    '#84CC16', // lime
+  ]
+  
+  // Simple hash
+  let hash = 0
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return colors[Math.abs(hash) % colors.length]
+}
+```
+
+**Implementation Notes:**
+- Client-side computation, no database change
+- Use in status indicator chip, calendar events, list badges
+- Ensure contrast with white text (all colors above are dark enough)
+
+**Complexity:** LOW — Pure function, no state.
+
+## Backend Changes Required
+
+| Table | Change | Migration |
+|-------|--------|-----------|
+| `material_deductions` | Add `site_id UUID NULL` with FK to `sites` | Yes |
+| `users` (or new table) | Add `active_site_id UUID NULL` with FK to `sites` | Yes |
+
+**Alternative for user active site:**
+- Store in `user_preferences` table (JSONB field)
+- Or new `active_contexts` table for flexibility
+
+**API Changes:**
+- `GET /api/v1/users/me/preferences` — Returns `{ active_site_id: string | null }`
+- `PATCH /api/v1/users/me/preferences` — Update active site
+- `WithdrawRequest` — Add optional `site_id` field
+- Material deduction response — Include `site_id` and `site_name`
+
+## MVP Definition for v1.7
 
 ### Launch With (This Milestone)
 
-- [x] Hours > 0 validation (TimeEntryDialog) — Fix BUG-TIME-001
-- [x] Delete confirmation dialogs — Sites, Materials, Vehicles, Tools
-- [x] Edit capability — Time entries, Reservations (backend endpoints needed for time)
-- [x] Status transition UI — Reservations (Confirmed→InUse→Completed, Cancel)
-- [x] Low stock badge/alert — Show in inventory list
+- [x] Backend: Add `active_site_id` to user preferences
+- [x] Backend: Add `site_id` to material deductions
+- [x] Frontend: Active Baustelle status indicator (header chip)
+- [x] Frontend: Toggle to set active Baustelle (overview + dashboard)
+- [x] Frontend: Auto-assign to reservations (pre-fill site_id)
+- [x] Frontend: Auto-assign to time entries (when work_type = site)
+- [x] Frontend: Auto-assign to material withdrawals (new site_id field)
+- [x] Frontend: Opt-out dialog with 5-second auto-confirm
+- [x] Frontend: Color assignment per Baustelle (hash-based)
 
 ### Implementation Order
 
-1. **Backend:** Add missing DELETE/PATCH endpoints (Sites, Materials, Time Entries)
-2. **Frontend:** Delete confirmation dialogs (reuse AlertDialog)
-3. **Frontend:** Edit dialogs (extend existing dialogs with mode prop)
-4. **Frontend:** Inline validation (TimeEntryDialog first)
-5. **Frontend:** Status transition dropdown (Reservations)
-6. **Frontend:** Low stock badge (InventoryListPage)
-7. **E2E:** Tests for all new operations
+1. **Backend:** Add migrations for `active_site_id` and `material_deductions.site_id`
+2. **Backend:** Add user preferences endpoints (GET/PATCH)
+3. **Backend:** Update `WithdrawRequest` DTO and handler
+4. **Frontend:** Create `ActiveContextProvider` with React context
+5. **Frontend:** Add status indicator chip to header
+6. **Frontend:** Add "Als aktiv setzen" button to Baustellen list
+7. **Frontend:** Update WithdrawDialog with site_id pre-fill + opt-out
+8. **Frontend:** Update ReservationDialog with site_id pre-fill
+9. **Frontend:** Update TimeEntryDialog with conditional site_id pre-fill
+10. **Frontend:** Add color utility function
+11. **E2E:** Test active context flow end-to-end
 
-### Add After Validation (v1.7)
+### Add After Validation (v1.8)
 
-- [ ] Calendar click-to-create — Enhances reservation UX
-- [ ] Overlap conflict details — Requires backend change
-- [ ] Undo for delete — Requires soft-delete implementation
+- [ ] Context-aware dashboard (filter by active Baustelle)
+- [ ] Context history (recently active Baustellen)
+- [ ] Cross-device sync (backend preferences)
 
 ### Future Consideration (v2+)
 
-- [ ] Bulk operations — Not needed for pilot
-- [ ] Audit log for deletions — Compliance feature
-- [ ] Archive vs delete — Soft-delete with recovery
+- [ ] Smart context suggestions (GPS/calendar)
+- [ ] Team context visibility (see who's on which Baustelle)
+- [ ] Context-based notifications (alerts for active Baustelle)
 
 ## Feature Prioritization Matrix
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Delete confirmation dialog | HIGH | LOW | P1 |
-| Hours validation fix | HIGH | LOW | P1 |
-| Edit time entries | HIGH | MEDIUM | P1 |
-| Edit reservations | HIGH | LOW | P1 |
-| Status transition UI | MEDIUM | MEDIUM | P2 |
-| Low stock alerts | MEDIUM | MEDIUM | P2 |
-| Inline validation feedback | MEDIUM | MEDIUM | P2 |
-| Calendar click-to-create | LOW | MEDIUM | P3 |
-| Overlap conflict details | LOW | MEDIUM | P3 |
-| Undo delete | LOW | HIGH | P3 |
+| Active Baustelle indicator | HIGH | LOW | P1 |
+| Context switch toggle | HIGH | LOW | P1 |
+| Auto-assign to reservations | HIGH | LOW | P1 |
+| Auto-assign to time entries | HIGH | LOW | P1 |
+| Auto-assign to withdrawals | HIGH | MEDIUM | P1 |
+| Opt-out dialog | HIGH | MEDIUM | P1 |
+| Color per Baustelle | MEDIUM | LOW | P2 |
+| Context-aware dashboard | MEDIUM | MEDIUM | P3 |
+| Context history | LOW | LOW | P3 |
+| Smart suggestions | LOW | HIGH | P3 |
 
 **Priority key:**
-- P1: Must have for this milestone (blocking issues)
-- P2: Should have, add in this milestone
+- P1: Must have for this milestone (core functionality)
+- P2: Should have, add when possible
 - P3: Nice to have, future consideration
+
+## Integration with Existing Code
+
+### Files to Modify
+
+| File | Change |
+|------|--------|
+| `frontend/src/lib/ActiveContext.tsx` | New file: Context provider + hook |
+| `frontend/src/components/layout/Header.tsx` | Add status indicator chip |
+| `frontend/src/pages/sites/SitesListPage.tsx` | Add "Als aktiv setzen" button |
+| `frontend/src/pages/inventory/WithdrawDialog.tsx` | Add site_id field + opt-out UI |
+| `frontend/src/pages/fleet/ReservationDialog.tsx` | Pre-fill site_id from context |
+| `frontend/src/pages/sites/TimeEntryDialog.tsx` | Conditional site_id pre-fill |
+| `src/modules/inventory/domain/entities.rs` | Add `site_id` to MaterialDeduction |
+| `src/modules/iam/domain/user_preferences.rs` | New file: Active context preferences |
+| `src/modules/inventory/application/handlers.rs` | Update withdraw handler |
+
+### New Files to Create
+
+| File | Purpose |
+|------|---------|
+| `frontend/src/lib/ActiveContext.tsx` | React context for active Baustelle |
+| `frontend/src/hooks/useActiveBaustelle.ts` | Hook to access/update active context |
+| `frontend/src/utils/baustelleColor.ts` | Color generation from ID |
+| `src/db/migrations/XXX_add_site_to_deductions.sql` | Migration for material_deductions.site_id |
+| `src/db/migrations/XXX_add_active_site_to_users.sql` | Migration for user preferences |
+
+## Edge Cases and Error Handling
+
+| Scenario | Expected Behavior |
+|----------|-------------------|
+| Active Baustelle is archived | Clear active context, show notification "Baustelle wurde archiviert" |
+| User has no active Baustelle | Show "Keine aktive Baustelle" in indicator, no auto-assignment |
+| Baustelle deleted while active | Same as archived — clear context, notify |
+| Multiple devices, different active Baustelle | Last write wins (backend preferences sync) |
+| User changes active Baustelle mid-dialog | Dialog keeps original Baustelle (snapshot on open) |
+| Offline mode | Use cached active Baustelle, sync on reconnect |
 
 ## Sources
 
-- **NN/G Confirmation Dialog Guidelines:** https://www.nngroup.com/articles/confirmation-dialog/
-  - "Use specific information that allows users to understand the effects of their action"
-  - "Do not use confirmation dialogs for routine actions"
-  - "Avoid giving confirmation dialogs a default Yes answer"
-  - "Instead of Yes/No, provide response options that summarize what will happen"
-- **Existing Codebase Analysis:**
-  - shadcn/ui Dialog and AlertDialog components
-  - ReservationDialog, TimeEntryDialog patterns
-  - Backend API routes status (routes.rs files)
-  - ReservationStatus state machine (common/types.rs)
-- **Issue Backlog:** .planning/ISSUE-BACKLOG.md (24 documented issues)
+- **Codebase Analysis:**
+  - `frontend/src/pages/inventory/WithdrawDialog.tsx` — Current withdrawal flow
+  - `frontend/src/pages/fleet/ReservationDialog.tsx` — Reservation with site_id field
+  - `frontend/src/pages/sites/TimeEntryDialog.tsx` — Time entry with site_id field
+  - `frontend/src/types/inventory.ts` — WithdrawRequest DTO (no site_id)
+  - `frontend/src/types/fleet.ts` — Reservation has site_id field
+  - `frontend/src/types/sites.ts` — TimeEntry has site_id field
+
+- **UX Patterns:**
+  - Slack workspace indicator (persistent, clickable, color-coded)
+  - GitHub repository context (visible in header, quick switch)
+  - Jira project selector (dropdown with search)
+  - Notion workspace switcher (persistent, colorful)
+
+- **PROJECT.md Requirements:**
+  - Status indicator showing which Baustelle is active
+  - Auto-assigned colors per Baustelle
+  - Toggle to set active Baustelle (overview + dashboard)
+  - Single active Baustelle per user (user-scoped)
+  - Auto-assignment: material deductions and tool reservations
+  - Opt-out dialog: 5-second confirmation with change/dismiss
 
 ---
-*Feature research for: Schreinerei v1.6 UX & Missing Functionality*
+*Feature research for: Schreinerei v1.7 Active Project Context*
 *Researched: 2026-04-30*

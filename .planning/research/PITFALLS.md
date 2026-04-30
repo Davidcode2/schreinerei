@@ -1,560 +1,278 @@
-# Domain Pitfalls: Adding Delete/Edit/Status Transitions to Existing CRUD App
+# Pitfalls Research: Active Project Context
 
-**Project:** Schreinerei SaaS v1.6
-**Domain:** Construction management SaaS with offline-first PWA
+**Domain:** Field Service / Construction App — Adding User-Scoped Active Project Context
 **Researched:** 2026-04-30
-**Confidence:** HIGH (based on codebase analysis + established patterns)
-
----
+**Confidence:** HIGH (based on Nielsen Norman heuristics, offline-first patterns, and WatermelonDB sync documentation)
 
 ## Critical Pitfalls
 
-### Pitfall 1: Delete Without Soft Delete Breaks Audit Trails
+### Pitfall 1: Stale Active Project Assignment
 
 **What goes wrong:**
-Hard delete permanently removes records. Users accidentally delete sites, materials, or reservations, losing historical data (time entries, stock withdrawal history, reservation patterns). Cannot recover from mistakes.
+User sets active project on Monday, works offline all week, then syncs on Friday. Meanwhile, the project was archived or deleted by another user. All material deductions and reservations created offline are now orphaned or rejected.
 
 **Why it happens:**
-Developers start with simple `DELETE FROM` thinking "users won't make mistakes." Later, business requirements for audit trails emerge but data is already gone.
+Offline-first apps cannot validate referential integrity during offline operations. Developers assume "active project" is always valid because it was valid when set.
 
 **How to avoid:**
-- Add `deleted_at` timestamp column to all deletable entities
-- Modify queries to exclude `WHERE deleted_at IS NULL`
-- Keep FK constraints intact (soft-deleted records still satisfy FKs)
-- Implement `restore` endpoint for accidental deletions
+- Store `active_project_set_at` timestamp alongside `active_project_id`
+- On sync, validate active project still exists and is active status
+- Show warning banner if active project became invalid during offline period
+- Provide "resolve conflicts" UI showing affected records with reassignment options
 
 **Warning signs:**
-- Backend has `DELETE` routes (fleet has them) but no `deleted_at` column
-- Users ask "can I undo this?" before deleting
-- Time entries reference deleted sites → orphaned records
+- Long offline periods before sync
+- Users reporting "my deductions disappeared"
+- Foreign key constraint violations on sync
 
-**Phase to address:** Backend delete implementation phase (before UI)
+**Phase to address:** Phase 1 (Backend & Sync Logic) — requires validation during pushChanges
 
 ---
 
-### Pitfall 2: Foreign Key Constraints Block Deletes Without Clear UX
+### Pitfall 2: Context Blindness (Users Forget Active Project)
 
 **What goes wrong:**
-User tries to delete a site that has time entries, or a vehicle with active reservations. Backend returns FK violation error, frontend shows generic "Delete failed" toast. User doesn't understand WHY delete failed.
+Users set active project, then navigate to other tasks. By the time they deduct materials, they've forgotten which project is active and create entries for the wrong project. The UI indicator becomes "wallpaper" that users stop noticing.
 
 **Why it happens:**
-Database FK constraints exist but aren't checked before delete attempt. Frontend doesn't know what "dependent entities" exist.
+Nielsen Norman Heuristic #1 (Visibility of System Status) requires persistent, meaningful feedback. Static indicators lose salience over time. Users develop "banner blindness" — same reason cookie banners are ignored.
 
 **How to avoid:**
-1. **Before delete, check dependencies:**
-   ```rust
-   // In service layer, before delete
-   let has_time_entries = repo.has_time_entries(site_id).await?;
-   if has_time_entries {
-       return Err(AppError::Conflict("Site has time entries. Archive instead?"));
-   }
-   ```
-
-2. **Return dependency info to frontend:**
-   ```typescript
-   // DELETE response
-   { 
-     success: false, 
-     error: "CONFLICT",
-     dependencies: { time_entries: 12, activities: 3 }
-   }
-   ```
-
-3. **UI shows clear message:** "Cannot delete: 12 time entries exist. Archive site instead?"
+- Color-code ALL relevant UI elements when active project is set (not just indicator)
+- Use the project's auto-assigned color as background tint for affected forms
+- Show project name prominently in the opt-out dialog (not just "Current Project")
+- Consider subtle visual "pulse" or badge when context affects current action
+- Add project name to confirmation messages: "Material deducted to [Project Name]"
 
 **Warning signs:**
-- Delete button exists but sometimes fails silently
-- Users report "delete doesn't work"
-- Database logs show FK constraint violations
+- Support tickets about "wrong project assignments"
+- Users asking "which project am I on?"
+- High rate of deduction reassignments after the fact
 
-**Phase to address:** Backend delete implementation (dependency checks)
+**Phase to address:** Phase 2 (Frontend UI) — indicator visibility and color coding
 
 ---
 
-### Pitfall 3: Offline Delete Sync Conflicts
+### Pitfall 3: Auto-Assignment Without Easy Undo
 
 **What goes wrong:**
-User A deletes a vehicle while offline. User B creates a reservation for that vehicle. When A syncs, the vehicle is deleted but B's reservation now references a non-existent vehicle. OR: Both users edit the same reservation offline → last-write-wins, losing changes.
+User scans QR code to deduct material. System auto-assigns to active project. User realizes wrong project but has no quick way to fix it. Must navigate to separate screen, find the record, edit, and reassign. Many users just leave it wrong.
 
 **Why it happens:**
-Offline-first apps queue operations in IndexedDB. No conflict resolution strategy exists. Sync applies operations in arrival order, not causal order.
-
-**Current state (from PROJECT.md):**
-> "No conflict resolution for offline edits" — Known tech debt
+Nielsen Norman Heuristic #3 (User Control and Freedom) requires "emergency exits." Auto-assignment is a convenience that becomes a trap without easy reversal. The 5-second opt-out dialog is pre-action, not post-action correction.
 
 **How to avoid:**
-1. **Soft delete prevents orphan FKs:** Deleted records still exist, satisfy FK constraints
-2. **Version vectors or timestamps:** Add `version` column, reject updates with stale version
-   ```rust
-   UPDATE reservations SET ... WHERE id = $1 AND version = $2
-   // If 0 rows affected → conflict occurred
-   ```
-3. **Conflict detection in sync:**
-   ```typescript
-   // In sync worker
-   if (serverVersion > localVersion) {
-     // Prompt user or auto-merge
-   }
-   ```
-4. **Tombstone for deletes:** Sync `deleted_at` timestamp, not actual delete
+- Add "Reassign" button immediately visible after auto-assignment
+- Show toast notification with "Undo" button for 5-10 seconds after action
+- Support inline project change on the deduction confirmation screen
+- Log recent assignments to allow bulk reassignment if user realizes systematic error
 
 **Warning signs:**
-- Offline operations occasionally fail on sync
-- Users report "my changes disappeared"
-- Data inconsistency between devices
+- High rate of edit operations on recently created records
+- Users complaining "too many clicks to fix"
+- Support requests for bulk reassignment
 
-**Phase to address:** Offline sync refactor (defer to v1.7+ as per tech debt)
+**Phase to address:** Phase 2 (Frontend UI) — undo/redo and reassignment UX
 
 ---
 
-### Pitfall 4: Status Transition Race Conditions
+### Pitfall 4: Offline Context Desynchronization
 
 **What goes wrong:**
-Two users view same reservation (status: Confirmed). User A clicks "Start Use", User B clicks "Cancel". Both requests hit backend. Depending on order, status ends up in wrong state or one user sees error.
+User A sets active project to "Kitchen Renovation" while offline. User A's colleague (User B) also offline, sets active project to "Bathroom Renovation" on same device (shared tablet). Both users create records. On sync, context is overwritten or conflicts.
 
 **Why it happens:**
-No optimistic locking. Backend checks `can_transition_to()` but between check and update, another request changes status.
-
-**Current code (reservation.rs:37-55):**
-```rust
-pub fn can_transition_to(&self, new_status: ReservationStatus) -> bool {
-    // This checks CURRENT state, not concurrent state
-}
-```
+Active project is user-scoped, but IndexedDB is device-scoped. Multi-user device scenarios create "last write wins" problems for user preferences.
 
 **How to avoid:**
-1. **Database-level check in UPDATE:**
-   ```sql
-   UPDATE reservations 
-   SET status = 'in_use', version = version + 1
-   WHERE id = $1 AND status = 'confirmed'  -- Conditional update
-   -- If 0 rows affected, status changed by another transaction
-   ```
-
-2. **Or use version column:**
-   ```sql
-   UPDATE reservations 
-   SET status = $1, version = version + 1
-   WHERE id = $2 AND version = $3
-   -- If 0 rows, another client modified it
-   ```
-
-3. **Frontend refreshes on conflict:**
-   ```typescript
-   try {
-     await updateReservation(...)
-   } catch (ConflictError) {
-     toast.error("Reservation was modified. Refreshing...")
-     refetch()
-   }
-   ```
+- Store active project per user in a `user_preferences` table with `user_id` FK
+- Include `user_id` in IndexedDB storage key: `active_project:{user_id}`
+- On login, load user's active project from server if available
+- Handle logout by clearing active project from IndexedDB
+- Consider: should active project persist across logout/login on same device?
 
 **Warning signs:**
-- Intermittent "invalid status transition" errors
-- Status shows one thing in list, another in detail view
-- Users report "I clicked but nothing happened"
+- Users on shared devices seeing wrong context
+- "My settings changed" reports
+- Context switching unexpectedly after sync
 
-**Phase to address:** Backend status transition implementation
+**Phase to address:** Phase 1 (Backend & IndexedDB Schema) — user-scoped storage
 
 ---
 
-### Pitfall 5: Delete UI Without Confirmation Leads to Accidental Data Loss
+### Pitfall 5: The 5-Second Opt-Out Dialog Becomes Annoyance
 
 **What goes wrong:**
-User accidentally clicks delete button (fat finger, double-click). Data immediately gone. No undo. User frustration, support tickets.
+Opt-out dialog appears on every deduction. User dismisses it automatically without reading. Same problem as Pitfall 2 — automated behavior defeats the purpose. NN/G warns that overused confirmations "lose their power to prevent errors."
 
 **Why it happens:**
-Delete button implemented as simple `onClick={handleDelete}` without confirmation dialog. "Delete quickly" sounds efficient until accidents happen.
+Nielsen Norman research shows confirmation dialogs must be for "serious consequences" and "not routine actions." Material deduction is a routine action for field workers. Repeated confirmations become muscle memory.
 
 **How to avoid:**
-1. **Confirmation dialog for destructive actions:**
-   ```tsx
-   <AlertDialog>
-     <AlertDialogTrigger asChild>
-       <Button variant="destructive">Löschen</Button>
-     </AlertDialogTrigger>
-     <AlertDialogContent>
-       <AlertDialogHeader>
-         <AlertDialogTitle>Site wirklich löschen?</AlertDialogTitle>
-         <AlertDialogDescription>
-           Diese Aktion kann nicht rückgängig gemacht werden.
-         </AlertDialogDescription>
-       </AlertDialogHeader>
-       <AlertDialogFooter>
-         <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-         <AlertDialogAction onClick={handleDelete}>Löschen</AlertDialogAction>
-       </AlertDialogFooter>
-     </AlertDialogContent>
-   </AlertDialog>
-   ```
-
-2. **Type-to-confirm for critical deletions:**
-   ```
-   Type the site name "Müller Baustelle" to confirm deletion:
-   [_________________________]
-   [Delete] [Cancel]
-   ```
+- Only show opt-out dialog if active project is set AND user hasn't dismissed in last N actions
+- Add "Don't ask again for this session" checkbox
+- Track dismissal rate — if >90%, reduce frequency
+- Consider: show opt-out ONLY when context seems suspicious (different location than usual, new material type)
+- Use progressive disclosure: show project name in form, dialog only on explicit "Change" action
 
 **Warning signs:**
-- Delete button is same size/prominence as edit button
-- No AlertDialog component imported in list pages
-- Users ask "is there an undo?"
+- Users clicking through without reading
+- Support requests showing users didn't notice active project
+- A/B testing shows no difference in error rate with/without dialog
 
-**Phase to address:** Frontend delete UI implementation
+**Phase to address:** Phase 2 (Frontend UI) — dialog UX refinement
 
 ---
 
-## Moderate Pitfalls
-
-### Pitfall 6: Backend Delete Routes Exist But Frontend Doesn't Use Them
+### Pitfall 6: Cross-Device Context Inconsistency
 
 **What goes wrong:**
-Fleet API has `DELETE /api/v1/fleet/vehicles/{id}` and `DELETE /api/v1/fleet/tools/{id}` routes. Frontend has no delete buttons for vehicles/tools. Code is written but unreachable.
+User sets active project on phone, then uses tablet. Active project differs between devices. User creates records on both devices, leading to inconsistent project assignments. Sync merges records but context remains device-specific.
 
 **Why it happens:**
-Backend-first development. API implemented but UI never connected. Tests pass for API but E2E tests don't cover UI flow.
+Active project is stored locally (IndexedDB) but not synced as user preference. This is a deliberate offline-first choice, but creates inconsistency when users work across devices.
 
 **How to avoid:**
-- Track API-UI gaps in issue tracker (already done in ISSUE-BACKLOG.md: MISSING-FLEET-001)
-- E2E tests should verify user can complete operation through UI, not just API
-- Code review checklist: "Does every backend route have a UI entry point?"
+- Sync active project as a user preference (not per-device)
+- Show "Last synced from [device] at [time]" in UI
+- On conflict (different active project on different devices), show resolution dialog
+- Consider: should active project change propagate immediately, or only on next sync?
+- Add "Active on other devices: [Project Name]" indicator
 
 **Warning signs:**
-- API routes without corresponding frontend hooks
-- E2E tests use API helpers to create data, not UI dialogs
-- Feature marked "done" but users can't find it in app
+- Users reporting inconsistent behavior across devices
+- Records assigned to unexpected projects
+- Confusion after switching devices mid-task
 
-**Phase to address:** Frontend delete UI (connect existing routes)
-
----
-
-### Pitfall 7: Edit Dialog Reuses Create Dialog Without Mode Distinction
-
-**What goes wrong:**
-Edit dialog is Create dialog with pre-filled values. Dialog title still says "Create". Submit button says "Save" but calls create API, not update API. User creates duplicate instead of editing.
-
-**Why it happens:**
-Duplicating dialog component seems faster than adding mode prop. "I'll add that later" → never added.
-
-**Current pattern (TimeEntryDialog.tsx, ReservationDialog.tsx):**
-Both dialogs only support create. No `entry` or `reservation` prop for edit mode.
-
-**How to avoid:**
-1. **Pass entity to edit:**
-   ```tsx
-   interface TimeEntryDialogProps {
-     entry?: TimeEntry  // If provided, edit mode
-     onCreate: (data: CreateTimeEntry) => void
-     onUpdate: (id: string, data: UpdateTimeEntry) => void
-   }
-   ```
-
-2. **Conditional title and submit:**
-   ```tsx
-   <DialogTitle>
-     {entry ? "Zeiteintrag bearbeiten" : "Zeit buchen"}
-   </DialogTitle>
-   <Button onClick={entry ? handleUpdate : handleCreate}>
-     {entry ? "Aktualisieren" : "Speichern"}
-   </Button>
-   ```
-
-3. **Initialize form with existing values:**
-   ```tsx
-   const [hours, setHours] = useState(entry?.hours ?? 1)
-   ```
-
-**Warning signs:**
-- Dialog title doesn't change when editing
-- Clicking "save" creates duplicate entries
-- Edit operation requires delete + recreate
-
-**Phase to address:** Frontend edit dialogs
-
----
-
-### Pitfall 8: Input Validation Feedback Only After Submit
-
-**What goes wrong:**
-User fills form, clicks submit, backend returns validation error, toast shows generic "Operation failed". User doesn't know which field is wrong. Resubmits multiple times, same error.
-
-**Current state (from BUG-TIME-002):**
-> "The TimeEntryDialog shows no inline validation messages. Users only see a generic toast error after submission fails."
-
-**Why it happens:**
-Frontend relies entirely on backend validation. "Backend is source of truth" → but UX suffers.
-
-**How to avoid:**
-1. **Client-side validation mirrors backend:**
-   ```tsx
-   const [errors, setErrors] = useState<Record<string, string>>({})
-   
-   const validate = (): boolean => {
-     const newErrors: Record<string, string> = {}
-     if (hours <= 0) newErrors.hours = "Stunden müssen größer als 0 sein"
-     if (!workDate) newErrors.workDate = "Datum ist erforderlich"
-     setErrors(newErrors)
-     return Object.keys(newErrors).length === 0
-   }
-   ```
-
-2. **Inline error display:**
-   ```tsx
-   <div className="space-y-2">
-     <Label>Stunden</Label>
-     <Input ... />
-     {errors.hours && (
-       <p className="text-sm text-destructive">{errors.hours}</p>
-     )}
-   </div>
-   ```
-
-3. **Disable submit until valid:**
-   ```tsx
-   <Button disabled={!isValid || mutation.isPending}>
-   ```
-
-**Warning signs:**
-- Users submit 3+ times before getting it right
-- Support tickets asking "what format does X field accept?"
-- Backend logs show high validation error rate
-
-**Phase to address:** Frontend validation (BUG-TIME-001, BUG-TIME-002)
-
----
-
-### Pitfall 9: Low Stock Alerts Not Shown in UI
-
-**What goes wrong:**
-Backend has `min_quantity`, `is_low_stock()`, and `/api/v1/inventory/low-stock` endpoint. Frontend doesn't show any visual indicator. Materials run out without warning.
-
-**Current state:**
-- Material domain has `is_low_stock()` method
-- API has `list_low_stock` route
-- Frontend has no visual indicator
-
-**Why it happens:**
-Backend implemented feature, frontend backlog didn't prioritize. "Works in API" ≠ "Users can see it".
-
-**How to avoid:**
-1. **Visual indicator in list:**
-   ```tsx
-   {material.is_low_stock && (
-     <Badge variant="destructive" className="gap-1">
-       <AlertTriangle className="h-3 w-3" />
-       Niedrig
-     </Badge>
-   )}
-   ```
-
-2. **Dedicated low-stock view:**
-   ```tsx
-   // In navigation
-   <NavLink to="/inventory/low-stock">
-     Inventory {lowStockCount > 0 && `(${lowStockCount})`}
-   </NavLink>
-   ```
-
-3. **Toast on stock withdrawal that triggers low:**
-   ```tsx
-   if (result.material.is_low_stock) {
-     toast.warning(`${material.name} ist niedrig (${material.quantity} verbleibend)`)
-   }
-   ```
-
-**Warning signs:**
-- Backend has feature, frontend doesn't use it
-- Users manually track reorder points in spreadsheets
-- Stockouts surprise users
-
-**Phase to address:** Low stock UI implementation
-
----
-
-### Pitfall 10: Calendar Click-to-Create Doesn't Pre-fill Time/Resource
-
-**What goes wrong:**
-Calendar shows empty slot. User clicks. ReservationDialog opens but `resourceId` and `startTime` are empty. User has to re-select what they just clicked.
-
-**Current state (from BUG-RES-002):**
-> "Calendar view shows reservations but clicking on empty time slots does nothing."
-
-**Why it happens:**
-Calendar component renders slots but has no `onClick` handler. Or handler opens dialog without passing context.
-
-**How to avoid:**
-1. **Pass click context to dialog:**
-   ```tsx
-   const handleSlotClick = (resourceId: string, startTime: Date) => {
-     setReservationDialog({
-       open: true,
-       resourceId,
-       startTime: startTime.toISOString(),
-       endTime: new Date(startTime.getTime() + 2 * 60 * 60 * 1000).toISOString()
-     })
-   }
-   ```
-
-2. **Dialog accepts initial values:**
-   ```tsx
-   <ReservationDialog
-     open={dialog.open}
-     resourceId={dialog.resourceId}
-     startTime={dialog.startTime}
-     endTime={dialog.endTime}
-   />
-   ```
-
-**Warning signs:**
-- Users navigate away from calendar to create reservations
-- Calendar is read-only, not interactive
-- "Nice view but useless" feedback
-
-**Phase to address:** Calendar click-to-create
-
----
-
-## Minor Pitfalls
-
-### Pitfall 11: QR Button Exists But Does Nothing
-
-**What goes wrong:**
-QR button in InventoryListPage renders but has no onClick. User clicks, nothing happens. Feature appears broken.
-
-**Current state (from BUG-INV-002):**
-> "QR code button exists but has no onClick handler - it's a static button."
-
-**How to avoid:**
-- Wire button to scanner dialog or QR detail view
-- If feature not ready, hide button or show "coming soon" tooltip
-- E2E test should verify button is functional
-
-**Phase to address:** QR button wiring
-
----
-
-### Pitfall 12: Status Transition UI Missing Despite Backend Support
-
-**What goes wrong:**
-Reservation has status (Pending → Confirmed → InUse → Completed/Cancelled). Backend validates transitions. Frontend has no buttons to trigger transitions. Reservations stuck in initial state.
-
-**Current state (from MISSING-RES-002):**
-> "No UI buttons to confirm, start, complete, or cancel reservations."
-
-**How to avoid:**
-1. **Action buttons based on current status:**
-   ```tsx
-   {reservation.status === 'pending' && (
-     <>
-       <Button onClick={() => updateStatus('confirmed')}>Bestätigen</Button>
-       <Button variant="destructive" onClick={() => updateStatus('cancelled')}>Stornieren</Button>
-     </>
-   )}
-   {reservation.status === 'confirmed' && (
-     <Button onClick={() => updateStatus('in_use')}>Starten</Button>
-   )}
-   ```
-
-2. **Status badge shows current state:**
-   ```tsx
-   <Badge variant={statusVariant[res.status]}>
-     {statusLabels[res.status]}
-   </Badge>
-   ```
-
-**Phase to address:** Reservation status UI
-
----
-
-## Phase-Specific Warnings
-
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|----------------|------------|
-| Backend delete routes | Soft delete not implemented, hard delete loses audit trail | Add `deleted_at` column before exposing delete API |
-| Frontend delete UI | Accidental deletions without confirmation | AlertDialog required for all delete operations |
-| Time entry edit | Dialog reused without mode distinction | Pass existing entry to dialog, conditional title/submit |
-| Reservation status UI | Race conditions on status update | Database-level status check in UPDATE WHERE clause |
-| Low stock alerts | Backend endpoint unused | Poll `/low-stock` or subscribe to events |
-| Calendar click-to-create | Dialog doesn't receive click context | Pass resourceId and time from slot click |
-| E2E tests | Tests use API helpers, don't verify UI flow | Test full user journey through UI |
-| Offline sync (v1.7+) | Delete conflicts with offline edits | Tombstone sync, version vectors |
-
----
-
-## Integration Gotchas
-
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| Backend delete → Frontend UI | API exists, UI doesn't connect | Track in issue tracker, E2E test UI flow |
-| ts-rs types | Generated types drift from API responses | Run `cargo test --features ts-rs/export` after DTO changes |
-| IndexedDB sync | Delete operations not queued for offline | Queue soft-delete operation, sync `deleted_at` |
-| Multi-tenant delete | TenantId not validated on delete | Always include `WHERE tenant_id = $1` in delete queries |
-| Status transitions | Frontend allows invalid transitions | Backend rejects but frontend doesn't disable invalid buttons |
+**Phase to address:** Phase 1 (Backend Sync) — add user preferences to sync protocol
 
 ---
 
 ## Technical Debt Patterns
 
+Shortcuts that seem reasonable but create long-term problems.
+
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Hard delete | Simpler queries | No audit trail, no recovery | Never in production app |
-| Delete without confirmation | Faster to implement | Accidental data loss, support burden | Never for destructive actions |
-| Edit via delete+create | Reuses create dialog | Orphaned references, lost metadata | Never |
-| Client-side only validation | Faster feedback | Backend validation bypassed | Never - always validate both sides |
-| Skip E2E for "simple" CRUD | Faster tests | Regression bugs in "simple" features | Never - CRUD is exactly what needs testing |
+| Store active project in localStorage only | Faster implementation, no IndexedDB schema change | Lost on logout, not offline-safe, no user-scoping | Never — use IndexedDB from start |
+| Skip active project validation during deduction | Fewer API calls, faster UX | Orphaned records on invalid project | Never — always validate FK |
+| Make active project global (not user-scoped) | Simpler state management | Breaks multi-user devices, multi-device scenarios | Never — must be user-scoped |
+| Don't sync active project preference | Simpler sync protocol | Cross-device inconsistency | Acceptable for MVP if documented |
+| Hardcode color assignments | Faster initial implementation | Can't change colors, conflicts with similar colors | Acceptable for MVP, move to config later |
+| No undo for auto-assignment | Simpler state management | User frustration, wrong data | Never — must provide undo |
+
+---
+
+## Integration Gotchas
+
+Common mistakes when connecting to existing services.
+
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| IndexedDB (Dexie.js) | Storing active project as single value without user_id FK | Use `user_preferences` table with compound key `[user_id+tenant_id]` |
+| Sync Protocol | Not including user preferences in sync payload | Add `user_preferences` to sync schema, sync before other data |
+| Material Deduction API | Assuming `site_id` is always provided | Default to active project, but require explicit confirmation if not set |
+| Keycloak Organizations | Assuming organization context includes user preferences | Fetch user preferences from app backend, not Keycloak |
+| QR Scanner | Auto-assigning without showing active project context | Display active project name prominently in scanner UI |
+
+---
+
+## Performance Traps
+
+Patterns that work at small scale but fail as usage grows.
+
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| Fetching active project from server on every deduction | Latency, poor offline UX | Cache in IndexedDB, validate on sync only | Immediately — offline must work |
+| Validating project existence on every form render | Slow form opens, laggy UI | Validate once on project set, trust until sync | 50+ active users |
+| Storing full project object in active project state | Memory bloat, stale data | Store project_id only, fetch details as needed | 100+ projects per tenant |
+| Color assignment via UUID hash (random) | Color collisions, hard to distinguish | Use predefined palette, assign sequentially | 10+ projects per tenant |
+| No pagination on project selector | Slow load, UI freeze | Paginate or lazy-load project list | 100+ projects per tenant |
 
 ---
 
 ## Security Mistakes
 
+Domain-specific security issues beyond general web security.
+
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Delete without tenant check | Cross-tenant data deletion | `WHERE tenant_id = $1` in every delete query |
-| Edit without ownership check | User modifies another user's data | `WHERE user_id = $1` or role-based check |
-| Status transition without authorization | User confirms own reservation | Check permissions: `can_confirm_reservation(user, reservation)` |
-| No rate limiting on delete | API abuse, mass deletion | Rate limit at infrastructure level (noted as tech debt) |
+| User can set active project from another tenant | Cross-tenant data leak | Validate tenant_id matches user's current organization on set |
+| Active project not validated on API call | Data assigned to unauthorized project | Always validate user has access to project_id on write operations |
+| Storing active project in URL params | User can manipulate, share wrong context | Use IndexedDB/localStorage, not URL state |
+| No audit trail for context changes | Can't investigate data quality issues | Log active project changes with timestamp and user_id |
+
+---
+
+## UX Pitfalls
+
+Common user experience mistakes in this domain.
+
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| Indicator hidden in hamburger menu | Users forget active project, create wrong assignments | Persistent header bar with color indicator |
+| No feedback after auto-assignment | User doesn't realize what happened | Toast notification with project name and undo option |
+| Context switch requires navigation to settings | Too many clicks, users don't switch | Quick toggle in header or on dashboard |
+| Same UI whether context is set or not | User doesn't notice absence of context | Grayed/inactive UI when no active project, prompt to set |
+| Opt-out dialog blocks all interaction | Workflow interruption, frustration | Non-modal indicator with dismiss/change options |
+| Project colors not visible on monochrome prints | Printouts lose context information | Include project name/code in all printed labels |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-Before marking delete/edit/status features complete:
+Things that appear complete but are missing critical pieces.
 
-- [ ] **Delete button:** AlertDialog confirms before deletion
-- [ ] **Delete backend:** Returns meaningful error if FK constraints block delete
-- [ ] **Delete sync:** Soft delete works offline (tombstone sync)
-- [ ] **Edit dialog:** Title changes to "Edit" when editing existing entity
-- [ ] **Edit submit:** Calls PATCH/PUT, not POST
-- [ ] **Validation:** Inline errors shown before submit, not just toast after
-- [ ] **Status buttons:** Only valid transitions shown as buttons
-- [ ] **Status race:** Concurrent updates handled (version check or conditional update)
-- [ ] **E2E tests:** Test delete, edit, status through UI, not just API helpers
-- [ ] **Multi-tenant:** Delete/update queries include tenant_id filter
+- [ ] **Active Project Indicator:** Often missing color coding beyond text — verify color tint appears on affected forms
+- [ ] **Offline Support:** Often missing user-scoped storage — verify active project persists per user after logout/login
+- [ ] **Undo Function:** Often missing reassignment flow — verify user can change project after auto-assignment
+- [ ] **Opt-Out Dialog:** Often missing "don't ask again" option — verify session persistence of dismissal
+- [ ] **Cross-Device Sync:** Often missing preference sync — verify active project syncs between devices
+- [ ] **Validation:** Often missing on write operations — verify API rejects invalid project_id even if set locally
+- [ ] **Audit Trail:** Often missing for context changes — verify changes are logged with timestamp
 
 ---
 
 ## Recovery Strategies
 
+When pitfalls occur despite prevention, how to recover.
+
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Hard delete used, data lost | HIGH | Restore from backup, no granular recovery possible |
-| Soft delete implemented after data exists | MEDIUM | Add `deleted_at NULL`, backfill NULL for existing records |
-| Edit creates duplicates | LOW | Teach users to use correct button, delete duplicates |
-| Status race condition | LOW | Refresh UI, retry operation with current status |
-| Offline sync conflict | MEDIUM | Manual merge or "server wins" resolution |
+| Stale Active Project | MEDIUM | Run script to find orphaned records, provide bulk reassignment UI |
+| Context Blindness | LOW | Add more prominent indicators, retrain users |
+| No Undo | LOW | Add undo feature retroactively, migrate recent records to include undo window |
+| Offline Desync | HIGH | May require manual data reconciliation if multiple users affected |
+| Dialog Fatigue | LOW | Adjust dialog frequency, add "don't ask again" option |
+| Cross-Device Inconsistency | MEDIUM | Implement preference sync, may need manual cleanup of inconsistent records |
+
+---
+
+## Pitfall-to-Phase Mapping
+
+How roadmap phases should address these pitfalls.
+
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| Stale Active Project | Phase 1 (Backend) | E2E test: create deductions offline, archive project, sync, verify warning |
+| Context Blindness | Phase 2 (Frontend) | User test: ask users to identify active project after 5 minutes |
+| No Undo | Phase 2 (Frontend) | E2E test: deduct material, undo, verify reverted |
+| Offline Desync | Phase 1 (Backend) | E2E test: two users on shared device, verify separate contexts |
+| Dialog Fatigue | Phase 2 (Frontend) | Analytics: track dismiss rate, verify <80% auto-dismiss |
+| Cross-Device Sync | Phase 1 (Backend) | E2E test: set on device A, sync device B, verify consistency |
 
 ---
 
 ## Sources
 
-- Codebase analysis: Backend API routes, domain logic, frontend dialogs
-- ISSUE-BACKLOG.md: Documented gaps and bugs
-- PROJECT.md: Known tech debt (no conflict resolution for offline edits)
-- Established patterns: State machine tests in domain layer, ts-rs type generation
-- shadcn/ui patterns: AlertDialog for confirmations
+- Nielsen Norman Group: "10 Usability Heuristics for User Interface Design" — Visibility of System Status, User Control and Freedom
+- Nielsen Norman Group: "Confirmation Dialogs Can Prevent User Errors" — Guidelines on dialog overuse and specificity
+- Nielsen Norman Group: "The Power of Defaults" — User tendency to stick with defaults
+- WatermelonDB Sync Documentation — Limitations, conflict resolution patterns
+- Offline First Community (offlinefirst.org) — Principles for offline-capable applications
+- Local First Web (localfirstweb.dev) — Patterns for local-first state management
 
 ---
 
-*Pitfalls research for: Schreinerei SaaS v1.6 - User Experience & Missing Functionality*
+*Pitfalls research for: Active Project Context (Construction Field Service App)*
 *Researched: 2026-04-30*
-*Confidence: HIGH (based on codebase inspection + established domain patterns)*
