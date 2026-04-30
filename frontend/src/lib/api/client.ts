@@ -1,6 +1,5 @@
 import { useAuthStore } from '../auth/authStore'
 import { refreshAccessToken } from '../auth/keycloak'
-import type { ApiError } from '../../types/api'
 import { toast } from 'sonner'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -76,10 +75,10 @@ class ApiClient {
     })
 
     if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
-        message: `HTTP ${response.status}`,
-      }))
-      throw new Error(error.message || 'API request failed')
+      const errorData = await response.json().catch(() => ({}))
+      // Handle both "error" (from backend) and "message" (fallback) keys
+      const errorMessage = errorData.error || errorData.message || `HTTP ${response.status}`
+      throw new Error(errorMessage)
     }
 
     if (response.status === 204) {

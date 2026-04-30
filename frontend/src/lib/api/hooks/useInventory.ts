@@ -131,3 +131,16 @@ export function useCreateOrderRequest() {
     },
   })
 }
+
+export function useDeleteMaterial() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.delete(`/api/v1/inventory/materials/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["materials"] })
+      queryClient.invalidateQueries({ queryKey: ["low-stock"] })
+    },
+  })
+}

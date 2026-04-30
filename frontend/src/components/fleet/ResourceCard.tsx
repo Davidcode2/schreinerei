@@ -1,7 +1,11 @@
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, QrCode } from "lucide-react"
+import { MapPin, QrCode, Trash2 } from "lucide-react"
 import { StatusBadge } from "@/components/shared"
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
+import { useDeleteVehicle, useDeleteTool } from "@/lib/api/hooks"
+import { toast } from "sonner"
 import type { Vehicle, Tool } from "@/types/fleet"
 
 interface ResourceCardProps {
@@ -15,54 +19,94 @@ function isVehicle(resource: Vehicle | Tool): resource is Vehicle {
 }
 
 export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const deleteVehicleMutation = useDeleteVehicle()
+  const deleteToolMutation = useDeleteTool()
+
   const isAvailable = resource.status === "available"
+  const deleteMutation = type === "vehicle" ? deleteVehicleMutation : deleteToolMutation
+
+  const handleDelete = () => {
+    deleteMutation.mutate(resource.id, {
+      onSuccess: () => {
+        toast.success(type === "vehicle" ? "Fahrzeug gelöscht" : "Werkzeug gelöscht")
+        setDeleteDialogOpen(false)
+      },
+      onError: (error: Error) => {
+        toast.error(error.message || "Löschen fehlgeschlagen")
+      },
+    })
+  }
 
   return (
-    <Card className="hover:border-primary/50 transition-colors">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="space-y-1">
-            <h3 className="font-semibold">{resource.name}</h3>
-            {isVehicle(resource) ? (
-              <p className="text-sm text-muted-foreground capitalize">
-                {resource.vehicle_type}
-                {resource.license_plate && ` • ${resource.license_plate}`}
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {resource.category || "Werkzeug"}
-              </p>
-            )}
+    <>
+      <Card className="hover:border-primary/50 transition-colors">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between mb-3">
+            <div className="space-y-1">
+              <h3 className="font-semibold">{resource.name}</h3>
+              {isVehicle(resource) ? (
+                <p className="text-sm text-muted-foreground capitalize">
+                  {resource.vehicle_type}
+                  {resource.license_plate && ` • ${resource.license_plate}`}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {resource.category || "Werkzeug"}
+                </p>
+              )}
+            </div>
+            <StatusBadge status={resource.status} />
           </div>
-          <StatusBadge status={resource.status} />
-        </div>
 
-        {resource.location && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-            <MapPin className="h-3 w-3" />
-            <span>{resource.location}</span>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between pt-3 border-t">
-          {resource.qr_code && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <QrCode className="h-3 w-3" />
-              <span className="font-mono">{resource.qr_code}</span>
+          {resource.location && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+              <MapPin className="h-3 w-3" />
+              <span>{resource.location}</span>
             </div>
           )}
-          <Button
-            size="sm"
-            variant={isAvailable ? "default" : "outline"}
-            disabled={!isAvailable}
-            onClick={() => onReserve(resource.id, type)}
-            className="ml-auto"
-          >
-            {isAvailable ? "Reservieren" : "Nicht verfügbar"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+
+          <div className="flex items-center justify-between pt-3 border-t">
+            <div className="flex items-center gap-2">
+              {resource.qr_code && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <QrCode className="h-3 w-3" />
+                  <span className="font-mono">{resource.qr_code}</span>
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setDeleteDialogOpen(true)
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button
+              size="sm"
+              variant={isAvailable ? "default" : "outline"}
+              disabled={!isAvailable}
+              onClick={() => onReserve(resource.id, type)}
+            >
+              {isAvailable ? "Reservieren" : "Nicht verfügbar"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDelete}
+        itemName={resource.name}
+        isPending={deleteMutation.isPending}
+      />
+    </>
   )
 }
 

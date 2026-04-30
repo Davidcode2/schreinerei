@@ -66,6 +66,19 @@ export function useUpdateVehicle() {
   })
 }
 
+export function useDeleteVehicle() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.delete(`/api/v1/fleet/vehicles/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] })
+      queryClient.invalidateQueries({ queryKey: ["calendar"] })
+    },
+  })
+}
+
 // === Tools ===
 
 export function useTools(query?: ListToolsQuery) {
@@ -114,6 +127,19 @@ export function useUpdateTool() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tools"] })
       queryClient.invalidateQueries({ queryKey: ["tool", variables.id] })
+    },
+  })
+}
+
+export function useDeleteTool() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.delete(`/api/v1/fleet/tools/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tools"] })
+      queryClient.invalidateQueries({ queryKey: ["calendar"] })
     },
   })
 }

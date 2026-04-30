@@ -1,8 +1,13 @@
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Calendar } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { MapPin, Calendar, Trash2 } from "lucide-react"
 import { Link } from "react-router-dom"
 import { StatusBadge } from "@/components/shared"
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
+import { useDeleteSite } from "@/lib/api/hooks"
+import { toast } from "sonner"
 import type { Site } from "@/types/sites"
 
 interface SiteCardProps {
@@ -19,51 +24,90 @@ function formatDate(date: string | null): string {
 }
 
 export function SiteCard({ site }: SiteCardProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const deleteMutation = useDeleteSite()
+
+  const handleDelete = () => {
+    deleteMutation.mutate(site.id, {
+      onSuccess: () => {
+        toast.success("Baustelle gelöscht")
+        setDeleteDialogOpen(false)
+      },
+      onError: (error: Error) => {
+        toast.error(error.message || "Löschen fehlgeschlagen")
+      },
+    })
+  }
+
   return (
-    <Link to={`/sites/${site.id}`}>
-      <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
+    <>
+      <Card className="hover:border-primary/50 transition-colors h-full">
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
-            <div className="space-y-1">
+            <Link to={`/sites/${site.id}`} className="space-y-1 flex-1">
               <h3 className="font-semibold line-clamp-1">{site.name}</h3>
               <p className="text-sm text-muted-foreground line-clamp-1">
                 {site.customer_name}
               </p>
+            </Link>
+            <div className="flex items-center gap-2">
+              <StatusBadge status={site.status} />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setDeleteDialogOpen(true)
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
-            <StatusBadge status={site.status} />
           </div>
 
-          {site.location && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              <MapPin className="h-3 w-3" />
-              <span className="line-clamp-1">{site.location}</span>
-            </div>
-          )}
-
-          {site.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-              {site.description}
-            </p>
-          )}
-
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            {(site.start_date || site.end_date) && (
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                <span className="text-xs">
-                  {formatDate(site.start_date)} - {formatDate(site.end_date)}
-                </span>
+          <Link to={`/sites/${site.id}`}>
+            {site.location && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                <MapPin className="h-3 w-3" />
+                <span className="line-clamp-1">{site.location}</span>
               </div>
             )}
-            {site.estimated_days && (
-              <Badge variant="outline" className="text-xs">
-                {site.estimated_days} Tage
-              </Badge>
+
+            {site.description && (
+              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                {site.description}
+              </p>
             )}
-          </div>
+
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              {(site.start_date || site.end_date) && (
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  <span className="text-xs">
+                    {formatDate(site.start_date)} - {formatDate(site.end_date)}
+                  </span>
+                </div>
+              )}
+              {site.estimated_days && (
+                <Badge variant="outline" className="text-xs">
+                  {site.estimated_days} Tage
+                </Badge>
+              )}
+            </div>
+          </Link>
         </CardContent>
       </Card>
-    </Link>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDelete}
+        itemName={site.name}
+        isPending={deleteMutation.isPending}
+      />
+    </>
   )
 }
 

@@ -64,6 +64,19 @@ export function useUpdateSite() {
   })
 }
 
+export function useDeleteSite() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.delete(`/api/v1/sites/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sites"] })
+      queryClient.invalidateQueries({ queryKey: ["dashboard-sites"] })
+    },
+  })
+}
+
 // === Assignments ===
 
 export function useSiteAssignments(siteId: string) {
