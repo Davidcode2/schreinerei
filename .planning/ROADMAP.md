@@ -235,15 +235,14 @@ Plans:
   4. User can transition reservation status via UI buttons (confirm, start, complete, cancel)
   5. User can create a reservation by clicking empty time slots in calendar view
   6. User sees which existing reservation conflicts when availability warning appears
-**Plans**: TBD
+**Plans**: 4 plans in 2 waves
 **UI hint**: yes
 
 Plans:
-- [ ] 20-01: Backend update routes
-- [ ] 20-02: Frontend edit UI for time entries
-- [ ] 20-03: Frontend edit UI for reservations
-- [ ] 20-04: Status transition buttons
-- [ ] 20-05: Calendar click-to-create
+- [x] 20-01: Backend time entry PATCH/DELETE routes (EDIT-01, EDIT-02)
+- [x] 20-02: Frontend time entry edit/delete UI (EDIT-01, EDIT-02)
+- [x] 20-03: Reservation edit & status transitions UI (EDIT-03, RESV-01)
+- [x] 20-04: Calendar click-to-create & conflict details (RESV-02, RESV-03)
 
 #### Phase 21: E2E Test Coverage
 **Goal**: All new functionality verified through E2E tests
@@ -288,7 +287,7 @@ Phases execute in numeric order: 1 → 2 → ... → 17 → 18 → 19 → 20 →
 | 17. E2E Data | v1.5 | 2/2 | Complete | 2026-04-30 |
 | 18. Bug Fixes & UX | v1.6 | 2/2 | Complete | 2026-04-30 |
 | 19. Delete Ops | v1.6 | 3/3 | Complete | 2026-04-30 |
-| 20. Edit & Resv | v1.6 | 0/5 | Not started | - |
+| 20. Edit & Resv | v1.6 | 4/4 | Complete | 2026-04-30 |
 | 21. E2E Tests | v1.6 | 0/4 | Not started | - |
 
 ---

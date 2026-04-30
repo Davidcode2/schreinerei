@@ -23,15 +23,15 @@ Requirements for completing missing CRUD functionality and improving UX.
 
 ### Edit Operations
 
-- [ ] **EDIT-01**: User can edit an existing time entry (hours, work type, notes)
-- [ ] **EDIT-02**: User can delete their own time entries
-- [ ] **EDIT-03**: User can edit an existing reservation (dates, resource, notes)
+- [x] **EDIT-01**: User can edit an existing time entry (hours, work type, notes) ✓
+- [x] **EDIT-02**: User can delete their own time entries ✓
+- [x] **EDIT-03**: User can edit an existing reservation (dates, resource, notes) ✓
 
 ### Reservation Workflow
 
-- [ ] **RESV-01**: User can transition reservation status (confirm, start, complete, cancel) via UI buttons
-- [ ] **RESV-02**: User can create a reservation by clicking empty time slots in calendar view
-- [ ] **RESV-03**: User sees which existing reservation conflicts when availability warning appears
+- [x] **RESV-01**: User can transition reservation status (confirm, start, complete, cancel) via UI buttons ✓
+- [x] **RESV-02**: User can create a reservation by clicking empty time slots in calendar view ✓
+- [x] **RESV-03**: User sees which existing reservation conflicts when availability warning appears ✓
 
 ### UX Improvements
 
@@ -95,12 +95,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEL-03 | Phase 19 | Complete ✓ |
 | DEL-04 | Phase 19 | Complete ✓ |
 | DEL-05 | Phase 19 | Complete ✓ |
-| EDIT-01 | Phase 20 | Pending |
-| EDIT-02 | Phase 20 | Pending |
-| EDIT-03 | Phase 20 | Pending |
-| RESV-01 | Phase 20 | Pending |
-| RESV-02 | Phase 20 | Pending |
-| RESV-03 | Phase 20 | Pending |
+| EDIT-01 | Phase 20 | Complete ✓ |
+| EDIT-02 | Phase 20 | Complete ✓ |
+| EDIT-03 | Phase 20 | Complete ✓ |
+| RESV-01 | Phase 20 | Complete ✓ |
+| RESV-02 | Phase 20 | Complete ✓ |
+| RESV-03 | Phase 20 | Complete ✓ |
 | UX-01 | Phase 18 | Complete (pre-existing) |
 | UX-02 | Phase 18 | Complete ✓ |
 | TEST-12 | Phase 21 | Pending |
