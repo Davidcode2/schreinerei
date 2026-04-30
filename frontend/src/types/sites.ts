@@ -84,6 +84,14 @@ export interface CreateTimeEntryRequest {
   notes?: string
 }
 
+export interface UpdateTimeEntryRequest {
+  site_id?: string
+  work_type?: WorkType
+  hours?: number
+  work_date?: string
+  notes?: string
+}
+
 // === Activity ===
 
 export type ActivityType = 'photo' | 'note'

@@ -9,6 +9,7 @@ import type {
   AssignUserRequest,
   TimeEntry,
   CreateTimeEntryRequest,
+  UpdateTimeEntryRequest,
   Activity,
   CreateActivityRequest,
   ActivityQuery,
@@ -138,6 +139,34 @@ export function useCreateTimeEntry() {
   return useMutation({
     mutationFn: (data: CreateTimeEntryRequest) =>
       apiClient.post<TimeEntry>("/api/v1/time-entries", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["time-entries"] })
+      queryClient.invalidateQueries({ queryKey: ["my-time-entries"] })
+      queryClient.invalidateQueries({ queryKey: ["dashboard-sites"] })
+    },
+  })
+}
+
+export function useUpdateTimeEntry() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, ...data }: UpdateTimeEntryRequest & { id: string }) =>
+      apiClient.patch<TimeEntry>(`/api/v1/time-entries/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["time-entries"] })
+      queryClient.invalidateQueries({ queryKey: ["my-time-entries"] })
+      queryClient.invalidateQueries({ queryKey: ["dashboard-sites"] })
+    },
+  })
+}
+
+export function useDeleteTimeEntry() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.delete(`/api/v1/time-entries/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["time-entries"] })
       queryClient.invalidateQueries({ queryKey: ["my-time-entries"] })
