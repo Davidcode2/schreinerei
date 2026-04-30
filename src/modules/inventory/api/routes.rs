@@ -18,6 +18,7 @@ use crate::modules::inventory::application::InventoryService;
 use crate::modules::inventory::domain::{
     CreateCategory, CreateMaterial, WithdrawMaterial, AdjustStock,
     CreateOrderRequest, ApproveOrderRequest, FulfillOrderRequest,
+    StockEntryWithSite,
 };
 use crate::AppState;
 
@@ -31,6 +32,7 @@ pub fn create_router() -> Router<AppState> {
         // Materials
         .route("/api/v1/inventory/materials", get(list_materials).post(create_material))
         .route("/api/v1/inventory/materials/{id}", get(get_material).delete(delete_material))
+        .route("/api/v1/inventory/materials/{id}/history", get(get_material_history))
         .route("/api/v1/inventory/materials/{id}/withdraw", post(withdraw_material))
         .route("/api/v1/inventory/materials/{id}/adjust", post(adjust_stock))
         .route("/api/v1/inventory/materials/{id}/qr", post(generate_qr_code))
@@ -216,6 +218,33 @@ pub struct FulfillOrderRequestDto {
     pub notes: Option<String>,
 }
 
+/// Response DTO for stock entry history
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct StockEntryResponse {
+    pub id: String,
+    pub quantity_change: i32,
+    pub quantity_after: i32,
+    pub notes: Option<String>,
+    pub site_id: Option<String>,
+    pub site_name: Option<String>,
+    pub created_at: String,
+}
+
+impl From<StockEntryWithSite> for StockEntryResponse {
+    fn from(entry: StockEntryWithSite) -> Self {
+        Self {
+            id: entry.id.to_string(),
+            quantity_change: entry.quantity_change,
+            quantity_after: entry.quantity_after,
+            notes: entry.notes,
+            site_id: entry.site_id.map(|s| s.to_string()),
+            site_name: entry.site_name,
+            created_at: entry.created_at.to_rfc3339(),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct OrderStatusQuery {
@@ -348,6 +377,30 @@ pub async fn get_material(
     let material = service.get_material(material_id, &ctx).await?;
     
     Ok(Json(MaterialResponse::from(material)))
+}
+
+/// GET /api/v1/inventory/materials/{id}/history - Get stock change history for a material
+pub async fn get_material_history(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let repo = crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool);
+    let ctx = TenantContext::from_auth(&auth);
+    
+    let material_id = Uuid::parse_str(&id)
+        .map(MaterialId)
+        .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
+    
+    // Verify material exists in tenant
+    repo.find_material_by_id(material_id, ctx.tenant_id).await?
+        .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
+    
+    // Get history with site names
+    let entries = repo.list_stock_entries_with_site(material_id, ctx.tenant_id, 50).await?;
+    let response: Vec<StockEntryResponse> = entries.into_iter().map(StockEntryResponse::from).collect();
+    
+    Ok(Json(response))
 }
 
 pub async fn delete_material(
