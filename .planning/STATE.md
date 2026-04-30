@@ -4,11 +4,11 @@
 
 **Core Value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick.
 
-**Current Focus:** v1.5 Testing & Quality Foundation — Frontend test infrastructure complete
+**Current Focus:** v1.5 Testing & Quality Foundation — ts-rs type generation complete
 
 ## Current Position
 
-**Phase:** 14 — Frontend Test Infrastructure
+**Phase:** 15 — ts-rs Type Generation
 **Status:** Complete
 **Progress:** ██████████ 100%
 
@@ -16,7 +16,7 @@
 Phase 12 [██████████] Complete ✓
 Phase 13 [██████████] Complete ✓
 Phase 14 [██████████] Complete ✓
-Phase 15 [░░░░░░░░░░] Not started
+Phase 15 [██████████] Complete ✓
 Phase 16 [░░░░░░░░░░] Not started
 Phase 17 [░░░░░░░░░░] Not started
 ```
@@ -26,16 +26,18 @@ Phase 17 [░░░░░░░░░░] Not started
 | Metric | Value |
 |--------|-------|
 | Milestone | v1.5 |
-| Phases Complete | 3/6 |
-| Requirements Complete | 10/21 |
+| Phases Complete | 4/6 |
+| Requirements Complete | 13/21 |
 | Days in Milestone | 0 |
 | Tests Added | 116 (backend) + 28 (frontend) |
+| DTOs with ts-rs | 49 |
 
 ## Accumulated Context
 
 ### Decisions
 - Phase numbering continues from Phase 12 (v1.4 ended at Phase 11)
 - ts-rs chosen for type generation (prevents frontend-backend drift)
+- ts-rs v12 used (v10 lacked proper export functionality)
 - Domain tests inline in domain files (zero mocking, fast feedback)
 - E2E tests verify data persistence, not just UI presence
 - Tests use helper functions for test fixtures to reduce boilerplate
@@ -57,8 +59,8 @@ Phase 17 [░░░░░░░░░░] Not started
 
 ## Session Continuity
 
-**Last Session:** 2026-04-30 — Phase 14 complete
-**Next Action:** `/gsd-plan-phase 15`
+**Last Session:** 2026-04-30 — Phase 15 complete
+**Next Action:** `/gsd-plan-phase 16`
 
 ### Quick Context
 - Project: Schreinerei SaaS (multi-tenant construction site management)
@@ -80,3 +82,4 @@ Phase 17 [░░░░░░░░░░] Not started
 *Phase 12 completed: 2026-04-30*
 *Phase 13 completed: 2026-04-30*
 *Phase 14 completed: 2026-04-30*
+*Phase 15 completed: 2026-04-30*
