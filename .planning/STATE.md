@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-04-30)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler.
-**Current focus:** Next milestone planning
+**Current focus:** Phase 25 planning and DEDU-03 end-to-end closure
 
 ## Current Position
 
-Phase: 23 of 23 (Frontend UI & Auto-Assignment)
-Plan: Complete
-Status: v1.7 shipped
-Last activity: 2026-04-30 — Removed obsolete Phase 24 from planning and finalized v1.7 scope
+Phase: 25 of 25 (Deduction History Site Name End-to-End Wiring)
+Plan: 0 plans created
+Status: Ready to plan
+Last activity: 2026-04-30 — Executed Phase 24 verification and requirement revalidation plans
 
-Progress: [██████████] 100% (v1.7 milestone)
+Progress: [██████████] 100% (v1.7 milestone; pending Phase 25 DEDU-03 closure)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8 (v1.7 milestone)
+- Total plans completed: 10 (v1.7 milestone)
 - Average duration: ~5 minutes
-- Total execution time: ~45 minutes
+- Total execution time: ~53 minutes
 
 **By Phase:**
 
@@ -29,6 +29,7 @@ Progress: [██████████] 100% (v1.7 milestone)
 |-------|-------|-------|----------|
 | 22. Backend Foundation | 4 | 4 | ~3 min |
 | 23. Frontend UI & Auto-Assignment | 4 | 4 | ~5 min |
+| 24. Verification & Revalidation | 2 | 2 | ~9 min |
 
 **Recent Trend:**
 - Phase 22 completed efficiently with parallel Wave 1 execution
@@ -49,6 +50,8 @@ Recent decisions affecting current work:
 - 22-02: site_id is optional in WithdrawMaterial (backward compatible)
 - 22-03: PATCH /preferences with null clears active site
 - 22-04: LEFT JOIN for site names in stock history
+- 24-01: Requirement verification uses explicit evidence pointers per REQ row
+- 24-02: Phase 24 revalidation verdict includes complete pass/partial/missing totals
 
 ### Pending Todos
 
@@ -73,5 +76,5 @@ Items acknowledged and carried forward from v1.6 close:
 ## Session Continuity
 
 Last session: 2026-04-30
-Stopped at: v1.7 complete (phases 22-23)
-Resume file: None
+Stopped at: Completed 24-02-PLAN.md
+Resume file: .planning/phases/24-phase-verification-requirement-revalidation/24-02-SUMMARY.md

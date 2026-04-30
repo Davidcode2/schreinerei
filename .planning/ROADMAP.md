@@ -45,7 +45,7 @@
 
 **Milestone Goal:** Close audit gaps from v1.7 milestone verification and restore full end-to-end coverage.
 
-- [ ] **Phase 24: Phase Verification & Requirement Revalidation** - Add missing verification artifacts for Phases 22/23 and revalidate requirement evidence
+- [x] **Phase 24: Phase Verification & Requirement Revalidation** - Add missing verification artifacts for Phases 22/23 and revalidate requirement evidence ✅
 - [ ] **Phase 25: Deduction History Site Name End-to-End Wiring** - Wire frontend consumer/render path for history `site_name` and close DEDU-03
 
 ## Phase Details
@@ -95,7 +95,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 22. Backend Foundation | v1.7 | 4/4 | ✅ Complete | 2026-04-30 |
 | 23. Frontend UI & Auto-Assignment | v1.7 | 4/4 | ✅ Complete | 2026-04-30 |
-| 24. Phase Verification & Requirement Revalidation | v1.7 | 0/0 | 📝 Planned | — |
+| 24. Phase Verification & Requirement Revalidation | v1.7 | 2/2 | ✅ Complete | 2026-04-30 |
 | 25. Deduction History Site Name End-to-End Wiring | v1.7 | 0/0 | 📝 Planned | — |
 
 ---
@@ -104,6 +104,10 @@ Plans:
 **Goal**: Produce missing verification artifacts for Phases 22 and 23 and revalidate requirement evidence coverage.
 **Depends on**: Phase 23
 **Requirements**: PREF-01, PREF-02, PREF-03, DEDU-01, DEDU-02, ACTV-01, ACTV-02, ACTV-03, ACTV-04, ACTV-05, ACTV-06, ACTV-07, AUTO-01, AUTO-02, AUTO-03, AUTO-04
+**Plans**: 2 plans
+Plans:
+- [x] 24-01-PLAN.md — Create Phase 22 verification artifact and backend requirement revalidation rows (PREF/DEDU)
+- [x] 24-02-PLAN.md — Create Phase 23 verification artifact and complete consolidated ACTV/AUTO revalidation verdict
 **Gap Closure**: Closes milestone audit verification gaps for requirements and missing phase verification evidence.
 
 ### Phase 25: Deduction History Site Name End-to-End Wiring

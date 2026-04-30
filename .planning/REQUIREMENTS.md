@@ -9,32 +9,32 @@ Active Project Context — auto-assign materials, reservations, and time entries
 
 ### Backend — User Preferences
 
-- [ ] **PREF-01**: User can store their active Baustelle preference server-side
-- [ ] **PREF-02**: System validates active Baustelle exists and is not archived/deleted
-- [ ] **PREF-03**: System clears preference automatically if Baustelle becomes invalid
+- [x] **PREF-01**: User can store their active Baustelle preference server-side
+- [x] **PREF-02**: System validates active Baustelle exists and is not archived/deleted
+- [x] **PREF-03**: System clears preference automatically if Baustelle becomes invalid
 
 ### Backend — Material Deductions
 
-- [ ] **DEDU-01**: Material deductions can be linked to a Baustelle (FK column)
-- [ ] **DEDU-02**: WithdrawMaterial command accepts optional site_id parameter
+- [x] **DEDU-01**: Material deductions can be linked to a Baustelle (FK column)
+- [x] **DEDU-02**: WithdrawMaterial command accepts optional site_id parameter
 - [ ] **DEDU-03**: Deduction details include Baustelle name when linked
 
 ### Frontend — Active Site UI
 
-- [ ] **ACTV-01**: User sees persistent indicator showing active Baustelle name and color
-- [ ] **ACTV-02**: User can toggle active Baustelle from overview page
-- [ ] **ACTV-03**: User can toggle active Baustelle from dashboard view
-- [ ] **ACTV-04**: Only one Baustelle can be active per user at a time
-- [ ] **ACTV-05**: Baustellen have auto-assigned colors (hash-based, no manual selection)
-- [ ] **ACTV-06**: Active state persists across page navigation and browser refresh
-- [ ] **ACTV-07**: Frontend state syncs with server preference on load and after changes
+- [x] **ACTV-01**: User sees persistent indicator showing active Baustelle name and color
+- [x] **ACTV-02**: User can toggle active Baustelle from overview page
+- [x] **ACTV-03**: User can toggle active Baustelle from dashboard view
+- [x] **ACTV-04**: Only one Baustelle can be active per user at a time
+- [x] **ACTV-05**: Baustellen have auto-assigned colors (hash-based, no manual selection)
+- [x] **ACTV-06**: Active state persists across page navigation and browser refresh
+- [x] **ACTV-07**: Frontend state syncs with server preference on load and after changes
 
 ### Auto-Assignment
 
-- [ ] **AUTO-01**: Material withdrawal form pre-fills active Baustelle
-- [ ] **AUTO-02**: Tool/vehicle reservation form pre-fills active Baustelle
-- [ ] **AUTO-03**: Time entry form pre-fills active Baustelle when work_type is 'site'
-- [ ] **AUTO-04**: User can change or remove assignment before submission
+- [x] **AUTO-01**: Material withdrawal form pre-fills active Baustelle
+- [x] **AUTO-02**: Tool/vehicle reservation form pre-fills active Baustelle
+- [x] **AUTO-03**: Time entry form pre-fills active Baustelle when work_type is 'site'
+- [x] **AUTO-04**: User can change or remove assignment before submission
 
 ## v2.0 Requirements
 
@@ -71,23 +71,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PREF-01 | 24 | Pending |
-| PREF-02 | 24 | Pending |
-| PREF-03 | 24 | Pending |
-| DEDU-01 | 24 | Pending |
-| DEDU-02 | 24 | Pending |
+| PREF-01 | 24 | Complete |
+| PREF-02 | 24 | Complete |
+| PREF-03 | 24 | Complete |
+| DEDU-01 | 24 | Complete |
+| DEDU-02 | 24 | Complete |
 | DEDU-03 | 25 | Pending |
-| ACTV-01 | 24 | Pending |
-| ACTV-02 | 24 | Pending |
-| ACTV-03 | 24 | Pending |
-| ACTV-04 | 24 | Pending |
-| ACTV-05 | 24 | Pending |
-| ACTV-06 | 24 | Pending |
-| ACTV-07 | 24 | Pending |
-| AUTO-01 | 24 | Pending |
-| AUTO-02 | 24 | Pending |
-| AUTO-03 | 24 | Pending |
-| AUTO-04 | 24 | Pending |
+| ACTV-01 | 24 | Complete |
+| ACTV-02 | 24 | Complete |
+| ACTV-03 | 24 | Complete |
+| ACTV-04 | 24 | Complete |
+| ACTV-05 | 24 | Complete |
+| ACTV-06 | 24 | Complete |
+| ACTV-07 | 24 | Complete |
+| AUTO-01 | 24 | Complete |
+| AUTO-02 | 24 | Complete |
+| AUTO-03 | 24 | Complete |
+| AUTO-04 | 24 | Complete |
 
 **Coverage:**
 - v1.7 requirements: 17 total
