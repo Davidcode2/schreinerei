@@ -8,6 +8,7 @@ use crate::common::types::{TenantId, MaterialId, CategoryId, UserId, Unit, Order
 use crate::modules::inventory::domain::{
     Category, Material, CreateCategory, CreateMaterial,
     OrderRequest, OrderStatus, CreateOrderRequest,
+    StockEntryWithSite,
 };
 
 /// Repository for material data access with tenant isolation
@@ -467,6 +468,37 @@ impl MaterialRepository {
         Ok(())
     }
 
+    /// List stock entries for a material with optional site name
+    pub async fn list_stock_entries_with_site(
+        &self,
+        material_id: MaterialId,
+        tenant_id: TenantId,
+        limit: i32,
+    ) -> Result<Vec<StockEntryWithSite>, AppError> {
+        let entries = sqlx::query_as::<_, StockEntryRow>(
+            r#"
+            SELECT 
+                se.id, se.tenant_id, se.material_id, se.user_id, 
+                se.quantity_change, se.quantity_after, se.notes, 
+                se.site_id, se.created_at,
+                s.name as site_name
+            FROM stock_entries se
+            LEFT JOIN sites s ON se.site_id = s.id
+            WHERE se.material_id = $1 AND se.tenant_id = $2
+            ORDER BY se.created_at DESC
+            LIMIT $3
+            "#
+        )
+        .bind(material_id.0)
+        .bind(tenant_id.0)
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(entries.into_iter().map(|row| row.into_stock_entry_with_site()).collect())
+    }
+
     // === Order Request operations ===
 
     pub async fn create_order_request(
@@ -758,6 +790,37 @@ impl OrderRequestRow {
             notes: self.notes,
             created_at: self.created_at,
             updated_at: self.updated_at,
+        }
+    }
+}
+
+#[derive(Debug, FromRow)]
+struct StockEntryRow {
+    id: Uuid,
+    tenant_id: Uuid,
+    material_id: Uuid,
+    user_id: Uuid,
+    quantity_change: i32,
+    quantity_after: i32,
+    notes: Option<String>,
+    site_id: Option<Uuid>,
+    created_at: DateTime<Utc>,
+    site_name: Option<String>,
+}
+
+impl StockEntryRow {
+    fn into_stock_entry_with_site(self) -> StockEntryWithSite {
+        StockEntryWithSite {
+            id: self.id,
+            tenant_id: TenantId(self.tenant_id),
+            material_id: MaterialId(self.material_id),
+            user_id: UserId(self.user_id),
+            quantity_change: self.quantity_change,
+            quantity_after: self.quantity_after,
+            notes: self.notes,
+            site_id: self.site_id.map(SiteId),
+            site_name: self.site_name,
+            created_at: self.created_at,
         }
     }
 }
