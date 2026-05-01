@@ -213,4 +213,46 @@ mod tests {
         };
         assert_eq!(cmd.validate(), Err("Cannot manually create status change activity".to_string()));
     }
+
+    #[test]
+    fn document_attachment_create_activity_accepts_note_and_attachments() {
+        let cmd = CreateActivity {
+            site_id: test_site_id(),
+            activity_type: ActivityType::Note,
+            content: Some("Montage gestartet".to_string()),
+            photo_url: None,
+            attachment_ids: vec![uuid::Uuid::new_v4()],
+        };
+
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn document_attachment_create_activity_accepts_attachments_without_note() {
+        let cmd = CreateActivity {
+            site_id: test_site_id(),
+            activity_type: ActivityType::Note,
+            content: Some("   ".to_string()),
+            photo_url: None,
+            attachment_ids: vec![uuid::Uuid::new_v4()],
+        };
+
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn document_attachment_create_activity_rejects_empty_note_without_attachments() {
+        let cmd = CreateActivity {
+            site_id: test_site_id(),
+            activity_type: ActivityType::Note,
+            content: Some("   ".to_string()),
+            photo_url: None,
+            attachment_ids: vec![],
+        };
+
+        assert_eq!(
+            cmd.validate(),
+            Err("Either content or at least one attachment is required for note activity".to_string())
+        );
+    }
 }
