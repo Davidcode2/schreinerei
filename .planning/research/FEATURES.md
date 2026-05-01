@@ -1,69 +1,75 @@
 # Feature Landscape
 
-**Domain:** Carpentry SaaS — Inventory v1.9
+**Domain:** Carpentry SaaS — Fleet reservation UX
 **Researched:** 2026-05-01
 
 ## Table Stakes
 
-Features users expect. Missing = product feels incomplete for inventory management.
-
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Category CRUD (create, read, update, delete) | Admins need to organize materials; current system only has create + list | Low | Domain command + service + repo + route pattern already exists for categories. Add update/delete following `DeleteMaterial` constraint-check pattern. |
-| Edit material location | Materials move between storage locations; read-only location is a gap | Low | New `UpdateMaterial` command with partial update (PATCH). Only `location` and `min_quantity` fields. |
-| Edit material minimum quantity | Business needs change; min_quantity needs adjustment over time | Low | Same `UpdateMaterial` command. Both fields in one endpoint, one dialog. |
-| Set available quantity to arbitrary number | Correction/adjustment already exists but is admin-only; stock-in should be available to all employees | Med | New `StockIn` command, new endpoint `POST /materials/{id}/stock-in`, reuses `stock_entries` table. |
-| "Material einlagern" (stock-in) action | Incoming deliveries need to be recorded; currently only deductions exist | Med | New `StockIn` command, new frontend dialog, new event type `MaterialAdded`. |
-| Category string on inventory overview | Users need to see which category a material belongs to without clicking in | Low | Add `category_name` to `MaterialResponse` via JOIN in existing query. |
+| Calendar visible on fleet page | Reservation visibility should not require a second page | Low | Existing `CalendarView` can be embedded or extracted into a shared component |
+| Date-range selection by two taps | Users expect to choose a range directly in the calendar | Med | Replace current first-tap dialog open behavior |
+| Same-day booking support | One-day reservations are common | Low | Second tap may be on the same day |
+| Deferred confirmation after range selection | Prevents accidental modal interruptions | Med | Selection state lives in calendar until second tap |
+| Cancel clears pending selection | Users need a safe escape hatch | Low | Modal cancel should undo the temporary range |
+| Existing bookings remain visible while selecting | Avoids blind booking attempts | Low | Calendar already renders reservations by day |
 
 ## Differentiators
 
-Features that set product apart. Not expected, but valued.
-
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Color-coded history entries | Green for stock-in, red for withdrawal, blue for adjustments, amber for location changes | Med | Requires `entry_type` enum in `stock_entries` + frontend rendering with distinct visual badges. |
-| Clickable Baustelle links in history | Navigate from material withdrawal history directly to the Baustelle where material was used | Low | `site_id` already present in `stock_entries`. Frontend `Link` to `/sites/{id}`. |
-| User attribution in history ("von Max Mustermann") | Accountability — who did what, when | Low | Join `users` table in history query, add `user_name` / `extracted_by` field. Pattern already used in `SiteStockHistoryRow`. |
+| Bottom-sheet confirmation modal | Keeps the selected range visible while confirming | Med | Better mobile UX than the current centered dialog |
+| Optional time entry | Date-only booking stays fast, time detail stays available when needed | Med | Existing API already accepts precise times |
+| Resource-specific colors in calendar | Makes scanning reservations across vehicles and tools much faster | Med | Can reuse deterministic hash-color pattern on the client |
+| Embedded page replaces separate calendar entry point | Simplifies the fleet workflow and reduces navigation overhead | Low | Remove or demote the calendar icon path |
 
 ## Anti-Features
 
-Features to explicitly NOT build.
-
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| Bulk stock-in (batch import) | v1.9 is about single-item actions; bulk import is a v2+ concern | Single-item stock-in dialog. Room for batch in future. |
-| Category hierarchy (nested categories) | Schreinerei categories are flat (Platten, Kanten, Lacke, Schrauben). Nesting adds complexity without value. | Flat category list with CRUD. |
-| Real-time history via WebSocket | Polling is fine for MVP team sizes (5-20 users per org). Real-time adds infra complexity. | React Query stale/refetch with 30s stale time (existing pattern). |
-| Soft-delete for categories | Categories with materials can't be deleted (FK constraint). Soft-delete adds query complexity for no user value when block-with-error exists. | Block delete with clear error message. Re-categorize materials first. |
-| Audit log for category changes | Domain events already capture `CategoryUpdated`/`CategoryDeleted`. A separate audit table is redundant. | Use `domain_events` table which already logs all mutations. |
+| Modal on first tap | Breaks range selection and repeats the current UX problem | Wait until second selection before opening confirmation |
+| Mandatory time input for every booking | Slows down the common case | Make times opt-in behind a checkbox |
+| Separate mobile and desktop flows | Increases complexity for little value | Use one selection model with responsive layout tweaks |
+| Backend-managed color palette | Not needed to deliver the UX improvement | Compute stable colors in frontend from resource id |
+| Preserving `/fleet/calendar` as the main booking path | Conflicts with the milestone goal of direct visibility | Move the main experience to `/fleet` |
 
 ## Feature Dependencies
 
-```
-Category CRUD → InventorySettingsPage (frontend needs category API)
-UpdateMaterial → MaterialEditDialog (frontend needs material PATCH API)
-StockIn → StockInDialog (frontend needs stock-in API)
-entry_type migration → Enriched history response → MaterialHistoryFeed
-MaterialResponse + category_name JOIN → Category display on inventory overview
-Enriched history → User attribution (JOIN users table)
-Enriched history → Clickable Baustelle links (site_id → Link)
+```text
+Embedded calendar on /fleet
+  -> requires reuse/extraction of current CalendarView grid
+
+Two-tap range selection
+  -> requires local selection state in calendar cells
+  -> requires range sorting before submit
+
+Bottom-sheet confirmation modal
+  -> depends on completed range selection
+  -> can hand off final values into existing ReservationDialog or reservation create mutation
+
+Optional times
+  -> depends on confirmation modal state
+  -> uses existing start_time/end_time reservation payload
+
+Resource colors
+  -> depends on deterministic resource-to-color mapping in frontend
 ```
 
 ## MVP Recommendation
 
 Prioritize:
-1. Stock-in backend + frontend (most impactful: closes the "only deduct" gap)
-2. Material edit backend + frontend (location and min_quantity)
-3. Category CRUD backend + frontend (enables full inventory management)
+1. Embed the calendar into the fleet page and remove the extra navigation step
+2. Replace first-tap modal creation with two-tap range selection
+3. Add confirmation/cancel flow after range completion
+4. Add optional times and stable resource colors once the selection flow is correct
 
 Defer:
-- Color-coded history: Requires migration, can ship in Phase 3 while stock-in works with existing history format
-- User attribution in history: Nice-to-have, requires JOIN complexity
+- month-view redesign
+- drag-to-select interactions
+- per-resource legend/filtering beyond the current fleet tabs
 
 ## Sources
 
-- Project requirements from `.planning/PROJECT.md` — v1.9 active requirements
-- Codebase analysis: existing create-only category endpoints, missing update/delete
-- Codebase analysis: existing `AdjustStock` command (admin-only), gap for employee stock-in
-- Codebase analysis: existing `MaterialResponse` lacks `category_name` field
+- `frontend/src/pages/fleet/FleetPage.tsx`
+- `frontend/src/pages/fleet/CalendarView.tsx`
+- `frontend/src/pages/fleet/ReservationDialog.tsx`
