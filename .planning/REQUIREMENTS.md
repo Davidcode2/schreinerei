@@ -20,13 +20,13 @@
 ### Stock-In (STOCK)
 
 - [x] **STOCK-01**: User can record material stock-in ("Material einlagern") with amount and notes
-- [ ] **STOCK-02**: Stock-in events appear in inventory history with "MaterialAdded" entry type
+- [x] **STOCK-02**: Stock-in events appear in inventory history with "MaterialAdded" entry type
 
 ### Enriched History (HIST)
 
-- [ ] **HIST-01**: Inventory history shows color-coded event types (green for stock-in, red for withdrawal, blue for location/quantity changes)
-- [ ] **HIST-02**: History entries display the user who performed the action
-- [ ] **HIST-03**: Baustelle name in withdrawal history is clickable and navigates to baustelle detail page
+- [x] **HIST-01**: Inventory history shows color-coded event types (green for stock-in, red for withdrawal, blue for location/quantity changes)
+- [x] **HIST-02**: History entries display the user who performed the action
+- [x] **HIST-03**: Baustelle name in withdrawal history is clickable and navigates to baustelle detail page
 
 ### Overview Display (VIEW)
 
@@ -79,10 +79,10 @@ Deferred to future release.
 | EDIT-02 | Phase 31 | Complete |
 | EDIT-03 | Phase 31 | Complete |
 | STOCK-01 | Phase 31 | Complete |
-| STOCK-02 | Phase 32 | Pending |
-| HIST-01 | Phase 32 | Pending |
-| HIST-02 | Phase 32 | Pending |
-| HIST-03 | Phase 32 | Pending |
+| STOCK-02 | Phase 32 | Complete |
+| HIST-01 | Phase 32 | Complete |
+| HIST-02 | Phase 32 | Complete |
+| HIST-03 | Phase 32 | Complete |
 | VIEW-01 | Phase 31 | Complete |
 
 **Coverage:**

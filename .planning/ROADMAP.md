@@ -40,7 +40,7 @@
 
 - [x] **Phase 30: Backend API Foundation** — Domain commands, migration, and API endpoints for categories, material editing, stock-in, and enriched history (completed 2026-05-01)
 - [x] **Phase 31: Settings, Editing & Stock-In** — Category settings page, material edit dialog, stock-in dialog, and category on overview (completed 2026-05-01)
-- [ ] **Phase 32: Enriched History** — Color-coded history feed with user attribution and clickable Baustelle links
+- [x] **Phase 32: Enriched History** — Color-coded history feed with user attribution and clickable Baustelle links (completed 2026-05-01)
 - [ ] **Phase 33: Type Safety & Coverage** — ts-rs type generation, validation tests, and E2E tests
 
 ## Phase Details
@@ -84,7 +84,9 @@
   2. Each history entry shows the user who performed the action (e.g., "von Max Mustermann")
   3. Baustelle names in withdrawal entries are clickable links that navigate to the site detail page
   4. Stock-in records appear in the history feed with MaterialAdded type and visual distinction
-**Plans**: TBD
+**Plans**: 2 plans
+ - [x] 32-01-PLAN.md — Add the dedicated enriched-history query hook and regression coverage
+ - [x] 32-02-PLAN.md — Render enriched history badges, attribution, and Baustelle links on the detail page
 **UI hint**: yes
 **Deferred note**: `location_changed` and `min_quantity_changed` history entries are intentionally deferred until a separate audit model exists; do not force metadata edits into `stock_entries`.
 
@@ -108,10 +110,10 @@ Phases execute in numeric order: 30 → 31 → 32 → 33
 |-------|-----------|----------------|--------|-----------|
 | 30. Backend API Foundation | v1.9 | 2/2 | Complete    | 2026-05-01 |
 | 31. Settings, Editing & Stock-In | v1.9 | 3/3 | Complete   | 2026-05-01 |
-| 32. Enriched History | v1.9 | 0/? | Not started | - |
+| 32. Enriched History | v1.9 | 2/2 | Complete    | 2026-05-01 |
 | 33. Type Safety & Coverage | v1.9 | 0/? | Not started | - |
 
 ---
 
 *Roadmap last updated: 2026-05-01*
-*Next: `/gsd-plan-phase 32`*
+*Next: `/gsd-plan-phase 33`*

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Inventory Features
 status: ready_to_plan
-stopped_at: Phase 31 verified and completed
-last_updated: "2026-05-01T16:20:00Z"
-last_activity: 2026-05-01 -- Phase 31 verified and completed
+stopped_at: Phase 32 verified and completed
+last_updated: "2026-05-01T15:30:20.054Z"
+last_activity: 2026-05-01 -- Phase 32 verified and completed
 progress:
   total_phases: 4
-  completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
-  percent: 50
+  completed_phases: 3
+  total_plans: 7
+  completed_plans: 7
+  percent: 75
 ---
 
 # State: Schreinerei — v1.9 Inventory Features
@@ -23,23 +23,23 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-05-01)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler.
-**Current focus:** Phase 32 — enriched-history
+**Current focus:** Phase 33 — type-safety-&-coverage
 
 ## Current Position
 
-Phase: 32 (enriched-history)
+Phase: 33
 Plan: Not started
 Status: Ready to plan
 Last activity: 2026-05-01
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███████░░░] 75%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 5
-- Completed this session: Phase 31 (3/3 plans)
+- Total plans completed: 7
+- Completed this session: Phase 32 (2/2 plans)
 
 **By Phase:**
 
@@ -47,11 +47,13 @@ Progress: [░░░░░░░░░░] 0%
 |-------|-------|-------|----------|
 | 30. Backend API Foundation | 2/2 | - | - |
 | 31. Settings, Editing & Stock-In | 3/3 | - | - |
-| 32. Enriched History | 0/? | - | - |
+| 32. Enriched History | 2/2 | - | - |
 | 33. Type Safety & Coverage | 0/? | - | - |
 | Phase 31 P01 | 10m | 3 tasks | 6 files |
 | Phase 31 P02 | 8m | 3 tasks | 5 files |
 | Phase 31 P03 | 7m | 3 tasks | 4 files |
+| Phase 32 P01 | 3m | 2 tasks | 2 files |
+| Phase 32 P02 | 4m | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -71,6 +73,8 @@ Recent decisions affecting current work:
 - [Phase 31]: Inventory settings lives at /settings/inventory under the authenticated route tree. — The gear entrypoint leads to a dedicated management surface instead of a generic settings fallback.
 - [Phase 31]: Blocked category deletes remain inline on the affected row. — Conflict feedback is explicit and survives dialog closure.
 - [Phase 31]: Detail-page stock correction accepts a target quantity and converts it to an adjust delta. — The frontend stays aligned with the existing backend adjust endpoint.
+- [Phase 32]: Enriched inventory history uses a dedicated React Query cache key and hook. — Legacy history payloads stay isolated from the richer UI contract.
+- [Phase 32]: Inventory detail history renders through a dedicated MaterialHistoryFeed with isolated ErrorState retry handling. — The page keeps stock-movement UX separate from the sites activity feed.
 
 ### Pending Todos
 
@@ -79,7 +83,7 @@ None.
 ### Blockers/Concerns
 
 - Metadata-only history audit model is still unresolved and intentionally deferred
-- Phase 31 should consume the new PATCH/DELETE/stock-in/enriched-history endpoints without re-shaping their backend contracts
+- Phase 33 should keep enriched history coverage aligned with the shipped Phase 32 UI contract
 
 ## Deferred Items
 
@@ -91,6 +95,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-01T14:36:50.159Z
-Stopped at: Phase 31 verified and completed
+Last session: 2026-05-01T15:30:20.047Z
+Stopped at: Phase 32 verified and completed
 Resume file: None

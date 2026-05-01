@@ -25,9 +25,16 @@ Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, 
 
 ## Current State
 
-**v1.8 shipped on 2026-05-01.**
+**Phase 32 completed on 2026-05-01.**
 
-All v1.8 features working:
+Inventory feature rollout now includes:
+- ✅ Category settings page with edit/delete safeguards
+- ✅ Material editing for location, minimum quantity, and target stock correction
+- ✅ Dedicated stock-in flow with notes
+- ✅ Enriched inventory history with color-coded events, user attribution, and Baustelle links
+- ✅ Category labels on inventory overview entries
+
+Previously shipped foundation still working:
 - ✅ Baustelle status workflow (geplant → aktiv → abgeschlossen) with modal
 - ✅ Tabbed activity feed (Notizen/Dokumente + Material)
 - ✅ Material extraction history with Baustelle links and category display
@@ -60,6 +67,13 @@ All v1.x requirements validated:
 - ✓ FEED-01 to FEED-04 — Tabbed activity feed with note creation and pagination
 - ✓ HIST-01 to HIST-05 — Material history with category, extractor, and site links
 - ✓ FILE-01 to FILE-07 — Photo uploads with secure storage and offline queue
+
+**v1.9 Inventory Features (12 requirements, product scope):**
+- ✓ CATS-01 to CATS-03 — Category settings entrypoint, editing, and guarded delete flow
+- ✓ EDIT-01 to EDIT-03 — Material location/minimum-quantity editing and direct stock correction
+- ✓ STOCK-01, STOCK-02 — Stock-in dialog plus visible history entries for stock additions
+- ✓ HIST-01 to HIST-03 — Enriched history badges, user attribution, and clickable Baustelle links
+- ✓ VIEW-01 — Category display on the inventory overview
 
 **v1.7 Active Project Context (17 requirements):**
 - ✓ PREF-01, PREF-02, PREF-03 — User preferences with validation
@@ -111,13 +125,7 @@ All v1.x requirements validated:
 
 ### Active
 
-- [ ] Inventory category editing via settings page
-- [ ] Inventory item editing (location, minimum quantity)
-- [ ] Set available quantity to arbitrary number
-- [ ] "Material einlagern" (stock in) action with modal
-- [ ] Extended inventory history for stock movements with user attribution
-- [ ] Clickable Baustelle links in history events
-- [ ] Category display on inventory overview
+Feature-complete for v1.9 product scope. Remaining work is Phase 33 quality hardening (type generation and expanded automated coverage).
 
 ### Deferred in v1.9
 
