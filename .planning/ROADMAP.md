@@ -70,9 +70,9 @@
   4. User can record stock-in with amount and notes via a dedicated dialog
   5. Category name is displayed on each material entry in the inventory overview
 **Plans**: 3 plans
-- [ ] 31-01-PLAN.md — Shared inventory mutation hooks, settings route, and inventory gear entrypoint
-- [ ] 31-02-PLAN.md — Category management UI and overview category labels
-- [ ] 31-03-PLAN.md — Material edit dialog, direct stock correction, and stock-in dialog
+- [x] 31-01-PLAN.md — Shared inventory mutation hooks, settings route, and inventory gear entrypoint
+- [x] 31-02-PLAN.md — Category management UI and overview category labels
+- [x] 31-03-PLAN.md — Material edit dialog, direct stock correction, and stock-in dialog
 **UI hint**: yes
 
 ### Phase 32: Enriched History
@@ -114,4 +114,4 @@ Phases execute in numeric order: 30 → 31 → 32 → 33
 ---
 
 *Roadmap last updated: 2026-05-01*
-*Next: `/gsd-execute-phase 31`*
+*Next: `/gsd-plan-phase 32`*
