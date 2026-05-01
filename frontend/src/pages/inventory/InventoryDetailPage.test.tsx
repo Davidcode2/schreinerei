@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { http, HttpResponse } from "msw"
 import { render, screen } from "@/test/utils"
 import { server } from "@/test/mocks/server"
@@ -97,5 +99,106 @@ describe("InventoryDetailPage history", () => {
     render(<InventoryDetailPage />)
 
     expect(await screen.findByText("Noch keine Entnahmen erfasst")).toBeInTheDocument()
+  })
+})
+
+describe("InventoryDetailPage interactions", () => {
+  it("renders stock-in, withdraw, and edit actions in the expected order", async () => {
+    render(<InventoryDetailPage />)
+
+    await screen.findByText("Betonschraube")
+
+    const buttonLabels = screen
+      .getAllByRole("button")
+      .map((button) => button.textContent?.trim())
+      .filter(Boolean)
+
+    const stockInIndex = buttonLabels.indexOf("Material einlagern")
+    const withdrawIndex = buttonLabels.indexOf("Material entnehmen")
+    const editIndex = buttonLabels.indexOf("Material bearbeiten")
+
+    expect(stockInIndex).toBeGreaterThanOrEqual(0)
+    expect(withdrawIndex).toBeGreaterThan(stockInIndex)
+    expect(editIndex).toBeGreaterThan(withdrawIndex)
+  })
+
+  it("submits stock-in with quantity and optional notes, then shows the success toast", async () => {
+    const user = userEvent.setup()
+    let stockInPayload: unknown = null
+
+    server.use(
+      http.get("/api/v1/inventory/materials/mat-123/history", () =>
+        HttpResponse.json([])
+      ),
+      http.post("/api/v1/inventory/materials/mat-123/stock-in", async ({ request }) => {
+        stockInPayload = await request.json()
+        return HttpResponse.json({ ...materialResponse, quantity: 51 })
+      })
+    )
+
+    render(<InventoryDetailPage />)
+
+    await user.click(await screen.findByRole("button", { name: /material einlagern/i }))
+
+    expect(await screen.findByText("Aktueller Bestand")).toBeInTheDocument()
+
+    await user.clear(screen.getByLabelText(/^menge$/i))
+    await user.type(screen.getByLabelText(/^menge$/i), "3")
+    await user.type(screen.getByLabelText(/notizen/i), "Lieferung HolzLand")
+    await user.click(screen.getByRole("button", { name: /einlagern$/i }))
+
+    await waitFor(() => {
+      expect(stockInPayload).toEqual({ quantity: 3, notes: "Lieferung HolzLand" })
+    })
+
+    expect(await screen.findByText("3 Stück eingelagert")).toBeInTheDocument()
+  })
+
+  it("submits edit changes and translates target stock into an adjust delta", async () => {
+    const user = userEvent.setup()
+    let updatePayload: unknown = null
+    let adjustPayload: unknown = null
+
+    server.use(
+      http.get("/api/v1/inventory/materials/mat-123/history", () =>
+        HttpResponse.json([])
+      ),
+      http.patch("/api/v1/inventory/materials/mat-123", async ({ request }) => {
+        updatePayload = await request.json()
+        return HttpResponse.json({
+          ...materialResponse,
+          location: "Regal B2",
+          min_quantity: 14,
+        })
+      }),
+      http.post("/api/v1/inventory/materials/mat-123/adjust", async ({ request }) => {
+        adjustPayload = await request.json()
+        return HttpResponse.json({ ...materialResponse, quantity: 60 })
+      })
+    )
+
+    render(<InventoryDetailPage />)
+
+    await user.click(await screen.findByRole("button", { name: /material bearbeiten/i }))
+
+    expect(await screen.findByText("Setzt den verfügbaren Bestand direkt auf diesen Wert.")).toBeInTheDocument()
+
+    await user.clear(screen.getByLabelText(/lagerort/i))
+    await user.type(screen.getByLabelText(/lagerort/i), "Regal B2")
+    await user.clear(screen.getByLabelText(/mindestbestand/i))
+    await user.type(screen.getByLabelText(/mindestbestand/i), "14")
+    await user.clear(screen.getByLabelText(/bestand korrigieren/i))
+    await user.type(screen.getByLabelText(/bestand korrigieren/i), "60")
+    await user.click(screen.getByRole("button", { name: /änderungen speichern/i }))
+
+    await waitFor(() => {
+      expect(updatePayload).toEqual({ location: "Regal B2", min_quantity: 14 })
+      expect(adjustPayload).toEqual({
+        quantity: 12,
+        reason: "Bestandskorrektur über Materialdialog",
+      })
+    })
+
+    expect(await screen.findByText("Material aktualisiert")).toBeInTheDocument()
   })
 })
