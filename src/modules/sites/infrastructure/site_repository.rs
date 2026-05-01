@@ -553,9 +553,21 @@ impl SiteRepository {
     ) -> Result<Vec<Activity>, AppError> {
         let activities = sqlx::query_as::<_, ActivityRow>(
             r#"
-            SELECT id, tenant_id, site_id, user_id, activity_type, content, photo_url, created_at
+            SELECT
+                site_activities.id,
+                site_activities.tenant_id,
+                site_activities.site_id,
+                site_activities.user_id,
+                COALESCE(NULLIF(users.name, ''), users.email, site_activities.user_id::text) AS creator_name,
+                site_activities.activity_type,
+                site_activities.content,
+                site_activities.photo_url,
+                site_activities.created_at
             FROM site_activities
-            WHERE tenant_id = $1 AND site_id = $2
+            LEFT JOIN users
+                ON users.id = site_activities.user_id
+               AND users.tenant_id = site_activities.tenant_id
+            WHERE site_activities.tenant_id = $1 AND site_activities.site_id = $2
             ORDER BY created_at DESC
             LIMIT $3
             "#
@@ -872,6 +884,7 @@ struct ActivityRow {
     tenant_id: Uuid,
     site_id: Uuid,
     user_id: Uuid,
+    creator_name: String,
     activity_type: String,
     content: Option<String>,
     photo_url: Option<String>,
@@ -902,6 +915,7 @@ impl ActivityRow {
             tenant_id: TenantId(self.tenant_id),
             site_id: SiteId(self.site_id),
             user_id: UserId(self.user_id),
+            creator_name: self.creator_name,
             activity_type: self.activity_type.parse().unwrap_or(ActivityType::Note),
             content: self.content,
             photo_url: self.photo_url,

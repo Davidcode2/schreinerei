@@ -42,6 +42,7 @@ pub struct Activity {
     pub tenant_id: TenantId,
     pub site_id: SiteId,
     pub user_id: UserId,
+    pub creator_name: String,
     pub activity_type: ActivityType,
     pub content: Option<String>,
     pub photo_url: Option<String>,
