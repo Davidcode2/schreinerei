@@ -6,7 +6,7 @@ use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::sites::domain::{
     Site, TimeEntry, Activity, CreateSite, UpdateSite, CreateTimeEntry, UpdateTimeEntry, AssignUser, CreateActivity,
     SiteCreatedPayload, SiteStatusChangedPayload, UserAssignedToSitePayload, TimeEntryCreatedPayload,
-    SiteActivityAttachment,
+    ActivityAttachmentMetadata, SiteActivityAttachment,
 };
 use crate::modules::sites::infrastructure::site_repository::{SiteRepository, DashboardSite};
 use sqlx::PgPool;
@@ -24,6 +24,8 @@ pub struct UploadPhotoCommand {
 
 pub struct UploadPhotoResult {
     pub attachment_id: Uuid,
+    pub filename: String,
+    pub mime_type: String,
     pub photo_url: String,
     pub thumbnail_url: Option<String>,
 }
@@ -41,15 +43,15 @@ impl SiteService {
     }
 
     pub fn validate_upload_payload(mime_type: &str, byte_len: usize) -> Result<(), AppError> {
-        let allowed = ["image/jpeg", "image/png", "image/webp"];
+        let allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
         if !allowed.contains(&mime_type) {
-            return Err(AppError::Validation("Unsupported image MIME type".to_string()));
+            return Err(AppError::Validation("Unsupported attachment MIME type".to_string()));
         }
         if byte_len == 0 {
-            return Err(AppError::Validation("Uploaded image is empty".to_string()));
+            return Err(AppError::Validation("Uploaded attachment is empty".to_string()));
         }
         if byte_len > MAX_UPLOAD_SIZE_BYTES {
-            return Err(AppError::Validation("Uploaded image exceeds size limit".to_string()));
+            return Err(AppError::Validation("Uploaded attachment exceeds size limit".to_string()));
         }
         Ok(())
     }
@@ -59,8 +61,13 @@ impl SiteService {
             "image/jpeg" => Ok("jpg"),
             "image/png" => Ok("png"),
             "image/webp" => Ok("webp"),
-            _ => Err(AppError::Validation("Unsupported image MIME type".to_string())),
+            "application/pdf" => Ok("pdf"),
+            _ => Err(AppError::Validation("Unsupported attachment MIME type".to_string())),
         }
+    }
+
+    fn should_generate_thumbnail(mime_type: &str) -> bool {
+        mime_type.starts_with("image/")
     }
 
     fn generate_thumbnail_bytes(bytes: &[u8], mime_type: &str) -> Result<Vec<u8>, AppError> {
@@ -82,11 +89,24 @@ impl SiteService {
         Ok(out.into_inner())
     }
 
-    fn build_attachment_urls(attachment_id: Uuid) -> (String, Option<String>) {
+    fn build_attachment_urls(attachment_id: Uuid, mime_type: &str) -> (String, Option<String>) {
+        let thumbnail_url = Self::should_generate_thumbnail(mime_type)
+            .then(|| format!("/api/v1/attachments/{attachment_id}/thumbnail"));
         (
             format!("/api/v1/attachments/{attachment_id}"),
-            Some(format!("/api/v1/attachments/{attachment_id}/thumbnail")),
+            thumbnail_url,
         )
+    }
+
+    fn to_attachment_metadata(attachment: SiteActivityAttachment) -> ActivityAttachmentMetadata {
+        let (url, thumbnail_url) = Self::build_attachment_urls(attachment.id, &attachment.mime_type);
+        ActivityAttachmentMetadata {
+            id: attachment.id,
+            filename: attachment.original_filename,
+            mime_type: attachment.mime_type,
+            url,
+            thumbnail_url,
+        }
     }
 
     async fn resolve_local_user_id(&self, ctx: &TenantContext) -> Result<UserId, AppError> {
@@ -421,6 +441,17 @@ impl SiteService {
             .create_activity(ctx.tenant_id, local_user_id, &create)
             .await?;
 
+        let attachments = if create.attachment_ids.is_empty() {
+            Vec::new()
+        } else {
+            self.site_repo
+                .link_activity_attachments(ctx.tenant_id, create.site_id, activity.id, &create.attachment_ids)
+                .await?
+                .into_iter()
+                .map(Self::to_attachment_metadata)
+                .collect()
+        };
+
         // Publish ActivityAdded event
         let event = crate::common::events::DomainEvent::new(
             EventType::ActivityAdded,
@@ -436,7 +467,7 @@ impl SiteService {
 
         self.site_repo.publish_event(&event).await?;
 
-        Ok(activity)
+        Ok(Activity { attachments, ..activity })
     }
 
     pub async fn list_activities(
@@ -448,22 +479,49 @@ impl SiteService {
         // Verify site exists in same tenant
         let _site = self.get_site(site_id, ctx).await?;
 
-        self.site_repo.list_activities(ctx.tenant_id, site_id, limit).await
+        let activities = self.site_repo.list_activities(ctx.tenant_id, site_id, limit).await?;
+        let activity_ids: Vec<_> = activities.iter().map(|activity| activity.id).collect();
+        let attachments_by_activity = self
+            .site_repo
+            .list_activity_attachments(ctx.tenant_id, site_id, &activity_ids)
+            .await?;
+
+        Ok(activities
+            .into_iter()
+            .map(|activity| Activity {
+                attachments: attachments_by_activity
+                    .get(&activity.id)
+                    .cloned()
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(Self::to_attachment_metadata)
+                    .collect(),
+                ..activity
+            })
+            .collect())
     }
 
-    pub async fn upload_photo_attachment(
+    pub async fn upload_site_attachment(
         &self,
         cmd: UploadPhotoCommand,
         ctx: &TenantContext,
     ) -> Result<UploadPhotoResult, AppError> {
+        let mime_type = cmd.mime_type.clone();
+        let original_filename = cmd.original_filename.clone();
+
         Self::validate_upload_payload(&cmd.mime_type, cmd.original_bytes.len())?;
 
         let _site = self.get_site(cmd.site_id, ctx).await?;
 
         let extension = Self::extension_for_mime(&cmd.mime_type)?;
         let original_key = format!("{}.{}", Uuid::new_v4(), extension);
-        let thumbnail_key = format!("{}.{}", Uuid::new_v4(), extension);
-        let thumbnail_bytes = Self::generate_thumbnail_bytes(&cmd.original_bytes, &cmd.mime_type)?;
+        let thumbnail_key = Self::should_generate_thumbnail(&cmd.mime_type)
+            .then(|| format!("{}.{}", Uuid::new_v4(), extension));
+        let thumbnail_bytes = if Self::should_generate_thumbnail(&cmd.mime_type) {
+            Some(Self::generate_thumbnail_bytes(&cmd.original_bytes, &cmd.mime_type)?)
+        } else {
+            None
+        };
 
         let attachment_id = Uuid::new_v4();
 
@@ -476,24 +534,34 @@ impl SiteService {
                     activity_id: None,
                     site_id: cmd.site_id,
                     storage_key: original_key,
-                    thumbnail_key: Some(thumbnail_key),
-                    original_filename: cmd.original_filename,
-                    mime_type: cmd.mime_type,
+                    thumbnail_key,
+                    original_filename: original_filename.clone(),
+                    mime_type: mime_type.clone(),
                     size_bytes: cmd.original_bytes.len() as i64,
                     original_bytes: Some(cmd.original_bytes),
-                    thumbnail_bytes: Some(thumbnail_bytes),
+                    thumbnail_bytes,
                     created_at: chrono::Utc::now(),
                 },
             )
             .await?;
 
-        let (photo_url, thumbnail_url) = Self::build_attachment_urls(attachment_id);
+        let (photo_url, thumbnail_url) = Self::build_attachment_urls(attachment_id, &mime_type);
 
         Ok(UploadPhotoResult {
             attachment_id,
+            filename: original_filename,
+            mime_type,
             photo_url,
             thumbnail_url,
         })
+    }
+
+    pub async fn upload_photo_attachment(
+        &self,
+        cmd: UploadPhotoCommand,
+        ctx: &TenantContext,
+    ) -> Result<UploadPhotoResult, AppError> {
+        self.upload_site_attachment(cmd, ctx).await
     }
 
     // === Dashboard operations ===
@@ -544,7 +612,7 @@ mod tests {
     #[test]
     fn attachment_urls_use_attachment_id_paths() {
         let id = uuid::Uuid::new_v4();
-        let (photo_url, thumb_url) = SiteService::build_attachment_urls(id);
+        let (photo_url, thumb_url) = SiteService::build_attachment_urls(id, "image/jpeg");
         assert_eq!(photo_url, format!("/api/v1/attachments/{id}"));
         assert_eq!(thumb_url, Some(format!("/api/v1/attachments/{id}/thumbnail")));
     }
@@ -552,7 +620,7 @@ mod tests {
     #[test]
     fn upload_photo_urls_do_not_use_pending_marker() {
         let id = uuid::Uuid::new_v4();
-        let (photo_url, thumb_url) = SiteService::build_attachment_urls(id);
+        let (photo_url, thumb_url) = SiteService::build_attachment_urls(id, "image/jpeg");
         assert!(!photo_url.contains("pending-upload"));
         assert!(!thumb_url.unwrap_or_default().contains("pending-upload"));
     }

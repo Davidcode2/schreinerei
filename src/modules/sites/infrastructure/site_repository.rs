@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc, NaiveDate};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use sqlx::{PgPool, FromRow};
 use uuid::Uuid;
 
@@ -578,11 +579,11 @@ impl SiteRepository {
             r#"
             INSERT INTO site_activity_attachments (
                 id, tenant_id, activity_id, site_id, storage_key, thumbnail_key,
-                mime_type, size_bytes, original_bytes, thumbnail_bytes, created_at
+                original_filename, mime_type, size_bytes, original_bytes, thumbnail_bytes, created_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             RETURNING id, tenant_id, activity_id, site_id, storage_key, thumbnail_key,
-                mime_type, size_bytes, original_bytes, thumbnail_bytes, created_at
+                original_filename, mime_type, size_bytes, original_bytes, thumbnail_bytes, created_at
             "#,
         )
         .bind(attachment.id)
@@ -591,6 +592,7 @@ impl SiteRepository {
         .bind(attachment.site_id.0)
         .bind(&attachment.storage_key)
         .bind(&attachment.thumbnail_key)
+        .bind(&attachment.original_filename)
         .bind(&attachment.mime_type)
         .bind(attachment.size_bytes)
         .bind(&attachment.original_bytes)
@@ -632,6 +634,89 @@ impl SiteRepository {
         Ok(())
     }
 
+    pub async fn link_activity_attachments(
+        &self,
+        tenant_id: TenantId,
+        site_id: SiteId,
+        activity_id: ActivityId,
+        attachment_ids: &[Uuid],
+    ) -> Result<Vec<SiteActivityAttachment>, AppError> {
+        if attachment_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let rows = sqlx::query_as::<_, AttachmentRow>(
+            r#"
+            UPDATE site_activity_attachments
+            SET activity_id = $1
+            WHERE tenant_id = $2
+              AND site_id = $3
+              AND id = ANY($4)
+              AND activity_id IS NULL
+            RETURNING id, tenant_id, activity_id, site_id, storage_key, thumbnail_key,
+                original_filename, mime_type, size_bytes, original_bytes, thumbnail_bytes, created_at
+            "#,
+        )
+        .bind(activity_id.0)
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .bind(attachment_ids)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        if rows.len() != attachment_ids.len() {
+            return Err(AppError::Validation(
+                "One or more attachments could not be linked to this activity".to_string(),
+            ));
+        }
+
+        Ok(rows.into_iter().map(AttachmentRow::into_attachment).collect())
+    }
+
+    pub async fn list_activity_attachments(
+        &self,
+        tenant_id: TenantId,
+        site_id: SiteId,
+        activity_ids: &[ActivityId],
+    ) -> Result<HashMap<ActivityId, Vec<SiteActivityAttachment>>, AppError> {
+        if activity_ids.is_empty() {
+            return Ok(HashMap::new());
+        }
+
+        let activity_uuids: Vec<_> = activity_ids.iter().map(|id| id.0).collect();
+        let rows = sqlx::query_as::<_, AttachmentRow>(
+            r#"
+            SELECT id, tenant_id, activity_id, site_id, storage_key, thumbnail_key,
+                original_filename, mime_type, size_bytes, original_bytes, thumbnail_bytes, created_at
+            FROM site_activity_attachments
+            WHERE tenant_id = $1
+              AND site_id = $2
+              AND activity_id = ANY($3)
+            ORDER BY created_at ASC
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .bind(&activity_uuids)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        let mut grouped = HashMap::new();
+        for row in rows {
+            let attachment = row.into_attachment();
+            if let Some(activity_id) = attachment.activity_id {
+                grouped
+                    .entry(activity_id)
+                    .or_insert_with(Vec::new)
+                    .push(attachment);
+            }
+        }
+
+        Ok(grouped)
+    }
+
     pub async fn find_attachment_by_id(
         &self,
         attachment_id: Uuid,
@@ -640,7 +725,7 @@ impl SiteRepository {
         let row = sqlx::query_as::<_, AttachmentRow>(
             r#"
             SELECT id, tenant_id, activity_id, site_id, storage_key, thumbnail_key,
-                mime_type, size_bytes, original_bytes, thumbnail_bytes, created_at
+                original_filename, mime_type, size_bytes, original_bytes, thumbnail_bytes, created_at
             FROM site_activity_attachments
             WHERE id = $1 AND tenant_id = $2
             "#,

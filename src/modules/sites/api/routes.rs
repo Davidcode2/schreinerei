@@ -42,7 +42,7 @@ pub fn create_router() -> Router<AppState> {
         // Activities
         .route("/api/v1/sites/{id}/activities", get(list_activities).post(create_activity))
         .route("/api/v1/sites/{id}/attachments", post(upload_site_attachment))
-        .route("/api/v1/sites/{id}/attachments/photo", post(upload_site_attachment))
+        .route("/api/v1/sites/{id}/attachments/photo", post(upload_site_photo_attachment))
         .route("/api/v1/attachments/{attachment_id}", get(get_attachment_bytes))
         .route("/api/v1/attachments/{attachment_id}/thumbnail", get(get_attachment_thumbnail_bytes))
         
@@ -160,6 +160,16 @@ pub struct TimeEntryResponse {
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct SiteActivityAttachmentResponse {
+    pub attachment_id: String,
+    pub filename: String,
+    pub mime_type: String,
+    pub url: String,
+    pub thumbnail_url: Option<String>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct UploadSiteAttachmentResponse {
     pub attachment_id: String,
     pub filename: String,
     pub mime_type: String,
@@ -731,7 +741,75 @@ pub async fn upload_site_attachment(
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
 
-    let mut image_part: Option<(String, Vec<u8>)> = None;
+    let mut attachment_part: Option<(String, String, Vec<u8>)> = None;
+
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| AppError::Validation(format!("Invalid multipart payload: {e}")))?
+    {
+        if field.name() != Some("attachment") {
+            continue;
+        }
+
+        let file_name = field.file_name().unwrap_or("attachment").to_string();
+
+        let mime_type = field
+            .content_type()
+            .ok_or_else(|| AppError::Validation("Attachment MIME type is required".to_string()))?
+            .to_string();
+        let bytes = field
+            .bytes()
+            .await
+            .map_err(|e| AppError::Validation(format!("Unable to read upload bytes: {e}")))?
+            .to_vec();
+        attachment_part = Some((file_name, mime_type, bytes));
+        break;
+    }
+
+    let (original_filename, mime_type, original_bytes) = attachment_part
+        .ok_or_else(|| AppError::Validation("Multipart field 'attachment' is required".to_string()))?;
+
+    let result = service
+        .upload_site_attachment(
+            crate::modules::sites::application::site_service::UploadPhotoCommand {
+                site_id,
+                mime_type,
+                original_bytes,
+                original_filename,
+            },
+            &ctx,
+        )
+        .await?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(UploadSiteAttachmentResponse {
+            attachment_id: result.attachment_id.to_string(),
+            filename: result.filename,
+            mime_type: result.mime_type,
+            url: result.photo_url,
+            thumbnail_url: result.thumbnail_url,
+        }),
+    ))
+}
+
+pub async fn upload_site_photo_attachment(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+    mut multipart: Multipart,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
+    );
+    let ctx = TenantContext::from_auth(&auth);
+
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+
+    let mut image_part: Option<(String, String, Vec<u8>)> = None;
 
     while let Some(field) = multipart
         .next_field()
@@ -742,6 +820,7 @@ pub async fn upload_site_attachment(
             continue;
         }
 
+        let file_name = field.file_name().unwrap_or("photo").to_string();
         let mime_type = field
             .content_type()
             .ok_or_else(|| AppError::Validation("Photo MIME type is required".to_string()))?
@@ -751,12 +830,12 @@ pub async fn upload_site_attachment(
             .await
             .map_err(|e| AppError::Validation(format!("Unable to read upload bytes: {e}")))?
             .to_vec();
-        image_part = Some((mime_type, bytes));
+        image_part = Some((file_name, mime_type, bytes));
         break;
     }
 
-    let (mime_type, original_bytes) =
-        image_part.ok_or_else(|| AppError::Validation("Multipart field 'photo' is required".to_string()))?;
+    let (original_filename, mime_type, original_bytes) = image_part
+        .ok_or_else(|| AppError::Validation("Multipart field 'photo' is required".to_string()))?;
 
     let result = service
         .upload_photo_attachment(
@@ -764,7 +843,7 @@ pub async fn upload_site_attachment(
                 site_id,
                 mime_type,
                 original_bytes,
-                original_filename: "attachment".to_string(),
+                original_filename,
             },
             &ctx,
         )
@@ -859,7 +938,7 @@ pub async fn get_attachment_thumbnail_bytes(
 
 #[cfg(test)]
 mod tests {
-    use super::{SiteActivityAttachmentResponse, UploadPhotoAttachmentResponse};
+    use super::{SiteActivityAttachmentResponse, UploadPhotoAttachmentResponse, UploadSiteAttachmentResponse};
 
     #[test]
     fn upload_response_contains_required_contract_fields() {
@@ -888,5 +967,19 @@ mod tests {
         assert_eq!(dto.mime_type, "application/pdf");
         assert!(dto.url.contains("/attachments/"));
         assert!(dto.thumbnail_url.is_none());
+    }
+
+    #[test]
+    fn upload_site_attachment_response_preserves_filename_and_mime_type() {
+        let dto = UploadSiteAttachmentResponse {
+            attachment_id: uuid::Uuid::new_v4().to_string(),
+            filename: "plan.pdf".to_string(),
+            mime_type: "application/pdf".to_string(),
+            url: "/api/v1/attachments/1".to_string(),
+            thumbnail_url: None,
+        };
+
+        assert_eq!(dto.filename, "plan.pdf");
+        assert_eq!(dto.mime_type, "application/pdf");
     }
 }

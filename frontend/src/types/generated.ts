@@ -128,6 +128,8 @@ export type UpdateVehicleRequest = { name: string | null, license_plate: string 
 
 export type UploadPhotoAttachmentResponse = { attachment_id: string, photo_url: string, thumbnail_url: string, };
 
+export type UploadSiteAttachmentResponse = { attachment_id: string, filename: string, mime_type: string, url: string, thumbnail_url: string | null, };
+
 export type UserPreferences = { active_site_id: string | null, };
 
 /**
