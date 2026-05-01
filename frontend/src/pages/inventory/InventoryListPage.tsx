@@ -124,13 +124,17 @@ export default function InventoryListPage() {
           <p className="text-sm text-muted-foreground">
             {filteredMaterials.length} Material{filteredMaterials.length !== 1 ? "ien" : ""} gefunden
           </p>
-          {filteredMaterials.map((material: Material) => (
-            <MaterialCard
-              key={material.id}
-              material={material}
-              categoryName={categoryNames.get(material.category_id)}
-            />
-          ))}
+          {filteredMaterials.map((material: Material) => {
+            const categoryName = categoryNames.get(material.category_id)
+
+            return (
+              <MaterialCard
+                key={material.id}
+                material={material}
+                {...(categoryName ? { categoryName } : {})}
+              />
+            )
+          })}
         </div>
       )}
 
