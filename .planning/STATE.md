@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: Baustelle Activity Stream Features
-status: ready_to_plan
-stopped_at: Phase 32 execution complete
-last_updated: "2026-05-01T18:13:30Z"
-last_activity: 2026-05-01 -- Phase 32 executed and summarized
+status: verifying
+stopped_at: Phase 33 execution complete
+last_updated: "2026-05-01T16:35:05Z"
+last_activity: 2026-05-01 -- Phase 33 executed and summarized
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  completed_phases: 4
+  total_plans: 9
+  completed_plans: 9
   percent: 100
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-01)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler.
-**Current focus:** Phase 33 — entry-management
+**Current focus:** Phase 33 verification
 
 ## Current Position
 
-Phase: 33
-Plan: Not started
-Status: Ready to plan
+Phase: 33 (entry-management)
+Plan: Complete
+Status: Phase complete — ready for verification
 Last activity: 2026-05-01
 
 Progress: [██████████] 100%
@@ -63,6 +63,9 @@ Recent decisions affecting current work:
 - v1.8: Authenticated blob fetch for images — no unauthenticated URLs
 - Phase 32: Resolve `creator_name` in the tenant-scoped activity query instead of trusting client-side user lookups.
 - Phase 32: Model the media viewer as a route-backed overlay so deep links close back to `/sites/:id`.
+- Phase 33: Expose only a boolean `can_delete` permission bit from activity APIs so the browser never compares Keycloak subjects to tenant-local activity user IDs.
+- Phase 33: Keep `status_change` activities immutable while allowing creator-only hard deletes for note/photo entries.
+- Phase 33: Route activity-feed deletes through one confirmation dialog and a site-scoped React Query invalidation path.
 
 ### Pending Todos
 
@@ -82,6 +85,6 @@ Items acknowledged and carried forward from v1.8:
 
 ## Session Continuity
 
-Last session: 2026-05-01T18:13:30Z
-Stopped at: Phase 32 execution complete
+Last session: 2026-05-01T16:35:05Z
+Stopped at: Phase 33 execution complete
 Resume file: None

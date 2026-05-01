@@ -33,9 +33,9 @@
 
 ### Entry Management (ENTRY)
 
-- [ ] **ENTRY-01**: User can delete their own activity entries (creator-only permission)
-- [ ] **ENTRY-02**: Delete action shows confirmation dialog before removing entry
-- [ ] **ENTRY-03**: Deletion removes entry and associated attachments from feed
+- [x] **ENTRY-01**: User can delete their own activity entries (creator-only permission)
+- [x] **ENTRY-02**: Delete action shows confirmation dialog before removing entry
+- [x] **ENTRY-03**: Deletion removes entry and associated attachments from feed
 
 ## v2 Requirements
 
@@ -99,9 +99,9 @@
 | VIEW-07 | 32 | Complete |
 | VIEW-08 | 32 | Complete |
 | VIEW-09 | 32 | Complete |
-| ENTRY-01 | 33 | Pending |
-| ENTRY-02 | 33 | Pending |
-| ENTRY-03 | 33 | Pending |
+| ENTRY-01 | 33 | Complete |
+| ENTRY-02 | 33 | Complete |
+| ENTRY-03 | 33 | Complete |
 
 **Coverage:**
 - v1 requirements: 20 total
