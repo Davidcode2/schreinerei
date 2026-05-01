@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Activity, ActivityAttachment } from "@/types/sites"
 import { useSiteMaterialHistory } from "@/lib/api/hooks"
 import { apiClient } from "@/lib/api/client"
+import { buildMediaViewerPath, extractAttachmentIdFromPhotoUrl } from "./mediaViewerRoute"
 
 const statusLabels: Record<string, string> = {
   planned: "Geplant",
@@ -142,20 +143,6 @@ function AttachmentTile({ attachment }: { attachment: ActivityAttachment }) {
   return <ImageAttachmentTile attachment={attachment} />
 }
 
-function buildPhotoAttachment(activity: Activity): ActivityAttachment | null {
-  if (!activity.photo_url) {
-    return null
-  }
-
-  return {
-    attachment_id: `${activity.id}-photo`,
-    filename: "Aktivitätsfoto",
-    mime_type: "image/jpeg",
-    url: activity.photo_url,
-    thumbnail_url: activity.photo_url,
-  }
-}
-
 function getActivityHeading(activity: Activity) {
   if (activity.activity_type === "photo") {
     return "Foto hinzugefügt"
@@ -168,9 +155,64 @@ function getActivityHeading(activity: Activity) {
   return activity.attachments.length > 0 ? "Dokument hinzugefügt" : "Notiz"
 }
 
+function buildViewerPath(
+  siteId: string,
+  activityId: string,
+  attachmentId: string,
+  filename: string
+): string {
+  return buildMediaViewerPath(siteId, activityId, attachmentId, filename)
+}
+
+function ViewerTileLink({
+  activity,
+  attachment,
+}: {
+  activity: Activity
+  attachment: ActivityAttachment
+}) {
+  const href = buildViewerPath(
+    activity.site_id,
+    activity.id,
+    attachment.attachment_id,
+    attachment.filename
+  )
+
+  return (
+    <Link
+      aria-label={`Medium öffnen: ${attachment.filename}`}
+      className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      to={href}
+    >
+      <div className="rounded-lg transition-colors hover:bg-slate-50 hover:ring-1 hover:ring-primary">
+        <AttachmentTile attachment={attachment} />
+      </div>
+    </Link>
+  )
+}
+
+function buildLegacyPhotoAttachment(activity: Activity): ActivityAttachment | null {
+  if (!activity.photo_url) {
+    return null
+  }
+
+  const attachmentId = extractAttachmentIdFromPhotoUrl(activity.photo_url)
+  if (!attachmentId) {
+    return null
+  }
+
+  return {
+    attachment_id: attachmentId,
+    filename: "Aktivitätsfoto",
+    mime_type: "image/jpeg",
+    url: activity.photo_url,
+    thumbnail_url: activity.photo_url,
+  }
+}
+
 function ActivityCard({ activity }: { activity: Activity }) {
   const hasDocumentAttachments = activity.activity_type !== "photo" && activity.attachments.length > 0
-  const photoAttachment = activity.activity_type === "photo" ? buildPhotoAttachment(activity) : null
+  const photoAttachment = activity.activity_type === "photo" ? buildLegacyPhotoAttachment(activity) : null
 
   return (
     <Card className="overflow-hidden">
@@ -221,14 +263,18 @@ function ActivityCard({ activity }: { activity: Activity }) {
           {hasDocumentAttachments ? (
             <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
               {activity.attachments.map((attachment) => (
-                <AttachmentTile key={attachment.attachment_id} attachment={attachment} />
+                <ViewerTileLink
+                  key={attachment.attachment_id}
+                  activity={activity}
+                  attachment={attachment}
+                />
               ))}
             </div>
           ) : null}
 
           {photoAttachment ? (
             <div className="mt-3 max-w-xs">
-              <ImageAttachmentTile attachment={photoAttachment} />
+              <ViewerTileLink activity={activity} attachment={photoAttachment} />
             </div>
           ) : null}
         </div>
