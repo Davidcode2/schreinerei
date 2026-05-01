@@ -2,6 +2,44 @@
 
 ---
 
+## v1.9 Inventory Features
+
+**Shipped:** 2026-05-01
+**Phases:** 4 | **Plans:** 13
+
+### Summary
+
+Made the inventory workflow fully manageable from the app itself with category management, direct material editing, stock-in, enriched movement history, and tighter type/test coverage around the shipped flows.
+
+### Accomplishments
+
+1. Category settings page with edit/delete safeguards and dedicated `/settings/inventory` entrypoint
+2. Material edit and target stock correction flow from inventory details
+3. Dedicated stock-in dialog with notes and persisted history visibility
+4. Enriched inventory history with badges, user attribution, and Baustelle links
+5. Generated DTO alignment plus API-backed browser coverage for the new inventory flows
+
+### Stats
+
+- **Timeline:** 1 day (2026-05-01)
+- **Requirements:** 12/12 accepted
+- **Known deferred items at close:** 9 (see `STATE.md` Deferred Items)
+
+### Key Decisions
+
+- Inventory settings live on a dedicated authenticated route instead of a generic settings fallback
+- Stock-in is a separate command from stock adjustment because it models a different business action
+- Category deletion remains blocked while referenced inventory history must be preserved
+- Milestone close accepted the remaining Phase 33 history color/assertion hardening gap through explicit manual verification
+
+### Archives
+
+- `.planning/milestones/v1.9-ROADMAP.md`
+- `.planning/milestones/v1.9-REQUIREMENTS.md`
+- `.planning/v1.9-MILESTONE-AUDIT.md`
+
+---
+
 ## v1.8 Activity Feed & Site Status
 
 **Shipped:** 2026-05-01

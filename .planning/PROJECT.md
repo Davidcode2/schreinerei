@@ -10,22 +10,17 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## Current Milestone: v1.9 Inventory Features
+## Latest Shipped Milestone: v1.9 Inventory Features
 
-**Goal:** Make inventory fully manageable — edit anything, track everything, see the full history.
+**Outcome:** Inventory is now fully manageable in-app with category management, direct material editing, stock-in, and enriched stock history.
 
-**Target features:**
-- Category editing via inventory settings page
-- Edit inventory item location and minimum quantity
-- Set available quantity to arbitrary number
-- "Material einlagern" (stock in) action
-- Extended history: stock movements with user attribution
-- Clickable Baustelle links in history events
-- Category string on inventory overview page
+## Next Milestone
+
+Not planned yet. Next logical workflow is `/gsd-new-milestone`.
 
 ## Current State
 
-**Phase 32 completed on 2026-05-01.**
+**v1.9 completed on 2026-05-01.**
 
 Inventory feature rollout now includes:
 - ✅ Category settings page with edit/delete safeguards
@@ -125,7 +120,7 @@ All v1.x requirements validated:
 
 ### Active
 
-Feature-complete for v1.9 product scope. Remaining work is Phase 33 quality hardening (type generation and expanded automated coverage).
+No active milestone requirements yet.
 
 ### Deferred in v1.9
 
@@ -266,4 +261,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-05-01 after starting v1.9 milestone**
+*Last updated: 2026-05-01 after completing v1.9 milestone*

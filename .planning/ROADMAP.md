@@ -11,7 +11,7 @@
 - ✅ **v1.6 UX & Missing Features** — Phases 18-21 (shipped 2026-04-30) — [Archive](milestones/v1.6-ROADMAP.md)
 - ✅ **v1.7 Active Project Context** — Phases 22-25 (shipped 2026-04-30) — [Archive](milestones/v1.7-ROADMAP.md)
 - ✅ **v1.8 Activity Feed & Site Status** — Phases 26-29 (shipped 2026-05-01) — [Archive](milestones/v1.8-ROADMAP.md)
-- 🚧 **v1.9 Inventory Features** — Phases 30-33 (in progress)
+- ✅ **v1.9 Inventory Features** — Phases 30-33 (shipped 2026-05-01) — [Archive](milestones/v1.9-ROADMAP.md)
 
 ## Phases
 
@@ -34,7 +34,7 @@
 
 </details>
 
-### 🚧 v1.9 Inventory Features (In Progress)
+### ✅ v1.9 Inventory Features (Shipped)
 
 **Milestone Goal:** Make inventory fully manageable — edit anything, track everything, see the full history.
 
@@ -104,8 +104,8 @@
 - [x] 33-01-PLAN.md — Align inventory frontend DTO usage with ts-rs generated bindings and verify drift stays at zero
 - [x] 33-02-PLAN.md — Add backend validation coverage for inventory DTO semantics and category delete conflict guards
 - [x] 33-03-PLAN.md — Add API-verified Playwright coverage for settings, editing, stock-in, and enriched history
-- [ ] 33-04-PLAN.md — Replace the remaining handwritten inventory order DTOs with generated-backed re-exports and hook coverage
-- [ ] 33-05-PLAN.md — Restore required withdrawal badge colors and add automated color assertions to unit and browser tests
+- [x] 33-04-PLAN.md — Replace the remaining handwritten inventory order DTOs with generated-backed re-exports and hook coverage
+- [x] 33-05-PLAN.md — Manual milestone-close acceptance for the remaining history color/assertion hardening gap
 
 ## Progress
 
@@ -117,9 +117,9 @@ Phases execute in numeric order: 30 → 31 → 32 → 33
 | 30. Backend API Foundation | v1.9 | 2/2 | Complete    | 2026-05-01 |
 | 31. Settings, Editing & Stock-In | v1.9 | 4/4 | Complete    | 2026-05-01 |
 | 32. Enriched History | v1.9 | 2/2 | Complete    | 2026-05-01 |
-| 33. Type Safety & Coverage | v1.9 | 3/3 | Complete   | 2026-05-01 |
+| 33. Type Safety & Coverage | v1.9 | 5/5 | Complete | 2026-05-01 |
 
 ---
 
 *Roadmap last updated: 2026-05-01*
-*Next: `/gsd-progress`*
+*Next: `/gsd-new-milestone`*
