@@ -11,6 +11,7 @@ use crate::common::types::{
 use crate::modules::sites::domain::{
     Site, SiteAssignment, TimeEntry,
     CreateSite, UpdateSite, CreateTimeEntry, UpdateTimeEntry, Activity, CreateActivity,
+    SiteActivityAttachment,
 };
 
 /// Repository for site data access with tenant isolation
@@ -568,6 +569,62 @@ impl SiteRepository {
         Ok(activities.into_iter().map(|a| a.into_activity()).collect())
     }
 
+    pub async fn create_activity_attachment(
+        &self,
+        tenant_id: TenantId,
+        attachment: &SiteActivityAttachment,
+    ) -> Result<SiteActivityAttachment, AppError> {
+        let row = sqlx::query_as::<_, AttachmentRow>(
+            r#"
+            INSERT INTO site_activity_attachments (
+                id, tenant_id, activity_id, site_id, storage_key, thumbnail_key,
+                mime_type, size_bytes, original_bytes, thumbnail_bytes, created_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            RETURNING id, tenant_id, activity_id, site_id, storage_key, thumbnail_key,
+                mime_type, size_bytes, original_bytes, thumbnail_bytes, created_at
+            "#,
+        )
+        .bind(attachment.id)
+        .bind(tenant_id.0)
+        .bind(attachment.activity_id.0)
+        .bind(attachment.site_id.0)
+        .bind(&attachment.storage_key)
+        .bind(&attachment.thumbnail_key)
+        .bind(&attachment.mime_type)
+        .bind(attachment.size_bytes)
+        .bind(&attachment.original_bytes)
+        .bind(&attachment.thumbnail_bytes)
+        .bind(attachment.created_at)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(row.into_attachment())
+    }
+
+    pub async fn find_attachment_by_id(
+        &self,
+        attachment_id: Uuid,
+        tenant_id: TenantId,
+    ) -> Result<Option<SiteActivityAttachment>, AppError> {
+        let row = sqlx::query_as::<_, AttachmentRow>(
+            r#"
+            SELECT id, tenant_id, activity_id, site_id, storage_key, thumbnail_key,
+                mime_type, size_bytes, original_bytes, thumbnail_bytes, created_at
+            FROM site_activity_attachments
+            WHERE id = $1 AND tenant_id = $2
+            "#,
+        )
+        .bind(attachment_id)
+        .bind(tenant_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(row.map(|r| r.into_attachment()))
+    }
+
     // === Dashboard operations ===
 
     pub async fn get_dashboard_sites(&self, tenant_id: TenantId) -> Result<Vec<DashboardSite>, AppError> {
@@ -707,6 +764,21 @@ struct ActivityRow {
     created_at: DateTime<Utc>,
 }
 
+#[derive(Debug, FromRow)]
+struct AttachmentRow {
+    id: Uuid,
+    tenant_id: Uuid,
+    activity_id: Uuid,
+    site_id: Uuid,
+    storage_key: String,
+    thumbnail_key: String,
+    mime_type: String,
+    size_bytes: i64,
+    original_bytes: Option<Vec<u8>>,
+    thumbnail_bytes: Option<Vec<u8>>,
+    created_at: DateTime<Utc>,
+}
+
 impl ActivityRow {
     fn into_activity(self) -> Activity {
         use crate::modules::sites::domain::ActivityType;
@@ -718,6 +790,24 @@ impl ActivityRow {
             activity_type: self.activity_type.parse().unwrap_or(ActivityType::Note),
             content: self.content,
             photo_url: self.photo_url,
+            created_at: self.created_at,
+        }
+    }
+}
+
+impl AttachmentRow {
+    fn into_attachment(self) -> SiteActivityAttachment {
+        SiteActivityAttachment {
+            id: self.id,
+            tenant_id: TenantId(self.tenant_id),
+            activity_id: ActivityId(self.activity_id),
+            site_id: SiteId(self.site_id),
+            storage_key: self.storage_key,
+            thumbnail_key: self.thumbnail_key,
+            mime_type: self.mime_type,
+            size_bytes: self.size_bytes,
+            original_bytes: self.original_bytes,
+            thumbnail_bytes: self.thumbnail_bytes,
             created_at: self.created_at,
         }
     }

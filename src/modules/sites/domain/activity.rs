@@ -48,6 +48,22 @@ pub struct Activity {
     pub created_at: DateTime<Utc>,
 }
 
+/// Metadata and blob keys for activity photo attachments.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SiteActivityAttachment {
+    pub id: uuid::Uuid,
+    pub tenant_id: TenantId,
+    pub activity_id: ActivityId,
+    pub site_id: SiteId,
+    pub storage_key: String,
+    pub thumbnail_key: String,
+    pub mime_type: String,
+    pub size_bytes: i64,
+    pub original_bytes: Option<Vec<u8>>,
+    pub thumbnail_bytes: Option<Vec<u8>>,
+    pub created_at: DateTime<Utc>,
+}
+
 /// Command to create an activity (photo or note)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateActivity {
@@ -85,6 +101,26 @@ mod tests {
 
     fn test_site_id() -> SiteId {
         SiteId::new()
+    }
+
+    #[test]
+    fn attachment_struct_holds_uuid_storage_keys() {
+        let attachment = SiteActivityAttachment {
+            id: uuid::Uuid::new_v4(),
+            tenant_id: TenantId::new(),
+            activity_id: ActivityId::new(),
+            site_id: SiteId::new(),
+            storage_key: format!("{}.jpg", uuid::Uuid::new_v4()),
+            thumbnail_key: format!("{}.jpg", uuid::Uuid::new_v4()),
+            mime_type: "image/jpeg".to_string(),
+            size_bytes: 12,
+            original_bytes: Some(vec![1, 2, 3]),
+            thumbnail_bytes: Some(vec![4, 5, 6]),
+            created_at: Utc::now(),
+        };
+
+        assert!(attachment.storage_key.contains('-'));
+        assert!(attachment.thumbnail_key.contains('-'));
     }
 
     #[test]
