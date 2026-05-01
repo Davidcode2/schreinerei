@@ -1,319 +1,326 @@
-# Stack Research: Active Project Context
+# Stack Research
 
-**Domain:** User-scoped active Baustelle state with auto-assignment
-**Researched:** 2026-04-30
+**Domain:** Activity Feed, File Uploads, Site Status Management
+**Researched:** 2026-05-01
 **Confidence:** HIGH
-
-## Summary
-
-The Active Project Context feature requires **NO new libraries**. All capabilities are already present in the existing stack:
-
-- **Zustand with persist middleware** — Already used for auth, same pattern for active site
-- **Tailwind CSS color palette** — Deterministic color assignment from site ID hash
-- **TanStack Query** — Already used for API calls and cache invalidation
-- **Backend stack** — Axum 0.8, SQLx 0.8 already support the needed endpoints
-
----
 
 ## Recommended Stack
 
-### Frontend State Management
+### Core Technologies
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Zustand | 5.0.12 | Active site state store | Already in use for auth with `persist` middleware. Same pattern applies. |
-| Zustand persist | (built-in) | LocalStorage persistence | Built into Zustand, used by authStore.ts. Survives page refresh. |
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| **axum::extract::Multipart** | 0.8 (existing) | File upload handling | Built into Axum, streaming support, zero new dependencies |
+| **axum::extract::ws** | 0.8 (existing) | Real-time activity updates | Built into Axum, integrates with existing tokio runtime |
+| **image** | 0.25 | Image processing & thumbnails | Pure Rust, no native deps, resize/thumbnail ops, multiple format support |
+| **aws-sdk-s3** | 1.x | Object storage client | S3-compatible, works with MinIO in Kubernetes, official AWS SDK |
+| **react-dropzone** | 14.x | Frontend file uploads | Industry standard, React 18 compatible, integrates with shadcn/ui |
+| **xstate** | 5.x | Frontend state machine | TypeScript-first, visual debugging, strict state transitions |
 
-### Color Generation
+### Supporting Libraries
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Tailwind CSS colors | 4.2.4 (existing) | Deterministic site colors | Use predefined palette (rose, orange, amber, emerald, teal, cyan, blue, indigo, violet). Hash site ID → index into palette. No new library. |
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| **statig** | 0.4 | Backend state machine | If site status becomes complex (hierarchical states, side effects) |
+| **tokio-util** | 0.7 | Codec for WebSocket messages | When implementing real-time activity feed |
+| **mime** | 0.3 | MIME type detection | File upload validation |
+| **uuid** | 1.x (existing) | Unique file identifiers | Already in use for entity IDs |
 
-### Backend
+### Development Tools
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Axum | 0.8 | API endpoints | Already in use. Add GET/PUT `/api/v1/users/me/active-site` |
-| SQLx | 0.8 | Database queries | Already in use. Add migration for user preferences |
-| ts-rs | 12 | Type generation | Already in use. Add DTOs for active site preference |
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| **MinIO** | Local S3-compatible storage | Deploy in Kubernetes, same API as AWS S3 |
+| **Stately.ai** | XState visualizer | Debug state machine transitions (optional) |
 
----
+## Installation
 
-## No New Dependencies Required
+### Backend (Rust)
 
-**The feature can be implemented entirely with existing libraries:**
+```toml
+# Cargo.toml additions
+
+[dependencies]
+# File uploads - already in axum 0.8
+# axum::extract::Multipart is built-in with "multipart" feature
+
+# Image processing
+image = "0.25"
+
+# S3-compatible storage (MinIO in Kubernetes)
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-sdk-s3 = "1"
+
+# MIME type detection for uploads
+mime = "0.3"
+
+# State machine (only if simple enum insufficient)
+statig = { version = "0.4", features = ["macro"] }
+```
+
+### Frontend (React/TypeScript)
 
 ```bash
-# No npm install needed
-# No cargo add needed
+# File uploads
+npm install react-dropzone
+
+# State machine
+npm install xstate
 ```
-
----
-
-## Implementation Components
-
-### 1. Frontend: Active Site Store
-
-Create a new Zustand store following the existing `authStore.ts` pattern:
-
-```typescript
-// frontend/src/lib/stores/activeSiteStore.ts
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-
-interface ActiveSiteState {
-  activeSiteId: string | null
-  setActiveSite: (id: string | null) => void
-}
-
-export const useActiveSiteStore = create<ActiveSiteState>()(
-  persist(
-    (set) => ({
-      activeSiteId: null,
-      setActiveSite: (id) => set({ activeSiteId: id }),
-    }),
-    {
-      name: 'active-site-storage',
-      partialize: (state) => ({
-        activeSiteId: state.activeSiteId,
-      }),
-    }
-  )
-)
-```
-
-### 2. Frontend: Color Generation
-
-Use a simple hash function with Tailwind's color palette:
-
-```typescript
-// frontend/src/lib/utils/siteColor.ts
-
-// Tailwind color palette indices (matching Tailwind 500 shades for good contrast)
-const SITE_COLORS = [
-  'bg-rose-500',
-  'bg-orange-500', 
-  'bg-amber-500',
-  'bg-emerald-500',
-  'bg-teal-500',
-  'bg-cyan-500',
-  'bg-blue-500',
-  'bg-indigo-500',
-  'bg-violet-500',
-] as const
-
-// Deterministic color from UUID
-export function getSiteColor(siteId: string): string {
-  // Simple hash: sum char codes, mod length
-  const hash = siteId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
-  return SITE_COLORS[hash % SITE_COLORS.length]
-}
-
-// Also export text variants for accessibility
-export function getSiteColorText(siteId: string): string {
-  return getSiteColor(siteId).replace('bg-', 'text-')
-}
-```
-
-### 3. Frontend: Active Site Status Component
-
-```typescript
-// frontend/src/components/active-site/ActiveSiteIndicator.tsx
-import { useActiveSiteStore } from '@/lib/stores/activeSiteStore'
-import { useSite } from '@/lib/api/hooks/useSites'
-import { Building2, X } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { getSiteColor } from '@/lib/utils/siteColor'
-
-export function ActiveSiteIndicator() {
-  const { activeSiteId, setActiveSite } = useActiveSiteStore()
-  const { data: site } = useSite(activeSiteId || '')
-
-  if (!activeSiteId || !site) return null
-
-  return (
-    <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-      <div className={`w-3 h-3 rounded-full ${getSiteColor(site.id)}`} />
-      <Building2 className="h-4 w-4" />
-      <span className="font-medium truncate">{site.name}</span>
-      <Badge variant="outline" className="text-xs">Aktiv</Badge>
-      <button onClick={() => setActiveSite(null)} className="ml-auto">
-        <X className="h-4 w-4" />
-      </button>
-    </div>
-  )
-}
-```
-
-### 4. Backend: Migration
-
-```sql
--- migrations/011_add_user_active_site.sql
-ALTER TABLE users ADD COLUMN active_site_id UUID REFERENCES sites(id) ON DELETE SET NULL;
-CREATE INDEX idx_users_active_site ON users(active_site_id);
-```
-
-### 5. Backend: API Endpoint
-
-```rust
-// Add to src/modules/iam/application/user_service.rs
-
-pub async fn get_active_site(
-    user_id: UserId,
-    repo: &dyn UserRepository,
-) -> Result<Option<SiteId>, IamError> {
-    repo.get_active_site(user_id).await
-}
-
-pub async fn set_active_site(
-    user_id: UserId,
-    site_id: Option<SiteId>,
-    repo: &dyn UserRepository,
-) -> Result<(), IamError> {
-    repo.set_active_site(user_id, site_id).await
-}
-```
-
-### 6. Frontend: Auto-Assignment Hook
-
-```typescript
-// frontend/src/hooks/useAutoAssignSite.ts
-import { useActiveSiteStore } from '@/lib/stores/activeSiteStore'
-import { useSite } from '@/lib/api/hooks/useSites'
-
-export function useAutoAssignSite() {
-  const { activeSiteId } = useActiveSiteStore()
-  const { data: activeSite } = useSite(activeSiteId || '')
-
-  return {
-    activeSiteId,
-    activeSite,
-    shouldAutoAssign: !!activeSiteId,
-  }
-}
-```
-
----
-
-## Integration Points
-
-### Material Withdrawal
-
-```typescript
-// In WithdrawDialog.tsx
-const { activeSiteId, shouldAutoAssign } = useAutoAssignSite()
-const [showConfirmDialog, setShowConfirmDialog] = useState(false)
-
-// Pre-fill notes with active site
-const defaultNotes = shouldAutoAssign 
-  ? `Baustelle: ${activeSite?.name}` 
-  : ''
-
-// On submit, show opt-out dialog if auto-assigning
-const handleSubmit = () => {
-  if (shouldAutoAssign) {
-    setShowConfirmDialog(true)
-  } else {
-    onConfirm(quantity, notes)
-  }
-}
-```
-
-### Tool Reservation
-
-```typescript
-// In ReservationDialog.tsx
-const { activeSiteId } = useActiveSiteStore()
-
-// Pre-select site in dropdown if active
-useEffect(() => {
-  if (mode === 'create' && activeSiteId && !siteId) {
-    setSiteId(activeSiteId)
-  }
-}, [mode, activeSiteId])
-```
-
----
 
 ## Alternatives Considered
 
-| Recommended | Alternative | Why Not |
-|-------------|-------------|---------|
-| Zustand persist | React Context | Zustand already in use, Context requires more boilerplate for persistence |
-| Zustand persist | localStorage directly | Zustand handles serialization, hydration, and subscriptions automatically |
-| Tailwind colors | color2k library | No need for color manipulation, just palette selection |
-| Tailwind colors | tinycolor2 | Heavier (5kB vs 0kB), overkill for simple palette assignment |
-| Deterministic hash | Random color | Colors must be consistent across page loads and devices |
-| localStorage only | Backend preference | Cross-device sync not required for v1.7, can add later |
-
----
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| **MinIO (S3 API)** | PostgreSQL bytea | Only for <10MB files total, no Kubernetes. bytea bloats DB, no CDN option. |
+| **MinIO (S3 API)** | Local filesystem | Single-server deployments only. K8s pods are ephemeral, requires PersistentVolume complexity. |
+| **image-rs** | ImageMagick | When you need advanced operations (watermarks, complex filters). image-rs is pure Rust, no native deps. |
+| **image-rs** | Sharp (Node) | Not applicable - backend is Rust |
+| **xstate** | Custom useReducer | For trivial state (2-3 transitions). xstate adds ~15KB but prevents invalid states. |
+| **xstate** | zustand (existing) | For client state, not state machines. zustand is for stores, xstate for workflows. |
+| **Axum WebSocket** | Server-Sent Events | When only server→client push needed. SSE simpler but can't do client→server. |
+| **Axum WebSocket** | Polling (existing) | MVP phase. Polling already works, WebSockets for scale (>100 concurrent users). |
+| **statig** | Simple enum | For straightforward geplant→aktiv→abgeschlossen. statig overkill for 3 linear states. |
 
 ## What NOT to Use
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| Redux | Overkill for single value state | Zustand (already in use) |
-| IndexedDB for active site | Auth uses localStorage, consistency matters | Zustand persist (localStorage) |
-| Color generation libraries | Palette selection is trivial | Hash function + Tailwind colors |
-| Server-sent events | Real-time not needed for user preference | TanStack Query cache invalidation |
-| Complex state machines | Two states: null or site ID | Simple Zustand store |
+| **PostgreSQL bytea for files** | Bloats DB, slow backups, no CDN, max 1GB per row | MinIO S3-compatible storage |
+| **Local filesystem in K8s** | Pods are ephemeral, requires PVs, multi-tenant isolation harder | MinIO with tenant-prefixed buckets |
+| **actix-multipart** | Different framework, would require rewrite | Axum's built-in multipart |
+| **multer** | Lower-level, Axum wraps it already | axum::extract::Multipart |
+| **File input without dropzone** | Poor UX on mobile, no drag-drop | react-dropzone |
+| **Complex state machine for simple status** | Over-engineering for 3-state linear workflow | Enum with transition validation |
+| **External image service** | Adds network latency, deployment complexity | image-rs in-process |
 
----
+## Storage Architecture
+
+### Recommended: MinIO (S3-Compatible)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Kubernetes Cluster                                         │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  MinIO (S3-Compatible Storage)                      │   │
+│  │  ┌─────────────────────────────────────────────┐    │   │
+│  │  │  Bucket: schreinerei-{tenant_id}            │    │   │
+│  │  │  ├── notes/                                │    │   │
+│  │  │  │   ├── {note_id}/                        │    │   │
+│  │  │  │   │   ├── image_1.jpg                   │    │   │
+│  │  │  │   │   └── document_1.pdf                │    │   │
+│  │  │  └── thumbnails/                           │    │   │
+│  │  │      └── {image_hash}_thumb.jpg            │    │   │
+│  │  └─────────────────────────────────────────────┘    │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Multi-tenant isolation:**
+- Bucket per tenant: `schreinerei-{tenant_id}`
+- OR single bucket with prefix: `schreinerei/{tenant_id}/notes/...`
+
+**Why MinIO:**
+- S3 API compatibility (use aws-sdk-s3)
+- Self-hosted in Kubernetes (no external dependency)
+- Works offline/airgapped
+- Presigned URLs for direct client upload (optional optimization)
+- Built-in versioning support
+
+### File Upload Flow
+
+```
+┌──────────┐    1. Upload     ┌──────────┐    2. Store      ┌──────────┐
+│ Frontend │ ──────────────▶ │  Backend │ ───────────────▶ │  MinIO   │
+│          │                  │  (Axum)  │                   │  (S3)    │
+│          │    4. Response   │          │    3. Metadata   │          │
+│          │ ◀────────────── │          │ ◀─────────────── │          │
+└──────────┘                  └──────────┘                   └──────────┘
+                                    │
+                                    ▼ 3b. File metadata
+                              ┌──────────┐
+                              │PostgreSQL│
+                              │ (JSONB)  │
+                              └──────────┘
+```
+
+### Database Schema for Attachments
+
+```sql
+-- Add to existing schema
+CREATE TABLE note_attachments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    note_id UUID NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+    tenant_id UUID NOT NULL,
+    
+    -- File metadata
+    original_filename VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    size_bytes BIGINT NOT NULL,
+    
+    -- Storage reference
+    storage_key VARCHAR(500) NOT NULL,  -- S3 key
+    
+    -- Image-specific (nullable)
+    width INT,
+    height INT,
+    thumbnail_key VARCHAR(500),
+    
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    created_by UUID REFERENCES users(id)
+);
+
+-- Store in JSONB for flexibility
+-- notes.content can include embedded attachment references
+```
+
+## State Machine Approach
+
+### Site Status: Simple Enum (Recommended for v1.8)
+
+For the linear workflow `geplant → aktiv → abgeschlossen`, use a simple enum with validation:
+
+```rust
+// Backend: src/modules/sites/domain/site_status.rs
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "site_status", rename_all = "lowercase")]
+pub enum SiteStatus {
+    Geplant,
+    Aktiv,
+    Abgeschlossen,
+    Archiviert,
+}
+
+impl SiteStatus {
+    pub fn can_transition_to(&self, target: Self) -> bool {
+        match (self, target) {
+            (Self::Geplant, Self::Aktiv) => true,
+            (Self::Aktiv, Self::Abgeschlossen) => true,
+            (Self::Abgeschlossen, Self::Archiviert) => true,
+            // Allow reopening
+            (Self::Abgeschlossen, Self::Aktiv) => true,
+            _ => false,
+        }
+    }
+}
+```
+
+```typescript
+// Frontend: Status badge with transitions
+type SiteStatus = 'geplant' | 'aktiv' | 'abgeschlossen' | 'archiviert';
+
+const ALLOWED_TRANSITIONS: Record<SiteStatus, SiteStatus[]> = {
+  geplant: ['aktiv'],
+  aktiv: ['abgeschlossen'],
+  abgeschlossen: ['aktiv', 'archiviert'],
+  archiviert: [],
+};
+```
+
+### When to Use statig (Future)
+
+If site status becomes complex:
+- Hierarchical states (aktiv has substates: vorbereitung, in_arbeit, abschluss)
+- Side effects on transitions (send notifications, archive materials)
+- State-local storage (different data per state)
+
+### When to Use xstate (Frontend)
+
+For the activity feed interaction:
+- Complex form state (draft → uploading → uploaded → error)
+- Multi-step note creation with attachments
+- Offline sync queue state
+
+## Real-Time Updates
+
+### Current: Polling (Sufficient for MVP)
+
+- React Query already polls for data freshness
+- Works offline (cached data available)
+- Simple to implement and debug
+
+### Future: WebSockets (When Needed)
+
+Enable when:
+- >100 concurrent users on same site
+- Sub-second update latency required
+- Real-time collaboration features
+
+```rust
+// Backend: WebSocket endpoint
+use axum::extract::ws::{WebSocketUpgrade, WebSocket};
+
+async fn site_activity_ws(
+    ws: WebSocketUpgrade,
+    Path(site_id): Path<Uuid>,
+    Extension(broadcaster): Extension<ActivityBroadcaster>,
+) -> Response {
+    ws.on_upgrade(move |socket| {
+        broadcaster.subscribe(site_id, socket)
+    })
+}
+```
+
+```typescript
+// Frontend: WebSocket hook (future)
+const useSiteActivityStream = (siteId: string) => {
+  useEffect(() => {
+    const ws = new WebSocket(`${WS_URL}/sites/${siteId}/activity`);
+    ws.onmessage = (event) => {
+      queryClient.invalidateQueries(['activities', siteId]);
+    };
+    return () => ws.close();
+  }, [siteId]);
+};
+```
 
 ## Version Compatibility
 
-All existing versions are compatible:
+| Package A | Compatible With | Notes |
+|-----------|-----------------|-------|
+| axum 0.8 | tokio 1.x | Already in use |
+| image 0.25 | tokio 1.x | Sync API, works with async via spawn_blocking |
+| aws-sdk-s3 1.x | tokio 1.x | Native async support |
+| react-dropzone 14.x | React 18/19 | Works with both versions |
+| xstate 5.x | React 18/19 | Use @xstate/react package |
 
-| Package | Version | Compatible With | Notes |
-|---------|---------|-----------------|-------|
-| zustand | 5.0.12 | React 19.2.5 | Already in use |
-| @tanstack/react-query | 5.100.6 | React 19.2.5 | Already in use |
-| tailwindcss | 4.2.4 | Vite 7.3.2 | Already in use |
-| axum | 0.8 | tokio 1, sqlx 0.8 | Already in use |
-| sqlx | 0.8 | PostgreSQL | Already in use |
+## Offline Considerations
 
----
+### File Uploads (Offline-First)
 
-## Database Schema Addition
+1. **Frontend**: Queue uploads in IndexedDB when offline
+2. **Sync**: Process queue when connection restored
+3. **Backend**: Deduplicate by content hash (SHA-256)
 
-```sql
--- Single column addition to users table
-ALTER TABLE users ADD COLUMN active_site_id UUID REFERENCES sites(id) ON DELETE SET NULL;
+```typescript
+// Offline upload queue with Dexie
+const offlineUploads = db.table('pendingUploads');
+await offlineUploads.add({
+  id: uuid(),
+  file: await file.arrayBuffer(),
+  noteId,
+  createdAt: Date.now(),
+  synced: false,
+});
 ```
 
-**Alternative (user_preferences table):**
-```sql
-CREATE TABLE user_preferences (
-    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    active_site_id UUID REFERENCES sites(id) ON DELETE SET NULL,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-```
+### Activity Feed (Offline-First)
 
-**Recommendation:** Single column on `users` table is simpler for v1.7. Can migrate to separate table later if preferences grow.
-
----
+1. **Read**: Load from IndexedDB cache
+2. **Write**: Store locally, sync when online
+3. **Merge**: Last-write-wins with server timestamps
 
 ## Sources
 
-- **Zustand docs** — Context7 `/pmndrs/zustand` — persist middleware with custom storage
-- **Existing codebase** — `frontend/src/lib/auth/authStore.ts` — Pattern for persisted Zustand store
-- **Tailwind CSS colors** — https://tailwindcss.com/docs/customizing-colors — Default color palette
-- **color2k comparison** — https://github.com/ricokahler/color2k — Not needed for this use case
+- **Context7 /image-rs/image** — Image resize, thumbnail, format support
+- **Context7 /awslabs/aws-sdk-rust** — S3 upload, ByteStream API
+- **Context7 /websites/rs_axum** — Multipart handling, WebSocket support
+- **Context7 /react-dropzone/react-dropzone** — File upload hooks, validation
+- **Context7 /statelyai/xstate** — State machine patterns, TypeScript integration
+- **docs.rs/statig** — Hierarchical state machines in Rust
+- **min.io/docs** — MinIO Kubernetes deployment, S3 compatibility
 
 ---
 
-## Confidence Assessment
-
-| Area | Level | Reason |
-|------|-------|--------|
-| State Management | HIGH | Zustand persist already used for auth, identical pattern |
-| Color Generation | HIGH | Hash + palette is trivial, no library needed |
-| Backend Integration | HIGH | Standard Axum + SQLx patterns already established |
-| Auto-assignment UI | HIGH | Dialog patterns exist, opt-out is simple countdown |
-
----
-
-*Stack research for: Active Project Context (v1.7)*
-*Researched: 2026-04-30*
+*Stack research for: Activity Feed & Site Status (v1.8)*
+*Researched: 2026-05-01*

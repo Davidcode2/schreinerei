@@ -1,150 +1,181 @@
-# Pitfalls Research: Active Project Context
+# Pitfalls Research: Activity Feed, File Uploads & Status Workflows
 
-**Domain:** Field Service / Construction App — Adding User-Scoped Active Project Context
-**Researched:** 2026-04-30
-**Confidence:** HIGH (based on Nielsen Norman heuristics, offline-first patterns, and WatermelonDB sync documentation)
+**Domain:** Schreinerei SaaS — Adding activity feed, site status workflow, notes/documents, and material history to existing multi-tenant offline-first PWA
+**Researched:** 2026-05-01
+**Confidence:** HIGH
 
 ## Critical Pitfalls
 
-### Pitfall 1: Stale Active Project Assignment
+### Pitfall 1: File Upload Path Traversal & Execution
 
 **What goes wrong:**
-User sets active project on Monday, works offline all week, then syncs on Friday. Meanwhile, the project was archived or deleted by another user. All material deductions and reservations created offline are now orphaned or rejected.
+User uploads a file with a crafted filename like `../../../etc/passwd` or `..%2F..%2Fconfig.rs`. The file gets stored outside the intended directory, or worse, a `.php`/`.rs` file gets executed when accessed. For images, malicious payloads hidden in EXIF data or polyglot files (files valid as both image and executable) can execute code.
 
 **Why it happens:**
-Offline-first apps cannot validate referential integrity during offline operations. Developers assume "active project" is always valid because it was valid when set.
+Developers trust user-provided filenames. File extension validation is bypassed with double extensions (`.jpg.php`), null bytes (`.php%00.jpg`), or case variations (`.pHp`). MIME type from the `Content-Type` header is spoofable and unreliable.
 
 **How to avoid:**
-- Store `active_project_set_at` timestamp alongside `active_project_id`
-- On sync, validate active project still exists and is active status
-- Show warning banner if active project became invalid during offline period
-- Provide "resolve conflicts" UI showing affected records with reassignment options
+1. **Never use user-provided filenames** — Generate UUID-based filenames server-side
+2. **Store files outside webroot** or use a separate storage service (S3, MinIO)
+3. **Validate file signatures (magic bytes)**, not extensions — First 4-16 bytes identify true file type
+4. **Use an allowlist of MIME types** that business requires (images only: `image/jpeg`, `image/png`, `image/webp`)
+5. **Strip metadata from images** using image rewriting (destroys steganographic payloads)
+6. **Set filesystem permissions to read-only** for upload directories (no execute)
 
 **Warning signs:**
-- Long offline periods before sync
-- Users reporting "my deductions disappeared"
-- Foreign key constraint violations on sync
+- Files stored with original names in `public/uploads/`
+- Code checks only file extension: `if filename.endsWith('.jpg')`
+- Files served directly from static file routes without sanitization
+- No file size limits (ZIP bombs, billion laughs attack)
 
-**Phase to address:** Phase 1 (Backend & Sync Logic) — requires validation during pushChanges
+**Phase to address:**
+Phase implementing file uploads (Activity Feed: Notes/Documents)
 
 ---
 
-### Pitfall 2: Context Blindness (Users Forget Active Project)
+### Pitfall 2: Activity Feed N+1 Query Explosion
 
 **What goes wrong:**
-Users set active project, then navigate to other tasks. By the time they deduct materials, they've forgotten which project is active and create entries for the wrong project. The UI indicator becomes "wallpaper" that users stop noticing.
+Activity feed loads 50 activities, then makes separate queries for each user's name, each site's name, each material's category. With 50 activities, this becomes 150+ database queries. Page load time increases from 50ms to 3+ seconds.
 
 **Why it happens:**
-Nielsen Norman Heuristic #1 (Visibility of System Status) requires persistent, meaningful feedback. Static indicators lose salience over time. Users develop "banner blindness" — same reason cookie banners are ignored.
+ORM-style lazy loading or separate fetch calls for related entities. The query looks innocent: "get activities for site X" but accessing `activity.user.name` triggers a separate query per row.
 
 **How to avoid:**
-- Color-code ALL relevant UI elements when active project is set (not just indicator)
-- Use the project's auto-assigned color as background tint for affected forms
-- Show project name prominently in the opt-out dialog (not just "Current Project")
-- Consider subtle visual "pulse" or badge when context affects current action
-- Add project name to confirmation messages: "Material deducted to [Project Name]"
+1. **Use SQL JOINs eagerly** — Single query with `LEFT JOIN users`, `LEFT JOIN materials`, etc.
+2. **Denormalize frequently accessed fields** — Store `user_name` directly on activity row (updated via domain event when user changes name)
+3. **Use cursor-based pagination** — `WHERE created_at < ? ORDER BY created_at DESC LIMIT 20` avoids OFFSET performance cliff
+4. **Count total server-side** — Don't fetch all rows to count them
 
 **Warning signs:**
-- Support tickets about "wrong project assignments"
-- Users asking "which project am I on?"
-- High rate of deduction reassignments after the fact
+- Query count increases linearly with page size
+- Database query logs show hundreds of small queries for one page load
+- Slow page loads when activity count grows past 100
 
-**Phase to address:** Phase 2 (Frontend UI) — indicator visibility and color coding
+**Phase to address:**
+Phase implementing activity feed API
 
 ---
 
-### Pitfall 3: Auto-Assignment Without Easy Undo
+### Pitfall 3: Status Transition Race Condition
 
 **What goes wrong:**
-User scans QR code to deduct material. System auto-assigns to active project. User realizes wrong project but has no quick way to fix it. Must navigate to separate screen, find the record, edit, and reassign. Many users just leave it wrong.
+Two users simultaneously change site status. User A transitions `Planned → Active` at 10:00:00.000. User B transitions `Planned → Completed` at 10:00:00.050. Without locking, both succeed, leaving site in `Completed` state while skipping the required `Active` phase. Business rules (e.g., "must be active before completing") are violated.
 
 **Why it happens:**
-Nielsen Norman Heuristic #3 (User Control and Freedom) requires "emergency exits." Auto-assignment is a convenience that becomes a trap without easy reversal. The 5-second opt-out dialog is pre-action, not post-action correction.
+Optimistic concurrency not implemented. The check `site.can_transition_to(new_status)` and the update happen in separate transactions or without version checking. Time-of-check to time-of-use (TOCTOU) vulnerability.
 
 **How to avoid:**
-- Add "Reassign" button immediately visible after auto-assignment
-- Show toast notification with "Undo" button for 5-10 seconds after action
-- Support inline project change on the deduction confirmation screen
-- Log recent assignments to allow bulk reassignment if user realizes systematic error
+1. **Use optimistic locking** — Add `version` column to sites table. Update with `WHERE id = ? AND version = ?`. If 0 rows affected, another transaction modified it — retry or reject.
+2. **Database-level constraint** — Store status transitions in a separate table with unique constraint on `(site_id, from_status, to_status)` for audit trail
+3. **Application-level lock** — `SELECT ... FOR UPDATE` before status change (pessimistic locking)
+4. **Event-sourced status** — Status is derived from transition events, not a mutable column
+
+**Implementation for this project:**
+```rust
+// In site_repository.rs
+pub async fn update_status(&self, site: &Site) -> Result<bool, Error> {
+    let result = sqlx::query!(
+        "UPDATE sites SET status = $1, updated_at = $2, version = version + 1 
+         WHERE id = $3 AND tenant_id = $4 AND version = $5",
+        site.status as _,
+        site.updated_at,
+        site.id,
+        site.tenant_id,
+        site.version,
+    )
+    .execute(&self.pool)
+    .await?;
+
+    Ok(result.rows_affected() > 0)
+}
+```
 
 **Warning signs:**
-- High rate of edit operations on recently created records
-- Users complaining "too many clicks to fix"
-- Support requests for bulk reassignment
+- Status changes without version checking
+- `UPDATE sites SET status = ? WHERE id = ?` without version in WHERE clause
+- Tests pass sequentially but fail under concurrent load
+- "Impossible" states appear in database (Completed site with no Active period)
 
-**Phase to address:** Phase 2 (Frontend UI) — undo/redo and reassignment UX
+**Phase to address:**
+Phase implementing site status workflow
 
 ---
 
-### Pitfall 4: Offline Context Desynchronization
+### Pitfall 4: Offline Sync Conflict Data Loss
 
 **What goes wrong:**
-User A sets active project to "Kitchen Renovation" while offline. User A's colleague (User B) also offline, sets active project to "Bathroom Renovation" on same device (shared tablet). Both users create records. On sync, context is overwritten or conflicts.
+User A goes offline, creates note "Foundation poured" on Site X. User B (online) creates note "Foundation cancelled" on same site. User A reconnects. Current implementation processes queue in order, potentially overwriting B's note with A's stale data, or silently dropping A's note due to foreign key changes.
 
 **Why it happens:**
-Active project is user-scoped, but IndexedDB is device-scoped. Multi-user device scenarios create "last write wins" problems for user preferences.
+No conflict detection or resolution strategy. The queue processes actions without checking if the underlying data has changed. No timestamps or version vectors to detect conflicts. Last-write-wins, but "last" is defined by sync order, not actual time.
 
 **How to avoid:**
-- Store active project per user in a `user_preferences` table with `user_id` FK
-- Include `user_id` in IndexedDB storage key: `active_project:{user_id}`
-- On login, load user's active project from server if available
-- Handle logout by clearing active project from IndexedDB
-- Consider: should active project persist across logout/login on same device?
+1. **Add `updated_at` and `version` to all entities** — Reject updates where client's version < server's version
+2. **Conflict detection** — Before applying queued action, fetch current server state. If changed since action was created, prompt user.
+3. **Idempotent operations** — Use client-generated IDs (UUID) so retries don't create duplicates
+4. **Operational transforms for text** — Notes with conflicting edits can be merged using OT or CRDTs
+5. **For this project** — Start simple: reject conflicting updates with clear error message, let user re-enter data
 
 **Warning signs:**
-- Users on shared devices seeing wrong context
-- "My settings changed" reports
-- Context switching unexpectedly after sync
+- No version/timestamp comparison before applying queued actions
+- Server errors during sync silently drop actions after retries
+- "My changes disappeared" user reports after being offline
+- Duplicated entities when sync retries after network timeout
 
-**Phase to address:** Phase 1 (Backend & IndexedDB Schema) — user-scoped storage
+**Phase to address:**
+Phase implementing offline queue for activities (extend existing queue with conflict detection)
 
 ---
 
-### Pitfall 5: The 5-Second Opt-Out Dialog Becomes Annoyance
+### Pitfall 5: Multi-Tenant Data Leakage via File URLs
 
 **What goes wrong:**
-Opt-out dialog appears on every deduction. User dismisses it automatically without reading. Same problem as Pitfall 2 — automated behavior defeats the purpose. NN/G warns that overused confirmations "lose their power to prevent errors."
+File URLs are predictable: `/api/v1/files/{uuid}`. User from Tenant A guesses UUID of file belonging to Tenant B and accesses it. Or file metadata (EXIF GPS, document author) leaks tenant information.
 
 **Why it happens:**
-Nielsen Norman research shows confirmation dialogs must be for "serious consequences" and "not routine actions." Material deduction is a routine action for field workers. Repeated confirmations become muscle memory.
+UUIDs are not secret. File access checks only authentication, not tenant authorization. Files are stored with tenant-unaware naming. Presigned URLs don't include tenant context.
 
 **How to avoid:**
-- Only show opt-out dialog if active project is set AND user hasn't dismissed in last N actions
-- Add "Don't ask again for this session" checkbox
-- Track dismissal rate — if >90%, reduce frequency
-- Consider: show opt-out ONLY when context seems suspicious (different location than usual, new material type)
-- Use progressive disclosure: show project name in form, dialog only on explicit "Change" action
+1. **Authorize every file access** — Check `file.tenant_id == current_user.tenant_id` before serving
+2. **Use tenant-scoped paths** — `/api/v1/files/{tenant_id}/{file_id}` (but still verify auth)
+3. **Presigned URLs with tenant claim** — Include tenant in signed URL payload, verify on access
+4. **Strip metadata** — Remove EXIF, document properties before storage
+5. **Separate storage buckets per tenant** — S3 bucket policies enforce isolation
 
 **Warning signs:**
-- Users clicking through without reading
-- Support requests showing users didn't notice active project
-- A/B testing shows no difference in error rate with/without dialog
+- File access endpoint checks only `user.is_authenticated`, not tenant
+- Files stored as `/uploads/{uuid}.jpg` without tenant prefix
+- Presigned URLs without tenant verification
 
-**Phase to address:** Phase 2 (Frontend UI) — dialog UX refinement
+**Phase to address:**
+Phase implementing file storage (Phase 2: Activity Feed)
 
 ---
 
-### Pitfall 6: Cross-Device Context Inconsistency
+### Pitfall 6: Material History Link Breaks When Site Deleted
 
 **What goes wrong:**
-User sets active project on phone, then uses tablet. Active project differs between devices. User creates records on both devices, leading to inconsistent project assignments. Sync merges records but context remains device-specific.
+Material deductions reference `site_id`. When a site is deleted (soft delete or hard delete), the material history query returns orphaned rows. UI shows "Unknown Site" or crashes. Referential integrity violated.
 
 **Why it happens:**
-Active project is stored locally (IndexedDB) but not synced as user preference. This is a deliberate offline-first choice, but creates inconsistency when users work across devices.
+Foreign key constraint missing or `ON DELETE SET NULL` used. Soft delete makes site "invisible" but history still references it. No consideration for "what happens to linked data" during site lifecycle.
 
 **How to avoid:**
-- Sync active project as a user preference (not per-device)
-- Show "Last synced from [device] at [time]" in UI
-- On conflict (different active project on different devices), show resolution dialog
-- Consider: should active project change propagate immediately, or only on next sync?
-- Add "Active on other devices: [Project Name]" indicator
+1. **Use soft delete for sites** — Never hard delete, mark `deleted_at` timestamp
+2. **Add FK constraint with RESTRICT** — Prevent site deletion while material deductions reference it
+3. **Denormalize site name** — Store `site_name` on deduction row at extraction time (snapshot, not reference)
+4. **Tombstone pattern** — When site deleted, update all references to point to a "Deleted Site" tombstone record
+5. **For this project** — Already using soft delete pattern; add `site_name_snapshot` to material_deductions
 
 **Warning signs:**
-- Users reporting inconsistent behavior across devices
-- Records assigned to unexpected projects
-- Confusion after switching devices mid-task
+- `site_id` column has no FK constraint
+- FK constraint uses `ON DELETE SET NULL` or `ON DELETE CASCADE`
+- Site deletion succeeds while material history references it
+- UI shows blank site name for old deductions
 
-**Phase to address:** Phase 1 (Backend Sync) — add user preferences to sync protocol
+**Phase to address:**
+Phase implementing material extraction history
 
 ---
 
@@ -154,28 +185,25 @@ Shortcuts that seem reasonable but create long-term problems.
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Store active project in localStorage only | Faster implementation, no IndexedDB schema change | Lost on logout, not offline-safe, no user-scoping | Never — use IndexedDB from start |
-| Skip active project validation during deduction | Fewer API calls, faster UX | Orphaned records on invalid project | Never — always validate FK |
-| Make active project global (not user-scoped) | Simpler state management | Breaks multi-user devices, multi-device scenarios | Never — must be user-scoped |
-| Don't sync active project preference | Simpler sync protocol | Cross-device inconsistency | Acceptable for MVP if documented |
-| Hardcode color assignments | Faster initial implementation | Can't change colors, conflicts with similar colors | Acceptable for MVP, move to config later |
-| No undo for auto-assignment | Simpler state management | User frustration, wrong data | Never — must provide undo |
-
----
+| Store files with original filename | User recognizes their file | Path traversal, XSS via SVG/HTML uploads | **Never** |
+| Skip version checking on status update | Simpler code, faster initial dev | Race conditions, inconsistent state | **Never** for status workflow |
+| Last-write-wins for offline sync | No conflict UI needed | Silent data loss, user frustration | MVP only with warning; fix before pilot |
+| Load all activities, filter in frontend | Skip backend pagination work | OOM crash at 10k+ activities | Prototype only |
+| Store activity user_id without name | Simpler schema | N+1 queries, slow feed | Only if JOINs used for display |
+| No file size limit | No UX for "file too large" | Storage exhaustion, ZIP bombs | **Never** |
 
 ## Integration Gotchas
 
-Common mistakes when connecting to existing services.
+Common mistakes when connecting to external services or existing modules.
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| IndexedDB (Dexie.js) | Storing active project as single value without user_id FK | Use `user_preferences` table with compound key `[user_id+tenant_id]` |
-| Sync Protocol | Not including user preferences in sync payload | Add `user_preferences` to sync schema, sync before other data |
-| Material Deduction API | Assuming `site_id` is always provided | Default to active project, but require explicit confirmation if not set |
-| Keycloak Organizations | Assuming organization context includes user preferences | Fetch user preferences from app backend, not Keycloak |
-| QR Scanner | Auto-assigning without showing active project context | Display active project name prominently in scanner UI |
-
----
+| Keycloak user lookup | Query Keycloak on every activity | Cache user name locally; update via event |
+| File storage (S3/MinIO) | Use same bucket for all tenants | Tenant-scoped paths + bucket policies OR separate buckets |
+| IndexedDB sync | Full table overwrite on every sync | Delta sync using `updated_at > last_sync_time` |
+| Activity feed pagination | OFFSET-based pagination | Cursor-based: `WHERE created_at < cursor` |
+| Status transitions | Allow any admin to change any status | Check business rules: only assigned users can activate |
+| Material deduction link | FK to sites without soft delete handling | Denormalize site_name at extraction time |
 
 ## Performance Traps
 
@@ -183,13 +211,11 @@ Patterns that work at small scale but fail as usage grows.
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Fetching active project from server on every deduction | Latency, poor offline UX | Cache in IndexedDB, validate on sync only | Immediately — offline must work |
-| Validating project existence on every form render | Slow form opens, laggy UI | Validate once on project set, trust until sync | 50+ active users |
-| Storing full project object in active project state | Memory bloat, stale data | Store project_id only, fetch details as needed | 100+ projects per tenant |
-| Color assignment via UUID hash (random) | Color collisions, hard to distinguish | Use predefined palette, assign sequentially | 10+ projects per tenant |
-| No pagination on project selector | Slow load, UI freeze | Paginate or lazy-load project list | 100+ projects per tenant |
-
----
+| Activity feed without index on `site_id, created_at` | Slow feed load as activities grow | Add composite index from day 1 | 1,000+ activities per site |
+| Fetching all materials for history | Page takes 5+ seconds | Server-side pagination, lazy load | 100+ materials linked to site |
+| Storing images in database | Backup grows 10x, slow queries | Store files in object storage, DB has URL | 1,000+ images |
+| No connection pooling | "too many connections" errors | Configure SQLx pool with limits | 10+ concurrent users |
+| Sync polling every 5 seconds | Server CPU spike, battery drain | WebSocket for real-time, or 30+ second interval | 50+ users online |
 
 ## Security Mistakes
 
@@ -197,12 +223,12 @@ Domain-specific security issues beyond general web security.
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| User can set active project from another tenant | Cross-tenant data leak | Validate tenant_id matches user's current organization on set |
-| Active project not validated on API call | Data assigned to unauthorized project | Always validate user has access to project_id on write operations |
-| Storing active project in URL params | User can manipulate, share wrong context | Use IndexedDB/localStorage, not URL state |
-| No audit trail for context changes | Can't investigate data quality issues | Log active project changes with timestamp and user_id |
-
----
+| Predictable file URLs | Cross-tenant file access | UUID + tenant authorization check |
+| No MIME validation | Malicious file upload (polyglot, EXIF payload) | Validate magic bytes, strip metadata |
+| SVG file upload | XSS via embedded `<script>` tags | Convert SVGs to PNG, or block SVG entirely |
+| Presigned URL without expiry | File accessible forever even after delete | 5-minute expiry max |
+| Status change without audit trail | No accountability, can't debug issues | Store every transition with user, timestamp |
+| Activity creation without site membership check | User spams another tenant's site | Verify `user` is assigned to `site` |
 
 ## UX Pitfalls
 
@@ -210,28 +236,24 @@ Common user experience mistakes in this domain.
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Indicator hidden in hamburger menu | Users forget active project, create wrong assignments | Persistent header bar with color indicator |
-| No feedback after auto-assignment | User doesn't realize what happened | Toast notification with project name and undo option |
-| Context switch requires navigation to settings | Too many clicks, users don't switch | Quick toggle in header or on dashboard |
-| Same UI whether context is set or not | User doesn't notice absence of context | Grayed/inactive UI when no active project, prompt to set |
-| Opt-out dialog blocks all interaction | Workflow interruption, frustration | Non-modal indicator with dismiss/change options |
-| Project colors not visible on monochrome prints | Printouts lose context information | Include project name/code in all printed labels |
-
----
+| Status change without confirmation modal | Accidental "Complete" on active site | Show consequences: "This will archive all materials. Continue?" |
+| Activity feed without "Load More" | User scrolls forever, page sluggish | Virtualized list + "Load older" button at top |
+| Offline indicator only in settings | User doesn't know data isn't syncing | Banner: "Offline — 3 changes pending" |
+| File upload with no progress | User thinks upload failed, uploads again | Progress bar + success toast |
+| Material history without site context | User sees deduction without knowing which site | Always show linked site name (clickable) |
+| "Aktiv" button confusing with status "aktiv" | User thinks they're setting status | Rename button to "Auswählen" (Select) |
 
 ## "Looks Done But Isn't" Checklist
 
 Things that appear complete but are missing critical pieces.
 
-- [ ] **Active Project Indicator:** Often missing color coding beyond text — verify color tint appears on affected forms
-- [ ] **Offline Support:** Often missing user-scoped storage — verify active project persists per user after logout/login
-- [ ] **Undo Function:** Often missing reassignment flow — verify user can change project after auto-assignment
-- [ ] **Opt-Out Dialog:** Often missing "don't ask again" option — verify session persistence of dismissal
-- [ ] **Cross-Device Sync:** Often missing preference sync — verify active project syncs between devices
-- [ ] **Validation:** Often missing on write operations — verify API rejects invalid project_id even if set locally
-- [ ] **Audit Trail:** Often missing for context changes — verify changes are logged with timestamp
-
----
+- [ ] **Activity feed:** Often missing tenant isolation check — verify activities filtered by `site.tenant_id`
+- [ ] **File upload:** Often missing cleanup for orphaned files (upload succeeds, entity creation fails) — verify transactional cleanup
+- [ ] **Status workflow:** Often missing audit trail — verify every transition logged with user, timestamp, reason
+- [ ] **Material history:** Often missing deleted site handling — verify UI shows "Deleted Site" not crash
+- [ ] **Offline sync:** Often missing conflict handling — verify queue rejects actions where server version > client version
+- [ ] **Pagination:** Often missing total count for UI — verify response includes `total_pages` or `has_more`
+- [ ] **File deletion:** Often missing actual file deletion (only DB record deleted) — verify storage cleanup
 
 ## Recovery Strategies
 
@@ -239,14 +261,11 @@ When pitfalls occur despite prevention, how to recover.
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Stale Active Project | MEDIUM | Run script to find orphaned records, provide bulk reassignment UI |
-| Context Blindness | LOW | Add more prominent indicators, retrain users |
-| No Undo | LOW | Add undo feature retroactively, migrate recent records to include undo window |
-| Offline Desync | HIGH | May require manual data reconciliation if multiple users affected |
-| Dialog Fatigue | LOW | Adjust dialog frequency, add "don't ask again" option |
-| Cross-Device Inconsistency | MEDIUM | Implement preference sync, may need manual cleanup of inconsistent records |
-
----
+| Cross-tenant file access | HIGH | 1. Audit all file access logs 2. Rotate all file URLs 3. Review tenant isolation |
+| Race condition corrupted state | MEDIUM | 1. Query for impossible states 2. Manual correction with audit log entry 3. Add optimistic locking |
+| Orphaned activities after site delete | MEDIUM | 1. Restore site from backup 2. Or link to "Deleted Site" tombstone |
+| File storage exhaustion | HIGH | 1. Emergency storage expansion 2. Add file size limits 3. Clean up orphaned files |
+| Sync conflict data loss | MEDIUM | 1. Check activity history for clues 2. Manual re-entry 3. Add conflict detection |
 
 ## Pitfall-to-Phase Mapping
 
@@ -254,25 +273,22 @@ How roadmap phases should address these pitfalls.
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Stale Active Project | Phase 1 (Backend) | E2E test: create deductions offline, archive project, sync, verify warning |
-| Context Blindness | Phase 2 (Frontend) | User test: ask users to identify active project after 5 minutes |
-| No Undo | Phase 2 (Frontend) | E2E test: deduct material, undo, verify reverted |
-| Offline Desync | Phase 1 (Backend) | E2E test: two users on shared device, verify separate contexts |
-| Dialog Fatigue | Phase 2 (Frontend) | Analytics: track dismiss rate, verify <80% auto-dismiss |
-| Cross-Device Sync | Phase 1 (Backend) | E2E test: set on device A, sync device B, verify consistency |
-
----
+| File upload security | Phase: Activity Feed (file uploads) | Security review with file upload checklist |
+| Activity feed N+1 | Phase: Activity Feed API | Query count assertion in tests |
+| Status race condition | Phase: Site Status Workflow | Concurrent transition test |
+| Offline sync conflict | Phase: Offline Queue Extension | Conflict detection test with version mismatch |
+| Multi-tenant file leakage | Phase: Activity Feed (file storage) | Tenant isolation test with cross-tenant file access attempt |
+| Material history link break | Phase: Material History | Test with soft-deleted site |
 
 ## Sources
 
-- Nielsen Norman Group: "10 Usability Heuristics for User Interface Design" — Visibility of System Status, User Control and Freedom
-- Nielsen Norman Group: "Confirmation Dialogs Can Prevent User Errors" — Guidelines on dialog overuse and specificity
-- Nielsen Norman Group: "The Power of Defaults" — User tendency to stick with defaults
-- WatermelonDB Sync Documentation — Limitations, conflict resolution patterns
-- Offline First Community (offlinefirst.org) — Principles for offline-capable applications
-- Local First Web (localfirstweb.dev) — Patterns for local-first state management
+- **OWASP File Upload Cheat Sheet** — https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html (HIGH confidence)
+- **Dexie.js Consistency Documentation** — https://dexie.org/docs/cloud/consistency (HIGH confidence)
+- **XState Guards and Concurrency** — https://context7.com/statelyai/xstate/llms.txt (HIGH confidence)
+- **SQLx Pagination Patterns** — https://github.com/alexandrughinea/sqlx-paginated (HIGH confidence)
+- **Existing codebase patterns** — `src/modules/sites/domain/site.rs`, `frontend/src/lib/offline/` (HIGH confidence)
+- **Project tech debt** — PROJECT.md: "No conflict resolution for offline edits"
 
 ---
-
-*Pitfalls research for: Active Project Context (Construction Field Service App)*
-*Researched: 2026-04-30*
+*Pitfalls research for: Schreinerei SaaS v1.8 Activity Feed & Site Status*
+*Researched: 2026-05-01*
