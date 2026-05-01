@@ -10,6 +10,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useCreateActivity, useUploadSitePhoto } from "@/lib/api/hooks"
+import { isOnline } from "@/lib/offline/sync"
+import { queuePhotoUploadAction } from "@/lib/offline/queue"
 import { toast } from "sonner"
 
 interface CreateNoteModalProps {
@@ -46,6 +48,24 @@ export function CreateNoteModal({
       let photoUrl: string | undefined
 
       if (activityType === "photo" && selectedFile) {
+        if (!isOnline()) {
+          await queuePhotoUploadAction({
+            siteId,
+            file: selectedFile,
+            content: content.trim() || undefined,
+          })
+
+          toast.success("Foto offline gespeichert", {
+            description: "Wird automatisch hochgeladen, sobald Sie wieder online sind.",
+          })
+          setContent("")
+          setSelectedFile(null)
+          setActivityType("note")
+          onSuccess()
+          onOpenChange(false)
+          return
+        }
+
         const uploadResponse = await uploadPhoto.mutateAsync({
           siteId,
           file: selectedFile,

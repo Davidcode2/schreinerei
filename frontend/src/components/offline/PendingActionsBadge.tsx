@@ -27,7 +27,7 @@ export default function PendingActionsBadge() {
           <p className="text-sm font-medium">
             Ausstehende Aktionen
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground" aria-live="polite">
             {pendingCount} Aktion{pendingCount !== 1 ? 'en' : ''} wartet{pendingCount !== 1 ? 'en' : ''} auf Synchronisation.
           </p>
           <p className="text-xs text-muted-foreground">
