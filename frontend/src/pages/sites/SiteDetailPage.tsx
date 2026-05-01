@@ -22,6 +22,7 @@ import { TimeEntryDialog } from "./TimeEntryDialog"
 import { ActivityFeed } from "./ActivityFeed"
 import { StatusChangeModal } from "./StatusChangeModal"
 import { CreateNoteModal } from "./CreateNoteModal"
+import { CameraUploadFlow } from "./CameraUploadFlow"
 
 function formatDate(date: string | null): string {
   if (!date) return "-"
@@ -37,7 +38,7 @@ export default function SiteDetailPage() {
   const [showTimeDialog, setShowTimeDialog] = useState(false)
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [showNoteModal, setShowNoteModal] = useState(false)
-  const [noteModalActivityType, setNoteModalActivityType] = useState<"note" | "photo">("note")
+  const [showCameraFlow, setShowCameraFlow] = useState(false)
 
   const { data: site, isLoading, error, refetch } = useSite(id!)
   const { data: activities, refetch: refetchActivities } = useActivities(id!)
@@ -60,20 +61,11 @@ export default function SiteDetailPage() {
   const totalHours = timeEntries?.reduce((sum, e) => sum + e.hours, 0) || 0
 
   const openPhotoModal = () => {
-    setNoteModalActivityType("photo")
-    setShowNoteModal(true)
+    setShowCameraFlow(true)
   }
 
   const openNoteModal = () => {
-    setNoteModalActivityType("note")
     setShowNoteModal(true)
-  }
-
-  const handleNoteModalOpenChange = (open: boolean) => {
-    setShowNoteModal(open)
-    if (!open) {
-      setNoteModalActivityType("note")
-    }
   }
 
   return (
@@ -247,10 +239,16 @@ export default function SiteDetailPage() {
 
       <CreateNoteModal
         open={showNoteModal}
-        onOpenChange={handleNoteModalOpenChange}
+        onOpenChange={setShowNoteModal}
         siteId={site.id}
         onSuccess={() => refetchActivities()}
-        initialActivityType={noteModalActivityType}
+      />
+
+      <CameraUploadFlow
+        open={showCameraFlow}
+        onOpenChange={setShowCameraFlow}
+        siteId={site.id}
+        onSuccess={() => refetchActivities()}
       />
     </div>
   )
