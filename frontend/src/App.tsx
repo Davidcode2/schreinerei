@@ -14,7 +14,7 @@ import DashboardPage from "@/pages/DashboardPage"
 import { InventoryListPage, InventoryDetailPage } from "@/pages/inventory"
 import { SitesListPage, SiteDetailPage } from "@/pages/sites"
 import { FleetPage, CalendarView } from "@/pages/fleet"
-import { SettingsPage } from "@/pages/settings"
+import { InventorySettingsPage, SettingsPage } from "@/pages/settings"
 import ScanPage from "@/pages/qr/ScanPage"
 import NotFoundPage from "@/pages/NotFoundPage"
 
@@ -78,6 +78,10 @@ function AppRoutes() {
 
                 {/* Settings */}
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route
+                  path="/settings/inventory"
+                  element={<InventorySettingsPage />}
+                />
 
                 {/* 404 */}
                 <Route path="*" element={<NotFoundPage />} />

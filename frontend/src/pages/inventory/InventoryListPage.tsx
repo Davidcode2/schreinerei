@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, Plus, QrCode } from "lucide-react"
+import { Search, Plus, QrCode, Settings } from "lucide-react"
 import {
   PageHeader,
   EmptyState,
@@ -40,10 +40,20 @@ export default function InventoryListPage() {
         title="Inventar"
         description="Materialverwaltung"
         action={
-          <Button className="gap-2" onClick={() => setAddMaterialOpen(true)}>
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Material hinzufügen</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate("/settings/inventory")}
+              aria-label="Inventar-Einstellungen öffnen"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+            <Button className="gap-2" onClick={() => setAddMaterialOpen(true)}>
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Material hinzufügen</span>
+            </Button>
+          </div>
         }
       />
 
