@@ -1,85 +1,14 @@
 ---
-gsd_state_version: 1.0
-milestone: v1.9
-milestone_name: Inventory Features
-status: executing
-stopped_at: Completed 30-01-PLAN.md
-last_updated: "2026-05-01T13:14:28.619Z"
-last_activity: 2026-05-01
-progress:
-  total_phases: 4
-  completed_phases: 0
-  total_plans: 2
-  completed_plans: 1
-  percent: 50
----
-
-# State: Schreinerei — v1.9 Inventory Features
-
-**Updated:** 2026-05-01
-
-## Project Reference
-
-See: .planning/PROJECT.md (updated 2026-05-01)
-
-**Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler.
-**Current focus:** Phase 30 — backend-api-foundation
-
-## Current Position
-
-Phase: 30 (backend-api-foundation) — EXECUTING
-Plan: 2 of 2
-Status: Ready to execute
-Last activity: 2026-05-01
-
-Progress: [█████░░░░░] 50%
-
-## Performance Metrics
-
-**Velocity:**
-
-- Total plans completed: 0
-- This milestone: v1.9 just started
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 30. Backend API Foundation | 0/2 | - | - |
-| 31. Settings, Editing & Stock-In | 0/? | - | - |
-| 32. Enriched History | 0/? | - | - |
-| 33. Type Safety & Coverage | 0/? | - | - |
-
-*Updated after each plan completion*
-| Phase 30-backend-api-foundation P01 | 9min | 4 tasks | 8 files |
-
-## Accumulated Context
-
-### Decisions
-
-Recent decisions affecting current work:
-
-- v1.9 scope: Category editing, material editing, stock-in, enriched history
-- Settings wheel icon → dedicated `/settings/inventory` route for category management
-- StockIn is a separate domain command (not reusing AdjustStock) — available to all users, uses notes instead of reason
-- entry_type migration: three-step nullable → backfill → NOT NULL
-- Category delete uses FK constraint check with Conflict error (no soft-delete)
-- MaterialHistoryFeed is a separate component (not shared with sites ActivityFeed)
-- [Phase ?]: ---
-
 phase: 30-backend-api-foundation
 plan: 01
 subsystem: api
 tags: [entry-type, domain-commands, stock-in, enriched-history, migration]
 
 # Dependency graph
-
 requires:
-
   - phase: v1.8
     provides: Existing inventory module with stock_entries, materials, categories
 provides:
-
   - EntryType enum with 5 variants and Display/FromStr
   - EnrichedStockEntry with user_name, entry_type, category_name
   - UpdateCategory command with validation
@@ -89,21 +18,17 @@ provides:
   - Repository methods: update_category, delete_category, update_material, stock_in, list_enriched_stock_entries
   - Service methods: update_category, delete_category, update_material, stock_in, list_enriched_history
   - Migration 014: entry_type column with backfill
-
 affects: [31-settings-editing-stock-in, 32-enriched-history]
 
 # Tech tracking
-
 tech-stack:
   added: [sqlx-VARCHAR-enum-for-EntryType]
   patterns: [PATCH-semantics-with-COALESCE, clear_location-boolean-flag, entry_type-enriched-history]
 
 key-files:
   created:
-
     - migrations/014_entry_type_stock_entries.sql
   modified:
-
     - src/modules/inventory/domain/stock_entry.rs
     - src/modules/inventory/domain/category.rs
     - src/modules/inventory/domain/material.rs
@@ -113,7 +38,6 @@ key-files:
     - src/modules/inventory/application/inventory_service.rs
 
 key-decisions:
-
   - "StockIn is separate from AdjustStock — available to all users, uses notes field instead of reason"
   - "UpdateMaterial uses clear_location boolean flag for explicit NULL setting, avoiding Option<Option<String>> JSON confusion"
   - "Category delete uses FK constraint check returning Conflict error, not soft-delete"
@@ -121,7 +45,6 @@ key-decisions:
   - "EnrichedStockEntry resolves user_name via COALESCE(u.name, u.email, user_id::text)"
 
 patterns-established:
-
   - "PATCH semantics with COALESCE for partial updates where None = don't change"
   - "EntryType enum maps to VARCHAR via sqlx with snake_case rename"
   - "Domain commands validate() returning Result<(), String> before repo delegation"
@@ -130,7 +53,6 @@ patterns-established:
 requirements-completed: []
 
 # Metrics
-
 duration: 9min
 completed: 2026-05-01
 ---
@@ -148,7 +70,6 @@ completed: 2026-05-01
 - **Files modified:** 8
 
 ## Accomplishments
-
 - Created migration 014 with entry_type VARCHAR(20) column, backfill logic, NOT NULL constraint, and index
 - Added EntryType enum with 5 variants (Withdrawn, Adjusted, MaterialAdded, LocationChanged, MinQuantityChanged) with Display/FromStr
 - Added EnrichedStockEntry struct with user_name, entry_type, category_name for rich history display
@@ -171,7 +92,6 @@ Each task was committed atomically:
 4. **task 4: Add service methods wiring domain commands to repository** - `a6bad06` (feat)
 
 ## Files Created/Modified
-
 - `migrations/014_entry_type_stock_entries.sql` - Migration adding entry_type column with backfill and index
 - `src/modules/inventory/domain/stock_entry.rs` - EntryType enum, EnrichedStockEntry struct, tests
 - `src/modules/inventory/domain/category.rs` - UpdateCategory command with validation and tests
@@ -182,7 +102,6 @@ Each task was committed atomically:
 - `src/modules/inventory/application/inventory_service.rs` - Service methods: update_category, delete_category, update_material, stock_in, list_enriched_history
 
 ## Decisions Made
-
 - StockIn uses `notes: Option<String>` instead of AdjustStock's `reason: String` — available to all users, not admin-only
 - UpdateMaterial uses `clear_location: Option<bool>` flag to handle explicit NULL setting, avoiding confusing `Option<Option<String>>` JSON
 - Category delete performs FK constraint check (COUNT on materials) and returns Conflict if referenced
@@ -202,7 +121,6 @@ None
 None - no external service configuration required.
 
 ## Next Phase Readiness
-
 - Backend domain foundation complete with all commands, validation, repository, and service methods
 - Ready for Plan 02 (API endpoints) which will expose these operations via REST routes
 - Migration 014 needs to be run against the database before deploying
@@ -223,25 +141,3 @@ None - no external service configuration required.
 - All stock_entries INSERT statements include entry_type column (3 inserts verified)
 - EnrichedStockEntry has entry_type, user_name, category_name fields
 - EventType enum has MaterialAdded, LocationChanged, MinQuantityChanged variants
-
-### Pending Todos
-
-None yet.
-
-### Blockers/Concerns
-
-- entry_type migration needs careful SQL review (nullable → backfill → NOT NULL)
-- React Query cache invalidation must cover both ["categories"] and ["materials"] keys
-
-## Deferred Items
-
-| Category | Item | Status | Deferred At |
-|----------|------|--------|-------------|
-| Offline | Photo queue replay | Backlog | v1.8 |
-| Testing | Integration tests with real PostgreSQL | v2.0 | v1.5 |
-
-## Session Continuity
-
-Last session: 2026-05-01T13:14:28.612Z
-Stopped at: Completed 30-01-PLAN.md
-Resume file: None

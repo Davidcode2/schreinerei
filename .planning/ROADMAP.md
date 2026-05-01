@@ -56,7 +56,7 @@
   4. Stock-in endpoint records positive quantity changes as MaterialAdded entries with notes
   5. Inventory history endpoint returns entry_type, user_name, and category_name for each entry
 **Plans**:
-- [ ] 30-01-PLAN.md — Domain commands, migration, and repository methods
+- [x] 30-01-PLAN.md — Domain commands, migration, and repository methods
 - [ ] 30-02-PLAN.md — API endpoints and TypeScript type generation
 
 ### Phase 31: Settings, Editing & Stock-In
@@ -102,7 +102,7 @@ Phases execute in numeric order: 30 → 31 → 32 → 33
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 30. Backend API Foundation | v1.9 | 0/? | Not started | - |
+| 30. Backend API Foundation | v1.9 | 1/2 | In Progress|  |
 | 31. Settings, Editing & Stock-In | v1.9 | 0/? | Not started | - |
 | 32. Enriched History | v1.9 | 0/? | Not started | - |
 | 33. Type Safety & Coverage | v1.9 | 0/? | Not started | - |
