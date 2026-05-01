@@ -102,6 +102,50 @@ impl AdjustStock {
     }
 }
 
+/// Command to partially update a material (PATCH semantics)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateMaterial {
+    pub location: Option<String>,
+    pub min_quantity: Option<i32>,
+    pub clear_location: Option<bool>,
+}
+
+impl UpdateMaterial {
+    /// Validate the update material command
+    pub fn validate(&self) -> Result<(), String> {
+        if let Some(min_qty) = self.min_quantity {
+            if min_qty < 0 {
+                return Err("Minimum quantity cannot be negative".to_string());
+            }
+        }
+        // If both setting a location and clearing it, that's a conflict
+        if let Some(ref loc) = self.location {
+            if !loc.is_empty() && self.clear_location == Some(true) {
+                return Err("Cannot set location and clear location at the same time".to_string());
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Command to stock-in material (available to all users)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StockIn {
+    pub material_id: MaterialId,
+    pub quantity: i32,
+    pub notes: Option<String>,
+}
+
+impl StockIn {
+    /// Validate the stock-in command
+    pub fn validate(&self) -> Result<(), String> {
+        if self.quantity <= 0 {
+            return Err("Stock-in quantity must be positive".to_string());
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -273,5 +317,109 @@ mod tests {
             reason: "".to_string(),
         };
         assert_eq!(cmd.validate(), Err("Reason is required for stock adjustment".to_string()));
+    }
+
+    // === UpdateMaterial tests ===
+
+    #[test]
+    fn update_material_validate_succeeds_with_location() {
+        let cmd = UpdateMaterial {
+            location: Some("Lager A".to_string()),
+            min_quantity: None,
+            clear_location: None,
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn update_material_validate_succeeds_with_min_quantity() {
+        let cmd = UpdateMaterial {
+            location: None,
+            min_quantity: Some(10),
+            clear_location: None,
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn update_material_validate_succeeds_with_clear_location() {
+        let cmd = UpdateMaterial {
+            location: None,
+            min_quantity: None,
+            clear_location: Some(true),
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn update_material_validate_succeeds_with_no_changes() {
+        let cmd = UpdateMaterial {
+            location: None,
+            min_quantity: None,
+            clear_location: None,
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn update_material_validate_fails_with_negative_min_quantity() {
+        let cmd = UpdateMaterial {
+            location: None,
+            min_quantity: Some(-1),
+            clear_location: None,
+        };
+        assert_eq!(cmd.validate(), Err("Minimum quantity cannot be negative".to_string()));
+    }
+
+    #[test]
+    fn update_material_validate_fails_with_conflict_set_and_clear_location() {
+        let cmd = UpdateMaterial {
+            location: Some("Lager A".to_string()),
+            min_quantity: None,
+            clear_location: Some(true),
+        };
+        assert_eq!(cmd.validate(), Err("Cannot set location and clear location at the same time".to_string()));
+    }
+
+    // === StockIn tests ===
+
+    #[test]
+    fn stock_in_validate_succeeds_with_positive_quantity() {
+        let cmd = StockIn {
+            material_id: MaterialId::new(),
+            quantity: 10,
+            notes: Some("Delivery arrived".to_string()),
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn stock_in_validate_succeeds_without_notes() {
+        let cmd = StockIn {
+            material_id: MaterialId::new(),
+            quantity: 5,
+            notes: None,
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn stock_in_validate_fails_with_zero_quantity() {
+        let cmd = StockIn {
+            material_id: MaterialId::new(),
+            quantity: 0,
+            notes: None,
+        };
+        assert_eq!(cmd.validate(), Err("Stock-in quantity must be positive".to_string()));
+    }
+
+    #[test]
+    fn stock_in_validate_fails_with_negative_quantity() {
+        let cmd = StockIn {
+            material_id: MaterialId::new(),
+            quantity: -5,
+            notes: None,
+        };
+        assert_eq!(cmd.validate(), Err("Stock-in quantity must be positive".to_string()));
     }
 }
