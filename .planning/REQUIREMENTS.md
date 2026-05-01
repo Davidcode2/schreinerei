@@ -82,31 +82,31 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CAM-01 | — | Pending |
-| CAM-02 | — | Pending |
-| CAM-03 | — | Pending |
-| DOC-01 | — | Pending |
-| DOC-02 | — | Pending |
-| DOC-03 | — | Pending |
-| DOC-04 | — | Pending |
-| DOC-05 | — | Pending |
-| VIEW-01 | — | Pending |
-| VIEW-02 | — | Pending |
-| VIEW-03 | — | Pending |
-| VIEW-04 | — | Pending |
-| VIEW-05 | — | Pending |
-| VIEW-06 | — | Pending |
-| VIEW-07 | — | Pending |
-| VIEW-08 | — | Pending |
-| VIEW-09 | — | Pending |
-| ENTRY-01 | — | Pending |
-| ENTRY-02 | — | Pending |
-| ENTRY-03 | — | Pending |
+| CAM-01 | 30 | Pending |
+| CAM-02 | 30 | Pending |
+| CAM-03 | 30 | Pending |
+| DOC-01 | 31 | Pending |
+| DOC-02 | 31 | Pending |
+| DOC-03 | 31 | Pending |
+| DOC-04 | 31 | Pending |
+| DOC-05 | 31 | Pending |
+| VIEW-01 | 32 | Pending |
+| VIEW-02 | 32 | Pending |
+| VIEW-03 | 32 | Pending |
+| VIEW-04 | 32 | Pending |
+| VIEW-05 | 32 | Pending |
+| VIEW-06 | 32 | Pending |
+| VIEW-07 | 32 | Pending |
+| VIEW-08 | 32 | Pending |
+| VIEW-09 | 32 | Pending |
+| ENTRY-01 | 33 | Pending |
+| ENTRY-02 | 33 | Pending |
+| ENTRY-03 | 33 | Pending |
 
 **Coverage:**
 - v1 requirements: 20 total
-- Mapped to phases: 0 ⚠️
-- Unmapped: 20 ⚠️
+- Mapped to phases: 20 ✓
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-01*
