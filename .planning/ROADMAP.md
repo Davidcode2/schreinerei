@@ -69,10 +69,11 @@
   3. User can set available quantity to an arbitrary number (stock correction)
   4. User can record stock-in with amount and notes via a dedicated dialog
   5. Category name is displayed on each material entry in the inventory overview
-**Plans**: 3 plans
+**Plans**: 4 plans
 - [x] 31-01-PLAN.md — Shared inventory mutation hooks, settings route, and inventory gear entrypoint
 - [x] 31-02-PLAN.md — Category management UI and overview category labels
 - [x] 31-03-PLAN.md — Material edit dialog, direct stock correction, and stock-in dialog
+- [ ] 31-04-PLAN.md — Gap closure for blocked category delete copy and regression coverage
 **UI hint**: yes
 
 ### Phase 32: Enriched History
