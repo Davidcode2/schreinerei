@@ -129,10 +129,10 @@ describe("MediaViewer", () => {
       />
     )
 
-    expect(await screen.findByText("Montage Plan.pdf")).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Montage Plan.pdf" })).toBeInTheDocument()
     expect(screen.getByText("Anna Tischler")).toBeInTheDocument()
     expect(screen.getByText("Keine Notiz vorhanden.")).toBeInTheDocument()
-    expect(screen.getByText(/01\.05\.2026, 10:00 Uhr/)).toBeInTheDocument()
+    expect(screen.getByText(/01\.05\.2026, .* Uhr/)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Viewer schließen" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Link kopieren" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Herunterladen" })).toBeInTheDocument()

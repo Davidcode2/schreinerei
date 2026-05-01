@@ -24,7 +24,11 @@ import { StatusChangeModal } from "./StatusChangeModal"
 import { CreateNoteModal } from "./CreateNoteModal"
 import { CameraUploadFlow } from "./CameraUploadFlow"
 import { MediaViewer } from "./MediaViewer"
-import { buildSiteDetailPath, resolveMediaViewerTarget } from "./mediaViewerRoute"
+import {
+  buildMediaViewerPath,
+  buildSiteDetailPath,
+  resolveMediaViewerTarget,
+} from "./mediaViewerRoute"
 
 function formatDate(date: string | null): string {
   if (!date) return "-"
@@ -57,6 +61,9 @@ export default function SiteDetailPage() {
     () => resolveMediaViewerTarget(activities || [], activityId, attachmentId),
     [activities, activityId, attachmentId]
   )
+  const viewerPath = viewerTarget
+    ? buildMediaViewerPath(site.id, viewerTarget.activity.id, viewerTarget.attachment.attachment_id, viewerTarget.title)
+    : buildSiteDetailPath(id || "")
 
   if (isLoading) {
     return <LoadingSpinner className="min-h-[400px]" size="lg" />
@@ -266,6 +273,7 @@ export default function SiteDetailPage() {
 
       <MediaViewer
         open={Boolean(activityId && attachmentId)}
+        sharePath={viewerPath}
         target={viewerTarget}
         onClose={() => navigate(buildSiteDetailPath(site.id))}
       />
