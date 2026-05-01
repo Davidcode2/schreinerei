@@ -18,7 +18,7 @@ const entryTypeConfig: Record<
   },
   withdrawn: {
     label: "Entnommen",
-    badgeClassName: "bg-red-100 text-red-700 border-red-200",
+    badgeClassName: "bg-amber-100 text-amber-800 border-amber-200",
   },
   adjusted: {
     label: "Bestand korrigiert",

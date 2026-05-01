@@ -30,6 +30,8 @@ const materialResponse = {
   created_at: "2026-04-30T10:00:00.000Z",
 }
 
+const apiPath = (path: string) => `*/api/v1${path}`
+
 function createHistoryEntry(overrides: Record<string, unknown> = {}) {
   return {
     id: "h-1",
@@ -50,23 +52,23 @@ function createHistoryEntry(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   server.use(
-    http.get("/api/v1/inventory/materials/mat-123", () =>
+    http.get(apiPath("/inventory/materials/mat-123"), () =>
       HttpResponse.json(materialResponse)
     ),
-    http.get("/api/v1/inventory/materials/mat-123/history/enriched", () =>
+    http.get(apiPath("/inventory/materials/mat-123/history/enriched"), () =>
       HttpResponse.json([])
     ),
-    http.get("/api/v1/preferences", () =>
+    http.get(apiPath("/preferences"), () =>
       HttpResponse.json({ active_site_id: null })
     ),
-    http.get("/api/v1/sites", () => HttpResponse.json([]))
+    http.get(apiPath("/sites"), () => HttpResponse.json([]))
   )
 })
 
 describe("InventoryDetailPage history", () => {
   it("renders material_added entries with badge, positive quantity, and attribution", async () => {
     server.use(
-      http.get("/api/v1/inventory/materials/mat-123/history/enriched", () =>
+      http.get(apiPath("/inventory/materials/mat-123/history/enriched"), () =>
         HttpResponse.json([
           createHistoryEntry({
             entry_type: "material_added",
@@ -90,7 +92,7 @@ describe("InventoryDetailPage history", () => {
 
   it("renders withdrawn entries with a Baustelle link", async () => {
     server.use(
-      http.get("/api/v1/inventory/materials/mat-123/history/enriched", () =>
+      http.get(apiPath("/inventory/materials/mat-123/history/enriched"), () =>
         HttpResponse.json([createHistoryEntry()])
       )
     )
@@ -105,7 +107,7 @@ describe("InventoryDetailPage history", () => {
 
   it("renders adjusted entries with the correction label", async () => {
     server.use(
-      http.get("/api/v1/inventory/materials/mat-123/history/enriched", () =>
+      http.get(apiPath("/inventory/materials/mat-123/history/enriched"), () =>
         HttpResponse.json([
           createHistoryEntry({
             entry_type: "adjusted",
@@ -143,18 +145,40 @@ describe("InventoryDetailPage interactions", () => {
 
     await screen.findByText("Betonschraube")
 
-    const buttonLabels = screen
-      .getAllByRole("button")
-      .map((button) => button.textContent?.trim())
-      .filter(Boolean)
+    const detailsTitle = screen.getByText("Details")
+    const actionsTitle = screen.getByText("Aktionen")
 
-    const stockInIndex = buttonLabels.indexOf("Material einlagern")
-    const withdrawIndex = buttonLabels.indexOf("Material entnehmen")
-    const editIndex = buttonLabels.indexOf("Material bearbeiten")
+    expect(
+      screen.getByRole("button", { name: /material bearbeiten/i })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /material einlagern/i })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /material entnehmen/i })
+    ).toBeInTheDocument()
 
-    expect(stockInIndex).toBeGreaterThanOrEqual(0)
-    expect(withdrawIndex).toBeGreaterThan(stockInIndex)
-    expect(editIndex).toBeGreaterThan(withdrawIndex)
+    expect(detailsTitle.parentElement).toContainElement(
+      screen.getByRole("button", { name: /material bearbeiten/i })
+    )
+    expect(actionsTitle.parentElement?.parentElement).toContainElement(
+      screen.getByRole("button", { name: /material einlagern/i })
+    )
+    expect(actionsTitle.parentElement?.parentElement).toContainElement(
+      screen.getByRole("button", { name: /material entnehmen/i })
+    )
+
+    const withdrawButton = screen.getByRole("button", {
+      name: /material entnehmen/i,
+    })
+    const stockInButton = screen.getByRole("button", {
+      name: /material einlagern/i,
+    })
+
+    expect(
+      withdrawButton.compareDocumentPosition(stockInButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
   })
 
   it("submits stock-in with quantity and optional notes, then shows the success toast", async () => {
@@ -162,10 +186,10 @@ describe("InventoryDetailPage interactions", () => {
     let stockInPayload: unknown = null
 
     server.use(
-      http.get("/api/v1/inventory/materials/mat-123/history/enriched", () =>
+      http.get(apiPath("/inventory/materials/mat-123/history/enriched"), () =>
         HttpResponse.json([])
       ),
-      http.post("/api/v1/inventory/materials/mat-123/stock-in", async ({ request }) => {
+      http.post(apiPath("/inventory/materials/mat-123/stock-in"), async ({ request }) => {
         stockInPayload = await request.json()
         return HttpResponse.json({ ...materialResponse, quantity: 51 })
       })
@@ -195,10 +219,10 @@ describe("InventoryDetailPage interactions", () => {
     let adjustPayload: unknown = null
 
     server.use(
-      http.get("/api/v1/inventory/materials/mat-123/history/enriched", () =>
+      http.get(apiPath("/inventory/materials/mat-123/history/enriched"), () =>
         HttpResponse.json([])
       ),
-      http.patch("/api/v1/inventory/materials/mat-123", async ({ request }) => {
+      http.patch(apiPath("/inventory/materials/mat-123"), async ({ request }) => {
         updatePayload = await request.json()
         return HttpResponse.json({
           ...materialResponse,
@@ -206,7 +230,7 @@ describe("InventoryDetailPage interactions", () => {
           min_quantity: 14,
         })
       }),
-      http.post("/api/v1/inventory/materials/mat-123/adjust", async ({ request }) => {
+      http.post(apiPath("/inventory/materials/mat-123/adjust"), async ({ request }) => {
         adjustPayload = await request.json()
         return HttpResponse.json({ ...materialResponse, quantity: 60 })
       })

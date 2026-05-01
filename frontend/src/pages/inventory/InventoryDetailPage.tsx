@@ -117,35 +117,6 @@ export default function InventoryDetailPage() {
         title={material.name}
         description={material.description || undefined}
         backTo="/inventory"
-        action={
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              onClick={() => setShowStockInDialog(true)}
-              disabled={stockInMutation.isPending}
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Material einlagern
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowWithdrawDialog(true)}
-              disabled={material.quantity <= 0 || withdrawMutation.isPending}
-              className="gap-2"
-            >
-              <Minus className="h-4 w-4" />
-              Material entnehmen
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowEditDialog(true)}
-              className="gap-2"
-            >
-              <Pencil className="h-4 w-4" />
-              Material bearbeiten
-            </Button>
-          </div>
-        }
       />
 
       {/* Status Card */}
@@ -180,10 +151,18 @@ export default function InventoryDetailPage() {
       {/* Details Grid */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-start justify-between space-y-0">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Details
             </CardTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowEditDialog(true)}
+              aria-label="Material bearbeiten"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             {material.location && (
@@ -208,6 +187,23 @@ export default function InventoryDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
+            <Button
+              onClick={() => setShowWithdrawDialog(true)}
+              disabled={material.quantity <= 0 || withdrawMutation.isPending}
+              className="w-full justify-start gap-2"
+            >
+              <Minus className="h-4 w-4" />
+              Material entnehmen
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowStockInDialog(true)}
+              disabled={stockInMutation.isPending}
+              className="w-full justify-start gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Material einlagern
+            </Button>
             {material.is_low_stock && (
               <Button
                 variant="outline"
