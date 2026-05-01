@@ -86,7 +86,9 @@ pub struct CreateCategoryRequest {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct UpdateCategoryRequest {
+    #[ts(optional)]
     pub name: Option<String>,
+    #[ts(optional)]
     pub description: Option<String>,
 }
 
@@ -139,8 +141,11 @@ pub struct CreateMaterialRequest {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct UpdateMaterialRequest {
+    #[ts(optional)]
     pub location: Option<String>,
+    #[ts(optional)]
     pub min_quantity: Option<i32>,
+    #[ts(optional)]
     pub clear_location: Option<bool>,
 }
 

@@ -101,9 +101,9 @@ export type TimeEntryResponse = { id: string, site_id: string | null, user_id: s
 
 export type ToolResponse = { id: string, name: string, category: string | null, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
 
-export type UpdateCategoryRequest = { name: string | null, description: string | null, };
+export type UpdateCategoryRequest = { name?: string, description?: string, };
 
-export type UpdateMaterialRequest = { location: string | null, min_quantity: number | null, clear_location: boolean | null, };
+export type UpdateMaterialRequest = { location?: string, min_quantity?: number, clear_location?: boolean, };
 
 export type UpdatePreferences = { active_site_id: string | null, };
 

@@ -172,7 +172,12 @@ impl MaterialRepository {
         .bind(tenant_id.0)
         .execute(&self.pool)
         .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+        .map_err(|e| match &e {
+            sqlx::Error::Database(db_err) if db_err.code().as_deref() == Some("23503") => {
+                AppError::Conflict("Cannot delete category: materials still reference it".to_string())
+            }
+            _ => AppError::Database(e.to_string()),
+        })?;
 
         if result.rows_affected() == 0 {
             return Err(AppError::NotFound("Category not found".to_string()));
