@@ -1,15 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiClient } from "../client"
 import type {
+  AdjustStockRequest,
   Category,
+  CreateCategoryRequest,
   Material,
   CreateMaterialRequest,
-  WithdrawRequest,
-  MaterialStockHistoryEntry,
-  SiteMaterialHistoryEntry,
-  OrderRequest,
   CreateOrderRequestDto,
+  MaterialStockHistoryEntry,
+  OrderRequest,
   OrderStatusQuery,
+  SiteMaterialHistoryEntry,
+  StockInRequest,
+  UpdateCategoryRequest,
+  UpdateMaterialRequest,
+  WithdrawRequest,
 } from "@/types/inventory"
 
 // === Categories ===
@@ -26,8 +31,31 @@ export function useCreateCategory() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: { name: string; description?: string }) =>
+    mutationFn: (data: CreateCategoryRequest) =>
       apiClient.post<Category>("/api/v1/inventory/categories", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] })
+    },
+  })
+}
+
+export function useUpdateCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateCategoryRequest }) =>
+      apiClient.patch<Category>(`/api/v1/inventory/categories/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] })
+    },
+  })
+}
+
+export function useDeleteCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => apiClient.delete(`/api/v1/inventory/categories/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] })
     },
@@ -88,6 +116,48 @@ export function useCreateMaterial() {
       apiClient.post<Material>("/api/v1/inventory/materials", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["materials"] })
+    },
+  })
+}
+
+export function useUpdateMaterial() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateMaterialRequest }) =>
+      apiClient.patch<Material>(`/api/v1/inventory/materials/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["materials"] })
+      queryClient.invalidateQueries({ queryKey: ["material"] })
+      queryClient.invalidateQueries({ queryKey: ["low-stock"] })
+    },
+  })
+}
+
+export function useAdjustMaterialStock() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, ...data }: AdjustStockRequest & { id: string }) =>
+      apiClient.post<Material>(`/api/v1/inventory/materials/${id}/adjust`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["materials"] })
+      queryClient.invalidateQueries({ queryKey: ["material"] })
+      queryClient.invalidateQueries({ queryKey: ["low-stock"] })
+    },
+  })
+}
+
+export function useStockInMaterial() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, ...data }: StockInRequest & { id: string }) =>
+      apiClient.post<Material>(`/api/v1/inventory/materials/${id}/stock-in`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["materials"] })
+      queryClient.invalidateQueries({ queryKey: ["material"] })
+      queryClient.invalidateQueries({ queryKey: ["low-stock"] })
     },
   })
 }
