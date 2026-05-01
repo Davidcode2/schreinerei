@@ -55,7 +55,9 @@
   3. Material PATCH endpoint accepts location and min_quantity partial updates (Option<T> fields)
   4. Stock-in endpoint records positive quantity changes as MaterialAdded entries with notes
   5. Inventory history endpoint returns entry_type, user_name, and category_name for each entry
-**Plans**: TBD
+**Plans**:
+- [ ] 30-01-PLAN.md — Domain commands, migration, and repository methods
+- [ ] 30-02-PLAN.md — API endpoints and TypeScript type generation
 
 ### Phase 31: Settings, Editing & Stock-In
 **Goal:** Users can manage categories, edit material properties, record stock-in, and see categories on the overview

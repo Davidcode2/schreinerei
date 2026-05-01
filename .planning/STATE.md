@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Inventory Features
-status: ready_to_plan
-last_updated: "2026-05-01T15:00:00Z"
+status: planned
+last_updated: "2026-05-01T16:00:00Z"
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
+  total_plans: 2
   completed_plans: 0
   percent: 0
 ---
@@ -42,7 +42,7 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 30. Backend API Foundation | 0/? | - | - |
+| 30. Backend API Foundation | 0/2 | - | - |
 | 31. Settings, Editing & Stock-In | 0/? | - | - |
 | 32. Enriched History | 0/? | - | - |
 | 33. Type Safety & Coverage | 0/? | - | - |
