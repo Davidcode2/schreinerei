@@ -4,13 +4,18 @@
 
 import type {
   AdjustStockRequest as GeneratedAdjustStockRequest,
+  ApproveOrderRequestDto as GeneratedApproveOrderRequestDto,
   CategoryResponse,
   CreateCategoryRequest as GeneratedCreateCategoryRequest,
   CreateMaterialRequest as GeneratedCreateMaterialRequest,
+  CreateOrderRequestDto as GeneratedCreateOrderRequestDto,
   EnrichedStockHistoryResponse,
   EntryType as GeneratedEntryType,
+  FulfillOrderRequestDto as GeneratedFulfillOrderRequestDto,
   ListMaterialsQuery as GeneratedListMaterialsQuery,
   MaterialResponse,
+  OrderRequestResponse as GeneratedOrderRequestResponse,
+  OrderStatusQuery as GeneratedOrderStatusQuery,
   QrCodeResponse as GeneratedQrCodeResponse,
   QrSvgResponse as GeneratedQrSvgResponse,
   SiteStockHistoryResponse,
@@ -61,38 +66,14 @@ export type QrSvgResponse = GeneratedQrSvgResponse
 
 // === Order Request ===
 
-export type OrderStatus = 'pending' | 'approved' | 'fulfilled' | 'cancelled'
+export type OrderRequest = GeneratedOrderRequestResponse
 
-export interface OrderRequest {
-  id: string
-  material_id: string
-  material_name: string
-  quantity: number
-  requested_by: string
-  status: OrderStatus
-  reason: string | null
-  approved_by: string | null
-  approved_at: string | null
-  fulfilled_at: string | null
-  notes: string | null
-  created_at: string
-}
+export type OrderStatus = OrderRequest["status"]
 
-export interface CreateOrderRequestDto {
-  material_id: string
-  quantity: number
-  reason?: string
-}
+export type CreateOrderRequestDto = GeneratedCreateOrderRequestDto
 
-export interface ApproveOrderRequestDto {
-  notes?: string
-}
+export type ApproveOrderRequestDto = GeneratedApproveOrderRequestDto
 
-export interface FulfillOrderRequestDto {
-  actual_quantity: number
-  notes?: string
-}
+export type FulfillOrderRequestDto = GeneratedFulfillOrderRequestDto
 
-export interface OrderStatusQuery {
-  status?: OrderStatus
-}
+export type OrderStatusQuery = GeneratedOrderStatusQuery
