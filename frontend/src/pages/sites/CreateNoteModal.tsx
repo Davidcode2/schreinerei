@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,7 @@ interface CreateNoteModalProps {
   onOpenChange: (open: boolean) => void
   siteId: string
   onSuccess: () => void
+  initialActivityType?: "note" | "photo"
 }
 
 export function CreateNoteModal({
@@ -26,12 +27,19 @@ export function CreateNoteModal({
   onOpenChange,
   siteId,
   onSuccess,
+  initialActivityType = "note",
 }: CreateNoteModalProps) {
   const [content, setContent] = useState("")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [activityType, setActivityType] = useState<"note" | "photo">("note")
   const createActivity = useCreateActivity()
   const uploadPhoto = useUploadSitePhoto()
+
+  useEffect(() => {
+    if (open) {
+      setActivityType(initialActivityType)
+    }
+  }, [open, initialActivityType])
 
   const handleSubmit = async () => {
     if (activityType === "note" && !content.trim()) {
@@ -106,8 +114,18 @@ export function CreateNoteModal({
 
   const isPending = createActivity.isPending || uploadPhoto.isPending
 
+  const handleDialogOpenChange = (newOpen: boolean) => {
+    if (newOpen) {
+      setActivityType(initialActivityType)
+      onOpenChange(true)
+      return
+    }
+
+    handleOpenChange(false)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Notiz hinzufügen</DialogTitle>

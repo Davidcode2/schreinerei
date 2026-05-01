@@ -37,6 +37,7 @@ export default function SiteDetailPage() {
   const [showTimeDialog, setShowTimeDialog] = useState(false)
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [showNoteModal, setShowNoteModal] = useState(false)
+  const [noteModalActivityType, setNoteModalActivityType] = useState<"note" | "photo">("note")
 
   const { data: site, isLoading, error, refetch } = useSite(id!)
   const { data: activities, refetch: refetchActivities } = useActivities(id!)
@@ -57,6 +58,23 @@ export default function SiteDetailPage() {
   }
 
   const totalHours = timeEntries?.reduce((sum, e) => sum + e.hours, 0) || 0
+
+  const openPhotoModal = () => {
+    setNoteModalActivityType("photo")
+    setShowNoteModal(true)
+  }
+
+  const openNoteModal = () => {
+    setNoteModalActivityType("note")
+    setShowNoteModal(true)
+  }
+
+  const handleNoteModalOpenChange = (open: boolean) => {
+    setShowNoteModal(open)
+    if (!open) {
+      setNoteModalActivityType("note")
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -187,14 +205,19 @@ export default function SiteDetailPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Aktivitäten</CardTitle>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" title="Foto hinzufügen">
+              <Button
+                variant="outline"
+                size="sm"
+                title="Foto hinzufügen"
+                onClick={openPhotoModal}
+              >
                 <Camera className="h-4 w-4" />
               </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
                 title="Notiz hinzufügen"
-                onClick={() => setShowNoteModal(true)}
+                onClick={openNoteModal}
               >
                 <FileText className="h-4 w-4" />
               </Button>
@@ -224,9 +247,10 @@ export default function SiteDetailPage() {
 
       <CreateNoteModal
         open={showNoteModal}
-        onOpenChange={setShowNoteModal}
+        onOpenChange={handleNoteModalOpenChange}
         siteId={site.id}
         onSuccess={() => refetchActivities()}
+        initialActivityType={noteModalActivityType}
       />
     </div>
   )

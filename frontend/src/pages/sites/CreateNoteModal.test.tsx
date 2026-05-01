@@ -32,7 +32,7 @@ describe('CreateNoteModal offline photo flow', () => {
 
     const onSuccess = vi.fn()
     const onOpenChange = vi.fn()
-    const { container } = render(
+    render(
       <CreateNoteModal
         open
         onOpenChange={onOpenChange}
@@ -43,7 +43,7 @@ describe('CreateNoteModal offline photo flow', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Foto' }))
 
-    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
     const file = new File(['data'], 'offline.jpg', { type: 'image/jpeg' })
     await userEvent.upload(fileInput, file)
 
@@ -61,5 +61,27 @@ describe('CreateNoteModal offline photo flow', () => {
     expect(createActivityMutate).not.toHaveBeenCalled()
     expect(onSuccess).toHaveBeenCalledOnce()
     expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+})
+
+describe('CreateNoteModal initial photo mode', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(isOnline).mockReturnValue(true)
+  })
+
+  it('opens directly in photo mode when requested by caller', () => {
+    render(
+      <CreateNoteModal
+        open
+        onOpenChange={vi.fn()}
+        siteId="site-1"
+        onSuccess={vi.fn()}
+        initialActivityType="photo"
+      />
+    )
+
+    expect(screen.queryByPlaceholderText('Notiz eingeben...')).not.toBeInTheDocument()
+    expect(document.querySelector('input[type="file"]')).toBeInTheDocument()
   })
 })
