@@ -69,7 +69,7 @@ Phases 30 → 31 → 32 → 33 (Phase 32 depends on 30+31; Phase 33 is independe
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 30. Camera Upload Flow | 1/1 | Complete   | 2026-05-01 |
+| 30. Camera Upload Flow | 1/1 | Complete    | 2026-05-01 |
 | 31. Document Upload Rework | 0/? | Not started | - |
 | 32. Media Viewer | 0/? | Not started | - |
 | 33. Entry Management | 0/? | Not started | - |

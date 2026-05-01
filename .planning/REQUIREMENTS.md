@@ -7,9 +7,9 @@
 
 ### Camera Upload (CAM)
 
-- [ ] **CAM-01**: Camera button on activity stream opens native camera/gallery picker (not document modal)
-- [ ] **CAM-02**: User can add an optional text note when uploading via camera flow
-- [ ] **CAM-03**: Camera upload automatically attaches selected image to activity entry
+- [x] **CAM-01**: Camera button on activity stream opens native camera/gallery picker (not document modal)
+- [x] **CAM-02**: User can add an optional text note when uploading via camera flow
+- [x] **CAM-03**: Camera upload automatically attaches selected image to activity entry
 
 ### Document Upload (DOC)
 
@@ -82,9 +82,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CAM-01 | 30 | Pending |
-| CAM-02 | 30 | Pending |
-| CAM-03 | 30 | Pending |
+| CAM-01 | 30 | Complete |
+| CAM-02 | 30 | Complete |
+| CAM-03 | 30 | Complete |
 | DOC-01 | 31 | Pending |
 | DOC-02 | 31 | Pending |
 | DOC-03 | 31 | Pending |
