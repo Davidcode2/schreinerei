@@ -8,6 +8,7 @@ const uploadSiteAttachmentMutate = vi.fn()
 
 vi.mock("@/lib/api/hooks", () => ({
   useCreateActivity: () => ({ isPending: false, mutateAsync: createActivityMutate }),
+  useUploadSitePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useUploadSiteAttachment: () => ({ isPending: false, mutateAsync: uploadSiteAttachmentMutate }),
 }))
 
@@ -48,27 +49,29 @@ describe("CreateNoteModal", () => {
 
   it("keeps valid image and pdf files while rejecting invalid selections", async () => {
     renderModal()
+    const user = userEvent.setup({ applyAccept: false })
 
     const picker = document.querySelector('input[type="file"]') as HTMLInputElement
     const imageFile = new File(["image"], "planung.jpg", { type: "image/jpeg" })
     const pdfFile = new File(["pdf"], "angebot.pdf", { type: "application/pdf" })
     const invalidFile = new File(["text"], "readme.txt", { type: "text/plain" })
 
-    await userEvent.upload(picker, [imageFile, pdfFile, invalidFile])
+    await user.upload(picker, [imageFile, pdfFile, invalidFile])
 
     expect(screen.getByText("planung.jpg")).toBeInTheDocument()
     expect(screen.getByText("angebot.pdf")).toBeInTheDocument()
-    expect(screen.getByText(/text\/plain/i)).toBeInTheDocument()
+    expect(screen.getByText(/Nicht unterstützte Dateien:/i)).toBeInTheDocument()
   })
 
   it("allows removing a selected file before submit", async () => {
     renderModal()
+    const user = userEvent.setup()
 
     const picker = document.querySelector('input[type="file"]') as HTMLInputElement
     const pdfFile = new File(["pdf"], "angebot.pdf", { type: "application/pdf" })
-    await userEvent.upload(picker, pdfFile)
+    await user.upload(picker, pdfFile)
 
-    await userEvent.click(screen.getByRole("button", { name: "Datei entfernen: angebot.pdf" }))
+    await user.click(screen.getByRole("button", { name: "Datei entfernen: angebot.pdf" }))
 
     expect(screen.queryByText("angebot.pdf")).not.toBeInTheDocument()
   })
