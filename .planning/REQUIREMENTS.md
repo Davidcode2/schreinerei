@@ -7,19 +7,19 @@
 
 ### Category Settings (CATS)
 
-- [ ] **CATS-01**: User can edit category name via inventory settings page
-- [ ] **CATS-02**: User can delete category (blocked if materials reference it, with clear error)
-- [ ] **CATS-03**: User can navigate to inventory settings page via settings wheel icon on inventory page
+- [x] **CATS-01**: User can edit category name via inventory settings page
+- [x] **CATS-02**: User can delete category (blocked if materials reference it, with clear error)
+- [x] **CATS-03**: User can navigate to inventory settings page via settings wheel icon on inventory page
 
 ### Material Editing (EDIT)
 
-- [ ] **EDIT-01**: User can edit inventory item location via edit icon in details section
-- [ ] **EDIT-02**: User can edit minimum quantity via modal (same modal as location edit)
-- [ ] **EDIT-03**: User can set available quantity to an arbitrary number (stock correction)
+- [x] **EDIT-01**: User can edit inventory item location via edit icon in details section
+- [x] **EDIT-02**: User can edit minimum quantity via modal (same modal as location edit)
+- [x] **EDIT-03**: User can set available quantity to an arbitrary number (stock correction)
 
 ### Stock-In (STOCK)
 
-- [ ] **STOCK-01**: User can record material stock-in ("Material einlagern") with amount and notes
+- [x] **STOCK-01**: User can record material stock-in ("Material einlagern") with amount and notes
 - [ ] **STOCK-02**: Stock-in events appear in inventory history with "MaterialAdded" entry type
 
 ### Enriched History (HIST)
@@ -30,7 +30,7 @@
 
 ### Overview Display (VIEW)
 
-- [ ] **VIEW-01**: Inventory overview shows category name on each material entry
+- [x] **VIEW-01**: Inventory overview shows category name on each material entry
 
 ## v2 Requirements
 
@@ -72,18 +72,18 @@ Deferred to future release.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CATS-01 | Phase 31 | Pending |
-| CATS-02 | Phase 31 | Pending |
-| CATS-03 | Phase 31 | Pending |
-| EDIT-01 | Phase 31 | Pending |
-| EDIT-02 | Phase 31 | Pending |
-| EDIT-03 | Phase 31 | Pending |
-| STOCK-01 | Phase 31 | Pending |
+| CATS-01 | Phase 31 | Complete |
+| CATS-02 | Phase 31 | Complete |
+| CATS-03 | Phase 31 | Complete |
+| EDIT-01 | Phase 31 | Complete |
+| EDIT-02 | Phase 31 | Complete |
+| EDIT-03 | Phase 31 | Complete |
+| STOCK-01 | Phase 31 | Complete |
 | STOCK-02 | Phase 32 | Pending |
 | HIST-01 | Phase 32 | Pending |
 | HIST-02 | Phase 32 | Pending |
 | HIST-03 | Phase 32 | Pending |
-| VIEW-01 | Phase 31 | Pending |
+| VIEW-01 | Phase 31 | Complete |
 
 **Coverage:**
 - v1.9 requirements: 12 total

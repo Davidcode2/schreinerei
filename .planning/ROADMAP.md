@@ -39,7 +39,7 @@
 **Milestone Goal:** Make inventory fully manageable — edit anything, track everything, see the full history.
 
 - [x] **Phase 30: Backend API Foundation** — Domain commands, migration, and API endpoints for categories, material editing, stock-in, and enriched history (completed 2026-05-01)
-- [ ] **Phase 31: Settings, Editing & Stock-In** — Category settings page, material edit dialog, stock-in dialog, and category on overview
+- [x] **Phase 31: Settings, Editing & Stock-In** — Category settings page, material edit dialog, stock-in dialog, and category on overview (completed 2026-05-01)
 - [ ] **Phase 32: Enriched History** — Color-coded history feed with user attribution and clickable Baustelle links
 - [ ] **Phase 33: Type Safety & Coverage** — ts-rs type generation, validation tests, and E2E tests
 
@@ -69,7 +69,10 @@
   3. User can set available quantity to an arbitrary number (stock correction)
   4. User can record stock-in with amount and notes via a dedicated dialog
   5. Category name is displayed on each material entry in the inventory overview
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 31-01-PLAN.md — Shared inventory mutation hooks, settings route, and inventory gear entrypoint
+- [ ] 31-02-PLAN.md — Category management UI and overview category labels
+- [ ] 31-03-PLAN.md — Material edit dialog, direct stock correction, and stock-in dialog
 **UI hint**: yes
 
 ### Phase 32: Enriched History
@@ -104,11 +107,11 @@ Phases execute in numeric order: 30 → 31 → 32 → 33
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 30. Backend API Foundation | v1.9 | 2/2 | Complete    | 2026-05-01 |
-| 31. Settings, Editing & Stock-In | v1.9 | 0/? | Not started | - |
+| 31. Settings, Editing & Stock-In | v1.9 | 3/3 | Complete   | 2026-05-01 |
 | 32. Enriched History | v1.9 | 0/? | Not started | - |
 | 33. Type Safety & Coverage | v1.9 | 0/? | Not started | - |
 
 ---
 
 *Roadmap last updated: 2026-05-01*
-*Next: `/gsd-plan-phase 30`*
+*Next: `/gsd-execute-phase 31`*
