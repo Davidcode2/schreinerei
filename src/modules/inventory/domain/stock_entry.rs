@@ -1,7 +1,48 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::str::FromStr;
 
 use crate::common::types::{TenantId, MaterialId, UserId, SiteId};
+
+/// Entry type for stock history entries
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, sqlx::Type)]
+#[sqlx(type_name = "VARCHAR", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum EntryType {
+    Withdrawn,
+    Adjusted,
+    MaterialAdded,
+    LocationChanged,
+    MinQuantityChanged,
+}
+
+impl fmt::Display for EntryType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            EntryType::Withdrawn => write!(f, "withdrawn"),
+            EntryType::Adjusted => write!(f, "adjusted"),
+            EntryType::MaterialAdded => write!(f, "material_added"),
+            EntryType::LocationChanged => write!(f, "location_changed"),
+            EntryType::MinQuantityChanged => write!(f, "min_quantity_changed"),
+        }
+    }
+}
+
+impl FromStr for EntryType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "withdrawn" => Ok(EntryType::Withdrawn),
+            "adjusted" => Ok(EntryType::Adjusted),
+            "material_added" => Ok(EntryType::MaterialAdded),
+            "location_changed" => Ok(EntryType::LocationChanged),
+            "min_quantity_changed" => Ok(EntryType::MinQuantityChanged),
+            _ => Err(format!("Unknown entry type: {}", s)),
+        }
+    }
+}
 
 /// Stock entry record representing a stock change (withdrawal or adjustment)
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,6 +88,24 @@ pub struct SiteStockHistoryEntry {
     pub notes: Option<String>,
     pub site_id: Option<SiteId>,
     pub site_name: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+/// Enriched stock entry with resolved names for display in history feed
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnrichedStockEntry {
+    pub id: uuid::Uuid,
+    pub tenant_id: TenantId,
+    pub material_id: MaterialId,
+    pub user_id: UserId,
+    pub user_name: String,
+    pub entry_type: EntryType,
+    pub quantity_change: i32,
+    pub quantity_after: i32,
+    pub notes: Option<String>,
+    pub site_id: Option<SiteId>,
+    pub site_name: Option<String>,
+    pub category_name: String,
     pub created_at: DateTime<Utc>,
 }
 
@@ -116,5 +175,74 @@ mod tests {
     fn stock_entry_site_name_is_none_when_not_set() {
         let entry = test_entry_with_site(-5, None);
         assert!(entry.site_name.is_none());
+    }
+
+    // === EntryType tests ===
+
+    #[test]
+    fn entry_type_display_roundtrip_withdrawn() {
+        let et = EntryType::Withdrawn;
+        assert_eq!(et.to_string(), "withdrawn");
+        assert_eq!(EntryType::from_str("withdrawn").unwrap(), EntryType::Withdrawn);
+    }
+
+    #[test]
+    fn entry_type_display_roundtrip_adjusted() {
+        let et = EntryType::Adjusted;
+        assert_eq!(et.to_string(), "adjusted");
+        assert_eq!(EntryType::from_str("adjusted").unwrap(), EntryType::Adjusted);
+    }
+
+    #[test]
+    fn entry_type_display_roundtrip_material_added() {
+        let et = EntryType::MaterialAdded;
+        assert_eq!(et.to_string(), "material_added");
+        assert_eq!(EntryType::from_str("material_added").unwrap(), EntryType::MaterialAdded);
+    }
+
+    #[test]
+    fn entry_type_display_roundtrip_location_changed() {
+        let et = EntryType::LocationChanged;
+        assert_eq!(et.to_string(), "location_changed");
+        assert_eq!(EntryType::from_str("location_changed").unwrap(), EntryType::LocationChanged);
+    }
+
+    #[test]
+    fn entry_type_display_roundtrip_min_quantity_changed() {
+        let et = EntryType::MinQuantityChanged;
+        assert_eq!(et.to_string(), "min_quantity_changed");
+        assert_eq!(EntryType::from_str("min_quantity_changed").unwrap(), EntryType::MinQuantityChanged);
+    }
+
+    #[test]
+    fn entry_type_from_str_rejects_unknown() {
+        assert!(EntryType::from_str("unknown").is_err());
+        assert!(EntryType::from_str("").is_err());
+    }
+
+    // === EnrichedStockEntry tests ===
+
+    #[test]
+    fn enriched_stock_entry_construction_with_all_fields() {
+        let entry = EnrichedStockEntry {
+            id: uuid::Uuid::new_v4(),
+            tenant_id: TenantId::new(),
+            material_id: MaterialId::new(),
+            user_id: UserId::new(),
+            user_name: "Max Mustermann".to_string(),
+            entry_type: EntryType::MaterialAdded,
+            quantity_change: 10,
+            quantity_after: 25,
+            notes: Some("Delivered".to_string()),
+            site_id: Some(SiteId::new()),
+            site_name: Some("Baustelle Müller".to_string()),
+            category_name: "Platten".to_string(),
+            created_at: Utc::now(),
+        };
+        assert_eq!(entry.user_name, "Max Mustermann");
+        assert_eq!(entry.entry_type, EntryType::MaterialAdded);
+        assert_eq!(entry.category_name, "Platten");
+        assert_eq!(entry.quantity_change, 10);
+        assert_eq!(entry.quantity_after, 25);
     }
 }

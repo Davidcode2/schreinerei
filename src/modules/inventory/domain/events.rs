@@ -95,6 +95,73 @@ impl StockAdjustedPayload {
     }
 }
 
+/// Payload for MaterialAdded event (stock-in operation)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MaterialAddedPayload {
+    pub material_id: MaterialId,
+    pub material_name: String,
+    pub quantity_added: i32,
+    pub quantity_after: i32,
+    pub added_by: UserId,
+    pub notes: Option<String>,
+}
+
+impl MaterialAddedPayload {
+    pub fn into_event(self, tenant_id: TenantId) -> DomainEvent {
+        DomainEvent::new(
+            EventType::MaterialAdded,
+            tenant_id,
+            "Material",
+            self.material_id.to_string(),
+            json!(self),
+        )
+    }
+}
+
+/// Payload for LocationChanged event
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LocationChangedPayload {
+    pub material_id: MaterialId,
+    pub material_name: String,
+    pub old_location: Option<String>,
+    pub new_location: Option<String>,
+    pub changed_by: UserId,
+}
+
+impl LocationChangedPayload {
+    pub fn into_event(self, tenant_id: TenantId) -> DomainEvent {
+        DomainEvent::new(
+            EventType::LocationChanged,
+            tenant_id,
+            "Material",
+            self.material_id.to_string(),
+            json!(self),
+        )
+    }
+}
+
+/// Payload for MinQuantityChanged event
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MinQuantityChangedPayload {
+    pub material_id: MaterialId,
+    pub material_name: String,
+    pub old_min_quantity: i32,
+    pub new_min_quantity: i32,
+    pub changed_by: UserId,
+}
+
+impl MinQuantityChangedPayload {
+    pub fn into_event(self, tenant_id: TenantId) -> DomainEvent {
+        DomainEvent::new(
+            EventType::MinQuantityChanged,
+            tenant_id,
+            "Material",
+            self.material_id.to_string(),
+            json!(self),
+        )
+    }
+}
+
 /// Payload for OrderRequestCreated event
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrderRequestCreatedPayload {

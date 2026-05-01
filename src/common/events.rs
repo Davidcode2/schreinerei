@@ -27,6 +27,9 @@ pub enum EventType {
     StockWithdrawn,
     StockLow,
     StockAdjusted,
+    MaterialAdded,
+    LocationChanged,
+    MinQuantityChanged,
     OrderRequestCreated,
     // Sites events
     SiteCreated,
