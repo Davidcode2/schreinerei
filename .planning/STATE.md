@@ -1,18 +1,18 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.8
-milestone_name: Activity Feed & Site Status
-status: complete
-last_updated: "2026-05-01T12:30:00Z"
+milestone: v1.9
+milestone_name: Inventory Features
+status: planning
+last_updated: "2026-05-01T14:00:00Z"
 progress:
-  total_phases: 29
-  completed_phases: 29
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
-# State: Schreinerei — v1.8 Complete
+# State: Schreinerei — v1.9 Inventory Features
 
 **Updated:** 2026-05-01
 
@@ -21,27 +21,27 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-01)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler.
-**Current focus:** Planning next milestone
+**Current focus:** Defining requirements
 
-## Milestone v1.8 Complete
+## Current Position
 
-All 4 phases (26-29) shipped and verified.
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-01 — Milestone v1.9 Inventory Features started
 
-**Key Deliverables:**
-- Status change workflow with modal and audit trail
-- Tabbed activity feed (Notes + Materials)
-- Material history with category, extractor, and site links
-- Photo uploads with secure storage and offline queue
+## Accumulated Context
 
-**Known Exception:**
-- Offline photo queue replay deferred to backlog (Phase 999.1) — broader offline support needed first
+**Decisions:**
+- v1.9 focuses on inventory management improvements
+- History events need color coding and user attribution
+- Reuse existing site activity stream component for inventory history
+- Settings wheel icon → dedicated inventory settings page for categories
 
-## Session Continuity
+**Blockers:** (none)
 
-**Next Steps:**
-1. `/gsd-new-milestone` — Define v1.9+ scope
-2. Archive complete — all milestones in `.planning/milestones/`
+**Todos:** (none)
 
 ---
 
-*State updated: 2026-05-01 after v1.8 milestone completion*
+*State updated: 2026-05-01 — Milestone v1.9 started*
