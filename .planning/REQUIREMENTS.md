@@ -70,32 +70,32 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STAT-01 | — | Pending |
-| STAT-02 | — | Pending |
-| STAT-03 | — | Pending |
-| STAT-04 | — | Pending |
-| STAT-05 | — | Pending |
-| FEED-01 | — | Pending |
-| FEED-02 | — | Pending |
-| FEED-03 | — | Pending |
-| FEED-04 | — | Pending |
-| FILE-01 | — | Pending |
-| FILE-02 | — | Pending |
-| FILE-03 | — | Pending |
-| FILE-04 | — | Pending |
-| FILE-05 | — | Pending |
-| FILE-06 | — | Pending |
-| FILE-07 | — | Pending |
-| HIST-01 | — | Pending |
-| HIST-02 | — | Pending |
-| HIST-03 | — | Pending |
-| HIST-04 | — | Pending |
-| HIST-05 | — | Pending |
+| STAT-01 | Phase 26 | Pending |
+| STAT-02 | Phase 26 | Pending |
+| STAT-03 | Phase 26 | Pending |
+| STAT-04 | Phase 26 | Pending |
+| STAT-05 | Phase 26 | Pending |
+| FEED-01 | Phase 27 | Pending |
+| FEED-02 | Phase 27 | Pending |
+| FEED-03 | Phase 27 | Pending |
+| FEED-04 | Phase 27 | Pending |
+| HIST-01 | Phase 28 | Pending |
+| HIST-02 | Phase 28 | Pending |
+| HIST-03 | Phase 28 | Pending |
+| HIST-04 | Phase 28 | Pending |
+| HIST-05 | Phase 28 | Pending |
+| FILE-01 | Phase 29 | Pending |
+| FILE-02 | Phase 29 | Pending |
+| FILE-03 | Phase 29 | Pending |
+| FILE-04 | Phase 29 | Pending |
+| FILE-05 | Phase 29 | Pending |
+| FILE-06 | Phase 29 | Pending |
+| FILE-07 | Phase 29 | Pending |
 
 **Coverage:**
 - v1.8 requirements: 21 total
-- Mapped to phases: 0
-- Unmapped: 21 ⚠️
+- Mapped to phases: 21 ✓
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-01*
