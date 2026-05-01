@@ -12,10 +12,13 @@ import type {
   UpdateTimeEntryRequest,
   Activity,
   CreateActivityRequest,
-  UploadPhotoAttachmentResponse,
   ActivityQuery,
   DashboardSite,
 } from "@/types/sites"
+import type {
+  UploadPhotoAttachmentResponse,
+  UploadSiteAttachmentResponse,
+} from "@/types/generated"
 
 // === Sites ===
 
@@ -209,6 +212,25 @@ export function useCreateActivity() {
   })
 }
 
+export function useDeleteActivity() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      siteId,
+      activityId,
+    }: {
+      siteId: string
+      activityId: string
+    }) => apiClient.delete(`/api/v1/sites/${siteId}/activities/${activityId}`),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["activities", variables.siteId],
+      })
+    },
+  })
+}
+
 export function useUploadSitePhoto() {
   return useMutation({
     mutationFn: async ({
@@ -223,6 +245,26 @@ export function useUploadSitePhoto() {
 
       return apiClient.post<UploadPhotoAttachmentResponse>(
         `/api/v1/sites/${siteId}/attachments/photo`,
+        formData
+      )
+    },
+  })
+}
+
+export function useUploadSiteAttachment() {
+  return useMutation({
+    mutationFn: async ({
+      siteId,
+      file,
+    }: {
+      siteId: string
+      file: File
+    }) => {
+      const formData = new FormData()
+      formData.append("attachment", file)
+
+      return apiClient.post<UploadSiteAttachmentResponse>(
+        `/api/v1/sites/${siteId}/attachments`,
         formData
       )
     },

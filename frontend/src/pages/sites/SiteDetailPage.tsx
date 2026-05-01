@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,7 +10,7 @@ import {
   Camera,
   FileText,
 } from "lucide-react"
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import {
   PageHeader,
   LoadingSpinner,
@@ -22,6 +22,13 @@ import { TimeEntryDialog } from "./TimeEntryDialog"
 import { ActivityFeed } from "./ActivityFeed"
 import { StatusChangeModal } from "./StatusChangeModal"
 import { CreateNoteModal } from "./CreateNoteModal"
+import { CameraUploadFlow } from "./CameraUploadFlow"
+import { MediaViewer } from "./MediaViewer"
+import {
+  buildMediaViewerPath,
+  buildSiteDetailPath,
+  resolveMediaViewerTarget,
+} from "./mediaViewerRoute"
 
 function formatDate(date: string | null): string {
   if (!date) return "-"
@@ -33,16 +40,30 @@ function formatDate(date: string | null): string {
 }
 
 export default function SiteDetailPage() {
-  const { id } = useParams<{ id: string }>()
+  const { id, activityId, attachmentId } = useParams<{
+    id: string
+    activityId?: string
+    attachmentId?: string
+    slug?: string
+  }>()
+  const navigate = useNavigate()
   const [showTimeDialog, setShowTimeDialog] = useState(false)
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [showNoteModal, setShowNoteModal] = useState(false)
-  const [noteModalActivityType, setNoteModalActivityType] = useState<"note" | "photo">("note")
+  const [showCameraFlow, setShowCameraFlow] = useState(false)
 
   const { data: site, isLoading, error, refetch } = useSite(id!)
   const { data: activities, refetch: refetchActivities } = useActivities(id!)
   const { data: timeEntries } = useTimeEntries(id!)
   const { data: assignments } = useSiteAssignments(id!)
+
+  const viewerTarget = useMemo(
+    () => resolveMediaViewerTarget(activities || [], activityId, attachmentId),
+    [activities, activityId, attachmentId]
+  )
+  const viewerPath = viewerTarget
+    ? buildMediaViewerPath(site.id, viewerTarget.activity.id, viewerTarget.attachment.attachment_id, viewerTarget.title)
+    : buildSiteDetailPath(id || "")
 
   if (isLoading) {
     return <LoadingSpinner className="min-h-[400px]" size="lg" />
@@ -59,21 +80,12 @@ export default function SiteDetailPage() {
 
   const totalHours = timeEntries?.reduce((sum, e) => sum + e.hours, 0) || 0
 
-  const openPhotoModal = () => {
-    setNoteModalActivityType("photo")
-    setShowNoteModal(true)
+  const openCameraFlow = () => {
+    setShowCameraFlow(true)
   }
 
   const openNoteModal = () => {
-    setNoteModalActivityType("note")
     setShowNoteModal(true)
-  }
-
-  const handleNoteModalOpenChange = (open: boolean) => {
-    setShowNoteModal(open)
-    if (!open) {
-      setNoteModalActivityType("note")
-    }
   }
 
   return (
@@ -209,7 +221,7 @@ export default function SiteDetailPage() {
                 variant="outline"
                 size="sm"
                 title="Foto hinzufügen"
-                onClick={openPhotoModal}
+                onClick={openCameraFlow}
               >
                 <Camera className="h-4 w-4" />
               </Button>
@@ -247,10 +259,23 @@ export default function SiteDetailPage() {
 
       <CreateNoteModal
         open={showNoteModal}
-        onOpenChange={handleNoteModalOpenChange}
+        onOpenChange={setShowNoteModal}
         siteId={site.id}
         onSuccess={() => refetchActivities()}
-        initialActivityType={noteModalActivityType}
+      />
+
+      <CameraUploadFlow
+        open={showCameraFlow}
+        onOpenChange={setShowCameraFlow}
+        siteId={site.id}
+        onSuccess={() => refetchActivities()}
+      />
+
+      <MediaViewer
+        open={Boolean(activityId && attachmentId)}
+        sharePath={viewerPath}
+        target={viewerTarget}
+        onClose={() => navigate(buildSiteDetailPath(site.id))}
       />
     </div>
   )

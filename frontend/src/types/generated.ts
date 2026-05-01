@@ -2,7 +2,7 @@
 
 export type ActivityQuery = { limit: number | null, };
 
-export type ActivityResponse = { id: string, site_id: string, user_id: string, activity_type: string, content: string | null, photo_url: string | null, created_at: string, };
+export type ActivityResponse = { id: string, site_id: string, user_id: string, creator_name: string, can_delete: boolean, activity_type: string, content: string | null, photo_url: string | null, attachments: Array<SiteActivityAttachmentResponse>, created_at: string, };
 
 export type AdjustStockRequest = { quantity: number, reason: string, };
 
@@ -26,7 +26,7 @@ export type CategoryResponse = { id: string, name: string, description: string |
 
 export type ConflictDetail = { id: string, user_name: string | null, start_time: string, end_time: string, status: string, };
 
-export type CreateActivityRequest = { activity_type: string, content: string | null, photo_url: string | null, };
+export type CreateActivityRequest = { activity_type: string, content: string | null, photo_url: string | null, attachment_ids: Array<string>, };
 
 export type CreateCategoryRequest = { name: string, description: string | null, };
 
@@ -91,6 +91,8 @@ export type ReservationResponse = { id: string, resource_type: string, resource_
 
 export type ReservationSummaryResponse = { id: string, start_time: string, end_time: string, user_name: string | null, site_name: string | null, status: string, };
 
+export type SiteActivityAttachmentResponse = { attachment_id: string, filename: string, mime_type: string, url: string, thumbnail_url: string | null, };
+
 export type SiteResponse = { id: string, name: string, customer_name: string, location: string | null, description: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, created_at: string, };
 
 export type SiteStockHistoryResponse = { id: string, material_id: string, material_name: string, category_name: string, quantity_change: number, quantity_after: number, notes: string | null, site_id: string | null, site_name: string | null, extracted_by: string, created_at: string, };
@@ -138,6 +140,8 @@ export type UpdateToolRequest = { name: string | null, category: string | null, 
 export type UpdateVehicleRequest = { name: string | null, license_plate: string | null, vehicle_type: string | null, description: string | null, status: string | null, location: string | null, qr_code: string | null, };
 
 export type UploadPhotoAttachmentResponse = { attachment_id: string, photo_url: string, thumbnail_url: string, };
+
+export type UploadSiteAttachmentResponse = { attachment_id: string, filename: string, mime_type: string, url: string, thumbnail_url: string | null, };
 
 export type UserPreferences = { active_site_id: string | null, };
 
