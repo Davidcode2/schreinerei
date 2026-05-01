@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import {
   useAdjustMaterialStock,
   useDeleteCategory,
+  useEnrichedMaterialHistory,
   useMaterialHistory,
   useSiteMaterialHistory,
   useStockInMaterial,
@@ -62,6 +63,43 @@ describe("useMaterialHistory", () => {
     const queryClient = createQueryClient()
 
     const { result } = renderHook(() => useMaterialHistory(""), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    expect(result.current.isEnabled).toBe(false)
+    expect(apiClient.get).not.toHaveBeenCalled()
+  })
+})
+
+describe("useEnrichedMaterialHistory", () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("issues GET to enriched material history endpoint with dedicated query key", async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce([])
+    const queryClient = createQueryClient()
+
+    const { result } = renderHook(() => useEnrichedMaterialHistory("mat-123"), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    await result.current.refetch()
+
+    expect(apiClient.get).toHaveBeenCalledWith(
+      "/api/v1/inventory/materials/mat-123/history/enriched"
+    )
+    expect(
+      queryClient.getQueryCache().find({
+        queryKey: ["material-history-enriched", "mat-123"],
+      })
+    ).toBeDefined()
+  })
+
+  it("is disabled when id is empty", () => {
+    const queryClient = createQueryClient()
+
+    const { result } = renderHook(() => useEnrichedMaterialHistory(""), {
       wrapper: createWrapper(queryClient),
     })
 
