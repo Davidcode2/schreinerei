@@ -84,10 +84,10 @@ Wave 3 *(blocked on Wave 2 completion)*
 **Plans**: 2 plans
 
 Wave 1 *(backend contract foundation)*
-- [ ] 33-01-PLAN.md — Add creator-only activity delete API contract and attachment cleanup
+- [x] 33-01-PLAN.md — Add creator-only activity delete API contract and attachment cleanup
 
 Wave 2 *(blocked on Wave 1 completion)*
-- [ ] 33-02-PLAN.md — Wire activity-feed delete confirmation UI to the new contract
+- [x] 33-02-PLAN.md — Wire activity-feed delete confirmation UI to the new contract
 
 ## Progress
 
