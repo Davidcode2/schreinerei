@@ -26,6 +26,7 @@ const defaultMaterialHistoryMock = {
 const baseActivity = {
   site_id: "site-1",
   user_id: "user-1",
+  creator_name: "Anna Tischler",
   activity_type: "note" as const,
   photo_url: null,
   created_at: "2026-05-01T10:00:00.000Z",
@@ -75,7 +76,7 @@ describe("ActivityFeed document entries", () => {
     vi.mocked(useSiteMaterialHistory).mockReturnValue(defaultMaterialHistoryMock)
   })
 
-  it("renders document heading, note text, and attachment tiles", async () => {
+  it("renders image attachments as clickable viewer links", async () => {
     getBlobMock.mockResolvedValue(new Blob(["image-bytes"], { type: "image/jpeg" }))
     vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:doc-preview")
     vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined)
@@ -110,9 +111,13 @@ describe("ActivityFeed document entries", () => {
     })
 
     expect(await screen.findByAltText("planung.jpg")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Medium öffnen: planung.jpg" })).toHaveAttribute(
+      "href",
+      "/sites/site-1/media/activity-1/att-1/planung-jpg"
+    )
   })
 
-  it("renders PDF cards with visible PDF labeling", () => {
+  it("renders PDF cards as clickable viewer links", () => {
     render(
       <ActivityFeed
         siteId="site-1"
@@ -137,9 +142,13 @@ describe("ActivityFeed document entries", () => {
 
     expect(screen.getByText("PDF")).toBeInTheDocument()
     expect(screen.getByText("angebot.pdf")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Medium öffnen: angebot.pdf" })).toHaveAttribute(
+      "href",
+      "/sites/site-1/media/activity-2/att-2/angebot-pdf"
+    )
   })
 
-  it("renders a fallback shell when protected previews fail", async () => {
+  it("keeps fallback tiles clickable when protected previews fail", async () => {
     getBlobMock.mockRejectedValue(new Error("preview failed"))
 
     render(
@@ -166,5 +175,36 @@ describe("ActivityFeed document entries", () => {
 
     expect(await screen.findByText("Vorschau nicht verfügbar")).toBeInTheDocument()
     expect(screen.getByText("planung.jpg")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Medium öffnen: planung.jpg" })).toHaveAttribute(
+      "href",
+      "/sites/site-1/media/activity-3/att-3/planung-jpg"
+    )
+  })
+
+  it("routes legacy photo activities into the viewer", async () => {
+    getBlobMock.mockResolvedValue(new Blob(["image-bytes"], { type: "image/jpeg" }))
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:legacy-photo")
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined)
+
+    render(
+      <ActivityFeed
+        siteId="site-1"
+        activities={[
+          {
+            ...baseActivity,
+            id: "activity-4",
+            activity_type: "photo",
+            content: null,
+            photo_url: "/api/v1/attachments/legacy-photo-id",
+          },
+        ]}
+      />
+    )
+
+    expect(await screen.findByAltText("Aktivitätsfoto")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Medium öffnen: Aktivitätsfoto" })).toHaveAttribute(
+      "href",
+      "/sites/site-1/media/activity-4/legacy-photo-id/aktivitatsfoto"
+    )
   })
 })
