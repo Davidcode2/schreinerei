@@ -41,6 +41,7 @@ pub fn create_router() -> Router<AppState> {
         
         // Activities
         .route("/api/v1/sites/{id}/activities", get(list_activities).post(create_activity))
+        .route("/api/v1/sites/{id}/activities/{activity_id}", delete(delete_activity))
         .route("/api/v1/sites/{id}/attachments", post(upload_site_attachment))
         .route("/api/v1/sites/{id}/attachments/photo", post(upload_site_photo_attachment))
         .route("/api/v1/attachments/{attachment_id}", get(get_attachment_bytes))
@@ -728,6 +729,28 @@ pub async fn create_activity(
     let activity = service.create_activity(create, &ctx).await?;
     
     Ok((StatusCode::CREATED, Json(ActivityResponse::from(activity))))
+}
+
+pub async fn delete_activity(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path((site_id, activity_id)): Path<(String, String)>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+
+    let site_id = Uuid::parse_str(&site_id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+    let activity_id = Uuid::parse_str(&activity_id)
+        .map(crate::common::types::ActivityId)
+        .map_err(|_| AppError::Validation("Invalid activity ID".to_string()))?;
+
+    service.delete_activity(site_id, activity_id, &ctx).await?;
+
+    Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
 }
 
 pub async fn upload_site_attachment(

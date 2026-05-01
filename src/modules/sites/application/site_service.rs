@@ -1,5 +1,5 @@
 use crate::common::error::AppError;
-use crate::common::types::{SiteId, UserId, Role, TimeEntryId};
+use crate::common::types::{ActivityId, SiteId, UserId, Role, TimeEntryId};
 use crate::common::events::EventType;
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
@@ -96,6 +96,16 @@ impl SiteService {
             format!("/api/v1/attachments/{attachment_id}"),
             thumbnail_url,
         )
+    }
+
+    fn extract_attachment_id(photo_url: &str) -> Result<Uuid, AppError> {
+        let attachment_id = photo_url
+            .strip_prefix("/api/v1/attachments/")
+            .and_then(|value| value.split('/').next())
+            .ok_or_else(|| AppError::Internal("Stored photo URL does not reference a protected attachment".to_string()))?;
+
+        Uuid::parse_str(attachment_id)
+            .map_err(|_| AppError::Internal("Stored photo URL contains an invalid attachment id".to_string()))
     }
 
     fn to_attachment_metadata(attachment: SiteActivityAttachment) -> ActivityAttachmentMetadata {
@@ -512,6 +522,37 @@ impl SiteService {
             .collect())
     }
 
+    pub async fn delete_activity(
+        &self,
+        site_id: SiteId,
+        activity_id: ActivityId,
+        ctx: &TenantContext,
+    ) -> Result<(), AppError> {
+        let existing = self
+            .site_repo
+            .find_activity_by_id(ctx.tenant_id, site_id, activity_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Activity not found".to_string()))?;
+
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+        if !Self::can_delete_activity(&existing, local_user_id) {
+            return Err(AppError::Forbidden(
+                "Can only delete your own note or photo activities".to_string(),
+            ));
+        }
+
+        if let Some(photo_url) = existing.photo_url.as_deref() {
+            let attachment_id = Self::extract_attachment_id(photo_url)?;
+            self.site_repo
+                .delete_attachment_by_id(ctx.tenant_id, site_id, attachment_id)
+                .await?;
+        }
+
+        self.site_repo
+            .delete_activity(ctx.tenant_id, site_id, activity_id)
+            .await
+    }
+
     pub async fn upload_site_attachment(
         &self,
         cmd: UploadPhotoCommand,
@@ -687,5 +728,15 @@ mod tests {
         let id = uuid::Uuid::new_v4();
         let (_url, thumbnail_url) = SiteService::build_attachment_urls(id, "application/pdf");
         assert!(thumbnail_url.is_none());
+    }
+
+    #[test]
+    fn delete_activity_photo_cleanup_extracts_attachment_id_from_protected_url() {
+        let id = uuid::Uuid::new_v4();
+
+        let parsed = SiteService::extract_attachment_id(&format!("/api/v1/attachments/{id}"))
+            .expect("parse protected attachment url");
+
+        assert_eq!(parsed, id);
     }
 }

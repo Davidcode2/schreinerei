@@ -1,5 +1,7 @@
 use chrono::{Duration, Utc};
-use schreinerei::common::types::{Role, SiteId, TenantId, UserId};
+use schreinerei::common::error::AppError;
+use schreinerei::common::types::{ActivityId, Role, SiteId, TenantId, UserId};
+use schreinerei::modules::sites::domain::ActivityType;
 use schreinerei::modules::iam::application::user_service::TenantContext;
 use schreinerei::modules::sites::application::site_service::SiteService;
 use schreinerei::modules::sites::infrastructure::site_repository::SiteRepository;
@@ -63,7 +65,7 @@ async fn create_test_user(
     )
     .bind(id)
     .bind(tenant_id)
-    .bind(format!("kc-{id}"))
+    .bind(id.to_string())
     .bind(email)
     .bind(name)
     .execute(pool)
@@ -82,18 +84,42 @@ async fn create_test_activity(
     photo_url: Option<&str>,
     created_at: chrono::DateTime<Utc>,
 ) -> Uuid {
+    create_test_activity_with_type(
+        pool,
+        tenant_id,
+        site_id,
+        user_id,
+        ActivityType::Note,
+        content,
+        photo_url,
+        created_at,
+    )
+    .await
+}
+
+async fn create_test_activity_with_type(
+    pool: &PgPool,
+    tenant_id: Uuid,
+    site_id: Uuid,
+    user_id: Uuid,
+    activity_type: ActivityType,
+    content: Option<&str>,
+    photo_url: Option<&str>,
+    created_at: chrono::DateTime<Utc>,
+) -> Uuid {
     let id = Uuid::new_v4();
 
     sqlx::query(
         r#"
         INSERT INTO site_activities (id, tenant_id, site_id, user_id, activity_type, content, photo_url, created_at)
-        VALUES ($1, $2, $3, $4, 'note', $5, $6, $7)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         "#,
     )
     .bind(id)
     .bind(tenant_id)
     .bind(site_id)
     .bind(user_id)
+    .bind(activity_type.as_str())
     .bind(content)
     .bind(photo_url)
     .bind(created_at)
@@ -108,7 +134,7 @@ async fn create_test_attachment(
     pool: &PgPool,
     tenant_id: Uuid,
     site_id: Uuid,
-    activity_id: Uuid,
+    activity_id: Option<Uuid>,
     filename: &str,
     mime_type: &str,
 ) -> Uuid {
@@ -250,7 +276,7 @@ async fn list_activities_preserves_order_and_attachment_hydration(pool: PgPool) 
         &pool,
         tenant_id,
         site_id,
-        oldest_activity_id,
+        Some(oldest_activity_id),
         "plan.pdf",
         "application/pdf",
     )
@@ -270,4 +296,178 @@ async fn list_activities_preserves_order_and_attachment_hydration(pool: PgPool) 
     assert_eq!(activities[1].attachments[0].id, attachment_id);
     assert_eq!(activities[1].attachments[0].filename, "plan.pdf");
     assert_eq!(activities[1].attachments[0].url, format!("/api/v1/attachments/{attachment_id}"));
+}
+
+#[sqlx::test]
+async fn delete_activity_removes_owned_entry_and_hides_it_from_future_reads(pool: PgPool) {
+    let tenant_id = create_test_tenant(&pool, "Delete Tenant").await;
+    let site_id = create_test_site(&pool, tenant_id, "Innenausbau").await;
+    let owner_id = create_test_user(&pool, tenant_id, "owner@test.invalid", Some("Owner")).await;
+
+    let activity_id = create_test_activity(
+        &pool,
+        tenant_id,
+        site_id,
+        owner_id,
+        Some("Wird gelöscht"),
+        None,
+        Utc::now(),
+    )
+    .await;
+
+    let service = SiteService::new(SiteRepository::new(pool.clone()));
+    service
+        .delete_activity(
+            SiteId(site_id),
+            ActivityId(activity_id),
+            &tenant_context(tenant_id, owner_id),
+        )
+        .await
+        .expect("delete own activity");
+
+    let activities = service
+        .list_activities(SiteId(site_id), 10, &tenant_context(tenant_id, owner_id))
+        .await
+        .expect("list remaining activities");
+
+    assert!(activities.is_empty());
+}
+
+#[sqlx::test]
+async fn delete_activity_rejects_other_users_and_status_change_entries(pool: PgPool) {
+    let tenant_id = create_test_tenant(&pool, "Delete Tenant").await;
+    let site_id = create_test_site(&pool, tenant_id, "Innenausbau").await;
+    let owner_id = create_test_user(&pool, tenant_id, "owner@test.invalid", Some("Owner")).await;
+    let viewer_id = create_test_user(&pool, tenant_id, "viewer@test.invalid", Some("Viewer")).await;
+
+    let other_users_activity = create_test_activity(
+        &pool,
+        tenant_id,
+        site_id,
+        owner_id,
+        Some("Nicht deine Aktivität"),
+        None,
+        Utc::now(),
+    )
+    .await;
+    let status_change_activity = create_test_activity_with_type(
+        &pool,
+        tenant_id,
+        site_id,
+        viewer_id,
+        ActivityType::StatusChange,
+        Some("{\"old_status\":\"planned\",\"new_status\":\"active\"}"),
+        None,
+        Utc::now() - Duration::minutes(1),
+    )
+    .await;
+
+    let service = SiteService::new(SiteRepository::new(pool.clone()));
+    let other_user_error = service
+        .delete_activity(
+            SiteId(site_id),
+            ActivityId(other_users_activity),
+            &tenant_context(tenant_id, viewer_id),
+        )
+        .await
+        .expect_err("reject other user delete");
+    let status_change_error = service
+        .delete_activity(
+            SiteId(site_id),
+            ActivityId(status_change_activity),
+            &tenant_context(tenant_id, viewer_id),
+        )
+        .await
+        .expect_err("reject status change delete");
+
+    assert!(matches!(other_user_error, AppError::Forbidden(_)));
+    assert!(matches!(status_change_error, AppError::Forbidden(_)));
+
+    let remaining_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM site_activities WHERE tenant_id = $1 AND site_id = $2",
+    )
+    .bind(tenant_id)
+    .bind(site_id)
+    .fetch_one(&pool)
+    .await
+    .expect("count remaining activities");
+    assert_eq!(remaining_count, 2);
+}
+
+#[sqlx::test]
+async fn delete_activity_photo_cleanup_removes_linked_and_photo_url_attachments(pool: PgPool) {
+    let tenant_id = create_test_tenant(&pool, "Delete Tenant").await;
+    let site_id = create_test_site(&pool, tenant_id, "Innenausbau").await;
+    let owner_id = create_test_user(&pool, tenant_id, "owner@test.invalid", Some("Owner")).await;
+
+    let note_activity = create_test_activity(
+        &pool,
+        tenant_id,
+        site_id,
+        owner_id,
+        Some("Mit Dokument"),
+        None,
+        Utc::now(),
+    )
+    .await;
+    let note_attachment = create_test_attachment(
+        &pool,
+        tenant_id,
+        site_id,
+        Some(note_activity),
+        "plan.pdf",
+        "application/pdf",
+    )
+    .await;
+
+    let photo_attachment = create_test_attachment(
+        &pool,
+        tenant_id,
+        site_id,
+        None,
+        "baustelle.jpg",
+        "image/jpeg",
+    )
+    .await;
+    let photo_activity = create_test_activity_with_type(
+        &pool,
+        tenant_id,
+        site_id,
+        owner_id,
+        ActivityType::Photo,
+        None,
+        Some(&format!("/api/v1/attachments/{photo_attachment}")),
+        Utc::now() - Duration::minutes(1),
+    )
+    .await;
+
+    let service = SiteService::new(SiteRepository::new(pool.clone()));
+    service
+        .delete_activity(
+            SiteId(site_id),
+            ActivityId(note_activity),
+            &tenant_context(tenant_id, owner_id),
+        )
+        .await
+        .expect("delete note activity");
+    service
+        .delete_activity(
+            SiteId(site_id),
+            ActivityId(photo_activity),
+            &tenant_context(tenant_id, owner_id),
+        )
+        .await
+        .expect("delete photo activity");
+
+    let remaining_attachment_ids: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT id FROM site_activity_attachments WHERE tenant_id = $1 AND site_id = $2 ORDER BY id",
+    )
+    .bind(tenant_id)
+    .bind(site_id)
+    .fetch_all(&pool)
+    .await
+    .expect("list remaining attachments");
+
+    assert!(!remaining_attachment_ids.contains(&note_attachment));
+    assert!(!remaining_attachment_ids.contains(&photo_attachment));
 }

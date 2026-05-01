@@ -582,6 +582,91 @@ impl SiteRepository {
         Ok(activities.into_iter().map(|a| a.into_activity()).collect())
     }
 
+    pub async fn find_activity_by_id(
+        &self,
+        tenant_id: TenantId,
+        site_id: SiteId,
+        activity_id: ActivityId,
+    ) -> Result<Option<Activity>, AppError> {
+        let activity = sqlx::query_as::<_, ActivityRow>(
+            r#"
+            SELECT
+                site_activities.id,
+                site_activities.tenant_id,
+                site_activities.site_id,
+                site_activities.user_id,
+                COALESCE(NULLIF(users.name, ''), users.email, site_activities.user_id::text) AS creator_name,
+                site_activities.activity_type,
+                site_activities.content,
+                site_activities.photo_url,
+                site_activities.created_at
+            FROM site_activities
+            LEFT JOIN users
+                ON users.id = site_activities.user_id
+               AND users.tenant_id = site_activities.tenant_id
+            WHERE site_activities.tenant_id = $1
+              AND site_activities.site_id = $2
+              AND site_activities.id = $3
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .bind(activity_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(activity.map(ActivityRow::into_activity))
+    }
+
+    pub async fn delete_activity(
+        &self,
+        tenant_id: TenantId,
+        site_id: SiteId,
+        activity_id: ActivityId,
+    ) -> Result<(), AppError> {
+        let result = sqlx::query(
+            r#"
+            DELETE FROM site_activities
+            WHERE tenant_id = $1 AND site_id = $2 AND id = $3
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .bind(activity_id.0)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        if result.rows_affected() == 0 {
+            return Err(AppError::NotFound("Activity not found".to_string()));
+        }
+
+        Ok(())
+    }
+
+    pub async fn delete_attachment_by_id(
+        &self,
+        tenant_id: TenantId,
+        site_id: SiteId,
+        attachment_id: Uuid,
+    ) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+            DELETE FROM site_activity_attachments
+            WHERE tenant_id = $1 AND site_id = $2 AND id = $3
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .bind(attachment_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(())
+    }
+
     pub async fn create_activity_attachment(
         &self,
         tenant_id: TenantId,
