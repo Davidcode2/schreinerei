@@ -2,9 +2,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { render, screen, waitFor } from "@/test/utils"
 import userEvent from "@testing-library/user-event"
 import { ActivityFeed } from "./ActivityFeed"
+import { toast } from "sonner"
 
 vi.mock("@/lib/api/hooks", () => ({
   useSiteMaterialHistory: vi.fn(),
+}))
+
+const mutateAsyncMock = vi.fn()
+const deleteMutationState = {
+  isPending: false,
+}
+
+vi.mock("@/lib/api/hooks/useSites", () => ({
+  useDeleteActivity: vi.fn(() => ({
+    mutateAsync: mutateAsyncMock,
+    get isPending() {
+      return deleteMutationState.isPending
+    },
+  })),
 }))
 
 vi.mock("@/lib/api/client", () => ({
@@ -12,6 +27,19 @@ vi.mock("@/lib/api/client", () => ({
     getBlob: vi.fn(),
   },
 }))
+
+vi.mock("sonner", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("sonner")>()
+
+  return {
+    ...actual,
+    toast: {
+      ...actual.toast,
+      success: vi.fn(),
+      error: vi.fn(),
+    },
+  }
+})
 
 import { useSiteMaterialHistory } from "@/lib/api/hooks"
 import { apiClient } from "@/lib/api/client"
@@ -28,6 +56,7 @@ const baseActivity = {
   user_id: "user-1",
   creator_name: "Anna Tischler",
   activity_type: "note" as const,
+  can_delete: false,
   photo_url: null,
   created_at: "2026-05-01T10:00:00.000Z",
   attachments: [],
@@ -35,6 +64,10 @@ const baseActivity = {
 
 beforeEach(() => {
   getBlobMock.mockReset()
+  mutateAsyncMock.mockReset()
+  deleteMutationState.isPending = false
+  vi.mocked(toast.success).mockReset()
+  vi.mocked(toast.error).mockReset()
 })
 
 describe("ActivityFeed material tab", () => {
@@ -206,5 +239,96 @@ describe("ActivityFeed document entries", () => {
       "href",
       "/sites/site-1/media/activity-4/legacy-photo-id/aktivitatsfoto"
     )
+  })
+
+  it("shows delete actions only for deletable activities", () => {
+    render(
+      <ActivityFeed
+        siteId="site-1"
+        activities={[
+          {
+            ...baseActivity,
+            id: "activity-5",
+            can_delete: true,
+            content: "Kann gelöscht werden",
+          },
+          {
+            ...baseActivity,
+            id: "activity-6",
+            can_delete: false,
+            content: "Nicht löschbar",
+          },
+          {
+            ...baseActivity,
+            id: "activity-7",
+            activity_type: "status_change",
+            can_delete: false,
+            content: '{"old_status":"planned","new_status":"active"}',
+          },
+        ]}
+      />
+    )
+
+    expect(screen.getByLabelText("Eintrag löschen: activity-5")).toBeInTheDocument()
+    expect(screen.queryByLabelText("Eintrag löschen: activity-6")).not.toBeInTheDocument()
+    expect(screen.queryByLabelText("Eintrag löschen: activity-7")).not.toBeInTheDocument()
+  })
+
+  it("confirms before deleting and closes after success", async () => {
+    mutateAsyncMock.mockResolvedValue(undefined)
+
+    render(
+      <ActivityFeed
+        siteId="site-1"
+        activities={[
+          {
+            ...baseActivity,
+            id: "activity-8",
+            can_delete: true,
+            content: "Montage abgeschlossen",
+          },
+        ]}
+      />
+    )
+
+    await userEvent.click(screen.getByLabelText("Eintrag löschen: activity-8"))
+    expect(screen.getByText("Wirklich löschen?")).toBeInTheDocument()
+    expect(mutateAsyncMock).not.toHaveBeenCalled()
+
+    await userEvent.click(screen.getByRole("button", { name: "Löschen" }))
+
+    expect(mutateAsyncMock).toHaveBeenCalledWith({
+      siteId: "site-1",
+      activityId: "activity-8",
+    })
+    await waitFor(() => {
+      expect(screen.queryByText("Wirklich löschen?")).not.toBeInTheDocument()
+    })
+    expect(toast.success).toHaveBeenCalledWith("Eintrag gelöscht")
+  })
+
+  it("shows an error toast when deletion fails", async () => {
+    mutateAsyncMock.mockRejectedValue(new Error("Löschen fehlgeschlagen"))
+
+    render(
+      <ActivityFeed
+        siteId="site-1"
+        activities={[
+          {
+            ...baseActivity,
+            id: "activity-9",
+            can_delete: true,
+            content: "Montage abgeschlossen",
+          },
+        ]}
+      />
+    )
+
+    await userEvent.click(screen.getByLabelText("Eintrag löschen: activity-9"))
+    await userEvent.click(screen.getByRole("button", { name: "Löschen" }))
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Löschen fehlgeschlagen")
+    })
   })
 })

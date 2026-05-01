@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { ArrowRight, Camera, FileText } from "lucide-react"
+import { ArrowRight, Camera, FileText, Trash2 } from "lucide-react"
+import { toast } from "sonner"
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
+import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Activity, ActivityAttachment } from "@/types/sites"
 import { useSiteMaterialHistory } from "@/lib/api/hooks"
 import { apiClient } from "@/lib/api/client"
+import { useDeleteActivity } from "@/lib/api/hooks/useSites"
 import { buildMediaViewerPath, extractAttachmentIdFromPhotoUrl } from "./mediaViewerRoute"
 
 const statusLabels: Record<string, string> = {
@@ -210,7 +214,21 @@ function buildLegacyPhotoAttachment(activity: Activity): ActivityAttachment | nu
   }
 }
 
-function ActivityCard({ activity }: { activity: Activity }) {
+function getDeleteItemName(activity: Activity): string {
+  if (activity.activity_type === "photo") {
+    return "dieses Foto"
+  }
+
+  return activity.attachments.length > 0 ? "diesen Eintrag" : "diese Notiz"
+}
+
+function ActivityCard({
+  activity,
+  onDelete,
+}: {
+  activity: Activity
+  onDelete: (activity: Activity) => void
+}) {
   const hasDocumentAttachments = activity.activity_type !== "photo" && activity.attachments.length > 0
   const photoAttachment = activity.activity_type === "photo" ? buildLegacyPhotoAttachment(activity) : null
 
@@ -236,9 +254,22 @@ function ActivityCard({ activity }: { activity: Activity }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium">{getActivityHeading(activity)}</p>
-            <span className="whitespace-nowrap text-xs text-muted-foreground">
-              {formatRelativeTime(activity.created_at)}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="whitespace-nowrap text-xs text-muted-foreground">
+                {formatRelativeTime(activity.created_at)}
+              </span>
+              {activity.can_delete ? (
+                <Button
+                  aria-label={`Eintrag löschen: ${activity.id}`}
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  onClick={() => onDelete(activity)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              ) : null}
+            </div>
           </div>
 
           {activity.activity_type === "status_change" && activity.content ? (
@@ -285,7 +316,9 @@ function ActivityCard({ activity }: { activity: Activity }) {
 
 export function ActivityFeed({ activities, siteId, maxItems }: ActivityFeedProps) {
   const [activeTab, setActiveTab] = useState("notes")
+  const [deleteTarget, setDeleteTarget] = useState<Activity | null>(null)
   const { data: materialHistory, isLoading: isMaterialHistoryLoading } = useSiteMaterialHistory(siteId)
+  const deleteActivityMutation = useDeleteActivity()
 
   const noteActivities = activities.filter(
     (activity) =>
@@ -296,8 +329,27 @@ export function ActivityFeed({ activities, siteId, maxItems }: ActivityFeedProps
 
   const displayedActivities = maxItems ? noteActivities.slice(0, maxItems) : noteActivities
 
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) {
+      return
+    }
+
+    try {
+      await deleteActivityMutation.mutateAsync({
+        siteId,
+        activityId: deleteTarget.id,
+      })
+      toast.success("Eintrag gelöscht")
+      setDeleteTarget(null)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Eintrag konnte nicht gelöscht werden"
+      toast.error(message)
+    }
+  }
+
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab}>
+    <>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
       <TabsList>
         <TabsTrigger value="notes">Notizen/Dokumente</TabsTrigger>
         <TabsTrigger value="materials">Material</TabsTrigger>
@@ -317,7 +369,7 @@ export function ActivityFeed({ activities, siteId, maxItems }: ActivityFeedProps
         ) : (
           <>
             {displayedActivities.map((activity) => (
-              <ActivityCard key={activity.id} activity={activity} />
+              <ActivityCard key={activity.id} activity={activity} onDelete={setDeleteTarget} />
             ))}
             {noteActivities.length > (maxItems || 0) && maxItems ? (
               <p className="text-center text-xs text-muted-foreground">
@@ -364,6 +416,19 @@ export function ActivityFeed({ activities, siteId, maxItems }: ActivityFeedProps
           </p>
         )}
       </TabsContent>
-    </Tabs>
+      </Tabs>
+
+      <DeleteConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleteActivityMutation.isPending) {
+            setDeleteTarget(null)
+          }
+        }}
+        onConfirm={handleDeleteConfirm}
+        itemName={deleteTarget ? getDeleteItemName(deleteTarget) : "diesen Eintrag"}
+        isPending={deleteActivityMutation.isPending}
+      />
+    </>
   )
 }
