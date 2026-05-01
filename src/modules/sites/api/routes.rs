@@ -1,5 +1,6 @@
 use axum::{
     extract::{Path, Query, State},
+    http::header,
     http::StatusCode,
     response::IntoResponse,
     Json,
@@ -40,6 +41,8 @@ pub fn create_router() -> Router<AppState> {
         
         // Activities
         .route("/api/v1/sites/{id}/activities", get(list_activities).post(create_activity))
+        .route("/api/v1/attachments/{attachment_id}", get(get_attachment_bytes))
+        .route("/api/v1/attachments/{attachment_id}/thumbnail", get(get_attachment_thumbnail_bytes))
         
         // Dashboard
         .route("/api/v1/dashboard/sites", get(get_dashboard))
@@ -684,4 +687,64 @@ pub async fn get_dashboard(
     let response: Vec<DashboardSiteResponse> = sites.into_iter().map(DashboardSiteResponse::from).collect();
     
     Ok(Json(response))
+}
+
+pub async fn get_attachment_bytes(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(attachment_id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let ctx = TenantContext::from_auth(&auth);
+    let repo = crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool);
+
+    let attachment_uuid = Uuid::parse_str(&attachment_id)
+        .map_err(|_| AppError::Validation("Invalid attachment ID".to_string()))?;
+
+    let attachment = repo
+        .find_attachment_by_id(attachment_uuid, ctx.tenant_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Attachment not found".to_string()))?;
+
+    let bytes = attachment
+        .original_bytes
+        .ok_or_else(|| AppError::NotFound("Attachment content not found".to_string()))?;
+
+    Ok((
+        StatusCode::OK,
+        [
+            (header::CONTENT_TYPE, attachment.mime_type),
+            (header::CACHE_CONTROL, "private, max-age=300".to_string()),
+        ],
+        bytes,
+    ))
+}
+
+pub async fn get_attachment_thumbnail_bytes(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(attachment_id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let ctx = TenantContext::from_auth(&auth);
+    let repo = crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool);
+
+    let attachment_uuid = Uuid::parse_str(&attachment_id)
+        .map_err(|_| AppError::Validation("Invalid attachment ID".to_string()))?;
+
+    let attachment = repo
+        .find_attachment_by_id(attachment_uuid, ctx.tenant_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Attachment not found".to_string()))?;
+
+    let bytes = attachment
+        .thumbnail_bytes
+        .ok_or_else(|| AppError::NotFound("Attachment thumbnail not found".to_string()))?;
+
+    Ok((
+        StatusCode::OK,
+        [
+            (header::CONTENT_TYPE, attachment.mime_type),
+            (header::CACHE_CONTROL, "private, max-age=300".to_string()),
+        ],
+        bytes,
+    ))
 }
