@@ -4,11 +4,12 @@ import { render, screen } from "@/test/utils"
 import { CreateNoteModal } from "./CreateNoteModal"
 
 const createActivityMutate = vi.fn()
+const uploadPhotoMutate = vi.fn()
 const uploadSiteAttachmentMutate = vi.fn()
 
 vi.mock("@/lib/api/hooks", () => ({
   useCreateActivity: () => ({ isPending: false, mutateAsync: createActivityMutate }),
-  useUploadSitePhoto: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useUploadSitePhoto: () => ({ isPending: false, mutateAsync: uploadPhotoMutate }),
   useUploadSiteAttachment: () => ({ isPending: false, mutateAsync: uploadSiteAttachmentMutate }),
 }))
 
@@ -74,5 +75,49 @@ describe("CreateNoteModal", () => {
     await user.click(screen.getByRole("button", { name: "Datei entfernen: angebot.pdf" }))
 
     expect(screen.queryByText("angebot.pdf")).not.toBeInTheDocument()
+  })
+
+  it("uploads attachments first and then creates one activity payload", async () => {
+    renderModal()
+    const user = userEvent.setup()
+
+    uploadSiteAttachmentMutate
+      .mockResolvedValueOnce({
+        attachment_id: "att-1",
+        filename: "planung.jpg",
+        mime_type: "image/jpeg",
+        url: "/api/v1/attachments/att-1",
+        thumbnail_url: "/api/v1/attachments/att-1/thumbnail",
+      })
+      .mockResolvedValueOnce({
+        attachment_id: "att-2",
+        filename: "angebot.pdf",
+        mime_type: "application/pdf",
+        url: "/api/v1/attachments/att-2",
+        thumbnail_url: null,
+      })
+
+    const picker = document.querySelector('input[type="file"]') as HTMLInputElement
+    const imageFile = new File(["image"], "planung.jpg", { type: "image/jpeg" })
+    const pdfFile = new File(["pdf"], "angebot.pdf", { type: "application/pdf" })
+
+    await user.type(screen.getByPlaceholderText("Notiz hinzufügen (optional)..."), "Montage abgeschlossen")
+    await user.upload(picker, [imageFile, pdfFile])
+    await user.click(screen.getByRole("button", { name: "Eintrag speichern" }))
+
+    expect(uploadSiteAttachmentMutate).toHaveBeenNthCalledWith(1, {
+      siteId: "site-1",
+      file: imageFile,
+    })
+    expect(uploadSiteAttachmentMutate).toHaveBeenNthCalledWith(2, {
+      siteId: "site-1",
+      file: pdfFile,
+    })
+    expect(createActivityMutate).toHaveBeenCalledWith({
+      siteId: "site-1",
+      activity_type: "note",
+      content: "Montage abgeschlossen",
+      attachment_ids: ["att-1", "att-2"],
+    })
   })
 })

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest"
 import { renderHook } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { useCreateActivity, useUploadSitePhoto } from "./useSites"
+import { useCreateActivity, useUploadSiteAttachment, useUploadSitePhoto } from "./useSites"
 import { apiClient } from "../client"
 
 vi.mock("../client", () => ({
@@ -97,5 +97,60 @@ describe("useCreateActivity", () => {
       activity_type: "photo",
       photo_url: "/api/v1/sites/site-1/attachments/att-1",
     })
+  })
+
+  it("sends attachment ids when creating a document activity", async () => {
+    vi.mocked(apiClient.post).mockResolvedValueOnce({ id: "activity-2" })
+    const queryClient = createQueryClient()
+
+    const { result } = renderHook(() => useCreateActivity(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    await result.current.mutateAsync({
+      siteId: "site-1",
+      activity_type: "note",
+      content: "Montage abgeschlossen",
+      attachment_ids: ["att-1", "att-2"],
+    })
+
+    expect(apiClient.post).toHaveBeenCalledWith("/api/v1/sites/site-1/activities", {
+      activity_type: "note",
+      content: "Montage abgeschlossen",
+      attachment_ids: ["att-1", "att-2"],
+    })
+  })
+})
+
+describe("useUploadSiteAttachment", () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("posts files under the generic attachment field", async () => {
+    vi.mocked(apiClient.post).mockResolvedValueOnce({
+      attachment_id: "att-9",
+      filename: "angebot.pdf",
+      mime_type: "application/pdf",
+      url: "/api/v1/attachments/att-9",
+      thumbnail_url: null,
+    })
+
+    const queryClient = createQueryClient()
+    const { result } = renderHook(() => useUploadSiteAttachment(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    const file = new File(["pdf"], "angebot.pdf", { type: "application/pdf" })
+    await result.current.mutateAsync({ siteId: "site-1", file })
+
+    expect(apiClient.post).toHaveBeenCalledWith(
+      "/api/v1/sites/site-1/attachments",
+      expect.any(FormData)
+    )
+
+    const formData = vi.mocked(apiClient.post).mock.calls[0][1] as FormData
+    expect(formData.get("attachment")).toBe(file)
+    expect(formData.get("photo")).toBeNull()
   })
 })
