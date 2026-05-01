@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { useCreateActivity, useUploadSitePhoto } from "@/lib/api/hooks"
+import { useCreateActivity, useUploadSiteAttachment } from "@/lib/api/hooks"
 import { toast } from "sonner"
 
 const ACCEPTED_MIME_TYPES = [
@@ -55,15 +55,15 @@ function revokePreview(file: ComposerFile) {
 export function CreateNoteModal({
   open,
   onOpenChange,
-  siteId: _siteId,
-  onSuccess: _onSuccess,
+  siteId,
+  onSuccess,
 }: CreateNoteModalProps) {
   const [content, setContent] = useState("")
   const [selectedFiles, setSelectedFiles] = useState<ComposerFile[]>([])
   const [selectionError, setSelectionError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const createActivity = useCreateActivity()
-  const uploadPhoto = useUploadSitePhoto()
+  const uploadSiteAttachment = useUploadSiteAttachment()
 
   useEffect(() => {
     return () => {
@@ -71,7 +71,7 @@ export function CreateNoteModal({
     }
   }, [selectedFiles])
 
-  const isPending = createActivity.isPending || uploadPhoto.isPending
+  const isPending = createActivity.isPending || uploadSiteAttachment.isPending
   const hasContent = content.trim().length > 0
   const canSubmit = hasContent || selectedFiles.length > 0
 
@@ -144,7 +144,25 @@ export function CreateNoteModal({
       return
     }
 
-    toast.success("Entwurf vorbereitet")
+    try {
+      const uploadedAttachments = await Promise.all(
+        selectedFiles.map(({ file }) => uploadSiteAttachment.mutateAsync({ siteId, file }))
+      )
+
+      await createActivity.mutateAsync({
+        siteId,
+        activity_type: "note",
+        content: hasContent ? content.trim() : undefined,
+        attachment_ids: uploadedAttachments.map((attachment) => attachment.attachment_id),
+      })
+
+      toast.success("Eintrag gespeichert")
+      resetForm()
+      onSuccess()
+      onOpenChange(false)
+    } catch {
+      toast.error("Upload fehlgeschlagen. Prüfen Sie Dateityp oder Verbindung und versuchen Sie es erneut.")
+    }
   }
 
   return (

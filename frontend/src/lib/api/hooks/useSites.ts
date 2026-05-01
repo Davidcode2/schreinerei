@@ -12,10 +12,13 @@ import type {
   UpdateTimeEntryRequest,
   Activity,
   CreateActivityRequest,
-  UploadPhotoAttachmentResponse,
   ActivityQuery,
   DashboardSite,
 } from "@/types/sites"
+import type {
+  UploadPhotoAttachmentResponse,
+  UploadSiteAttachmentResponse,
+} from "@/types/generated"
 
 // === Sites ===
 
@@ -223,6 +226,26 @@ export function useUploadSitePhoto() {
 
       return apiClient.post<UploadPhotoAttachmentResponse>(
         `/api/v1/sites/${siteId}/attachments/photo`,
+        formData
+      )
+    },
+  })
+}
+
+export function useUploadSiteAttachment() {
+  return useMutation({
+    mutationFn: async ({
+      siteId,
+      file,
+    }: {
+      siteId: string
+      file: File
+    }) => {
+      const formData = new FormData()
+      formData.append("attachment", file)
+
+      return apiClient.post<UploadSiteAttachmentResponse>(
+        `/api/v1/sites/${siteId}/attachments`,
         formData
       )
     },
