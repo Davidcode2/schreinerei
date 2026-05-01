@@ -116,7 +116,11 @@ impl MaterialRepository {
             r#"
             UPDATE categories
             SET name = COALESCE($2, name),
-                description = COALESCE($3, description),
+                description = CASE
+                    WHEN $3 IS NULL THEN description
+                    WHEN $3 = '' THEN NULL
+                    ELSE $3
+                END,
                 updated_at = NOW()
             WHERE id = $1 AND tenant_id = $4
             RETURNING id, tenant_id, name, description, created_at, updated_at

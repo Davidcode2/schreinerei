@@ -350,7 +350,11 @@ impl InventoryService {
         material_id: MaterialId,
         ctx: &TenantContext,
     ) -> Result<Vec<EnrichedStockEntry>, AppError> {
-        // History visible to all users in the tenant
+        self.material_repo
+            .find_material_by_id(material_id, ctx.tenant_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
+
         self.material_repo.list_enriched_stock_entries(material_id, ctx.tenant_id, 50).await
     }
 
