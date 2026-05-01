@@ -6,6 +6,7 @@ import type {
   CreateMaterialRequest,
   WithdrawRequest,
   MaterialStockHistoryEntry,
+  SiteMaterialHistoryEntry,
   OrderRequest,
   CreateOrderRequestDto,
   OrderStatusQuery,
@@ -63,6 +64,18 @@ export function useMaterialHistory(id: string) {
         `/api/v1/inventory/materials/${id}/history`
       ),
     enabled: !!id,
+    staleTime: 30000,
+  })
+}
+
+export function useSiteMaterialHistory(siteId: string, limit = 50) {
+  return useQuery({
+    queryKey: ["site-material-history", siteId, limit],
+    queryFn: () =>
+      apiClient.get<SiteMaterialHistoryEntry[]>(
+        `/api/v1/inventory/sites/${siteId}/history`
+      ),
+    enabled: !!siteId,
     staleTime: 30000,
   })
 }

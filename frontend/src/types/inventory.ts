@@ -42,6 +42,20 @@ export interface MaterialStockHistoryEntry {
   created_at: string
 }
 
+export interface SiteMaterialHistoryEntry {
+  id: string
+  material_id: string
+  material_name: string
+  category_name: string
+  quantity_change: number
+  quantity_after: number
+  notes: string | null
+  site_id: string | null
+  site_name: string | null
+  extracted_by: string
+  created_at: string
+}
+
 export interface CreateMaterialRequest {
   category_id: string
   name: string

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest"
 import { renderHook } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { useMaterialHistory } from "./useInventory"
+import { useMaterialHistory, useSiteMaterialHistory } from "./useInventory"
 import { apiClient } from "../client"
 
 vi.mock("../client", () => ({
@@ -56,5 +56,26 @@ describe("useMaterialHistory", () => {
 
     expect(result.current.isEnabled).toBe(false)
     expect(apiClient.get).not.toHaveBeenCalled()
+  })
+})
+
+describe("useSiteMaterialHistory", () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("issues GET to site history endpoint", async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce([])
+    const queryClient = createQueryClient()
+
+    const { result } = renderHook(() => useSiteMaterialHistory("site-123"), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    await result.current.refetch()
+
+    expect(apiClient.get).toHaveBeenCalledWith(
+      "/api/v1/inventory/sites/site-123/history"
+    )
   })
 })
