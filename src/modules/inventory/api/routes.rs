@@ -922,6 +922,97 @@ pub async fn fulfill_order_request(
     
     let order = service.fulfill_order_request(order_id, fulfill, &ctx).await?;
     let material = service.get_material(order.material_id, &ctx).await?;
-    
+
     Ok(Json(OrderRequestResponse::from_order(order, material.name)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{EnrichedStockHistoryResponse, StockInRequest, UpdateCategoryRequest, UpdateMaterialRequest};
+    use crate::common::types::{MaterialId, SiteId, TenantId, UserId};
+    use crate::modules::inventory::domain::{EnrichedStockEntry, EntryType, StockIn, UpdateCategory, UpdateMaterial};
+    use chrono::Utc;
+
+    #[test]
+    fn update_category_request_preserves_patch_semantics() {
+        let unchanged: UpdateCategory = UpdateCategoryRequest {
+            name: None,
+            description: None,
+        }
+        .into();
+        assert_eq!(unchanged.name, None);
+        assert_eq!(unchanged.description, None);
+
+        let clear_description: UpdateCategory = UpdateCategoryRequest {
+            name: None,
+            description: Some(String::new()),
+        }
+        .into();
+        assert_eq!(clear_description.name, None);
+        assert_eq!(clear_description.description, Some(String::new()));
+    }
+
+    #[test]
+    fn update_material_request_preserves_clear_location_without_fabricating_fields() {
+        let update: UpdateMaterial = UpdateMaterialRequest {
+            location: None,
+            min_quantity: None,
+            clear_location: Some(true),
+        }
+        .into();
+
+        assert_eq!(update.location, None);
+        assert_eq!(update.min_quantity, None);
+        assert_eq!(update.clear_location, Some(true));
+    }
+
+    #[test]
+    fn stock_in_request_keeps_notes_and_reuses_domain_validation() {
+        let request = StockInRequest {
+            quantity: 4,
+            notes: Some("Lieferschein 1234".to_string()),
+        };
+        let stock_in = StockIn {
+            material_id: MaterialId::new(),
+            quantity: request.quantity,
+            notes: request.notes.clone(),
+        };
+
+        assert_eq!(stock_in.notes, Some("Lieferschein 1234".to_string()));
+        assert!(stock_in.validate().is_ok());
+
+        let invalid = StockIn {
+            material_id: MaterialId::new(),
+            quantity: 0,
+            notes: None,
+        };
+        assert_eq!(invalid.validate(), Err("Stock-in quantity must be positive".to_string()));
+    }
+
+    #[test]
+    fn enriched_history_response_exposes_phase_32_ui_fields() {
+        let entry = EnrichedStockEntry {
+            id: uuid::Uuid::new_v4(),
+            tenant_id: TenantId::new(),
+            material_id: MaterialId::new(),
+            user_id: UserId::new(),
+            user_name: "Max Mustermann".to_string(),
+            entry_type: EntryType::Withdrawn,
+            quantity_change: -4,
+            quantity_after: 12,
+            notes: Some("Für Baustelle".to_string()),
+            site_id: Some(SiteId::new()),
+            site_name: Some("Baustelle Müller".to_string()),
+            category_name: "Schrauben".to_string(),
+            created_at: Utc::now(),
+        };
+
+        let response = EnrichedStockHistoryResponse::from(entry);
+
+        assert_eq!(response.entry_type, EntryType::Withdrawn);
+        assert_eq!(response.user_name, "Max Mustermann");
+        assert!(response.site_id.is_some());
+        assert_eq!(response.site_name, Some("Baustelle Müller".to_string()));
+        assert_eq!(response.category_name, "Schrauben");
+    }
 }
