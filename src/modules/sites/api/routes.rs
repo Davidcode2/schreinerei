@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Multipart, Path, Query, State},
     http::header,
     http::StatusCode,
     response::IntoResponse,
@@ -41,6 +41,7 @@ pub fn create_router() -> Router<AppState> {
         
         // Activities
         .route("/api/v1/sites/{id}/activities", get(list_activities).post(create_activity))
+        .route("/api/v1/sites/{id}/attachments/photo", post(upload_site_photo_attachment))
         .route("/api/v1/attachments/{attachment_id}", get(get_attachment_bytes))
         .route("/api/v1/attachments/{attachment_id}/thumbnail", get(get_attachment_thumbnail_bytes))
         
@@ -153,6 +154,14 @@ pub struct TimeEntryResponse {
     pub work_date: String,
     pub notes: Option<String>,
     pub created_at: String,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct UploadPhotoAttachmentResponse {
+    pub attachment_id: String,
+    pub photo_url: String,
+    pub thumbnail_url: String,
 }
 
 impl From<crate::modules::sites::domain::TimeEntry> for TimeEntryResponse {
@@ -672,6 +681,69 @@ pub async fn create_activity(
     Ok((StatusCode::CREATED, Json(ActivityResponse::from(activity))))
 }
 
+pub async fn upload_site_photo_attachment(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+    mut multipart: Multipart,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
+    );
+    let ctx = TenantContext::from_auth(&auth);
+
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+
+    let mut image_part: Option<(String, Vec<u8>)> = None;
+
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| AppError::Validation(format!("Invalid multipart payload: {e}")))?
+    {
+        if field.name() != Some("photo") {
+            continue;
+        }
+
+        let mime_type = field
+            .content_type()
+            .ok_or_else(|| AppError::Validation("Photo MIME type is required".to_string()))?
+            .to_string();
+        let bytes = field
+            .bytes()
+            .await
+            .map_err(|e| AppError::Validation(format!("Unable to read upload bytes: {e}")))?
+            .to_vec();
+        image_part = Some((mime_type, bytes));
+        break;
+    }
+
+    let (mime_type, original_bytes) =
+        image_part.ok_or_else(|| AppError::Validation("Multipart field 'photo' is required".to_string()))?;
+
+    let result = service
+        .upload_photo_attachment(
+            crate::modules::sites::application::site_service::UploadPhotoCommand {
+                site_id,
+                mime_type,
+                original_bytes,
+            },
+            &ctx,
+        )
+        .await?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(UploadPhotoAttachmentResponse {
+            attachment_id: result.attachment_id.to_string(),
+            photo_url: result.photo_url,
+            thumbnail_url: result.thumbnail_url,
+        }),
+    ))
+}
+
 // === Dashboard Handler ===
 
 pub async fn get_dashboard(
@@ -747,4 +819,22 @@ pub async fn get_attachment_thumbnail_bytes(
         ],
         bytes,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::UploadPhotoAttachmentResponse;
+
+    #[test]
+    fn upload_response_contains_required_contract_fields() {
+        let dto = UploadPhotoAttachmentResponse {
+            attachment_id: uuid::Uuid::new_v4().to_string(),
+            photo_url: "/api/v1/attachments/1".to_string(),
+            thumbnail_url: "/api/v1/attachments/1/thumbnail".to_string(),
+        };
+
+        assert!(!dto.attachment_id.is_empty());
+        assert!(dto.photo_url.contains("/attachments/"));
+        assert!(dto.thumbnail_url.ends_with("/thumbnail"));
+    }
 }
