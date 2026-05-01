@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.11
 milestone_name: Fleet Calendar on Fleet Page
-status: planning
-last_updated: "2026-05-01T14:27:59.685Z"
+status: ready_to_plan
+last_updated: "2026-05-01T14:28:00Z"
 last_activity: 2026-05-01
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
   percent: 0
 ---
 
-# State: Schreinerei — v1.9 Inventory Features
+# State: Schreinerei — v1.11 Fleet Calendar on Fleet Page
 
 **Updated:** 2026-05-01
 
@@ -21,31 +21,32 @@ progress:
 
 See: `.planning/PROJECT.md` (updated 2026-05-01)
 
-**Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler.
-**Current focus:** Phase 31 — Settings, Editing & Stock-In
+**Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
+**Current focus:** Phase 34 — Fleet Page Calendar Integration
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-05-01 — Milestone v1.11 started
+Phase: 34 of 36 (Fleet Page Calendar Integration)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-05-01 — Roadmap approved for milestone v1.11
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 2
-- Completed this session: Phase 30 (2/2 plans)
+- Total plans completed: 0
+- Completed this session: None
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 30. Backend API Foundation | 2/2 | - | - |
-| 31. Settings, Editing & Stock-In | 0/? | - | - |
-| 32. Enriched History | 0/? | - | - |
-| 33. Type Safety & Coverage | 0/? | - | - |
+| 34. Fleet Page Calendar Integration | 0/? | - | - |
+| 35. Range Selection & Confirmation Flow | 0/? | - | - |
+| 36. Calendar Visibility, Colors & Cleanup | 0/? | - | - |
 
 ## Accumulated Context
 
@@ -53,14 +54,14 @@ Last activity: 2026-05-01 — Milestone v1.11 started
 
 Recent decisions affecting current work:
 
-- v1.9 scope: Category editing, material editing, stock-in, enriched history
-- Settings wheel icon → dedicated `/settings/inventory` route for category management
-- StockIn is a separate domain command (not reusing AdjustStock) — available to all users, uses notes instead of reason
-- entry_type migration: three-step nullable → backfill → NOT NULL
-- Category delete preserves history: return Conflict while any material row exists, including soft-deleted rows
-- Enriched history stays stock-movement-focused for now
-- `location_changed` and `min_quantity_changed` history entries are deferred until a separate audit model exists
-- MaterialHistoryFeed is a separate component (not shared with sites ActivityFeed)
+- v1.11 scope: embed the calendar into `/fleet` instead of keeping booking behind a separate calendar page
+- Reservation creation should use a two-tap date-range flow instead of opening a modal on the first tap
+- Second tap may be the same day to support one-day reservations
+- Selected dates must always be sorted into start then end before confirmation
+- Confirmation should appear from the bottom of the screen so the calendar stays visible on mobile
+- Time entry is optional and should be enabled by a checkbox rather than required for every booking
+- Vehicle and machine colors should be stable per resource and derived without adding backend color storage
+- v1.9 inventory frontend phases 31-33 are deferred while v1.11 is the active milestone
 
 ### Pending Todos
 
@@ -68,19 +69,19 @@ None.
 
 ### Blockers/Concerns
 
-- Metadata-only history audit model is still unresolved and intentionally deferred
-- Phase 31 should consume the new PATCH/DELETE/stock-in/enriched-history endpoints without re-shaping their backend contracts
+- The embedded `/fleet` calendar and any remaining `/fleet/calendar` route must not drift into separate implementations
+- Selection state must stay tied to a single resource so users cannot accidentally create a range across different rows
 
 ## Deferred Items
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| History model | `location_changed` / `min_quantity_changed` audit entries need a separate model, not `stock_entries` | Deferred | v1.9 / Phase 30 |
+| Inventory | v1.9 phases 31-33 frontend work | Deferred | v1.11 start |
 | Offline | Photo queue replay | Backlog | v1.8 |
 | Testing | Integration tests with real PostgreSQL | v2.0 | v1.5 |
 
 ## Session Continuity
 
 Last session: 2026-05-01
-Stopped at: Phase 30 complete, Phase 31 ready to plan
+Stopped at: Milestone v1.11 initialized, Phase 34 ready to plan
 Resume file: None

@@ -55,29 +55,27 @@ Deferred to future release.
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FCAL-01 | TBD | Pending |
-| FCAL-02 | TBD | Pending |
-| FCAL-03 | TBD | Pending |
-| FSEL-01 | TBD | Pending |
-| FSEL-02 | TBD | Pending |
-| FSEL-03 | TBD | Pending |
-| FSEL-04 | TBD | Pending |
-| FCONF-01 | TBD | Pending |
-| FCONF-02 | TBD | Pending |
-| FCONF-03 | TBD | Pending |
-| FCONF-04 | TBD | Pending |
-| FCONF-05 | TBD | Pending |
-| FCONF-06 | TBD | Pending |
+| FCAL-01 | Phase 34 | Pending |
+| FCAL-02 | Phase 34 | Pending |
+| FCAL-03 | Phase 36 | Pending |
+| FSEL-01 | Phase 35 | Pending |
+| FSEL-02 | Phase 35 | Pending |
+| FSEL-03 | Phase 35 | Pending |
+| FSEL-04 | Phase 35 | Pending |
+| FCONF-01 | Phase 35 | Pending |
+| FCONF-02 | Phase 35 | Pending |
+| FCONF-03 | Phase 35 | Pending |
+| FCONF-04 | Phase 35 | Pending |
+| FCONF-05 | Phase 36 | Pending |
+| FCONF-06 | Phase 36 | Pending |
 
 **Coverage:**
 - v1.11 requirements: 13 total
-- Mapped to phases: 0
-- Unmapped: 13 ⚠️
+- Mapped to phases: 13 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-01*
-*Last updated: 2026-05-01 after milestone v1.11 definition*
+*Last updated: 2026-05-01 after milestone v1.11 roadmap mapping*
