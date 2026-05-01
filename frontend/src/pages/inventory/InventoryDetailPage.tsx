@@ -7,6 +7,8 @@ import {
   MapPin,
   QrCode,
   Minus,
+  Pencil,
+  Plus,
   AlertTriangle,
   ShoppingCart,
 } from "lucide-react"
@@ -17,24 +19,30 @@ import {
   StatusBadge,
 } from "@/components/shared"
 import {
-  useMaterial,
-  useMaterialHistory,
-  useWithdrawMaterial,
-  useCreateOrderRequest,
-  usePreferences,
-  useSites,
+    useMaterial,
+    useMaterialHistory,
+    useStockInMaterial,
+    useWithdrawMaterial,
+    useCreateOrderRequest,
+    usePreferences,
+    useSites,
 } from "@/lib/api/hooks"
+import { MaterialEditDialog } from "./MaterialEditDialog"
+import { StockInDialog } from "./StockInDialog"
 import { WithdrawDialog } from "./WithdrawDialog"
 import { toast } from "sonner"
 
 export default function InventoryDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showStockInDialog, setShowStockInDialog] = useState(false)
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false)
 
   const { data: material, isLoading, error, refetch } = useMaterial(id!)
   const { data: history } = useMaterialHistory(id!)
   const { data: preferences } = usePreferences()
   const { data: sites } = useSites()
+  const stockInMutation = useStockInMaterial()
   const withdrawMutation = useWithdrawMaterial()
   const orderMutation = useCreateOrderRequest()
 
@@ -70,6 +78,20 @@ export default function InventoryDetailPage() {
     }
   }
 
+  const handleStockIn = async (quantity: number, notes?: string) => {
+    try {
+      await stockInMutation.mutateAsync({
+        id: material.id,
+        quantity,
+        ...(notes ? { notes } : {}),
+      })
+      toast.success(`${quantity} ${material.unit} eingelagert`)
+      setShowStockInDialog(false)
+    } catch {
+      toast.error("Einlagerung fehlgeschlagen")
+    }
+  }
+
   const handleOrderRequest = async () => {
     try {
       await orderMutation.mutateAsync({
@@ -90,14 +112,33 @@ export default function InventoryDetailPage() {
         description={material.description || undefined}
         backTo="/inventory"
         action={
-          <Button
-            onClick={() => setShowWithdrawDialog(true)}
-            disabled={material.quantity <= 0}
-            className="gap-2"
-          >
-            <Minus className="h-4 w-4" />
-            Entnahme
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={() => setShowStockInDialog(true)}
+              disabled={stockInMutation.isPending}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Material einlagern
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowWithdrawDialog(true)}
+              disabled={material.quantity <= 0 || withdrawMutation.isPending}
+              className="gap-2"
+            >
+              <Minus className="h-4 w-4" />
+              Material entnehmen
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowEditDialog(true)}
+              className="gap-2"
+            >
+              <Pencil className="h-4 w-4" />
+              Material bearbeiten
+            </Button>
+          </div>
         }
       />
 
@@ -161,15 +202,6 @@ export default function InventoryDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-2"
-              onClick={() => setShowWithdrawDialog(true)}
-              disabled={material.quantity <= 0}
-            >
-              <Minus className="h-4 w-4" />
-              Material entnehmen
-            </Button>
             {material.is_low_stock && (
               <Button
                 variant="outline"
@@ -249,6 +281,20 @@ export default function InventoryDetailPage() {
         isLoading={withdrawMutation.isPending}
         sites={(sites ?? []).map((site) => ({ id: site.id, name: site.name }))}
         initialSiteId={preferences?.active_site_id ?? null}
+      />
+
+      <StockInDialog
+        open={showStockInDialog}
+        onOpenChange={setShowStockInDialog}
+        material={material}
+        onConfirm={handleStockIn}
+        isLoading={stockInMutation.isPending}
+      />
+
+      <MaterialEditDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        material={material}
       />
     </div>
   )
