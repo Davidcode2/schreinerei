@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: milestone
 status: executing
-last_updated: "2026-05-01T09:53:13.152Z"
+last_updated: "2026-05-01T10:01:55.087Z"
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 9
-  completed_plans: 5
-  percent: 56
+  completed_plans: 6
+  percent: 67
 ---
 
 # State: Schreinerei v1.8 Activity Feed & Site Status
@@ -27,13 +27,13 @@ progress:
 ## Current Position
 
 Phase: 29 (photo-upload-attachments) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 **Phase:** 28 — Material History Tab
 **Status:** Ready to execute
 **Next Action:** `/gsd-verify-phase 28`
 
 ```
-Progress: [██████░░░░] 56%
+Progress: [███████░░░] 67%
 ```
 
 ## Active Context
@@ -66,6 +66,7 @@ Phase 29 — photo-upload-attachments
 | Velocity | v1.7: 17 reqs, v1.8: 5/21 in progress |
 | Phase 29 P01 | 2 min | 2 tasks | 4 files |
 | Phase 29 P02 | 27 min | 3 tasks | 6 files |
+| Phase 29 P03 | 6 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,8 @@ Phase 29 — photo-upload-attachments
 - [Phase 29]: Attachment lookup returns NotFound for tenant mismatch — Prevents cross-tenant existence disclosure
 - [Phase 29]: Create photo activity during upload and then update photo_url to attachment-backed URL for immediate feed visibility. — Ensures uploaded photos appear in the activity feed immediately with stable, tenant-safe URLs.
 - [Phase 29]: Generate original/thumbnail storage keys server-side using UUIDs and MIME-derived extensions; never trust client filenames. — Mitigates path/key tampering risks and satisfies filename confidentiality requirements.
+- [Phase 29]: Frontend photo flow uploads file first and reuses backend-provided photo_url for activity creation. — This keeps URL construction canonical on the backend and prevents frontend string assembly drift.
+- [Phase 29]: ApiClient detects FormData and skips JSON serialization/headers for multipart uploads. — Multipart uploads fail when payloads are JSON-stringified or forced to application/json; FormData must pass through unchanged.
 
 ### Todos
 
@@ -97,7 +100,7 @@ None.
 
 ## Session Continuity
 
-**Last Session:** 2026-05-01T09:52:28.227Z
+**Last Session:** 2026-05-01T10:00:59.608Z
 **Handoff:** Phase 28 implemented, ready for verification
 
 **Key Files:**
