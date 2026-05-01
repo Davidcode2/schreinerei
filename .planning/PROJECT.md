@@ -10,24 +10,23 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## Current Milestone: v1.9 Inventory Features
+## Current Milestone: v1.10 Baustelle Activity Stream Features
 
-**Goal:** Make inventory fully manageable — edit anything, track everything, see the full history.
+**Goal:** Fix and enhance the Baustelle activity stream — separate camera/document upload flows, support mixed note+attachment entries, and add a fullscreen media viewer with share links.
 
 **Target features:**
-- Category editing via inventory settings page
-- Edit inventory item location and minimum quantity
-- Set available quantity to arbitrary number
-- "Material einlagern" (stock in) action
-- Extended history: material added (green), location changed (blue), with user attribution
-- Clickable Baustelle links in history events
-- Category string on inventory overview page
+- Camera button opens camera/gallery picker (distinct from document modal)
+- Document upload modal supports note AND attachments together (currently note OR image)
+- All attachment combinations: note only, note+PDF(s), note+image(s), PDF(s) only, image(s) only
+- Clickable image/document previews in feed open fullscreen viewer
+- Fullscreen view modal with slug: large media, note alongside, timestamp, username, download & share
+- Creator can delete their own entries
 
 ## Current State
 
-**v1.8 shipped on 2026-05-01.**
+**v1.8 shipped on 2026-05-01.** v1.9 (Inventory Features) deferred.
 
-All v1.8 features working:
+v1.8 features working:
 - ✅ Baustelle status workflow (geplant → aktiv → abgeschlossen) with modal
 - ✅ Tabbed activity feed (Notizen/Dokumente + Material)
 - ✅ Material extraction history with Baustelle links and category display
@@ -35,6 +34,12 @@ All v1.8 features working:
 - ✅ Authenticated blob fetch for image rendering (no unauthenticated URLs)
 - ✅ Offline photo capture queue with reconnect sync (deferred runtime test)
 - ✅ Camera-first modal entry point for photo uploads
+
+**Known issues for v1.10:**
+- Camera button on activity stream opens document modal (should open camera/gallery)
+- Document modal only supports note OR image (should support note AND attachments)
+- No fullscreen media viewer from feed
+- No ability to delete own entries
 
 ## Previous Milestones
 
@@ -111,13 +116,22 @@ All v1.x requirements validated:
 
 ### Active
 
-- [ ] Inventory category editing via settings page
-- [ ] Inventory item editing (location, minimum quantity)
-- [ ] Set available quantity to arbitrary number
-- [ ] "Material einlagern" (stock in) action with modal
-- [ ] Extended inventory history (material added, location changed, user attribution)
-- [ ] Clickable Baustelle links in history events
-- [ ] Category display on inventory overview
+- [ ] Camera button opens camera/gallery picker on activity stream
+- [ ] Document upload modal supports note AND attachments (all combinations)
+- [ ] Clickable image/document previews in feed
+- [ ] Fullscreen media viewer with slug, note, timestamp, user, download, share
+- [ ] Delete own entries (creator only)
+
+### Future (v1.9+)
+
+**Inventory Features (deferred from v1.9):**
+- Category editing via inventory settings page
+- Edit inventory item location and minimum quantity
+- Set available quantity to arbitrary number
+- "Material einlagern" (stock in) action with modal
+- Extended inventory history (material added, location changed, user attribution)
+- Clickable Baustelle links in history events
+- Category display on inventory overview
 
 ### Future (v2.0+)
 
@@ -126,6 +140,15 @@ All v1.x requirements validated:
 - INT-02: Integration tests for sites module
 - INT-03: Integration tests for fleet module
 - INT-04: Multi-tenant isolation tests for all modules
+
+**Inventory Features:**
+- Category editing via inventory settings page
+- Inventory item editing (location, minimum quantity)
+- Set available quantity to arbitrary number
+- "Material einlagern" (stock in) action with modal
+- Extended inventory history with user attribution
+- Clickable Baustelle links in history events
+- Category display on inventory overview
 
 **Self-Service Registration:**
 - SS-01: Public website with organization registration
@@ -141,7 +164,7 @@ All v1.x requirements validated:
 - CAD/CNC Integration (DXF, Bsolid) — Nicht kritisch für Pilot, später implementieren
 - Native Mobile App — PWA first, später React Native/Capacitor möglich
 - Öffentliche Website/Landing Page — Fokus auf App, Website später
-- Foto-Uploads und Dokument-Anhänge (nur Fotos in v1.8, Dokumente in v2.0+)
+- Foto-Uploads und Dokument-Anhänge — Photos done in v1.8, document support in v1.10
 - Rich Text Editor für Notizen (Plain Text für v1.8)
 - Echtzeit-WebSocket Sync (Polling reicht für MVP-Teamgrößen)
 - Video-Uploads (Speicher/Kosten, aufgeschoben)
@@ -251,4 +274,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-05-01 after starting v1.9 milestone**
+*Last updated: 2026-05-01 after starting v1.10 milestone**
