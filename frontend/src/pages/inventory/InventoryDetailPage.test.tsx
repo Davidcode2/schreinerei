@@ -30,10 +30,31 @@ const materialResponse = {
   created_at: "2026-04-30T10:00:00.000Z",
 }
 
+function createHistoryEntry(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "h-1",
+    material_id: "mat-123",
+    user_id: "user-1",
+    user_name: "Max Mustermann",
+    entry_type: "withdrawn",
+    quantity_change: -4,
+    quantity_after: 44,
+    notes: "Entnahme Schalung",
+    site_id: "site-1",
+    site_name: "Baustelle Müller",
+    category_name: "Schrauben",
+    created_at: "2026-04-30T11:30:00.000Z",
+    ...overrides,
+  }
+}
+
 beforeEach(() => {
   server.use(
     http.get("/api/v1/inventory/materials/mat-123", () =>
       HttpResponse.json(materialResponse)
+    ),
+    http.get("/api/v1/inventory/materials/mat-123/history/enriched", () =>
+      HttpResponse.json([])
     ),
     http.get("/api/v1/preferences", () =>
       HttpResponse.json({ active_site_id: null })
@@ -43,42 +64,18 @@ beforeEach(() => {
 })
 
 describe("InventoryDetailPage history", () => {
-  it("renders site_name for linked deduction entries", async () => {
+  it("renders material_added entries with badge, positive quantity, and attribution", async () => {
     server.use(
-      http.get("/api/v1/inventory/materials/mat-123/history", () =>
+      http.get("/api/v1/inventory/materials/mat-123/history/enriched", () =>
         HttpResponse.json([
-          {
-            id: "h-1",
-            quantity_change: -4,
-            quantity_after: 44,
-            notes: "Entnahme Schalung",
-            site_id: "site-1",
-            site_name: "Baustelle Müller",
-            created_at: "2026-04-30T11:30:00.000Z",
-          },
-        ])
-      )
-    )
-
-    render(<InventoryDetailPage />)
-
-    expect(await screen.findByText("Historie")).toBeInTheDocument()
-    expect(await screen.findByText("Baustelle Müller")).toBeInTheDocument()
-  })
-
-  it("does not render site label when site_name is null", async () => {
-    server.use(
-      http.get("/api/v1/inventory/materials/mat-123/history", () =>
-        HttpResponse.json([
-          {
-            id: "h-2",
-            quantity_change: -2,
-            quantity_after: 46,
-            notes: "Lagerentnahme",
+          createHistoryEntry({
+            entry_type: "material_added",
+            quantity_change: 3,
+            quantity_after: 51,
+            notes: "Lieferung HolzLand",
             site_id: null,
             site_name: null,
-            created_at: "2026-04-30T12:00:00.000Z",
-          },
+          }),
         ])
       )
     )
@@ -86,19 +83,57 @@ describe("InventoryDetailPage history", () => {
     render(<InventoryDetailPage />)
 
     expect(await screen.findByText("Historie")).toBeInTheDocument()
-    expect(screen.queryByText("Baustelle Müller")).not.toBeInTheDocument()
+    expect(await screen.findByText("Eingelagert")).toBeInTheDocument()
+    expect(screen.getByText("+3")).toBeInTheDocument()
+    expect(screen.getByText("von Max Mustermann")).toBeInTheDocument()
   })
 
-  it("shows empty state copy when no history entries exist", async () => {
+  it("renders withdrawn entries with a Baustelle link", async () => {
     server.use(
-      http.get("/api/v1/inventory/materials/mat-123/history", () =>
-        HttpResponse.json([])
+      http.get("/api/v1/inventory/materials/mat-123/history/enriched", () =>
+        HttpResponse.json([createHistoryEntry()])
       )
     )
 
     render(<InventoryDetailPage />)
 
-    expect(await screen.findByText("Noch keine Entnahmen erfasst")).toBeInTheDocument()
+    expect(await screen.findByText("Historie")).toBeInTheDocument()
+    expect(await screen.findByText("Entnommen")).toBeInTheDocument()
+    const siteLink = screen.getByRole("link", { name: "Baustelle Müller" })
+    expect(siteLink).toHaveAttribute("href", "/sites/site-1")
+  })
+
+  it("renders adjusted entries with the correction label", async () => {
+    server.use(
+      http.get("/api/v1/inventory/materials/mat-123/history/enriched", () =>
+        HttpResponse.json([
+          createHistoryEntry({
+            entry_type: "adjusted",
+            quantity_change: 2,
+            quantity_after: 50,
+            site_id: null,
+            site_name: null,
+          }),
+        ])
+      )
+    )
+
+    render(<InventoryDetailPage />)
+
+    expect(await screen.findByText("Bestand korrigiert")).toBeInTheDocument()
+  })
+
+  it("shows the enriched history empty state copy when no entries exist", async () => {
+    render(<InventoryDetailPage />)
+
+    expect(
+      await screen.findByText("Noch keine Materialbewegungen")
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        "Einlagerungen, Entnahmen und Korrekturen erscheinen hier, sobald die erste Änderung erfasst wurde."
+      )
+    ).toBeInTheDocument()
   })
 })
 
@@ -127,7 +162,7 @@ describe("InventoryDetailPage interactions", () => {
     let stockInPayload: unknown = null
 
     server.use(
-      http.get("/api/v1/inventory/materials/mat-123/history", () =>
+      http.get("/api/v1/inventory/materials/mat-123/history/enriched", () =>
         HttpResponse.json([])
       ),
       http.post("/api/v1/inventory/materials/mat-123/stock-in", async ({ request }) => {
@@ -160,7 +195,7 @@ describe("InventoryDetailPage interactions", () => {
     let adjustPayload: unknown = null
 
     server.use(
-      http.get("/api/v1/inventory/materials/mat-123/history", () =>
+      http.get("/api/v1/inventory/materials/mat-123/history/enriched", () =>
         HttpResponse.json([])
       ),
       http.patch("/api/v1/inventory/materials/mat-123", async ({ request }) => {
