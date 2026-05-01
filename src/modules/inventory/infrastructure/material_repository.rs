@@ -132,7 +132,13 @@ impl MaterialRepository {
         .bind(tenant_id.0)
         .fetch_optional(&self.pool)
         .await
-        .map_err(|e| AppError::Database(e.to_string()))?
+        .map_err(|e| {
+            if e.to_string().contains("unique") || e.to_string().contains("duplicate") {
+                AppError::Validation("Category with this name already exists".to_string())
+            } else {
+                AppError::Database(e.to_string())
+            }
+        })?
         .ok_or_else(|| AppError::NotFound("Category not found".to_string()))?;
 
         Ok(category.into_category())
@@ -147,7 +153,7 @@ impl MaterialRepository {
         let count: i64 = sqlx::query_scalar(
             r#"
             SELECT COUNT(*) FROM materials
-            WHERE category_id = $1 AND tenant_id = $2
+            WHERE category_id = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#
         )
         .bind(id.0)
@@ -161,6 +167,18 @@ impl MaterialRepository {
                 "Cannot delete category: materials still reference it".to_string()
             ));
         }
+
+        sqlx::query(
+            r#"
+            DELETE FROM materials
+            WHERE category_id = $1 AND tenant_id = $2 AND deleted_at IS NOT NULL
+            "#
+        )
+        .bind(id.0)
+        .bind(tenant_id.0)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
 
         let result = sqlx::query(
             r#"
@@ -1191,8 +1209,7 @@ impl SiteStockHistoryRow {
 
     #[test]
     fn delete_category_query_checks_material_count() {
-        // Verify the delete_category method exists and the SQL uses material count check
-        // This is a compile-time verification — the real test needs a database
+        // Verify active materials block deletion while deleted materials are purged first.
         let sql = r#"
             SELECT COUNT(*) FROM materials
             WHERE category_id = $1 AND tenant_id = $2 AND deleted_at IS NULL
