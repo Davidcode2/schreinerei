@@ -606,12 +606,18 @@ pub async fn get_site_material_history(
     auth: AuthenticatedUser,
     Path(site_id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
-    let repo = crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool);
+    let repo = crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool.clone());
+    let site_repo = crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool);
     let ctx = TenantContext::from_auth(&auth);
 
     let parsed_site_id = Uuid::parse_str(&site_id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+
+    site_repo
+        .find_site_by_id(ctx.tenant_id, parsed_site_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Site not found".to_string()))?;
 
     let entries = repo
         .list_stock_entries_for_site(parsed_site_id, ctx.tenant_id, 50)
