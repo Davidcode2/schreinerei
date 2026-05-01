@@ -2,13 +2,15 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
+use ts_rs::TS;
 
 use crate::common::types::{TenantId, MaterialId, UserId, SiteId};
 
 /// Entry type for stock history entries
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, sqlx::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS, sqlx::Type)]
 #[sqlx(type_name = "VARCHAR", rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub enum EntryType {
     Withdrawn,
     Adjusted,

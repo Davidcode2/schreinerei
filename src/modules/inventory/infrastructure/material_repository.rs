@@ -147,7 +147,7 @@ impl MaterialRepository {
         let count: i64 = sqlx::query_scalar(
             r#"
             SELECT COUNT(*) FROM materials
-            WHERE category_id = $1 AND tenant_id = $2 AND deleted_at IS NULL
+            WHERE category_id = $1 AND tenant_id = $2
             "#
         )
         .bind(id.0)

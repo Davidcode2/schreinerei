@@ -285,7 +285,7 @@ impl InventoryService {
         // Emit events for changed fields
         let local_user_id = self.resolve_local_user_id(ctx).await?;
 
-        if update.location.is_some() || update.clear_location == Some(true) {
+        if old_material.location != updated.location {
             let event = LocationChangedPayload {
                 material_id: updated.id,
                 material_name: updated.name.clone(),
@@ -296,7 +296,7 @@ impl InventoryService {
             self.material_repo.publish_event(&event).await?;
         }
 
-        if let Some(_) = update.min_quantity {
+        if old_material.min_quantity != updated.min_quantity {
             let event = MinQuantityChangedPayload {
                 material_id: updated.id,
                 material_name: updated.name.clone(),

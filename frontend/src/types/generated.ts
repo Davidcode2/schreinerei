@@ -46,7 +46,12 @@ export type CreateVehicleRequest = { name: string, license_plate: string | null,
 
 export type DashboardSiteResponse = { id: string, name: string, customer_name: string, location: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, assigned_users: bigint, total_hours: number, };
 
-export type EnrichedStockHistoryResponse = { id: string, material_id: string, user_id: string, user_name: string, entry_type: string, quantity_change: number, quantity_after: number, notes: string | null, site_id: string | null, site_name: string | null, category_name: string, created_at: string, };
+export type EnrichedStockHistoryResponse = { id: string, material_id: string, user_id: string, user_name: string, entry_type: EntryType, quantity_change: number, quantity_after: number, notes: string | null, site_id: string | null, site_name: string | null, category_name: string, created_at: string, };
+
+/**
+ * Entry type for stock history entries
+ */
+export type EntryType = "withdrawn" | "adjusted" | "material_added" | "location_changed" | "min_quantity_changed";
 
 export type FulfillOrderRequestDto = { actual_quantity: number, notes: string | null, };
 
