@@ -7,6 +7,7 @@ import type {
   Material,
   CreateMaterialRequest,
   CreateOrderRequestDto,
+  EnrichedStockHistoryEntry,
   MaterialStockHistoryEntry,
   OrderRequest,
   OrderStatusQuery,
@@ -90,6 +91,18 @@ export function useMaterialHistory(id: string) {
     queryFn: () =>
       apiClient.get<MaterialStockHistoryEntry[]>(
         `/api/v1/inventory/materials/${id}/history`
+      ),
+    enabled: !!id,
+    staleTime: 30000,
+  })
+}
+
+export function useEnrichedMaterialHistory(id: string) {
+  return useQuery({
+    queryKey: ["material-history-enriched", id],
+    queryFn: () =>
+      apiClient.get<EnrichedStockHistoryEntry[]>(
+        `/api/v1/inventory/materials/${id}/history/enriched`
       ),
     enabled: !!id,
     staleTime: 30000,
