@@ -587,7 +587,7 @@ impl SiteRepository {
         )
         .bind(attachment.id)
         .bind(tenant_id.0)
-        .bind(attachment.activity_id.0)
+        .bind(attachment.activity_id.map(|id| id.0))
         .bind(attachment.site_id.0)
         .bind(&attachment.storage_key)
         .bind(&attachment.thumbnail_key)
@@ -797,7 +797,7 @@ struct ActivityRow {
 struct AttachmentRow {
     id: Uuid,
     tenant_id: Uuid,
-    activity_id: Uuid,
+    activity_id: Option<Uuid>,
     site_id: Uuid,
     storage_key: String,
     thumbnail_key: String,
@@ -829,7 +829,7 @@ impl AttachmentRow {
         SiteActivityAttachment {
             id: self.id,
             tenant_id: TenantId(self.tenant_id),
-            activity_id: ActivityId(self.activity_id),
+            activity_id: self.activity_id.map(ActivityId),
             site_id: SiteId(self.site_id),
             storage_key: self.storage_key,
             thumbnail_key: self.thumbnail_key,

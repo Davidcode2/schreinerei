@@ -53,7 +53,7 @@ pub struct Activity {
 pub struct SiteActivityAttachment {
     pub id: uuid::Uuid,
     pub tenant_id: TenantId,
-    pub activity_id: ActivityId,
+    pub activity_id: Option<ActivityId>,
     pub site_id: SiteId,
     pub storage_key: String,
     pub thumbnail_key: String,
@@ -108,7 +108,7 @@ mod tests {
         let attachment = SiteActivityAttachment {
             id: uuid::Uuid::new_v4(),
             tenant_id: TenantId::new(),
-            activity_id: ActivityId::new(),
+            activity_id: Some(ActivityId::new()),
             site_id: SiteId::new(),
             storage_key: format!("{}.jpg", uuid::Uuid::new_v4()),
             thumbnail_key: format!("{}.jpg", uuid::Uuid::new_v4()),

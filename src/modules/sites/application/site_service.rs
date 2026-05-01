@@ -5,7 +5,7 @@ use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::sites::domain::{
     Site, TimeEntry, Activity, CreateSite, UpdateSite, CreateTimeEntry, UpdateTimeEntry, AssignUser, CreateActivity,
-    SiteCreatedPayload, SiteStatusChangedPayload, UserAssignedToSitePayload, TimeEntryCreatedPayload, ActivityType,
+    SiteCreatedPayload, SiteStatusChangedPayload, UserAssignedToSitePayload, TimeEntryCreatedPayload,
     SiteActivityAttachment,
 };
 use crate::modules::sites::infrastructure::site_repository::{SiteRepository, DashboardSite};
@@ -458,7 +458,6 @@ impl SiteService {
         Self::validate_upload_payload(&cmd.mime_type, cmd.original_bytes.len())?;
 
         let _site = self.get_site(cmd.site_id, ctx).await?;
-        let local_user_id = self.resolve_local_user_id(ctx).await?;
 
         let extension = Self::extension_for_mime(&cmd.mime_type)?;
         let original_key = format!("{}.{}", Uuid::new_v4(), extension);
@@ -466,19 +465,6 @@ impl SiteService {
         let thumbnail_bytes = Self::generate_thumbnail_bytes(&cmd.original_bytes, &cmd.mime_type)?;
 
         let attachment_id = Uuid::new_v4();
-        let activity = self
-            .site_repo
-            .create_activity(
-                ctx.tenant_id,
-                local_user_id,
-                &CreateActivity {
-                    site_id: cmd.site_id,
-                    activity_type: ActivityType::Photo,
-                    content: None,
-                    photo_url: Some("pending-upload".to_string()),
-                },
-            )
-            .await?;
 
         self.site_repo
             .create_activity_attachment(
@@ -486,7 +472,7 @@ impl SiteService {
                 &SiteActivityAttachment {
                     id: attachment_id,
                     tenant_id: ctx.tenant_id,
-                    activity_id: activity.id,
+                    activity_id: None,
                     site_id: cmd.site_id,
                     storage_key: original_key,
                     thumbnail_key,
@@ -500,9 +486,6 @@ impl SiteService {
             .await?;
 
         let (photo_url, thumbnail_url) = Self::build_attachment_urls(attachment_id);
-        self.site_repo
-            .update_activity_photo_url(ctx.tenant_id, activity.id, cmd.site_id, &photo_url)
-            .await?;
 
         Ok(UploadPhotoResult {
             attachment_id,
@@ -536,6 +519,12 @@ mod tests {
     }
 
     #[test]
+    fn upload_photo_rejects_empty_payload() {
+        let empty = SiteService::validate_upload_payload("image/jpeg", 0);
+        assert!(empty.is_err());
+    }
+
+    #[test]
     fn thumbnail_generation_produces_bounded_image() {
         let img = image::DynamicImage::new_rgb8(1200, 800);
         let mut bytes = std::io::Cursor::new(Vec::new());
@@ -556,5 +545,13 @@ mod tests {
         let (photo_url, thumb_url) = SiteService::build_attachment_urls(id);
         assert_eq!(photo_url, format!("/api/v1/attachments/{id}"));
         assert_eq!(thumb_url, format!("/api/v1/attachments/{id}/thumbnail"));
+    }
+
+    #[test]
+    fn upload_photo_urls_do_not_use_pending_marker() {
+        let id = uuid::Uuid::new_v4();
+        let (photo_url, thumb_url) = SiteService::build_attachment_urls(id);
+        assert!(!photo_url.contains("pending-upload"));
+        assert!(!thumb_url.contains("pending-upload"));
     }
 }
