@@ -1,3 +1,17 @@
+---
+gsd_state_version: 1.0
+milestone: v1.10
+milestone_name: Baustelle Activity Stream Features
+status: planning
+last_updated: "2026-05-01T15:30:00Z"
+progress:
+  total_phases: 4
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
+---
+
 # Project State
 
 ## Project Reference
