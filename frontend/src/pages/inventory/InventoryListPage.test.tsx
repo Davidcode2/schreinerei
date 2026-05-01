@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest"
-import { screen } from "@testing-library/react"
+import { screen, within } from "@testing-library/react"
 import { render } from "@/test/utils"
 import { mockData } from "@/test/mocks/handlers"
 import { createCategory } from "@/test/factories/category"
@@ -39,8 +39,9 @@ describe("InventoryListPage", () => {
   it("renders the category name directly under the material name", async () => {
     render(<InventoryListPage />)
 
-    expect(await screen.findByText("Multiplexplatte")).toBeInTheDocument()
-    expect(await screen.findByText("Holzwerkstoffe")).toBeInTheDocument()
-    expect(screen.getByText("Birke 18 mm")).toBeInTheDocument()
+    const materialLink = await screen.findByRole("link", { name: /multiplexplatte/i })
+
+    expect(within(materialLink).getByText("Holzwerkstoffe")).toBeInTheDocument()
+    expect(within(materialLink).getByText("Birke 18 mm")).toBeInTheDocument()
   })
 })

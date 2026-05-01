@@ -12,9 +12,10 @@ import type { Material } from "@/types/inventory"
 
 interface MaterialCardProps {
   material: Material
+  categoryName?: string
 }
 
-export function MaterialCard({ material }: MaterialCardProps) {
+export function MaterialCard({ material, categoryName }: MaterialCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const deleteMutation = useDeleteMaterial()
 
@@ -41,6 +42,11 @@ export function MaterialCard({ material }: MaterialCardProps) {
               </div>
               <div className="min-w-0">
                 <h3 className="font-semibold line-clamp-1">{material.name}</h3>
+                {categoryName && (
+                  <p className="mt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {categoryName}
+                  </p>
+                )}
                 {material.description && (
                   <p className="text-sm text-muted-foreground line-clamp-1">
                     {material.description}

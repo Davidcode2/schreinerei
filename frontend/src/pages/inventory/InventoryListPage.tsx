@@ -28,6 +28,10 @@ export default function InventoryListPage() {
     refetch,
   } = useMaterials(selectedCategory)
 
+  const categoryNames = new Map(
+    (categories ?? []).map((category) => [category.id, category.name])
+  )
+
   const filteredMaterials = materials?.filter((material: Material) =>
     material.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     material.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -121,7 +125,11 @@ export default function InventoryListPage() {
             {filteredMaterials.length} Material{filteredMaterials.length !== 1 ? "ien" : ""} gefunden
           </p>
           {filteredMaterials.map((material: Material) => (
-            <MaterialCard key={material.id} material={material} />
+            <MaterialCard
+              key={material.id}
+              material={material}
+              categoryName={categoryNames.get(material.category_id)}
+            />
           ))}
         </div>
       )}
