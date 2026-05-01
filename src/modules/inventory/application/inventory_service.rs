@@ -4,9 +4,11 @@ use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::inventory::domain::{
     Category, Material, CreateCategory, CreateMaterial, WithdrawMaterial, AdjustStock,
+    UpdateCategory, UpdateMaterial, StockIn,
     OrderRequest, OrderStatus, CreateOrderRequest, ApproveOrderRequest, FulfillOrderRequest,
     StockLowPayload, StockWithdrawnPayload, MaterialCreatedPayload, StockAdjustedPayload,
-    OrderRequestCreatedPayload,
+    OrderRequestCreatedPayload, MaterialAddedPayload, LocationChangedPayload, MinQuantityChangedPayload,
+    EnrichedStockEntry,
 };
 use crate::modules::inventory::infrastructure::MaterialRepository;
 use qrcode::render::svg;
@@ -68,6 +70,30 @@ impl InventoryService {
             .find_category_by_id(id, ctx.tenant_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Category not found".to_string()))
+    }
+
+    pub async fn update_category(
+        &self,
+        id: CategoryId,
+        update: UpdateCategory,
+        ctx: &TenantContext,
+    ) -> Result<Category, AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+        update.validate()?;
+        self.material_repo.update_category(id, &update, ctx.tenant_id).await
+    }
+
+    pub async fn delete_category(
+        &self,
+        id: CategoryId,
+        ctx: &TenantContext,
+    ) -> Result<(), AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+        self.material_repo.delete_category(id, ctx.tenant_id).await
     }
 
     // === Material operations ===
@@ -234,6 +260,98 @@ impl InventoryService {
         }
 
         Ok(material)
+    }
+
+    pub async fn update_material(
+        &self,
+        id: MaterialId,
+        update: UpdateMaterial,
+        ctx: &TenantContext,
+    ) -> Result<Material, AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+
+        update.validate()?;
+
+        // Record old values for events before update
+        let old_material = self.material_repo
+            .find_material_by_id(id, ctx.tenant_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
+
+        let updated = self.material_repo.update_material(id, &update, ctx.tenant_id).await?;
+
+        // Emit events for changed fields
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+
+        if update.location.is_some() || update.clear_location == Some(true) {
+            let event = LocationChangedPayload {
+                material_id: updated.id,
+                material_name: updated.name.clone(),
+                old_location: old_material.location.clone(),
+                new_location: updated.location.clone(),
+                changed_by: local_user_id,
+            }.into_event(ctx.tenant_id);
+            self.material_repo.publish_event(&event).await?;
+        }
+
+        if let Some(_) = update.min_quantity {
+            let event = MinQuantityChangedPayload {
+                material_id: updated.id,
+                material_name: updated.name.clone(),
+                old_min_quantity: old_material.min_quantity,
+                new_min_quantity: updated.min_quantity,
+                changed_by: local_user_id,
+            }.into_event(ctx.tenant_id);
+            self.material_repo.publish_event(&event).await?;
+        }
+
+        Ok(updated)
+    }
+
+    pub async fn stock_in(
+        &self,
+        stock_in: StockIn,
+        ctx: &TenantContext,
+    ) -> Result<Material, AppError> {
+        // StockIn available to all users — no admin check
+        stock_in.validate()?;
+
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+
+        let material = self.material_repo
+            .stock_in(
+                stock_in.material_id,
+                stock_in.quantity,
+                stock_in.notes.clone(),
+                local_user_id,
+                ctx.tenant_id,
+            )
+            .await?;
+
+        // Emit MaterialAdded event
+        let event = MaterialAddedPayload {
+            material_id: material.id,
+            material_name: material.name.clone(),
+            quantity_added: stock_in.quantity,
+            quantity_after: material.quantity,
+            added_by: local_user_id,
+            notes: stock_in.notes,
+        }.into_event(ctx.tenant_id);
+
+        self.material_repo.publish_event(&event).await?;
+
+        Ok(material)
+    }
+
+    pub async fn list_enriched_history(
+        &self,
+        material_id: MaterialId,
+        ctx: &TenantContext,
+    ) -> Result<Vec<EnrichedStockEntry>, AppError> {
+        // History visible to all users in the tenant
+        self.material_repo.list_enriched_stock_entries(material_id, ctx.tenant_id, 50).await
     }
 
     pub async fn list_low_stock(
