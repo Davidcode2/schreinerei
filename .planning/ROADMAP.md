@@ -25,7 +25,8 @@ Enhance the Baustelle activity stream with separate camera/document upload flows
   1. Camera button on activity stream opens native camera/gallery picker (not the document modal)
   2. User can attach an optional text note before submitting a camera upload
   3. Selected photo automatically attaches to the activity entry and appears in the feed
-**Plans**: TBD
+**Plans**: 1 plan
+- [ ] 30-01-PLAN.md — Create CameraUploadFlow component and wire into SiteDetailPage
 
 ### Phase 31: Document Upload Rework
 **Goal**: Users can create activity entries combining notes and file attachments in any combination
@@ -68,7 +69,7 @@ Phases 30 → 31 → 32 → 33 (Phase 32 depends on 30+31; Phase 33 is independe
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 30. Camera Upload Flow | 0/? | Not started | - |
+| 30. Camera Upload Flow | 0/1 | Ready to execute | - |
 | 31. Document Upload Rework | 0/? | Not started | - |
 | 32. Media Viewer | 0/? | Not started | - |
 | 33. Entry Management | 0/? | Not started | - |
