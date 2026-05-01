@@ -2,7 +2,7 @@
 
 export type ActivityQuery = { limit: number | null, };
 
-export type ActivityResponse = { id: string, site_id: string, user_id: string, activity_type: string, content: string | null, photo_url: string | null, attachments: Array<SiteActivityAttachmentResponse>, created_at: string, };
+export type ActivityResponse = { id: string, site_id: string, user_id: string, creator_name: string, activity_type: string, content: string | null, photo_url: string | null, attachments: Array<SiteActivityAttachmentResponse>, created_at: string, };
 
 export type AdjustStockRequest = { quantity: number, reason: string, };
 

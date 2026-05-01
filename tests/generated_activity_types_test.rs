@@ -23,6 +23,9 @@ fn generated_attachment_response_keeps_existing_viewer_fields() {
         "url: string",
         "thumbnail_url: string | null",
     ] {
-        assert!(generated.contains(field), "missing generated field: {field}");
+        assert!(
+            generated.contains(field),
+            "missing generated field: {field}"
+        );
     }
 }
