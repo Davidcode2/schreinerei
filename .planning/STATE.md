@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: milestone
 status: verifying
-last_updated: "2026-05-01T10:09:52.351Z"
+last_updated: "2026-05-01T10:35:19.637Z"
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 9
-  completed_plans: 7
-  percent: 78
+  total_plans: 10
+  completed_plans: 8
+  percent: 80
 ---
 
 # State: Schreinerei v1.8 Activity Feed & Site Status
@@ -33,7 +33,7 @@ Plan: 4 of 4
 **Next Action:** `/gsd-verify-phase 28`
 
 ```
-Progress: [████████░░] 78%
+Progress: [████████░░] 80%
 ```
 
 ## Active Context
@@ -68,6 +68,7 @@ Phase 29 — photo-upload-attachments
 | Phase 29 P02 | 27 min | 3 tasks | 6 files |
 | Phase 29 P03 | 6 min | 3 tasks | 7 files |
 | Phase 29 P04 | 20 min | 2 tasks | 8 files |
+| Phase 29 P05 | 2 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,8 @@ Phase 29 — photo-upload-attachments
 - [Phase 29]: ApiClient detects FormData and skips JSON serialization/headers for multipart uploads. — Multipart uploads fail when payloads are JSON-stringified or forced to application/json; FormData must pass through unchanged.
 - [Phase ?]: Queue photo uploads as data URLs — Ensures queued binary payload survives reload before replay
 - [Phase ?]: Validate queued photo payload before replay — Drops malformed payloads and prevents invalid upload attempts
+- [Phase 29]: Standardize multipart upload field to 'photo' in online and offline paths to match backend validation — Prevents 400 multipart field errors and keeps replay contract consistent
+- [Phase 29]: Add initialActivityType modal entrypoint for camera button — Ensures camera icon is a functional photo-first entry while preserving note flow
 
 ### Todos
 
@@ -103,7 +106,7 @@ None.
 
 ## Session Continuity
 
-**Last Session:** 2026-05-01T10:09:13.321Z
+**Last Session:** 2026-05-01T10:35:12.396Z
 **Handoff:** Phase 28 implemented, ready for verification
 
 **Key Files:**
