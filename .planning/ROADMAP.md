@@ -96,7 +96,7 @@ Plans:
 5. Offline photo capture is queued and syncs when connection restored
 6. File access is authorized by tenant_id preventing cross-tenant leakage
 
-**Plans:** 1/4 plans executed
+**Plans:** 2/4 plans executed
 
 Plans:
 - [ ] 29-01-PLAN.md — Add tenant-scoped attachment schema and secure attachment read endpoints
@@ -113,7 +113,7 @@ Plans:
 | 26. Status Change Workflow | 3/3 | ✅ Complete | 2026-05-01 |
 | 27. Tabbed Activity Feed | 2/2 | ✅ Complete | 2026-05-01 |
 | 28. Material History Tab | 3/3 | ✅ Complete | 2026-05-01 |
-| 29. Photo Upload & Attachments | 1/4 | In Progress|  |
+| 29. Photo Upload & Attachments | 2/4 | In Progress|  |
 
 ## Coverage Map
 

@@ -22,10 +22,10 @@
 
 ### File Attachments
 
-- [ ] **FILE-01**: User can upload photos via camera or gallery
+- [x] **FILE-01**: User can upload photos via camera or gallery
 - [ ] **FILE-02**: Image preview shown in activity feed
 - [x] **FILE-03**: Photos stored with UUID filenames (security)
-- [ ] **FILE-04**: Image thumbnails generated on upload
+- [x] **FILE-04**: Image thumbnails generated on upload
 - [ ] **FILE-05**: Offline photo capture queued for sync
 - [ ] **FILE-06**: Sync queue processes uploads when online
 - [x] **FILE-07**: File access authorized by tenant_id
@@ -84,10 +84,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HIST-03 | Phase 28 | Pending |
 | HIST-04 | Phase 28 | Pending |
 | HIST-05 | Phase 28 | Pending |
-| FILE-01 | Phase 29 | Pending |
+| FILE-01 | Phase 29 | Complete |
 | FILE-02 | Phase 29 | Pending |
 | FILE-03 | Phase 29 | Complete |
-| FILE-04 | Phase 29 | Pending |
+| FILE-04 | Phase 29 | Complete |
 | FILE-05 | Phase 29 | Pending |
 | FILE-06 | Phase 29 | Pending |
 | FILE-07 | Phase 29 | Complete |
