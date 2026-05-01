@@ -10,7 +10,7 @@
 
 - [x] **Phase 26: Status Change Workflow** - Site status transitions with modal UI and audit trail ✓ 2026-05-01
 - [x] **Phase 27: Tabbed Activity Feed** - Activity feed reorganization with tabs for notes and materials ✓ 2026-05-01
-- [ ] **Phase 28: Material History Tab** - Material extraction history linked to Baustellen
+- [x] **Phase 28: Material History Tab** - Material extraction history linked to Baustellen ✓ 2026-05-01
 - [x] **Phase 29: Photo Upload & Attachments** - Photo capture, storage infrastructure, and activity attachments (completed 2026-05-01)
 
 ## Phase Details
@@ -130,11 +130,11 @@ Plans:
 | FEED-02 | Phase 27 | ✅ Complete |
 | FEED-03 | Phase 27 | ✅ Complete |
 | FEED-04 | Phase 27 | ✅ Complete |
-| HIST-01 | Phase 28 | ✅ Complete |
-| HIST-02 | Phase 28 | ✅ Complete |
-| HIST-03 | Phase 28 | ✅ Complete |
-| HIST-04 | Phase 28 | ✅ Complete |
-| HIST-05 | Phase 28 | ✅ Complete |
+| HIST-01 | Phase 28 | ✅ Verified |
+| HIST-02 | Phase 28 | ✅ Verified |
+| HIST-03 | Phase 28 | ✅ Verified |
+| HIST-04 | Phase 28 | ✅ Verified |
+| HIST-05 | Phase 28 | ✅ Verified |
 | FILE-01 | Phase 29 | Pending |
 | FILE-02 | Phase 29 | Pending |
 | FILE-03 | Phase 29 | Pending |
@@ -147,4 +147,4 @@ Plans:
 
 *Roadmap created: 2026-05-01*
 *Last updated: 2026-05-01 after Phase 27 completion*
-*Next: `/gsd-execute-phase 29`*
+*Next: `/gsd-next` — milestone nearly complete*
