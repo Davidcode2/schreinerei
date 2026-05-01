@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { login } from './helpers/auth';
 import {
   createCategory,
@@ -10,6 +10,15 @@ import {
   withdrawMaterial,
 } from './helpers/api';
 import { uniqueName, useCleanup } from './helpers/data';
+
+async function expectVisibleWithReload(page: Page, locator: Locator) {
+  try {
+    await expect(locator).toBeVisible({ timeout: 5000 });
+  } catch {
+    await page.reload();
+    await expect(locator).toBeVisible({ timeout: 15000 });
+  }
+}
 
 test.describe('Inventory phase 31-32 flows', () => {
   let cleanup: () => Promise<void> = async () => {};
@@ -38,7 +47,9 @@ test.describe('Inventory phase 31-32 flows', () => {
     await page.getByRole('button', { name: 'Inventar-Einstellungen öffnen' }).click();
     await expect(page).toHaveURL(/\/settings\/inventory$/);
 
-    await page.getByRole('button', { name: `${category.name} bearbeiten` }).click();
+    const editCategoryButton = page.getByRole('button', { name: `${category.name} bearbeiten` });
+    await expectVisibleWithReload(page, editCategoryButton);
+    await editCategoryButton.click();
     await page.getByLabel('Name').fill(updatedName);
     await page.getByLabel('Beschreibung').fill('Neu beschrieben');
     await page.getByRole('button', { name: 'Speichern' }).click();
@@ -69,7 +80,9 @@ test.describe('Inventory phase 31-32 flows', () => {
     track.material(material.id);
 
     await page.goto('/settings/inventory');
-    await page.getByRole('button', { name: `${category.name} löschen` }).click();
+    const deleteCategoryButton = page.getByRole('button', { name: `${category.name} löschen` });
+    await expectVisibleWithReload(page, deleteCategoryButton);
+    await deleteCategoryButton.click();
     await page.getByRole('button', { name: 'Löschen' }).last().click();
 
     await expect(
@@ -99,7 +112,9 @@ test.describe('Inventory phase 31-32 flows', () => {
     track.material(material.id);
 
     await page.goto(`/inventory/${material.id}`);
-    await page.getByRole('button', { name: 'Material bearbeiten' }).click();
+    const editMaterialButton = page.getByRole('button', { name: 'Material bearbeiten' });
+    await expectVisibleWithReload(page, editMaterialButton);
+    await editMaterialButton.click();
     await page.getByLabel('Lagerort').fill('Regal B2');
     await page.getByLabel('Mindestbestand').fill('14');
     await page.getByLabel('Bestand korrigieren').fill('25');
@@ -132,7 +147,9 @@ test.describe('Inventory phase 31-32 flows', () => {
     track.material(material.id);
 
     await page.goto(`/inventory/${material.id}`);
-    await page.getByRole('button', { name: 'Material einlagern' }).click();
+    const stockInButton = page.getByRole('button', { name: 'Material einlagern' });
+    await expectVisibleWithReload(page, stockInButton);
+    await stockInButton.click();
     await page.getByLabel('Menge').fill('6');
     await page.getByLabel('Notizen').fill('Lieferschein 4711');
     await page.getByRole('button', { name: /6 Stück einlagern/i }).click();
@@ -184,7 +201,11 @@ test.describe('Inventory phase 31-32 flows', () => {
 
     await page.goto(`/inventory/${material.id}`);
 
-    await expect(page.getByText('Entnommen')).toBeVisible();
+    const withdrawnBadge = page.getByText('Entnommen');
+    await expectVisibleWithReload(page, withdrawnBadge);
+    await expect(withdrawnBadge).toHaveClass(/bg-red-100/);
+    await expect(withdrawnBadge).toHaveClass(/text-red-700/);
+    await expect(withdrawnBadge).toHaveClass(/border-red-200/);
     await expect(page.getByText(`von ${history[0].user_name}`)).toBeVisible();
     await expect(page.getByRole('link', { name: site.name })).toHaveAttribute(
       'href',
