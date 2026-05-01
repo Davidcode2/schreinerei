@@ -41,7 +41,7 @@
 - [x] **Phase 30: Backend API Foundation** — Domain commands, migration, and API endpoints for categories, material editing, stock-in, and enriched history (completed 2026-05-01)
 - [x] **Phase 31: Settings, Editing & Stock-In** — Category settings page, material edit dialog, stock-in dialog, and category on overview (completed 2026-05-01)
 - [x] **Phase 32: Enriched History** — Color-coded history feed with user attribution and clickable Baustelle links (completed 2026-05-01)
-- [ ] **Phase 33: Type Safety & Coverage** — ts-rs type generation, validation tests, and E2E tests
+- [x] **Phase 33: Type Safety & Coverage** — ts-rs type generation, validation tests, and E2E tests (completed 2026-05-01)
 
 ## Phase Details
 
@@ -99,7 +99,10 @@
   2. Backend validation tests cover category CRUD operations and FK constraint enforcement
   3. E2E tests verify settings page, stock-in dialog, and material edit flows end-to-end
   4. E2E tests verify history feed renders enriched entries with correct colors, attribution, and links
-**Plans**: TBD
+**Plans**: 3 plans
+- [x] 33-01-PLAN.md — Align inventory frontend DTO usage with ts-rs generated bindings and verify drift stays at zero
+- [x] 33-02-PLAN.md — Add backend validation coverage for inventory DTO semantics and category delete conflict guards
+- [x] 33-03-PLAN.md — Add API-verified Playwright coverage for settings, editing, stock-in, and enriched history
 
 ## Progress
 
@@ -111,9 +114,9 @@ Phases execute in numeric order: 30 → 31 → 32 → 33
 | 30. Backend API Foundation | v1.9 | 2/2 | Complete    | 2026-05-01 |
 | 31. Settings, Editing & Stock-In | v1.9 | 3/3 | Complete   | 2026-05-01 |
 | 32. Enriched History | v1.9 | 2/2 | Complete    | 2026-05-01 |
-| 33. Type Safety & Coverage | v1.9 | 0/? | Not started | - |
+| 33. Type Safety & Coverage | v1.9 | 3/3 | Complete   | 2026-05-01 |
 
 ---
 
 *Roadmap last updated: 2026-05-01*
-*Next: `/gsd-plan-phase 33`*
+*Next: `/gsd-execute-phase 33`*
