@@ -10,6 +10,18 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
+## Current Milestone: v1.8 Activity Feed & Site Status
+
+**Goal:** Bring Baustellen to life with status tracking, activity feeds, and linked material history.
+
+**Target features:**
+- Baustelle status workflow (geplant → aktiv → abgeschlossen) with modal
+- Activity feed with Notes/Documents and Materials tabs
+- Add notes with images/documents
+- Material extraction history with Baustelle links
+- Category display on material entries
+- Rename "aktiv" button to "Auswählen" (avoid confusion with status)
+
 ## Current State
 
 **v1.7 shipped on 2026-05-01.**
@@ -92,7 +104,13 @@ All v1.x requirements validated:
 
 ### Active
 
-Ready for next milestone planning. See `/gsd-new-milestone` to start.
+v1.8 Activity Feed & Site Status:
+- [ ] Site status management (geplant → aktiv → abgeschlossen)
+- [ ] Activity feed with tabs (Notes/Documents | Materials)
+- [ ] Add notes with images/documents
+- [ ] Material extraction history with Baustelle links
+- [ ] Category display on material entries
+- [ ] Rename "aktiv" to "Auswählen" button
 
 ### Future (v2.0+)
 
@@ -216,4 +234,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-05-01 after v1.7 milestone archived*
+*Last updated: 2026-05-01 after v1.8 milestone started*
