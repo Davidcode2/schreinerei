@@ -2,6 +2,50 @@
 
 ---
 
+## v1.8 Activity Feed & Site Status
+
+**Shipped:** 2026-05-01
+**Phases:** 4 | **Plans:** 11
+
+### Summary
+
+Brought Baustellen to life with status tracking, tabbed activity feeds, linked material history, and photo uploads with offline support.
+
+### Accomplishments
+
+1. Site status transitions via modal with backend validation and optimistic locking
+2. Tabbed activity feed (Notizen/Dokumente + Material) with note creation
+3. Material history tab showing live extraction data with category, extractor, and site links
+4. Photo uploads with multipart pipeline, UUID storage, and authenticated blob rendering
+5. Offline photo queue with data-URL persistence and reconnect sync
+6. Decoupled photo upload from activity creation with camera-first modal entry
+
+### Stats
+
+- **Timeline:** 1 day (2026-05-01)
+- **LOC:** ~12,133 Rust + ~11,619 TypeScript
+- **Requirements:** 21/21 verified (2 deferred runtime tests)
+
+### Key Decisions
+
+- Status change modal with valid transition buttons only
+- ActivityFeed displays status changes with arrow icon
+- Attachment API uses opaque UUID routes — no internal storage keys in public paths
+- Make activity_id nullable — upload stores bytes only, modal createActivity is the business event
+- Authenticated blob fetch for image rendering (no unauthenticated URLs)
+- Offline photo queue deferred to backlog (Phase 999.1)
+
+### Known Deferred Items
+
+1 offline test (photo queue replay on reconnect — broader offline support needed first)
+
+### Archives
+
+- `.planning/milestones/v1.8-ROADMAP.md`
+- `.planning/milestones/v1.8-REQUIREMENTS.md`
+
+---
+
 ## v1.6 User Experience & Missing Functionality
 
 **Shipped:** 2026-04-30

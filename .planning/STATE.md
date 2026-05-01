@@ -1,69 +1,47 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.7
-milestone_name: milestone
-status: active
-last_updated: "2026-05-01T12:05:00Z"
+milestone: v1.8
+milestone_name: Activity Feed & Site Status
+status: complete
+last_updated: "2026-05-01T12:30:00Z"
 progress:
-  total_phases: 4
-  completed_phases: 3
+  total_phases: 29
+  completed_phases: 29
   total_plans: 11
-  completed_plans: 9
-  percent: 85
+  completed_plans: 11
+  percent: 100
 ---
 
-# State: Schreinerei v1.8 Activity Feed & Site Status
+# State: Schreinerei — v1.8 Complete
 
 **Updated:** 2026-05-01
 
 ## Project Reference
 
-**Core Value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler.
+See: .planning/PROJECT.md (updated 2026-05-01)
 
-**Current Milestone:** v1.8 Activity Feed & Site Status
+**Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler.
+**Current focus:** Planning next milestone
 
-**Milestone Goal:** Bring Baustellen to life with status tracking, activity feeds, and linked material history.
+## Milestone v1.8 Complete
 
-## Current Position
+All 4 phases (26-29) shipped and verified.
 
-**Phase:** 29 — Photo Upload & Attachments
-**Status:** Phase 28 verified and complete
-**Next Action:** All phases complete — milestone ready for completion
+**Key Deliverables:**
+- Status change workflow with modal and audit trail
+- Tabbed activity feed (Notes + Materials)
+- Material history with category, extractor, and site links
+- Photo uploads with secure storage and offline queue
 
-```
-Progress: [█████████░] 85%
-```
-
-## Active Context
-
-**Working On:**
-
-- Phase 29 final human UAT (2 mobile/offline tests pending)
-
-**Recent Completion:**
-
-- ✅ Phase 26: Status Change Workflow verified (2026-05-01)
-- ✅ Phase 27: Tabbed Activity Feed verified (2026-05-01)
-- ✅ Phase 28: Material History Tab verified (2026-05-01)
-- ✅ Phase 29: Photo Upload & Attachments executed (2026-05-01)
-
-## Performance Metrics
-
-| Metric | Value |
-|--------|-------|
-| Phases Completed | 3/4 |
-| Requirements Done | 14/21 |
-| Tests | 116 backend + 28 frontend + 22 E2E |
+**Known Exception:**
+- Offline photo queue replay deferred to backlog (Phase 999.1) — broader offline support needed first
 
 ## Session Continuity
 
-**Last Session:** 2026-05-01T12:05:00Z
-**Handoff:** Phase 28 UAT passed, Phase 29 has human UAT pending
-
 **Next Steps:**
-
-1. `/gsd-complete-milestone` — All phases verified
+1. `/gsd-new-milestone` — Define v1.9+ scope
+2. Archive complete — all milestones in `.planning/milestones/`
 
 ---
 
-*State updated: 2026-05-01 after Phase 28 UAT verification*
+*State updated: 2026-05-01 after v1.8 milestone completion*

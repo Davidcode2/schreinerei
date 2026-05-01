@@ -10,30 +10,22 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## Current Milestone: v1.8 Activity Feed & Site Status
+## Current Milestone: Planning next milestone
 
-**Goal:** Bring Baustellen to life with status tracking, activity feeds, and linked material history.
-
-**Target features:**
-- Baustelle status workflow (geplant → aktiv → abgeschlossen) with modal
-- Activity feed with Notes/Documents and Materials tabs
-- Add notes with images/documents
-- Material extraction history with Baustelle links
-- Category display on material entries
-- Rename "aktiv" button to "Auswählen" (avoid confusion with status)
+**Next:** Define v1.9+ scope via `/gsd-new-milestone`
 
 ## Current State
 
-**v1.7 shipped on 2026-05-01.**
+**v1.8 shipped on 2026-05-01.**
 
-All v1.7 features working:
-- ✅ Active Baustelle indicator with hash-based colors
-- ✅ Toggle controls on sites overview and dashboard
-- ✅ Single active Baustelle per user (user-scoped)
-- ✅ Auto-prefill in material withdrawal, reservation, and time entry forms
-- ✅ Backend validation and auto-clear for invalid sites
-- ✅ Deduction history with linked Baustelle name
-- ✅ Full verification evidence and regression tests
+All v1.8 features working:
+- ✅ Baustelle status workflow (geplant → aktiv → abgeschlossen) with modal
+- ✅ Tabbed activity feed (Notizen/Dokumente + Material)
+- ✅ Material extraction history with Baustelle links and category display
+- ✅ Photo uploads with multipart pipeline, UUID storage, server-side thumbnails
+- ✅ Authenticated blob fetch for image rendering (no unauthenticated URLs)
+- ✅ Offline photo capture queue with reconnect sync (deferred runtime test)
+- ✅ Camera-first modal entry point for photo uploads
 
 ## Previous Milestones
 
@@ -53,6 +45,12 @@ All core features working:
 ### Validated
 
 All v1.x requirements validated:
+
+**v1.8 Activity Feed & Site Status (21 requirements):**
+- ✓ STAT-01 to STAT-05 — Status change workflow with modal, validation, and audit trail
+- ✓ FEED-01 to FEED-04 — Tabbed activity feed with note creation and pagination
+- ✓ HIST-01 to HIST-05 — Material history with category, extractor, and site links
+- ✓ FILE-01 to FILE-07 — Photo uploads with secure storage and offline queue
 
 **v1.7 Active Project Context (17 requirements):**
 - ✓ PREF-01, PREF-02, PREF-03 — User preferences with validation
@@ -104,13 +102,7 @@ All v1.x requirements validated:
 
 ### Active
 
-v1.8 Activity Feed & Site Status:
-- [ ] Site status management (geplant → aktiv → abgeschlossen)
-- [ ] Activity feed with tabs (Notes/Documents | Materials)
-- [ ] Add notes with images/documents
-- [ ] Material extraction history with Baustelle links
-- [ ] Category display on material entries
-- [ ] Rename "aktiv" to "Auswählen" button
+No active requirements — milestone v1.8 complete. Define next milestone via `/gsd-new-milestone`.
 
 ### Future (v2.0+)
 
@@ -134,22 +126,26 @@ v1.8 Activity Feed & Site Status:
 - CAD/CNC Integration (DXF, Bsolid) — Nicht kritisch für Pilot, später implementieren
 - Native Mobile App — PWA first, später React Native/Capacitor möglich
 - Öffentliche Website/Landing Page — Fokus auf App, Website später
-- Datenmigration — Pilot startet bei Null
+- Foto-Uploads und Dokument-Anhänge (nur Fotos in v1.8, Dokumente in v2.0+)
+- Rich Text Editor für Notizen (Plain Text für v1.8)
+- Echtzeit-WebSocket Sync (Polling reicht für MVP-Teamgrößen)
+- Video-Uploads (Speicher/Kosten, aufgeschoben)
 
 ## Context
 
 **Pilot-Kunde:** Eine Schreinerei wird als erster Kunde die Software testen.
 
 **Tech Stack:**
-- Backend: Rust, Axum 0.8, SQLx 0.8, PostgreSQL (~12,290 LOC)
-- Frontend: Vite 6, React 18, TypeScript, Tailwind CSS 4, shadcn/ui (~8,991 LOC)
+- Backend: Rust, Axum 0.8, SQLx 0.8, PostgreSQL (~12,133 LOC)
+- Frontend: Vite 6, React 18, TypeScript, Tailwind CSS 4, shadcn/ui (~11,619 LOC)
 - Auth: Keycloak with OAuth2 PKCE
 - Offline: Workbox, Dexie.js (IndexedDB)
 - Testing: Vitest, MSW, Playwright
 
 **Known Tech Debt:**
 - 24 issues documented in ISSUE-BACKLOG.md
-- No integration tests with real database (deferred to v1.6)
+- Offline photo queue replay not runtime-tested (deferred to backlog Phase 999.1)
+- No integration tests with real database (deferred to future milestone)
 - No rate limiting (infrastructure level)
 - Event polling vs pub/sub
 - No conflict resolution for offline edits
@@ -214,6 +210,12 @@ src/
 | Hash-based colors | Deterministic, no user decisions | ✓ v1.7 shipped |
 | JSONB preferences | Flexible schema evolution | ✓ v1.7 shipped |
 | FK-safe user mapping | Tenant-local user resolution | ✓ v1.7 shipped |
+| Status change modal with valid transitions | Controlled workflow, audit trail | ✓ v1.8 shipped |
+| ActivityFeed tabs (Notes + Materials) | Organized information display | ✓ v1.8 shipped |
+| "Auswählen" instead of "Aktiv" | Avoids confusion with status name | ✓ v1.8 shipped |
+| Opaque UUID attachment routes | No internal storage keys in URLs | ✓ v1.8 shipped |
+| Nullable activity_id for uploads | Decouple upload from activity creation | ✓ v1.8 shipped |
+| Authenticated blob fetch for images | No unauthenticated image URLs | ✓ v1.8 shipped |
 
 ## Evolution
 
@@ -234,4 +236,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-05-01 after v1.8 milestone started*
+*Last updated: 2026-05-01 after v1.8 milestone completion*
