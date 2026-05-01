@@ -21,15 +21,15 @@
 
 ### Media Viewer (VIEW)
 
-- [ ] **VIEW-01**: Click on image preview in feed opens fullscreen modal showing large image
-- [ ] **VIEW-02**: Click on document preview in feed opens fullscreen modal showing document
-- [ ] **VIEW-03**: Fullscreen modal has its own slug-based URL for direct linking and sharing
-- [ ] **VIEW-04**: Fullscreen modal displays note text alongside the media (to the right of image)
-- [ ] **VIEW-05**: Fullscreen modal shows timestamp and username of entry creator
-- [ ] **VIEW-06**: Fullscreen modal has download button to download the media file
-- [ ] **VIEW-07**: Fullscreen modal has share button to copy page link to clipboard
-- [ ] **VIEW-08**: Fullscreen modal has close button to return to activity feed
-- [ ] **VIEW-09**: Modal fills almost the entire screen for optimal media viewing
+- [x] **VIEW-01**: Click on image preview in feed opens fullscreen modal showing large image
+- [x] **VIEW-02**: Click on document preview in feed opens fullscreen modal showing document
+- [x] **VIEW-03**: Fullscreen modal has its own slug-based URL for direct linking and sharing
+- [x] **VIEW-04**: Fullscreen modal displays note text alongside the media (to the right of image)
+- [x] **VIEW-05**: Fullscreen modal shows timestamp and username of entry creator
+- [x] **VIEW-06**: Fullscreen modal has download button to download the media file
+- [x] **VIEW-07**: Fullscreen modal has share button to copy page link to clipboard
+- [x] **VIEW-08**: Fullscreen modal has close button to return to activity feed
+- [x] **VIEW-09**: Modal fills almost the entire screen for optimal media viewing
 
 ### Entry Management (ENTRY)
 
@@ -90,15 +90,15 @@
 | DOC-03 | 31 | Complete |
 | DOC-04 | 31 | Complete |
 | DOC-05 | 31 | Complete |
-| VIEW-01 | 32 | Pending |
-| VIEW-02 | 32 | Pending |
-| VIEW-03 | 32 | Pending |
-| VIEW-04 | 32 | Pending |
-| VIEW-05 | 32 | Pending |
-| VIEW-06 | 32 | Pending |
-| VIEW-07 | 32 | Pending |
-| VIEW-08 | 32 | Pending |
-| VIEW-09 | 32 | Pending |
+| VIEW-01 | 32 | Complete |
+| VIEW-02 | 32 | Complete |
+| VIEW-03 | 32 | Complete |
+| VIEW-04 | 32 | Complete |
+| VIEW-05 | 32 | Complete |
+| VIEW-06 | 32 | Complete |
+| VIEW-07 | 32 | Complete |
+| VIEW-08 | 32 | Complete |
+| VIEW-09 | 32 | Complete |
 | ENTRY-01 | 33 | Pending |
 | ENTRY-02 | 33 | Pending |
 | ENTRY-03 | 33 | Pending |

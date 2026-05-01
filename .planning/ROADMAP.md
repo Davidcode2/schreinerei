@@ -12,7 +12,7 @@ Enhance the Baustelle activity stream with separate camera/document upload flows
 
 - [x] **Phase 30: Camera Upload Flow** - Separate camera button from document modal with optional note (completed 2026-05-01)
 - [x] **Phase 31: Document Upload Rework** - Support note AND attachments in a single entry (all combinations) (completed 2026-05-01)
-- [ ] **Phase 32: Media Viewer** - Fullscreen viewer with slug URLs, metadata, download, and share
+- [x] **Phase 32: Media Viewer** - Fullscreen viewer with slug URLs, metadata, download, and share (completed 2026-05-01)
 - [ ] **Phase 33: Entry Management** - Delete own entries with confirmation
 
 ## Phase Details
@@ -62,7 +62,16 @@ Cross-cutting constraints:
   3. User can download the media file and copy a direct link to the entry
   4. Fullscreen modal has a unique slug-based URL for direct linking and sharing
   5. Modal fills nearly the entire screen with a close button to return to the feed
-**Plans**: TBD
+**Plans**: 3 plans
+
+Wave 1 *(viewer contract foundation)*
+- [x] 32-01-PLAN.md — Extend activity API contracts with creator display names for viewer metadata
+
+Wave 2 *(blocked on Wave 1 completion)*
+- [x] 32-02-PLAN.md — Add route-backed fullscreen viewer shell, deep links, share, and download actions
+
+Wave 3 *(blocked on Wave 2 completion)*
+- [x] 32-03-PLAN.md — Make feed image/PDF tiles open the fullscreen viewer accessibly
 
 ### Phase 33: Entry Management
 **Goal**: Users can delete their own activity entries with confirmation
@@ -83,5 +92,5 @@ Phases 30 → 31 → 32 → 33 (Phase 32 depends on 30+31; Phase 33 is independe
 |-------|----------------|--------|-----------|
 | 30. Camera Upload Flow | 1/1 | Complete    | 2026-05-01 |
 | 31. Document Upload Rework | 3/3 | Complete    | 2026-05-01 |
-| 32. Media Viewer | 0/? | Not started | - |
+| 32. Media Viewer | 3/3 | Complete   | 2026-05-01 |
 | 33. Entry Management | 0/? | Not started | - |
