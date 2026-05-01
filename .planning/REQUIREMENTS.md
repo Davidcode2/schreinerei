@@ -72,24 +72,30 @@ Deferred to future release.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CATS-01 | — | Pending |
-| CATS-02 | — | Pending |
-| CATS-03 | — | Pending |
-| EDIT-01 | — | Pending |
-| EDIT-02 | — | Pending |
-| EDIT-03 | — | Pending |
-| STOCK-01 | — | Pending |
-| STOCK-02 | — | Pending |
-| HIST-01 | — | Pending |
-| HIST-02 | — | Pending |
-| HIST-03 | — | Pending |
-| VIEW-01 | — | Pending |
+| CATS-01 | Phase 31 | Pending |
+| CATS-02 | Phase 31 | Pending |
+| CATS-03 | Phase 31 | Pending |
+| EDIT-01 | Phase 31 | Pending |
+| EDIT-02 | Phase 31 | Pending |
+| EDIT-03 | Phase 31 | Pending |
+| STOCK-01 | Phase 31 | Pending |
+| STOCK-02 | Phase 32 | Pending |
+| HIST-01 | Phase 32 | Pending |
+| HIST-02 | Phase 32 | Pending |
+| HIST-03 | Phase 32 | Pending |
+| VIEW-01 | Phase 31 | Pending |
 
 **Coverage:**
 - v1.9 requirements: 12 total
-- Mapped to phases: 0
-- Unmapped: 12 ⚠️
+- Mapped to phases: 12/12 ✓
+- Unmapped: 0
+
+**Mapping rationale:**
+- **Phase 30** (Backend API Foundation): Enabler phase — builds API endpoints and migration that Phase 31-32 depend on. No v1 requirements mapped directly.
+- **Phase 31** (Settings, Editing & Stock-In): Frontend surfaces for category management, material editing, stock-in recording, and overview display. 8 requirements become observable here.
+- **Phase 32** (Enriched History): Visual history enhancements — color-coding, user attribution, clickable links. 4 requirements become observable here. STOCK-02 maps here because stock-in entries are only visible in the enriched history feed.
+- **Phase 33** (Type Safety & Coverage): Quality gate — ts-rs type generation and test coverage. No v1 requirements mapped directly (validates Phase 30-32).
 
 ---
 *Requirements defined: 2026-05-01*
-*Last updated: 2026-05-01 after initial definition*
+*Last updated: 2026-05-01 — traceability updated with phase mappings*
