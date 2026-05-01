@@ -556,4 +556,17 @@ mod tests {
         assert!(!photo_url.contains("pending-upload"));
         assert!(!thumb_url.unwrap_or_default().contains("pending-upload"));
     }
+
+    #[test]
+    fn document_attachment_upload_accepts_pdf_payload() {
+        let result = SiteService::validate_upload_payload("application/pdf", 1024);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn document_attachment_upload_skips_thumbnail_for_pdf() {
+        let id = uuid::Uuid::new_v4();
+        let (_url, thumbnail_url) = SiteService::build_attachment_urls(id, "application/pdf");
+        assert!(thumbnail_url.is_none());
+    }
 }
