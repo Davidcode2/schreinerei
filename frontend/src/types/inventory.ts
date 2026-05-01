@@ -16,6 +16,11 @@ export interface CreateCategoryRequest {
   description?: string
 }
 
+export interface UpdateCategoryRequest {
+  name?: string
+  description?: string
+}
+
 // === Material ===
 
 export interface Material {
@@ -39,6 +44,23 @@ export interface MaterialStockHistoryEntry {
   notes: string | null
   site_id: string | null
   site_name: string | null
+  created_at: string
+}
+
+export type EntryType = 'withdrawn' | 'adjusted' | 'material_added' | 'location_changed' | 'min_quantity_changed'
+
+export interface EnrichedStockHistoryEntry {
+  id: string
+  material_id: string
+  user_id: string
+  user_name: string
+  entry_type: EntryType
+  quantity_change: number
+  quantity_after: number
+  notes: string | null
+  site_id: string | null
+  site_name: string | null
+  category_name: string
   created_at: string
 }
 
@@ -66,6 +88,12 @@ export interface CreateMaterialRequest {
   location?: string
 }
 
+export interface UpdateMaterialRequest {
+  location?: string
+  min_quantity?: number
+  clear_location?: boolean
+}
+
 export interface WithdrawRequest {
   quantity: number
   notes?: string
@@ -75,6 +103,11 @@ export interface WithdrawRequest {
 export interface AdjustStockRequest {
   quantity: number
   reason: string
+}
+
+export interface StockInRequest {
+  quantity: number
+  notes?: string
 }
 
 export interface ListMaterialsQuery {
