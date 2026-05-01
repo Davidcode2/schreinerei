@@ -96,7 +96,7 @@ Plans:
 5. Offline photo capture is queued and syncs when connection restored
 6. File access is authorized by tenant_id preventing cross-tenant leakage
 
-**Plans:** 5/5 plans complete
+**Plans:** 6/6 plans complete
 
 Plans:
 - [ ] 29-01-PLAN.md — Add tenant-scoped attachment schema and secure attachment read endpoints
@@ -104,6 +104,7 @@ Plans:
 - [ ] 29-03-PLAN.md — Wire frontend camera/gallery upload flow and activity feed image previews
 - [ ] 29-04-PLAN.md — Add offline photo queueing and reconnect sync processing
 - [ ] 29-05-PLAN.md — Close multipart field mismatch and wire functional photo icon entrypoint
+- [ ] 29-06-PLAN.md — Gap closure: remove duplicate photo activity creation and fix authenticated attachment preview loading
 
 ---
 
@@ -114,7 +115,7 @@ Plans:
 | 26. Status Change Workflow | 3/3 | ✅ Complete | 2026-05-01 |
 | 27. Tabbed Activity Feed | 2/2 | ✅ Complete | 2026-05-01 |
 | 28. Material History Tab | 3/3 | ✅ Complete | 2026-05-01 |
-| 29. Photo Upload & Attachments | 5/5 | Complete   | 2026-05-01 |
+| 29. Photo Upload & Attachments | 6/6 | Complete   | 2026-05-01 |
 
 ## Coverage Map
 

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: milestone
 status: verifying
-last_updated: "2026-05-01T10:35:19.637Z"
+last_updated: "2026-05-01T11:11:53.334Z"
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 10
-  completed_plans: 8
-  percent: 80
+  total_plans: 11
+  completed_plans: 9
+  percent: 82
 ---
 
 # State: Schreinerei v1.8 Activity Feed & Site Status
@@ -33,7 +33,7 @@ Plan: 4 of 4
 **Next Action:** `/gsd-verify-phase 28`
 
 ```
-Progress: [████████░░] 80%
+Progress: [████████░░] 82%
 ```
 
 ## Active Context
@@ -69,6 +69,7 @@ Phase 29 — photo-upload-attachments
 | Phase 29 P03 | 6 min | 3 tasks | 7 files |
 | Phase 29 P04 | 20 min | 2 tasks | 8 files |
 | Phase 29 P05 | 2 min | 2 tasks | 7 files |
+| Phase 29 P06 | 31 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,8 @@ Phase 29 — photo-upload-attachments
 - [Phase ?]: Validate queued photo payload before replay — Drops malformed payloads and prevents invalid upload attempts
 - [Phase 29]: Standardize multipart upload field to 'photo' in online and offline paths to match backend validation — Prevents 400 multipart field errors and keeps replay contract consistent
 - [Phase 29]: Add initialActivityType modal entrypoint for camera button — Ensures camera icon is a functional photo-first entry while preserving note flow
+- [Phase 29]: Make `site_activity_attachments.activity_id` nullable and remove upload-side implicit activity creation — Upload endpoint now stores attachment bytes only; modal createActivity is the single business event path.
+- [Phase 29]: Render protected attachment previews via authenticated blob fetch (`apiClient.getBlob`) and object URLs — Prevents browser 401s from unauthenticated direct image requests.
 
 ### Todos
 
@@ -106,7 +109,7 @@ None.
 
 ## Session Continuity
 
-**Last Session:** 2026-05-01T10:35:12.396Z
+**Last Session:** 2026-05-01T11:11:53.324Z
 **Handoff:** Phase 28 implemented, ready for verification
 
 **Key Files:**
