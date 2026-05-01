@@ -35,6 +35,21 @@ const DELETE_CONFIRMATION =
   "Möchten Sie diese Kategorie wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
 const BLOCKED_DELETE_MESSAGE =
   "Kategorie konnte nicht gelöscht werden. Entfernen oder verschieben Sie zuerst alle Materialien dieser Kategorie und versuchen Sie es dann erneut."
+const BLOCKED_DELETE_PREFIX = "Cannot delete category:"
+
+function getDeleteConflictMessage(error: Error) {
+  const message = error.message.trim()
+
+  if (
+    message === "Cannot delete category: material history must be preserved" ||
+    message === "Cannot delete category: materials still reference it" ||
+    message.startsWith(BLOCKED_DELETE_PREFIX)
+  ) {
+    return BLOCKED_DELETE_MESSAGE
+  }
+
+  return message
+}
 
 export default function InventorySettingsPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
@@ -111,7 +126,7 @@ export default function InventorySettingsPage() {
       onError: (error) => {
         setConflictMessages((current) => ({
           ...current,
-          [deleteCategoryId]: error.message || BLOCKED_DELETE_MESSAGE,
+          [deleteCategoryId]: getDeleteConflictMessage(error),
         }))
         setDeleteCategoryId(null)
       },
