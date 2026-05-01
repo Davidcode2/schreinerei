@@ -37,13 +37,21 @@ export function CameraUploadFlow({
 
   useEffect(() => {
     if (open && !pickerTriggered) {
-      setTimeout(() => fileInputRef.current?.click(), 50)
+      requestAnimationFrame(() => fileInputRef.current?.click())
       setPickerTriggered(true)
     }
     if (!open) {
       setPickerTriggered(false)
     }
   }, [open, pickerTriggered])
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
+    }
+  }, [previewUrl])
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -52,9 +60,17 @@ export function CameraUploadFlow({
       return
     }
 
+    if (!file.type.startsWith("image/")) {
+      toast.error("Bitte wählen Sie eine Bilddatei aus")
+      onOpenChange(false)
+      return
+    }
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+    }
     setSelectedFile(file)
-    const url = URL.createObjectURL(file)
-    setPreviewUrl(url)
+    setPreviewUrl(URL.createObjectURL(file))
   }
 
   const handleSubmit = async () => {

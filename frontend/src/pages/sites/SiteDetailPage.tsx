@@ -60,7 +60,7 @@ export default function SiteDetailPage() {
 
   const totalHours = timeEntries?.reduce((sum, e) => sum + e.hours, 0) || 0
 
-  const openPhotoModal = () => {
+  const openCameraFlow = () => {
     setShowCameraFlow(true)
   }
 
@@ -201,7 +201,7 @@ export default function SiteDetailPage() {
                 variant="outline"
                 size="sm"
                 title="Foto hinzufügen"
-                onClick={openPhotoModal}
+                onClick={openCameraFlow}
               >
                 <Camera className="h-4 w-4" />
               </Button>
