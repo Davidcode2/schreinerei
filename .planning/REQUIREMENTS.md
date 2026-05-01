@@ -1,0 +1,113 @@
+# Requirements: Schreinerei
+
+**Defined:** 2026-05-01
+**Core Value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler.
+
+## v1 Requirements
+
+### Camera Upload (CAM)
+
+- [ ] **CAM-01**: Camera button on activity stream opens native camera/gallery picker (not document modal)
+- [ ] **CAM-02**: User can add an optional text note when uploading via camera flow
+- [ ] **CAM-03**: Camera upload automatically attaches selected image to activity entry
+
+### Document Upload (DOC)
+
+- [ ] **DOC-01**: Document modal supports note AND attachment(s) in a single entry (currently note OR image)
+- [ ] **DOC-02**: User can upload one or more PDFs as attachments (with optional note)
+- [ ] **DOC-03**: User can upload one or more images as attachments (with optional note)
+- [ ] **DOC-04**: User can create an entry with attachment-only (no note text required)
+- [ ] **DOC-05**: Document modal accepts both PDF and image file types with appropriate validation
+
+### Media Viewer (VIEW)
+
+- [ ] **VIEW-01**: Click on image preview in feed opens fullscreen modal showing large image
+- [ ] **VIEW-02**: Click on document preview in feed opens fullscreen modal showing document
+- [ ] **VIEW-03**: Fullscreen modal has its own slug-based URL for direct linking and sharing
+- [ ] **VIEW-04**: Fullscreen modal displays note text alongside the media (to the right of image)
+- [ ] **VIEW-05**: Fullscreen modal shows timestamp and username of entry creator
+- [ ] **VIEW-06**: Fullscreen modal has download button to download the media file
+- [ ] **VIEW-07**: Fullscreen modal has share button to copy page link to clipboard
+- [ ] **VIEW-08**: Fullscreen modal has close button to return to activity feed
+- [ ] **VIEW-09**: Modal fills almost the entire screen for optimal media viewing
+
+### Entry Management (ENTRY)
+
+- [ ] **ENTRY-01**: User can delete their own activity entries (creator-only permission)
+- [ ] **ENTRY-02**: Delete action shows confirmation dialog before removing entry
+- [ ] **ENTRY-03**: Deletion removes entry and associated attachments from feed
+
+## v2 Requirements
+
+### Integration Tests
+
+- **INT-01**: Integration tests with real PostgreSQL for inventory module
+- **INT-02**: Integration tests for sites module
+- **INT-03**: Integration tests for fleet module
+- **INT-04**: Multi-tenant isolation tests for all modules
+
+### Inventory Features (deferred from v1.9)
+
+- **INVT-10**: Category editing via inventory settings page
+- **INVT-11**: Edit inventory item location and minimum quantity
+- **INVT-12**: Set available quantity to arbitrary number
+- **INVT-13**: "Material einlagern" (stock in) action with modal
+- **INVT-14**: Extended inventory history with user attribution
+- **INVT-15**: Clickable Baustelle links in history events
+- **INVT-16**: Category display on inventory overview
+
+### Self-Service Registration
+
+- **SS-01**: Public website with organization registration
+- **SS-02**: Self-service organization creation flow
+- **SS-03**: Organization admin dashboard
+- **SS-04**: Member invitation via email
+- **EXT-01**: Organization identity provider support
+- **EXT-02**: Multi-organization user support
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| RFID Hardware-Integration | Hardware nicht vorhanden, später ergänzen |
+| CAD/CNC Integration (DXF, Bsolid) | Nicht kritisch für Pilot, später implementieren |
+| Native Mobile App | PWA first, später React Native/Capacitor möglich |
+| Öffentliche Website/Landing Page | Fokus auf App, Website später |
+| Rich Text Editor für Notizen | Plain Text für jetzt, später erweitern |
+| Echtzeit-WebSocket Sync | Polling reicht für MVP-Teamgrößen |
+| Video-Uploads | Speicher/Kosten, aufgeschoben |
+| Offline photo queue replay test | Deferred to backlog (Phase 999.1) |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CAM-01 | — | Pending |
+| CAM-02 | — | Pending |
+| CAM-03 | — | Pending |
+| DOC-01 | — | Pending |
+| DOC-02 | — | Pending |
+| DOC-03 | — | Pending |
+| DOC-04 | — | Pending |
+| DOC-05 | — | Pending |
+| VIEW-01 | — | Pending |
+| VIEW-02 | — | Pending |
+| VIEW-03 | — | Pending |
+| VIEW-04 | — | Pending |
+| VIEW-05 | — | Pending |
+| VIEW-06 | — | Pending |
+| VIEW-07 | — | Pending |
+| VIEW-08 | — | Pending |
+| VIEW-09 | — | Pending |
+| ENTRY-01 | — | Pending |
+| ENTRY-02 | — | Pending |
+| ENTRY-03 | — | Pending |
+
+**Coverage:**
+- v1 requirements: 20 total
+- Mapped to phases: 0 ⚠️
+- Unmapped: 20 ⚠️
+
+---
+*Requirements defined: 2026-05-01*
+*Last updated: 2026-05-01 after initial definition*
