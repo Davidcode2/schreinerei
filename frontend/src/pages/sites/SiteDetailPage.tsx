@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,7 +10,7 @@ import {
   Camera,
   FileText,
 } from "lucide-react"
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import {
   PageHeader,
   LoadingSpinner,
@@ -23,6 +23,8 @@ import { ActivityFeed } from "./ActivityFeed"
 import { StatusChangeModal } from "./StatusChangeModal"
 import { CreateNoteModal } from "./CreateNoteModal"
 import { CameraUploadFlow } from "./CameraUploadFlow"
+import { MediaViewer } from "./MediaViewer"
+import { buildSiteDetailPath, resolveMediaViewerTarget } from "./mediaViewerRoute"
 
 function formatDate(date: string | null): string {
   if (!date) return "-"
@@ -34,7 +36,13 @@ function formatDate(date: string | null): string {
 }
 
 export default function SiteDetailPage() {
-  const { id } = useParams<{ id: string }>()
+  const { id, activityId, attachmentId } = useParams<{
+    id: string
+    activityId?: string
+    attachmentId?: string
+    slug?: string
+  }>()
+  const navigate = useNavigate()
   const [showTimeDialog, setShowTimeDialog] = useState(false)
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [showNoteModal, setShowNoteModal] = useState(false)
@@ -44,6 +52,11 @@ export default function SiteDetailPage() {
   const { data: activities, refetch: refetchActivities } = useActivities(id!)
   const { data: timeEntries } = useTimeEntries(id!)
   const { data: assignments } = useSiteAssignments(id!)
+
+  const viewerTarget = useMemo(
+    () => resolveMediaViewerTarget(activities || [], activityId, attachmentId),
+    [activities, activityId, attachmentId]
+  )
 
   if (isLoading) {
     return <LoadingSpinner className="min-h-[400px]" size="lg" />
@@ -249,6 +262,12 @@ export default function SiteDetailPage() {
         onOpenChange={setShowCameraFlow}
         siteId={site.id}
         onSuccess={() => refetchActivities()}
+      />
+
+      <MediaViewer
+        open={Boolean(activityId && attachmentId)}
+        target={viewerTarget}
+        onClose={() => navigate(buildSiteDetailPath(site.id))}
       />
     </div>
   )

@@ -68,6 +68,7 @@ function AppRoutes() {
                 {/* Sites */}
                 <Route path="/sites" element={<SitesListPage />} />
                 <Route path="/sites/:id" element={<SiteDetailPage />} />
+                <Route path="/sites/:id/media/:activityId/:attachmentId/:slug?" element={<SiteDetailPage />} />
 
                 {/* Fleet */}
                 <Route path="/fleet" element={<FleetPage />} />

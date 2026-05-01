@@ -94,7 +94,7 @@ export interface UpdateTimeEntryRequest {
 
 // === Activity ===
 
-export type ActivityType = 'photo' | 'note'
+export type ActivityType = 'photo' | 'note' | 'status_change'
 
 export interface ActivityAttachment {
   attachment_id: string
@@ -108,6 +108,7 @@ export interface Activity {
   id: string
   site_id: string
   user_id: string
+  creator_name: string
   activity_type: ActivityType
   content: string | null
   photo_url: string | null
