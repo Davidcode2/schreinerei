@@ -150,12 +150,7 @@ impl MaterialRepository {
         tenant_id: TenantId,
     ) -> Result<(), AppError> {
         // Check if any materials reference this category
-        let count: i64 = sqlx::query_scalar(
-            r#"
-            SELECT COUNT(*) FROM materials
-            WHERE category_id = $1 AND tenant_id = $2
-            "#
-        )
+        let count: i64 = sqlx::query_scalar(Self::delete_category_conflict_count_query())
         .bind(id.0)
         .bind(tenant_id.0)
         .fetch_one(&self.pool)
@@ -190,6 +185,13 @@ impl MaterialRepository {
         }
 
         Ok(())
+    }
+
+    fn delete_category_conflict_count_query() -> &'static str {
+        r#"
+            SELECT COUNT(*) FROM materials
+            WHERE category_id = $1 AND tenant_id = $2
+            "#
     }
 
     // === Material operations ===
@@ -1198,12 +1200,16 @@ impl SiteStockHistoryRow {
     #[test]
     fn delete_category_query_checks_material_count() {
         // Verify deletion is blocked when any material row still exists for history preservation.
-        let sql = r#"
-            SELECT COUNT(*) FROM materials
-            WHERE category_id = $1 AND tenant_id = $2
-            "#;
+        let sql = MaterialRepository::delete_category_conflict_count_query();
         assert!(sql.contains("category_id"));
         assert!(!sql.contains("deleted_at IS NULL"));
+    }
+
+    #[test]
+    fn delete_category_query_keeps_tenant_scoping() {
+        let sql = MaterialRepository::delete_category_conflict_count_query();
+        assert!(sql.contains("tenant_id = $2"));
+        assert!(sql.contains("COUNT(*)"));
     }
 }
 

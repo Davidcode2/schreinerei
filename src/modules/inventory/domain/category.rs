@@ -97,6 +97,15 @@ mod tests {
         assert_eq!(cmd.validate(), Err("Category name too long (max 100 chars)".to_string()));
     }
 
+    #[test]
+    fn create_category_validate_succeeds_with_description() {
+        let cmd = CreateCategory {
+            name: "Beschläge".to_string(),
+            description: Some("Schubladenauszüge".to_string()),
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
     // === UpdateCategory tests ===
 
     #[test]
@@ -122,6 +131,15 @@ mod tests {
         let cmd = UpdateCategory {
             name: None,
             description: Some("".to_string()),
+        };
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn update_category_validate_succeeds_with_name_and_description() {
+        let cmd = UpdateCategory {
+            name: Some("Plattenwerkstoffe".to_string()),
+            description: Some("Lager Nord".to_string()),
         };
         assert!(cmd.validate().is_ok());
     }
