@@ -2,6 +2,49 @@
 
 ---
 
+## v1.11 Fleet Calendar on Fleet Page
+
+**Shipped:** 2026-05-01
+**Phases:** 3 | **Plans:** 5
+
+### Summary
+
+Brought the fleet booking experience into `/fleet` with explicit two-tap range selection, bottom-sheet confirmation, visible reservation context, and stable per-resource color accents.
+
+### Accomplishments
+
+1. Embedded the fleet calendar directly on `/fleet` above the existing fleet lists
+2. Replaced first-tap instant booking with a two-tap date-range reservation flow
+3. Added same-day range support, sorted reverse-order selection, and cancel/reset behavior
+4. Added a bottom confirmation sheet with optional time entry
+5. Preserved reservation visibility during selection and introduced deterministic resource colors
+6. Removed the standalone `/fleet/calendar` entry path so `/fleet` is now the primary booking route
+
+### Stats
+
+- **Timeline:** Same day (2026-05-01)
+- **Requirements:** 13/13 complete
+- **Milestone work:** 3 phases, 5 plans, 8 tasks
+- **Verification:** Phase 35 and 36 code verification passed; human UX checks approved before close
+
+### Key Decisions
+
+- Embedded-first booking flow instead of maintaining a separate primary calendar page
+- Two-tap range selection instead of first-tap modal booking
+- Bottom confirmation sheet to keep the calendar visible while confirming
+- Deterministic frontend identity-based resource colors instead of backend-managed color state
+
+### Known Deferred Items
+
+1 debug session, 1 pending todo, and 3 dormant seeds were acknowledged at close. See `.planning/STATE.md` Deferred Items.
+
+### Archives
+
+- `.planning/milestones/v1.11-ROADMAP.md`
+- `.planning/milestones/v1.11-REQUIREMENTS.md`
+
+---
+
 ## v1.8 Activity Feed & Site Status
 
 **Shipped:** 2026-05-01
