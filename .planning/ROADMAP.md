@@ -96,7 +96,13 @@ Plans:
 5. Offline photo capture is queued and syncs when connection restored
 6. File access is authorized by tenant_id preventing cross-tenant leakage
 
-**Plans:** TBD
+**Plans:** 1/4 plans executed
+
+Plans:
+- [ ] 29-01-PLAN.md — Add tenant-scoped attachment schema and secure attachment read endpoints
+- [ ] 29-02-PLAN.md — Implement multipart photo upload pipeline with UUID filenames and thumbnail generation
+- [ ] 29-03-PLAN.md — Wire frontend camera/gallery upload flow and activity feed image previews
+- [ ] 29-04-PLAN.md — Add offline photo queueing and reconnect sync processing
 
 ---
 
@@ -107,7 +113,7 @@ Plans:
 | 26. Status Change Workflow | 3/3 | ✅ Complete | 2026-05-01 |
 | 27. Tabbed Activity Feed | 2/2 | ✅ Complete | 2026-05-01 |
 | 28. Material History Tab | 3/3 | ✅ Complete | 2026-05-01 |
-| 29. Photo Upload & Attachments | 0/4 | Not started | - |
+| 29. Photo Upload & Attachments | 1/4 | In Progress|  |
 
 ## Coverage Map
 
@@ -139,4 +145,4 @@ Plans:
 
 *Roadmap created: 2026-05-01*
 *Last updated: 2026-05-01 after Phase 27 completion*
-*Next: `/gsd-plan-phase 28`*
+*Next: `/gsd-execute-phase 29`*
