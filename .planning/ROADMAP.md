@@ -135,16 +135,27 @@ Plans:
 | HIST-03 | Phase 28 | ✅ Verified |
 | HIST-04 | Phase 28 | ✅ Verified |
 | HIST-05 | Phase 28 | ✅ Verified |
-| FILE-01 | Phase 29 | Pending |
-| FILE-02 | Phase 29 | Pending |
-| FILE-03 | Phase 29 | Pending |
-| FILE-04 | Phase 29 | Pending |
-| FILE-05 | Phase 29 | Pending |
-| FILE-06 | Phase 29 | Pending |
-| FILE-07 | Phase 29 | Pending |
+| FILE-01 | Phase 29 | ✅ Verified |
+| FILE-02 | Phase 29 | ✅ Verified |
+| FILE-03 | Phase 29 | ✅ Verified |
+| FILE-04 | Phase 29 | ✅ Verified |
+| FILE-05 | Phase 29 | ✅ Verified |
+| FILE-06 | Phase 29 | ✅ Verified |
+| FILE-07 | Phase 29 | ✅ Verified |
+
+---
+
+## Backlog
+
+### Phase 999.1: Offline Photo Queue Replay
+
+**Goal:** Test and validate offline photo queue replay after reconnect
+**Source phase:** 29
+**Deferred at:** 2026-05-01 during Phase 29 UAT
+**Note:** Offline functionality is largely unimplemented; offline queue replay for photos cannot be tested until broader offline support exists.
 
 ---
 
 *Roadmap created: 2026-05-01*
-*Last updated: 2026-05-01 after Phase 27 completion*
-*Next: `/gsd-next` — milestone nearly complete*
+*Last updated: 2026-05-01 after Phase 28+29 verification*
+*Next: `/gsd-complete-milestone`*
