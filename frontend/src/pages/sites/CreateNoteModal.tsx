@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { useCreateActivity } from "@/lib/api/hooks"
+import { useCreateActivity, useUploadSitePhoto } from "@/lib/api/hooks"
 import { toast } from "sonner"
 
 interface CreateNoteModalProps {
@@ -26,35 +26,65 @@ export function CreateNoteModal({
   onSuccess,
 }: CreateNoteModalProps) {
   const [content, setContent] = useState("")
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [activityType, setActivityType] = useState<"note" | "photo">("note")
   const createActivity = useCreateActivity()
+  const uploadPhoto = useUploadSitePhoto()
 
   const handleSubmit = async () => {
-    if (!content.trim()) {
+    if (activityType === "note" && !content.trim()) {
       toast.error("Bitte geben Sie eine Notiz ein")
       return
     }
 
+    if (activityType === "photo" && !selectedFile) {
+      toast.error("Bitte wählen Sie ein Foto aus")
+      return
+    }
+
     try {
+      let photoUrl: string | undefined
+
+      if (activityType === "photo" && selectedFile) {
+        const uploadResponse = await uploadPhoto.mutateAsync({
+          siteId,
+          file: selectedFile,
+        })
+        photoUrl = uploadResponse.photo_url
+      }
+
       await createActivity.mutateAsync({
         siteId,
-        activity_type: "note",
-        content: content.trim(),
+        activity_type: activityType,
+        content: activityType === "note" ? content.trim() : undefined,
+        photo_url: photoUrl,
       })
-      toast.success("Notiz hinzugefügt")
+
+      toast.success(activityType === "note" ? "Notiz hinzugefügt" : "Foto hinzugefügt")
       setContent("")
+      setSelectedFile(null)
+      setActivityType("note")
       onSuccess()
       onOpenChange(false)
     } catch (error) {
-      toast.error("Notiz konnte nicht erstellt werden")
+      toast.error(
+        activityType === "note"
+          ? "Notiz konnte nicht erstellt werden"
+          : "Foto konnte nicht hochgeladen werden"
+      )
     }
   }
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
       setContent("")
+      setSelectedFile(null)
+      setActivityType("note")
     }
     onOpenChange(newOpen)
   }
+
+  const isPending = createActivity.isPending || uploadPhoto.isPending
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -62,18 +92,51 @@ export function CreateNoteModal({
         <DialogHeader>
           <DialogTitle>Notiz hinzufügen</DialogTitle>
           <DialogDescription>
-            Fügen Sie eine Notiz zur Baustelle hinzu
+            Fügen Sie eine Notiz hinzu oder laden Sie ein Foto hoch
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4">
-          <Textarea
-            placeholder="Notiz eingeben..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={4}
-            className="resize-none"
-          />
+        <div className="py-4 space-y-4">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant={activityType === "note" ? "default" : "outline"}
+              onClick={() => setActivityType("note")}
+            >
+              Notiz
+            </Button>
+            <Button
+              type="button"
+              variant={activityType === "photo" ? "default" : "outline"}
+              onClick={() => setActivityType("photo")}
+            >
+              Foto
+            </Button>
+          </div>
+
+          {activityType === "note" ? (
+            <Textarea
+              placeholder="Notiz eingeben..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={4}
+              className="resize-none"
+            />
+          ) : (
+            <div className="space-y-2">
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(event) =>
+                  setSelectedFile(event.target.files?.[0] ?? null)
+                }
+              />
+              {selectedFile && (
+                <p className="text-xs text-muted-foreground">{selectedFile.name}</p>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter>
@@ -85,9 +148,13 @@ export function CreateNoteModal({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!content.trim() || createActivity.isPending}
+            disabled={
+              isPending ||
+              (activityType === "note" && !content.trim()) ||
+              (activityType === "photo" && !selectedFile)
+            }
           >
-            {createActivity.isPending ? "Speichern..." : "Speichern"}
+            {isPending ? "Speichern..." : "Speichern"}
           </Button>
         </DialogFooter>
       </DialogContent>

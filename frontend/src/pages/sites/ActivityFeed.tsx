@@ -103,7 +103,7 @@ function ActivityCard({ activity }: { activity: Activity }) {
             <div className="mt-2">
               <img
                 src={activity.photo_url}
-                alt="Activity"
+                alt="Aktivitätsfoto"
                 className="rounded-lg max-h-32 object-cover"
               />
             </div>
