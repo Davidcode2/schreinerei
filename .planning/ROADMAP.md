@@ -100,10 +100,12 @@
   2. Backend validation tests cover category CRUD operations and FK constraint enforcement
   3. E2E tests verify settings page, stock-in dialog, and material edit flows end-to-end
   4. E2E tests verify history feed renders enriched entries with correct colors, attribution, and links
-**Plans**: 3 plans
+**Plans**: 5 plans
 - [x] 33-01-PLAN.md — Align inventory frontend DTO usage with ts-rs generated bindings and verify drift stays at zero
 - [x] 33-02-PLAN.md — Add backend validation coverage for inventory DTO semantics and category delete conflict guards
 - [x] 33-03-PLAN.md — Add API-verified Playwright coverage for settings, editing, stock-in, and enriched history
+- [ ] 33-04-PLAN.md — Replace the remaining handwritten inventory order DTOs with generated-backed re-exports and hook coverage
+- [ ] 33-05-PLAN.md — Restore required withdrawal badge colors and add automated color assertions to unit and browser tests
 
 ## Progress
 
