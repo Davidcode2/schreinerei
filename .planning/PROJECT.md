@@ -35,10 +35,12 @@ v1.8 features working:
 - ✅ Offline photo capture queue with reconnect sync (deferred runtime test)
 - ✅ Camera-first modal entry point for photo uploads
 
-v1.10 progress (Phase 30 complete):
+v1.10 progress (Phases 30-31 complete):
 - ✅ Camera button opens dedicated CameraUploadFlow (native picker, not document modal)
 - ✅ Camera upload supports optional note
 - ✅ Camera photo automatically attaches to activity entry
+- ✅ Document modal supports note-only, attachment-only, and mixed note + image/PDF entries
+- ✅ Activity feed renders document entries with image previews, PDF cards, and preview fallbacks
 
 ## Previous Milestones
 
@@ -116,7 +118,7 @@ All v1.x requirements validated:
 ### Active
 
 - [x] Camera button opens camera/gallery picker on activity stream (Phase 30 ✓)
-- [ ] Document upload modal supports note AND attachments (all combinations)
+- [x] Document upload modal supports note AND attachments (all combinations)
 - [ ] Clickable image/document previews in feed
 - [ ] Fullscreen media viewer with slug, note, timestamp, user, download, share
 - [ ] Delete own entries (creator only)

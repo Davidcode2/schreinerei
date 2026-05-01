@@ -11,7 +11,7 @@ Enhance the Baustelle activity stream with separate camera/document upload flows
 - Prior phases (1-29): See v1.0–v1.8 milestones in MILESTONES.md
 
 - [x] **Phase 30: Camera Upload Flow** - Separate camera button from document modal with optional note (completed 2026-05-01)
-- [ ] **Phase 31: Document Upload Rework** - Support note AND attachments in a single entry (all combinations)
+- [x] **Phase 31: Document Upload Rework** - Support note AND attachments in a single entry (all combinations) (completed 2026-05-01)
 - [ ] **Phase 32: Media Viewer** - Fullscreen viewer with slug URLs, metadata, download, and share
 - [ ] **Phase 33: Entry Management** - Delete own entries with confirmation
 
@@ -38,7 +38,19 @@ Enhance the Baustelle activity stream with separate camera/document upload flows
   3. User can upload image files as attachments with or without a note
   4. User can create an entry with attachments only (no note text required)
   5. Modal validates and accepts both PDF and image file types with clear error messages
-**Plans**: TBD
+**Plans**: 3 plans
+
+Wave 1 *(foundation for all later work)*
+- [x] 31-01-PLAN.md — Create backend/storage contract for multi-attachment document entries
+
+Wave 2 *(blocked on Wave 1 completion)*
+- [x] 31-02-PLAN.md — Rebuild CreateNoteModal into note + multi-attachment document composer
+- [x] 31-03-PLAN.md — Render attachment-backed document entries in the activity feed
+
+Cross-cutting constraints:
+- Preserve the separate Phase 30 camera flow; document modal work must not reintroduce camera/photo mode toggles.
+- Keep upload-first, activity-second orchestration; uploads store bytes first, then create/link the activity explicitly.
+- Maintain authenticated attachment previews; do not fall back to unauthenticated blob URLs.
 
 ### Phase 32: Media Viewer
 **Goal**: Users can view, download, and share media attachments in a fullscreen viewer with direct links
@@ -70,6 +82,6 @@ Phases 30 → 31 → 32 → 33 (Phase 32 depends on 30+31; Phase 33 is independe
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 30. Camera Upload Flow | 1/1 | Complete    | 2026-05-01 |
-| 31. Document Upload Rework | 0/? | Not started | - |
+| 31. Document Upload Rework | 3/3 | Complete    | 2026-05-01 |
 | 32. Media Viewer | 0/? | Not started | - |
 | 33. Entry Management | 0/? | Not started | - |

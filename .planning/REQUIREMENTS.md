@@ -13,11 +13,11 @@
 
 ### Document Upload (DOC)
 
-- [ ] **DOC-01**: Document modal supports note AND attachment(s) in a single entry (currently note OR image)
-- [ ] **DOC-02**: User can upload one or more PDFs as attachments (with optional note)
-- [ ] **DOC-03**: User can upload one or more images as attachments (with optional note)
-- [ ] **DOC-04**: User can create an entry with attachment-only (no note text required)
-- [ ] **DOC-05**: Document modal accepts both PDF and image file types with appropriate validation
+- [x] **DOC-01**: Document modal supports note AND attachment(s) in a single entry (currently note OR image)
+- [x] **DOC-02**: User can upload one or more PDFs as attachments (with optional note)
+- [x] **DOC-03**: User can upload one or more images as attachments (with optional note)
+- [x] **DOC-04**: User can create an entry with attachment-only (no note text required)
+- [x] **DOC-05**: Document modal accepts both PDF and image file types with appropriate validation
 
 ### Media Viewer (VIEW)
 
@@ -85,11 +85,11 @@
 | CAM-01 | 30 | Complete |
 | CAM-02 | 30 | Complete |
 | CAM-03 | 30 | Complete |
-| DOC-01 | 31 | Pending |
-| DOC-02 | 31 | Pending |
-| DOC-03 | 31 | Pending |
-| DOC-04 | 31 | Pending |
-| DOC-05 | 31 | Pending |
+| DOC-01 | 31 | Complete |
+| DOC-02 | 31 | Complete |
+| DOC-03 | 31 | Complete |
+| DOC-04 | 31 | Complete |
+| DOC-05 | 31 | Complete |
 | VIEW-01 | 32 | Pending |
 | VIEW-02 | 32 | Pending |
 | VIEW-03 | 32 | Pending |
