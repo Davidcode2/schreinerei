@@ -1,6 +1,7 @@
 import { http, HttpResponse, delay } from 'msw';
 
 const API_BASE = '/api/v1';
+const apiRoute = (path: string) => `*${API_BASE}${path}`;
 
 // Mock data stores (can be modified in tests)
 export const mockData = {
@@ -15,12 +16,12 @@ export const mockData = {
 
 export const handlers = [
   // Materials (inventory module)
-  http.get(`${API_BASE}/inventory/materials`, async () => {
+  http.get(apiRoute('/inventory/materials'), async () => {
     await delay(10);
     return HttpResponse.json(mockData.materials);
   }),
 
-  http.post(`${API_BASE}/inventory/materials`, async ({ request }) => {
+  http.post(apiRoute('/inventory/materials'), async ({ request }) => {
     const body = await request.json();
     const newMaterial = {
       id: crypto.randomUUID(),
@@ -35,12 +36,12 @@ export const handlers = [
   }),
 
   // Categories (inventory module)
-  http.get(`${API_BASE}/inventory/categories`, async () => {
+  http.get(apiRoute('/inventory/categories'), async () => {
     await delay(10);
     return HttpResponse.json(mockData.categories);
   }),
 
-  http.post(`${API_BASE}/inventory/categories`, async ({ request }) => {
+  http.post(apiRoute('/inventory/categories'), async ({ request }) => {
     const body = await request.json() as any;
     const newCategory = {
       id: crypto.randomUUID(),

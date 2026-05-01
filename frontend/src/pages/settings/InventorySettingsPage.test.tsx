@@ -44,7 +44,7 @@ describe("InventorySettingsPage", () => {
     const user = userEvent.setup()
 
     server.use(
-      http.patch("/api/v1/inventory/categories/:id", async ({ params, request }) => {
+      http.patch("*/api/v1/inventory/categories/:id", async ({ params, request }) => {
         const payload = (await request.json()) as {
           name?: string
           description?: string
@@ -85,11 +85,10 @@ describe("InventorySettingsPage", () => {
     const user = userEvent.setup()
 
     server.use(
-      http.delete("/api/v1/inventory/categories/:id", () =>
+      http.delete("*/api/v1/inventory/categories/:id", () =>
         HttpResponse.json(
           {
-            message:
-              "Kategorie konnte nicht gelöscht werden. Entfernen oder verschieben Sie zuerst alle Materialien dieser Kategorie und versuchen Sie es dann erneut.",
+            message: "Cannot delete category: material history must be preserved",
           },
           { status: 409 }
         )
