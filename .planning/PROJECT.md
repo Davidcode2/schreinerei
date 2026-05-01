@@ -24,7 +24,7 @@ Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, 
 
 ## Current State
 
-**v1.8 shipped on 2026-05-01.** v1.9 (Inventory Features) deferred.
+**v1.8 shipped on 2026-05-01.** v1.9 (Inventory Features) deferred. Phase 30 complete.
 
 v1.8 features working:
 - ✅ Baustelle status workflow (geplant → aktiv → abgeschlossen) with modal
@@ -35,11 +35,10 @@ v1.8 features working:
 - ✅ Offline photo capture queue with reconnect sync (deferred runtime test)
 - ✅ Camera-first modal entry point for photo uploads
 
-**Known issues for v1.10:**
-- Camera button on activity stream opens document modal (should open camera/gallery)
-- Document modal only supports note OR image (should support note AND attachments)
-- No fullscreen media viewer from feed
-- No ability to delete own entries
+v1.10 progress (Phase 30 complete):
+- ✅ Camera button opens dedicated CameraUploadFlow (native picker, not document modal)
+- ✅ Camera upload supports optional note
+- ✅ Camera photo automatically attaches to activity entry
 
 ## Previous Milestones
 
@@ -116,7 +115,7 @@ All v1.x requirements validated:
 
 ### Active
 
-- [ ] Camera button opens camera/gallery picker on activity stream
+- [x] Camera button opens camera/gallery picker on activity stream (Phase 30 ✓)
 - [ ] Document upload modal supports note AND attachments (all combinations)
 - [ ] Clickable image/document previews in feed
 - [ ] Fullscreen media viewer with slug, note, timestamp, user, download, share
@@ -274,4 +273,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-05-01 after starting v1.10 milestone**
+*Last updated: 2026-05-01 after Phase 30 completion**
