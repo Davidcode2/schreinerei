@@ -109,6 +109,11 @@ impl SiteService {
         }
     }
 
+    fn can_delete_activity(activity: &Activity, requester_id: UserId) -> bool {
+        matches!(activity.activity_type, crate::modules::sites::domain::ActivityType::Note | crate::modules::sites::domain::ActivityType::Photo)
+            && activity.user_id == requester_id
+    }
+
     async fn resolve_local_user_id(&self, ctx: &TenantContext) -> Result<UserId, AppError> {
         let user_repo = UserRepository::new(self.pool.clone());
         let user = user_repo
@@ -467,7 +472,11 @@ impl SiteService {
 
         self.site_repo.publish_event(&event).await?;
 
-        Ok(Activity { attachments, ..activity })
+        Ok(Activity {
+            attachments,
+            can_delete: Self::can_delete_activity(&activity, local_user_id),
+            ..activity
+        })
     }
 
     pub async fn list_activities(
@@ -479,6 +488,7 @@ impl SiteService {
         // Verify site exists in same tenant
         let _site = self.get_site(site_id, ctx).await?;
 
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
         let activities = self.site_repo.list_activities(ctx.tenant_id, site_id, limit).await?;
         let activity_ids: Vec<_> = activities.iter().map(|activity| activity.id).collect();
         let attachments_by_activity = self
@@ -489,6 +499,7 @@ impl SiteService {
         Ok(activities
             .into_iter()
             .map(|activity| Activity {
+                can_delete: Self::can_delete_activity(&activity, local_user_id),
                 attachments: attachments_by_activity
                     .get(&activity.id)
                     .cloned()
@@ -577,7 +588,47 @@ impl SiteService {
 #[cfg(test)]
 mod tests {
     use super::SiteService;
+    use crate::common::types::{ActivityId, SiteId, TenantId, UserId};
+    use crate::modules::sites::domain::{Activity, ActivityType};
     use image::GenericImageView;
+    use chrono::Utc;
+
+    #[test]
+    fn activity_response_can_delete_for_owned_note_and_photo_only() {
+        let owner_id = UserId::new();
+
+        let note = sample_activity(ActivityType::Note, owner_id);
+        let photo = sample_activity(ActivityType::Photo, owner_id);
+        let other_user_note = sample_activity(ActivityType::Note, UserId::new());
+
+        assert!(SiteService::can_delete_activity(&note, owner_id));
+        assert!(SiteService::can_delete_activity(&photo, owner_id));
+        assert!(!SiteService::can_delete_activity(&other_user_note, owner_id));
+    }
+
+    #[test]
+    fn activity_response_can_delete_rejects_status_change_even_for_owner() {
+        let owner_id = UserId::new();
+        let status_change = sample_activity(ActivityType::StatusChange, owner_id);
+
+        assert!(!SiteService::can_delete_activity(&status_change, owner_id));
+    }
+
+    fn sample_activity(activity_type: ActivityType, user_id: UserId) -> Activity {
+        Activity {
+            id: ActivityId::new(),
+            tenant_id: TenantId::new(),
+            site_id: SiteId::new(),
+            user_id,
+            creator_name: "Max Mustermann".to_string(),
+            can_delete: false,
+            activity_type,
+            content: Some("hello".to_string()),
+            photo_url: None,
+            attachments: Vec::new(),
+            created_at: Utc::now(),
+        }
+    }
 
     #[test]
     fn upload_validation_rejects_bad_mime_and_oversize() {

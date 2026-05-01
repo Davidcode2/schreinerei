@@ -916,6 +916,7 @@ impl ActivityRow {
             site_id: SiteId(self.site_id),
             user_id: UserId(self.user_id),
             creator_name: self.creator_name,
+            can_delete: false,
             activity_type: self.activity_type.parse().unwrap_or(ActivityType::Note),
             content: self.content,
             photo_url: self.photo_url,

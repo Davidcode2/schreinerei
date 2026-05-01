@@ -43,6 +43,7 @@ pub struct Activity {
     pub site_id: SiteId,
     pub user_id: UserId,
     pub creator_name: String,
+    pub can_delete: bool,
     pub activity_type: ActivityType,
     pub content: Option<String>,
     pub photo_url: Option<String>,

@@ -577,6 +577,7 @@ pub struct ActivityResponse {
     pub site_id: String,
     pub user_id: String,
     pub creator_name: String,
+    pub can_delete: bool,
     pub activity_type: String,
     pub content: Option<String>,
     pub photo_url: Option<String>,
@@ -591,6 +592,7 @@ impl From<crate::modules::sites::domain::Activity> for ActivityResponse {
             site_id: activity.site_id.to_string(),
             user_id: activity.user_id.to_string(),
             creator_name: activity.creator_name,
+            can_delete: activity.can_delete,
             activity_type: activity.activity_type.as_str().to_string(),
             content: activity.content,
             photo_url: activity.photo_url,
@@ -940,7 +942,29 @@ pub async fn get_attachment_thumbnail_bytes(
 
 #[cfg(test)]
 mod tests {
-    use super::{SiteActivityAttachmentResponse, UploadPhotoAttachmentResponse, UploadSiteAttachmentResponse};
+    use super::{ActivityResponse, SiteActivityAttachmentResponse, UploadPhotoAttachmentResponse, UploadSiteAttachmentResponse};
+    use crate::common::types::{ActivityId, SiteId, TenantId, UserId};
+    use crate::modules::sites::domain::{Activity, ActivityType};
+    use chrono::Utc;
+
+    #[test]
+    fn activity_response_can_delete_maps_server_permission_bit() {
+        let response = ActivityResponse::from(Activity {
+            id: ActivityId::new(),
+            tenant_id: TenantId::new(),
+            site_id: SiteId::new(),
+            user_id: UserId::new(),
+            creator_name: "Max Mustermann".to_string(),
+            can_delete: true,
+            activity_type: ActivityType::Note,
+            content: Some("Notiz".to_string()),
+            photo_url: None,
+            attachments: Vec::new(),
+            created_at: Utc::now(),
+        });
+
+        assert!(response.can_delete);
+    }
 
     #[test]
     fn upload_response_contains_required_contract_fields() {
