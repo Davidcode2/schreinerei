@@ -8,8 +8,8 @@
 
 ## Phases
 
-- [ ] **Phase 26: Status Change Workflow** - Site status transitions with modal UI and audit trail
-- [ ] **Phase 27: Tabbed Activity Feed** - Activity feed reorganization with tabs for notes and materials
+- [x] **Phase 26: Status Change Workflow** - Site status transitions with modal UI and audit trail ✓ 2026-05-01
+- [x] **Phase 27: Tabbed Activity Feed** - Activity feed reorganization with tabs for notes and materials ✓ 2026-05-01
 - [ ] **Phase 28: Material History Tab** - Material extraction history linked to Baustellen
 - [ ] **Phase 29: Photo Upload & Attachments** - Photo capture, storage infrastructure, and activity attachments
 
@@ -30,7 +30,9 @@
 4. Each status change creates activity entry visible in feed for audit trail
 5. Concurrent status changes are rejected with clear error message (optimistic locking)
 
-**Plans:** TBD
+**Plans:** Complete (3/3 plans executed)
+
+**Status:** ✅ Complete
 
 ---
 
@@ -48,7 +50,9 @@
 3. Each entry shows timestamp and content preview for quick scanning
 4. Feed loads additional entries on scroll with cursor-based pagination
 
-**Plans:** TBD
+**Plans:** Complete (2/2 plans executed)
+
+**Status:** ✅ Complete
 
 ---
 
@@ -95,8 +99,8 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 26. Status Change Workflow | 0/3 | Not started | - |
-| 27. Tabbed Activity Feed | 0/2 | Not started | - |
+| 26. Status Change Workflow | 3/3 | ✅ Complete | 2026-05-01 |
+| 27. Tabbed Activity Feed | 2/2 | ✅ Complete | 2026-05-01 |
 | 28. Material History Tab | 0/3 | Not started | - |
 | 29. Photo Upload & Attachments | 0/4 | Not started | - |
 
@@ -104,15 +108,15 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STAT-01 | Phase 26 | Pending |
-| STAT-02 | Phase 26 | Pending |
-| STAT-03 | Phase 26 | Pending |
-| STAT-04 | Phase 26 | Pending |
-| STAT-05 | Phase 26 | Pending |
-| FEED-01 | Phase 27 | Pending |
-| FEED-02 | Phase 27 | Pending |
-| FEED-03 | Phase 27 | Pending |
-| FEED-04 | Phase 27 | Pending |
+| STAT-01 | Phase 26 | ✅ Complete |
+| STAT-02 | Phase 26 | ✅ Complete |
+| STAT-03 | Phase 26 | ✅ Complete |
+| STAT-04 | Phase 26 | ✅ Complete |
+| STAT-05 | Phase 26 | ✅ Complete |
+| FEED-01 | Phase 27 | ✅ Complete |
+| FEED-02 | Phase 27 | ✅ Complete |
+| FEED-03 | Phase 27 | ✅ Complete |
+| FEED-04 | Phase 27 | ✅ Complete |
 | HIST-01 | Phase 28 | Pending |
 | HIST-02 | Phase 28 | Pending |
 | HIST-03 | Phase 28 | Pending |
@@ -129,4 +133,5 @@
 ---
 
 *Roadmap created: 2026-05-01*
-*Ready for planning: `/gsd-plan-phase 26`*
+*Last updated: 2026-05-01 after Phase 27 completion*
+*Next: `/gsd-plan-phase 28`*

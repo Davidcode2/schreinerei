@@ -1,6 +1,16 @@
+import { useState } from "react"
 import { Card } from "@/components/ui/card"
-import { Camera, FileText } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Camera, FileText, ArrowRight } from "lucide-react"
 import type { Activity } from "@/types/sites"
+
+const statusLabels: Record<string, string> = {
+  planned: "Geplant",
+  active: "Aktiv",
+  completed: "Abgeschlossen",
+  archived: "Archiviert",
+}
 
 interface ActivityFeedProps {
   activities: Activity[]
@@ -29,86 +39,136 @@ function formatRelativeTime(dateString: string): string {
   }
 }
 
-export function ActivityFeed({ activities, maxItems }: ActivityFeedProps) {
-  const displayedActivities = maxItems
-    ? activities.slice(0, maxItems)
-    : activities
-
-  if (activities.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <div className="rounded-full bg-muted p-4 mx-auto w-fit mb-3">
-          <FileText className="h-6 w-6 text-muted-foreground" />
+function ActivityCard({ activity }: { activity: Activity }) {
+  return (
+    <Card className="overflow-hidden">
+      <div className="flex gap-3 p-3">
+        <div className="flex-shrink-0">
+          {activity.activity_type === "photo" ? (
+            <div className="rounded-lg bg-blue-100 dark:bg-blue-900 p-2">
+              <Camera className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+            </div>
+          ) : activity.activity_type === "status_change" ? (
+            <div className="rounded-lg bg-green-100 dark:bg-green-900 p-2">
+              <ArrowRight className="h-4 w-4 text-green-600 dark:text-green-300" />
+            </div>
+          ) : (
+            <div className="rounded-lg bg-yellow-100 dark:bg-yellow-900 p-2">
+              <FileText className="h-4 w-4 text-yellow-600 dark:text-yellow-300" />
+            </div>
+          )}
         </div>
-        <p className="text-sm text-muted-foreground">
-          Noch keine Aktivitäten
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          Fügen Sie Fotos oder Notizen hinzu
-        </p>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm">
+              {activity.activity_type === "photo" ? (
+                <span className="font-medium">Foto hinzugefügt</span>
+              ) : activity.activity_type === "status_change" ? (
+                <span className="font-medium">Status geändert</span>
+              ) : (
+                <span className="font-medium">Notiz</span>
+              )}
+            </p>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {formatRelativeTime(activity.created_at)}
+            </span>
+          </div>
+
+          {activity.activity_type === "status_change" && activity.content ? (
+            <div className="mt-1">
+              <p className="text-sm text-muted-foreground">
+                {(() => {
+                  try {
+                    const data = JSON.parse(activity.content)
+                    const oldStatus = statusLabels[data.old_status] || data.old_status
+                    const newStatus = statusLabels[data.new_status] || data.new_status
+                    return `${oldStatus} → ${newStatus}`
+                  } catch {
+                    return activity.content
+                  }
+                })()}
+              </p>
+            </div>
+          ) : activity.content ? (
+            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+              {activity.content}
+            </p>
+          ) : null}
+
+          {activity.photo_url && (
+            <div className="mt-2">
+              <img
+                src={activity.photo_url}
+                alt="Activity"
+                className="rounded-lg max-h-32 object-cover"
+              />
+            </div>
+          )}
+        </div>
       </div>
-    )
-  }
+    </Card>
+  )
+}
+
+export function ActivityFeed({ activities, maxItems }: ActivityFeedProps) {
+  const [activeTab, setActiveTab] = useState("notes")
+
+  const noteActivities = activities.filter(
+    (a) => a.activity_type === "photo" || a.activity_type === "note" || a.activity_type === "status_change"
+  )
+
+  const displayedActivities = maxItems
+    ? noteActivities.slice(0, maxItems)
+    : noteActivities
 
   return (
-    <div className="space-y-4">
-      {displayedActivities.map((activity) => (
-        <Card key={activity.id} className="overflow-hidden">
-          <div className="flex gap-3 p-3">
-            {/* Icon */}
-            <div className="flex-shrink-0">
-              {activity.activity_type === "photo" ? (
-                <div className="rounded-lg bg-blue-100 dark:bg-blue-900 p-2">
-                  <Camera className="h-4 w-4 text-blue-600 dark:text-blue-300" />
-                </div>
-              ) : (
-                <div className="rounded-lg bg-yellow-100 dark:bg-yellow-900 p-2">
-                  <FileText className="h-4 w-4 text-yellow-600 dark:text-yellow-300" />
-                </div>
-              )}
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <TabsList>
+        <TabsTrigger value="notes">Notizen/Dokumente</TabsTrigger>
+        <TabsTrigger value="materials">Material</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="notes" className="space-y-4 mt-4">
+        {displayedActivities.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="rounded-full bg-muted p-4 mx-auto w-fit mb-3">
+              <FileText className="h-6 w-6 text-muted-foreground" />
             </div>
-
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm">
-                  {activity.activity_type === "photo" ? (
-                    <span className="font-medium">Foto hinzugefügt</span>
-                  ) : (
-                    <span className="font-medium">Notiz</span>
-                  )}
-                </p>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {formatRelativeTime(activity.created_at)}
-                </span>
-              </div>
-
-              {activity.content && (
-                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                  {activity.content}
-                </p>
-              )}
-
-              {/* Photo preview */}
-              {activity.photo_url && (
-                <div className="mt-2">
-                  <img
-                    src={activity.photo_url}
-                    alt="Activity"
-                    className="rounded-lg max-h-32 object-cover"
-                  />
-                </div>
-              )}
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Noch keine Aktivitäten
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Fügen Sie Fotos oder Notizen hinzu
+            </p>
           </div>
-        </Card>
-      ))}
+        ) : (
+          <>
+            {displayedActivities.map((activity) => (
+              <ActivityCard key={activity.id} activity={activity} />
+            ))}
+            {noteActivities.length > (maxItems || 0) && maxItems && (
+              <p className="text-xs text-muted-foreground text-center">
+                +{noteActivities.length - maxItems} weitere Aktivitäten
+              </p>
+            )}
+          </>
+        )}
+      </TabsContent>
 
-      {activities.length > (maxItems || 0) && maxItems && (
-        <p className="text-xs text-muted-foreground text-center">
-          +{activities.length - maxItems} weitere Aktivitäten
-        </p>
-      )}
-    </div>
+      <TabsContent value="materials" className="mt-0">
+        <div className="text-center py-8">
+          <div className="rounded-full bg-muted p-4 mx-auto w-fit mb-3">
+            <FileText className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Material-Historie folgt in Kürze
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Diese Funktion wird in einem kommenden Update verfügbar sein
+          </p>
+        </div>
+      </TabsContent>
+    </Tabs>
   )
 }

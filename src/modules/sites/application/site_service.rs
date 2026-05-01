@@ -87,6 +87,30 @@ impl SiteService {
                 }.into_event(ctx.tenant_id);
 
                 self.site_repo.publish_event(&event).await?;
+
+                // Create activity for status change
+                let local_user_id = self.resolve_local_user_id(ctx).await?;
+                let activity_content = serde_json::json!({
+                    "old_status": old_site.status.to_string(),
+                    "new_status": new_status.to_string(),
+                }).to_string();
+
+                sqlx::query!(
+                    r#"
+                    INSERT INTO site_activities (id, tenant_id, site_id, user_id, activity_type, content, photo_url, created_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, NULL, $7)
+                    "#,
+                    uuid::Uuid::new_v4(),
+                    ctx.tenant_id.0,
+                    site.id.0,
+                    local_user_id.0,
+                    "status_change",
+                    activity_content,
+                    chrono::Utc::now(),
+                )
+                .execute(&self.pool)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
             }
         }
 

@@ -20,6 +20,8 @@ import {
 import { useSite, useActivities, useTimeEntries, useSiteAssignments } from "@/lib/api/hooks"
 import { TimeEntryDialog } from "./TimeEntryDialog"
 import { ActivityFeed } from "./ActivityFeed"
+import { StatusChangeModal } from "./StatusChangeModal"
+import { CreateNoteModal } from "./CreateNoteModal"
 
 function formatDate(date: string | null): string {
   if (!date) return "-"
@@ -33,9 +35,11 @@ function formatDate(date: string | null): string {
 export default function SiteDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [showTimeDialog, setShowTimeDialog] = useState(false)
+  const [showStatusModal, setShowStatusModal] = useState(false)
+  const [showNoteModal, setShowNoteModal] = useState(false)
 
   const { data: site, isLoading, error, refetch } = useSite(id!)
-  const { data: activities } = useActivities(id!)
+  const { data: activities, refetch: refetchActivities } = useActivities(id!)
   const { data: timeEntries } = useTimeEntries(id!)
   const { data: assignments } = useSiteAssignments(id!)
 
@@ -76,7 +80,12 @@ export default function SiteDetailPage() {
         <CardContent className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <StatusBadge status={site.status} />
+              <div 
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => setShowStatusModal(true)}
+              >
+                <StatusBadge status={site.status} />
+              </div>
               {site.location && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4" />
@@ -178,10 +187,15 @@ export default function SiteDetailPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Aktivitäten</CardTitle>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" title="Foto hinzufügen">
                 <Camera className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                title="Notiz hinzufügen"
+                onClick={() => setShowNoteModal(true)}
+              >
                 <FileText className="h-4 w-4" />
               </Button>
             </div>
@@ -197,6 +211,22 @@ export default function SiteDetailPage() {
         onOpenChange={setShowTimeDialog}
         siteId={site.id}
         siteName={site.name}
+      />
+
+      <StatusChangeModal
+        open={showStatusModal}
+        onOpenChange={setShowStatusModal}
+        siteId={site.id}
+        siteName={site.name}
+        currentStatus={site.status}
+        onSuccess={() => refetch()}
+      />
+
+      <CreateNoteModal
+        open={showNoteModal}
+        onOpenChange={setShowNoteModal}
+        siteId={site.id}
+        onSuccess={() => refetchActivities()}
       />
     </div>
   )

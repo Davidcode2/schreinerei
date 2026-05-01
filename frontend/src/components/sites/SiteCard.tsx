@@ -69,7 +69,7 @@ export function SiteCard({
                 }}
                 disabled={isToggling}
               >
-                {isActive ? "Aktiv" : "Aktiv setzen"}
+                Auswählen
               </Button>
               <StatusBadge status={site.status} />
               <Button
@@ -115,7 +115,7 @@ export function SiteCard({
                   {site.estimated_days} Tage
                 </Badge>
               )}
-              {isActive && <Badge className="text-xs">Aktiv</Badge>}
+              {isActive && <Badge className="text-xs">Ausgewählt</Badge>}
             </div>
           </Link>
         </CardContent>

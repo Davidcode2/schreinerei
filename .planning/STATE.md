@@ -12,45 +12,48 @@
 
 ## Current Position
 
-**Phase:** 26 — Status Change Workflow
+**Phase:** 27 — Tabbed Activity Feed
 **Status:** Ready to Plan
-**Next Action:** `/gsd-plan-phase 26`
+**Next Action:** `/gsd-plan-phase 27`
 
 ```
-Progress: [░░░░░░░░░░░░░░░░░░] 0% (0/4 phases)
+Progress: [████░░░░░░░░░░░░░░] 25% (1/4 phases)
 ```
 
 ## Active Context
 
 **Working On:**
-- Starting v1.8 milestone
-- 21 requirements mapped to 4 phases
+- Phase 27: Tabbed Activity Feed with notes and materials tabs
+- Building on Phase 26 status change workflow
 
 **Current Focus:**
-- Phase 26: Status change modal with validation and audit trail
-- Backend state machine exists, needs UI integration
+- Activity feed needs tab navigation
+- Add notes functionality
+- Material history tab integration
 
 **Recent Completion:**
-- v1.7 shipped on 2026-05-01
-- Active Baustelle context fully working
-- Auto-prefill in all forms verified
+- ✅ Phase 26: Status Change Workflow complete (2026-05-01)
+- ✅ Status change modal working
+- ✅ Activity feed shows status changes
+- ✅ "Aktiv" button renamed to "Auswählen"
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Phases Completed | 0/4 |
-| Requirements Done | 0/21 |
+| Phases Completed | 1/4 |
+| Requirements Done | 5/21 |
 | Tests | 116 backend + 28 frontend + 22 E2E |
-| Code Lines | ~12,290 Rust + ~8,991 TypeScript |
-| Velocity | v1.7: 17 reqs in 1 day |
+| Code Lines | ~12,290 Rust + ~9,100 TypeScript |
+| Velocity | v1.7: 17 reqs, v1.8: 5/21 in progress |
 
 ## Accumulated Context
 
 ### Decisions
-- Phase 29 consolidates file storage infrastructure with photo upload UI (coarse granularity)
-- Tabbed feed approach: "Notizen/Dokumente" and "Material" tabs
-- Status change creates audit trail activity entries automatically
+- Phase 26: Status change modal with valid transition buttons only
+- Phase 26: ActivityFeed displays status changes with arrow icon
+- Phase 26: Error handling uses toast notifications with auto-refresh
+- Phase 26: "Aktiv" → "Auswählen" to avoid confusion
 
 ### Todos
 None yet.
@@ -59,25 +62,26 @@ None yet.
 None.
 
 ### Learnings
-- Status state machine already exists in backend (Phase 26 is UI integration)
-- File storage needs port/adapter pattern for dev/prod flexibility
-- Material history can leverage existing site_id link in StockEntry
+- Backend status state machine was already complete
+- ActivityType::StatusChange already existed
+- useUpdateSite hook handles optimistic updates
+- Toast notifications work well for error handling
 
 ## Session Continuity
 
-**Last Session:** v1.7 completion and verification
-**Handoff:** Roadmap created, ready to plan Phase 26
+**Last Session:** Phase 26 completion
+**Handoff:** Ready to plan Phase 27
 
 **Key Files:**
-- `.planning/ROADMAP.md` — Phase structure
-- `.planning/REQUIREMENTS.md` — 21 v1.8 requirements
-- `.planning/research/SUMMARY.md` — Implementation research
+- `.planning/ROADMAP.md` — Phase structure (Phase 26 complete)
+- `.planning/REQUIREMENTS.md` — 21 v1.8 requirements (5 complete)
+- `.planning/phases/26-status-change-workflow/` — Phase 26 artifacts
 
 **Next Steps:**
-1. `/gsd-plan-phase 26` — Create execution plan
-2. `/gsd-execute-phase 26` — Implement status workflow
-3. Continue through phases 27-29
+1. `/gsd-plan-phase 27` — Create execution plan for Tabbed Activity Feed
+2. `/gsd-execute-phase 27` — Implement tabs and notes
+3. Continue through phases 28-29
 
 ---
 
-*State initialized: 2026-05-01*
+*State updated: 2026-05-01 after Phase 26 completion*
