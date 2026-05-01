@@ -1,4 +1,5 @@
 import { Page } from '@playwright/test';
+import { authHeaders } from './api';
 
 interface TestResources {
   materials: string[];
@@ -23,34 +24,41 @@ export function useCleanup(page: Page) {
 
   const cleanup = async () => {
     for (const id of resources.reservations) {
+      const headers = await authHeaders(page).catch(() => undefined);
       await page.request
-        .delete(`/api/v1/fleet/reservations/${id}`)
+        .delete(`/api/v1/fleet/reservations/${id}`, headers ? { headers } : undefined)
         .catch(() => {});
     }
     for (const id of resources.timeEntries) {
+      const headers = await authHeaders(page).catch(() => undefined);
       await page.request
-        .delete(`/api/v1/time-entries/${id}`)
+        .delete(`/api/v1/time-entries/${id}`, headers ? { headers } : undefined)
         .catch(() => {});
     }
     for (const id of resources.materials) {
+      const headers = await authHeaders(page).catch(() => undefined);
       await page.request
-        .delete(`/api/v1/inventory/materials/${id}`)
+        .delete(`/api/v1/inventory/materials/${id}`, headers ? { headers } : undefined)
         .catch(() => {});
     }
     for (const id of resources.sites) {
-      await page.request.delete(`/api/v1/sites/${id}`).catch(() => {});
+      const headers = await authHeaders(page).catch(() => undefined);
+      await page.request.delete(`/api/v1/sites/${id}`, headers ? { headers } : undefined).catch(() => {});
     }
     for (const id of resources.vehicles) {
+      const headers = await authHeaders(page).catch(() => undefined);
       await page.request
-        .delete(`/api/v1/fleet/vehicles/${id}`)
+        .delete(`/api/v1/fleet/vehicles/${id}`, headers ? { headers } : undefined)
         .catch(() => {});
     }
     for (const id of resources.tools) {
-      await page.request.delete(`/api/v1/fleet/tools/${id}`).catch(() => {});
+      const headers = await authHeaders(page).catch(() => undefined);
+      await page.request.delete(`/api/v1/fleet/tools/${id}`, headers ? { headers } : undefined).catch(() => {});
     }
     for (const id of resources.categories) {
+      const headers = await authHeaders(page).catch(() => undefined);
       await page.request
-        .delete(`/api/v1/inventory/categories/${id}`)
+        .delete(`/api/v1/inventory/categories/${id}`, headers ? { headers } : undefined)
         .catch(() => {});
     }
     resources.materials = [];

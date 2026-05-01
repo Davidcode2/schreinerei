@@ -1,13 +1,37 @@
 import { Page } from '@playwright/test';
 
+async function authHeaders(page: Page): Promise<Record<string, string>> {
+  const accessToken = await page.evaluate(() => {
+    const raw = window.localStorage.getItem('auth-storage');
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as {
+      state?: { tokens?: { access_token?: string } };
+    };
+
+    return parsed.state?.tokens?.access_token ?? null;
+  });
+
+  if (!accessToken) {
+    throw new Error('Missing access token in Playwright browser session');
+  }
+
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+  };
+}
+
+export { authHeaders };
+
 interface MaterialData {
   category_id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   unit: string;
   quantity: number;
   min_quantity: number;
-  location?: string;
+  location?: string | null;
 }
 
 interface MaterialResponse {
@@ -92,7 +116,44 @@ interface ToolResponse {
 interface CategoryResponse {
   id: string;
   name: string;
+  description?: string | null;
+  created_at: string;
+}
+
+interface UpdateCategoryData {
+  name?: string;
   description?: string;
+}
+
+interface UpdateMaterialData {
+  location?: string;
+  min_quantity?: number;
+  clear_location?: boolean;
+}
+
+interface StockInData {
+  quantity: number;
+  notes?: string | null;
+}
+
+interface WithdrawMaterialData {
+  quantity: number;
+  notes?: string | null;
+  site_id?: string | null;
+}
+
+interface EnrichedHistoryEntry {
+  id: string;
+  material_id: string;
+  user_id: string;
+  user_name: string;
+  entry_type: string;
+  quantity_change: number;
+  quantity_after: number;
+  notes: string | null;
+  site_id: string | null;
+  site_name: string | null;
+  category_name: string;
   created_at: string;
 }
 
@@ -102,6 +163,7 @@ export async function createMaterial(
 ): Promise<MaterialResponse> {
   const response = await page.request.post('/api/v1/inventory/materials', {
     data,
+    headers: await authHeaders(page),
   });
   if (!response.ok()) {
     throw new Error(`Failed to create material: ${response.status()}`);
@@ -110,21 +172,35 @@ export async function createMaterial(
 }
 
 export async function getMaterial(page: Page, id: string): Promise<MaterialResponse> {
-  const response = await page.request.get(`/api/v1/inventory/materials/${id}`);
+  const response = await page.request.get(`/api/v1/inventory/materials/${id}`, {
+    headers: await authHeaders(page),
+  });
+  if (!response.ok()) {
+    throw new Error(`Failed to get material: ${response.status()}`);
+  }
   return response.json();
 }
 
 export async function listMaterials(page: Page): Promise<MaterialResponse[]> {
-  const response = await page.request.get('/api/v1/inventory/materials');
+  const response = await page.request.get('/api/v1/inventory/materials', {
+    headers: await authHeaders(page),
+  });
   return response.json();
 }
 
 export async function deleteMaterial(page: Page, id: string): Promise<void> {
-  await page.request.delete(`/api/v1/inventory/materials/${id}`).catch(() => {});
+  await page.request
+    .delete(`/api/v1/inventory/materials/${id}`, {
+      headers: await authHeaders(page),
+    })
+    .catch(() => {});
 }
 
 export async function createSite(page: Page, data: SiteData): Promise<SiteResponse> {
-  const response = await page.request.post('/api/v1/sites', { data });
+  const response = await page.request.post('/api/v1/sites', {
+    data,
+    headers: await authHeaders(page),
+  });
   if (!response.ok()) {
     throw new Error(`Failed to create site: ${response.status()}`);
   }
@@ -132,17 +208,25 @@ export async function createSite(page: Page, data: SiteData): Promise<SiteRespon
 }
 
 export async function getSite(page: Page, id: string): Promise<SiteResponse> {
-  const response = await page.request.get(`/api/v1/sites/${id}`);
+  const response = await page.request.get(`/api/v1/sites/${id}`, {
+    headers: await authHeaders(page),
+  });
   return response.json();
 }
 
 export async function listSites(page: Page): Promise<SiteResponse[]> {
-  const response = await page.request.get('/api/v1/sites');
+  const response = await page.request.get('/api/v1/sites', {
+    headers: await authHeaders(page),
+  });
   return response.json();
 }
 
 export async function deleteSite(page: Page, id: string): Promise<void> {
-  await page.request.delete(`/api/v1/sites/${id}`).catch(() => {});
+  await page.request
+    .delete(`/api/v1/sites/${id}`, {
+      headers: await authHeaders(page),
+    })
+    .catch(() => {});
 }
 
 export async function createVehicle(
@@ -188,13 +272,15 @@ export async function deleteTool(page: Page, id: string): Promise<void> {
 }
 
 export async function listCategories(page: Page): Promise<CategoryResponse[]> {
-  const response = await page.request.get('/api/v1/inventory/categories');
+  const response = await page.request.get('/api/v1/inventory/categories', {
+    headers: await authHeaders(page),
+  });
   return response.json();
 }
 
 interface CategoryData {
   name: string;
-  description?: string;
+  description?: string | null;
 }
 
 export async function createCategory(
@@ -203,9 +289,93 @@ export async function createCategory(
 ): Promise<CategoryResponse> {
   const response = await page.request.post('/api/v1/inventory/categories', {
     data,
+    headers: await authHeaders(page),
   });
   if (!response.ok()) {
     throw new Error(`Failed to create category: ${response.status()}`);
+  }
+  return response.json();
+}
+
+export async function getCategory(page: Page, id: string): Promise<CategoryResponse> {
+  const response = await page.request.get(`/api/v1/inventory/categories/${id}`, {
+    headers: await authHeaders(page),
+  });
+  if (!response.ok()) {
+    throw new Error(`Failed to get category: ${response.status()}`);
+  }
+  return response.json();
+}
+
+export async function updateCategory(
+  page: Page,
+  id: string,
+  data: UpdateCategoryData
+): Promise<CategoryResponse> {
+  const response = await page.request.patch(`/api/v1/inventory/categories/${id}`, {
+    data,
+    headers: await authHeaders(page),
+  });
+  if (!response.ok()) {
+    throw new Error(`Failed to update category: ${response.status()}`);
+  }
+  return response.json();
+}
+
+export async function updateMaterial(
+  page: Page,
+  id: string,
+  data: UpdateMaterialData
+): Promise<MaterialResponse> {
+  const response = await page.request.patch(`/api/v1/inventory/materials/${id}`, {
+    data,
+    headers: await authHeaders(page),
+  });
+  if (!response.ok()) {
+    throw new Error(`Failed to update material: ${response.status()}`);
+  }
+  return response.json();
+}
+
+export async function stockInMaterial(
+  page: Page,
+  id: string,
+  data: StockInData
+): Promise<MaterialResponse> {
+  const response = await page.request.post(`/api/v1/inventory/materials/${id}/stock-in`, {
+    data,
+    headers: await authHeaders(page),
+  });
+  if (!response.ok()) {
+    throw new Error(`Failed to stock in material: ${response.status()}`);
+  }
+  return response.json();
+}
+
+export async function withdrawMaterial(
+  page: Page,
+  id: string,
+  data: WithdrawMaterialData
+): Promise<MaterialResponse> {
+  const response = await page.request.post(`/api/v1/inventory/materials/${id}/withdraw`, {
+    data,
+    headers: await authHeaders(page),
+  });
+  if (!response.ok()) {
+    throw new Error(`Failed to withdraw material: ${response.status()}`);
+  }
+  return response.json();
+}
+
+export async function listEnrichedMaterialHistory(
+  page: Page,
+  id: string
+): Promise<EnrichedHistoryEntry[]> {
+  const response = await page.request.get(`/api/v1/inventory/materials/${id}/history/enriched`, {
+    headers: await authHeaders(page),
+  });
+  if (!response.ok()) {
+    throw new Error(`Failed to get enriched history: ${response.status()}`);
   }
   return response.json();
 }
