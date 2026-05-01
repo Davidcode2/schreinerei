@@ -74,8 +74,8 @@ export default function InventoryDetailPage() {
       await withdrawMutation.mutateAsync({
         id: material.id,
         quantity,
+        notes: notes ?? null,
         site_id: siteId ?? null,
-        ...(notes ? { notes } : {}),
       })
       toast.success(`${quantity} ${material.unit} entnommen`)
       setShowWithdrawDialog(false)
@@ -89,7 +89,7 @@ export default function InventoryDetailPage() {
       await stockInMutation.mutateAsync({
         id: material.id,
         quantity,
-        ...(notes ? { notes } : {}),
+        notes: notes ?? null,
       })
       toast.success(`${quantity} ${material.unit} eingelagert`)
       setShowStockInDialog(false)

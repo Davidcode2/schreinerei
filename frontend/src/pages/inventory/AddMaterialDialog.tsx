@@ -76,23 +76,14 @@ export function AddMaterialDialog({
   const handleSubmit = () => {
     if (!isFormValid) return
 
-    const payload: {
-      category_id: string
-      name: string
-      quantity: number
-      unit: string
-      min_quantity: number
-      location?: string
-    } = {
+    const payload = {
       category_id: categoryId,
       name,
+      description: null,
       quantity: parseFloat(quantity),
       unit,
       min_quantity: parseFloat(minQuantity),
-    }
-
-    if (location) {
-      payload.location = location
+      location: location || null,
     }
 
     createMaterial.mutate(payload, {
@@ -135,7 +126,7 @@ export function AddMaterialDialog({
                   onClick={() => {
                     if (newCategoryName.trim()) {
                       createCategory.mutate(
-                        { name: newCategoryName.trim() },
+                        { name: newCategoryName.trim(), description: null },
                         {
                           onSuccess: (newCat) => {
                             setCategoryId(newCat.id)

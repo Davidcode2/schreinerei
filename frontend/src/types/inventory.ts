@@ -1,131 +1,63 @@
 /**
- * Inventory module types matching backend DTOs
+ * Thin inventory type facade backed by generated API DTOs.
  */
+
+import type {
+  AdjustStockRequest as GeneratedAdjustStockRequest,
+  CategoryResponse,
+  CreateCategoryRequest as GeneratedCreateCategoryRequest,
+  CreateMaterialRequest as GeneratedCreateMaterialRequest,
+  EnrichedStockHistoryResponse,
+  EntryType as GeneratedEntryType,
+  ListMaterialsQuery as GeneratedListMaterialsQuery,
+  MaterialResponse,
+  QrCodeResponse as GeneratedQrCodeResponse,
+  QrSvgResponse as GeneratedQrSvgResponse,
+  SiteStockHistoryResponse,
+  StockEntryResponse,
+  StockInRequest as GeneratedStockInRequest,
+  UpdateCategoryRequest as GeneratedUpdateCategoryRequest,
+  UpdateMaterialRequest as GeneratedUpdateMaterialRequest,
+  WithdrawRequest as GeneratedWithdrawRequest,
+} from "@/types/generated"
 
 // === Category ===
 
-export interface Category {
-  id: string
-  name: string
-  description: string | null
-  created_at: string
-}
+export type Category = CategoryResponse
 
-export interface CreateCategoryRequest {
-  name: string
-  description?: string
-}
+export type CreateCategoryRequest = GeneratedCreateCategoryRequest
 
-export interface UpdateCategoryRequest {
-  name?: string
-  description?: string
-}
+export type UpdateCategoryRequest = GeneratedUpdateCategoryRequest
 
 // === Material ===
 
-export interface Material {
-  id: string
-  category_id: string
-  name: string
-  description: string | null
-  unit: string
-  quantity: number
-  min_quantity: number
-  location: string | null
-  qr_code: string | null
-  is_low_stock: boolean
-  created_at: string
-}
+export type Material = MaterialResponse
 
-export interface MaterialStockHistoryEntry {
-  id: string
-  quantity_change: number
-  quantity_after: number
-  notes: string | null
-  site_id: string | null
-  site_name: string | null
-  created_at: string
-}
+export type MaterialStockHistoryEntry = StockEntryResponse
 
-export type EntryType = 'withdrawn' | 'adjusted' | 'material_added' | 'location_changed' | 'min_quantity_changed'
+export type EntryType = GeneratedEntryType
 
-export interface EnrichedStockHistoryEntry {
-  id: string
-  material_id: string
-  user_id: string
-  user_name: string
-  entry_type: EntryType
-  quantity_change: number
-  quantity_after: number
-  notes: string | null
-  site_id: string | null
-  site_name: string | null
-  category_name: string
-  created_at: string
-}
+export type EnrichedStockHistoryEntry = EnrichedStockHistoryResponse
 
-export interface SiteMaterialHistoryEntry {
-  id: string
-  material_id: string
-  material_name: string
-  category_name: string
-  quantity_change: number
-  quantity_after: number
-  notes: string | null
-  site_id: string | null
-  site_name: string | null
-  extracted_by: string
-  created_at: string
-}
+export type SiteMaterialHistoryEntry = SiteStockHistoryResponse
 
-export interface CreateMaterialRequest {
-  category_id: string
-  name: string
-  description?: string
-  unit: string
-  quantity: number
-  min_quantity: number
-  location?: string
-}
+export type CreateMaterialRequest = GeneratedCreateMaterialRequest
 
-export interface UpdateMaterialRequest {
-  location?: string
-  min_quantity?: number
-  clear_location?: boolean
-}
+export type UpdateMaterialRequest = GeneratedUpdateMaterialRequest
 
-export interface WithdrawRequest {
-  quantity: number
-  notes?: string
-  site_id?: string | null
-}
+export type WithdrawRequest = GeneratedWithdrawRequest
 
-export interface AdjustStockRequest {
-  quantity: number
-  reason: string
-}
+export type AdjustStockRequest = GeneratedAdjustStockRequest
 
-export interface StockInRequest {
-  quantity: number
-  notes?: string
-}
+export type StockInRequest = GeneratedStockInRequest
 
-export interface ListMaterialsQuery {
-  category_id?: string
-}
+export type ListMaterialsQuery = GeneratedListMaterialsQuery
 
 // === QR Code ===
 
-export interface QrCodeResponse {
-  qr_code: string
-  material_id: string
-  material_name: string
-}
+export type QrCodeResponse = GeneratedQrCodeResponse
 
-export interface QrSvgResponse {
-  svg: string
-  qr_code: string
-}
+export type QrSvgResponse = GeneratedQrSvgResponse
 
 // === Order Request ===
 

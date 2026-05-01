@@ -1,22 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiClient } from "../client"
 import type {
-  AdjustStockRequest,
   Category,
-  CreateCategoryRequest,
   Material,
-  CreateMaterialRequest,
-  CreateOrderRequestDto,
   EnrichedStockHistoryEntry,
   MaterialStockHistoryEntry,
   OrderRequest,
-  OrderStatusQuery,
   SiteMaterialHistoryEntry,
+} from "@/types/inventory"
+import type {
+  AdjustStockRequest,
+  CreateCategoryRequest,
+  CreateMaterialRequest,
+  CreateOrderRequestDto,
+  OrderStatusQuery,
   StockInRequest,
   UpdateCategoryRequest,
   UpdateMaterialRequest,
   WithdrawRequest,
-} from "@/types/inventory"
+} from "@/types/generated"
 
 // === Categories ===
 
