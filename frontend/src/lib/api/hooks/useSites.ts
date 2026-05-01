@@ -212,6 +212,25 @@ export function useCreateActivity() {
   })
 }
 
+export function useDeleteActivity() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      siteId,
+      activityId,
+    }: {
+      siteId: string
+      activityId: string
+    }) => apiClient.delete(`/api/v1/sites/${siteId}/activities/${activityId}`),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["activities", variables.siteId],
+      })
+    },
+  })
+}
+
 export function useUploadSitePhoto() {
   return useMutation({
     mutationFn: async ({

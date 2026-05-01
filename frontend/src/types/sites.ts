@@ -109,6 +109,7 @@ export interface Activity {
   site_id: string
   user_id: string
   creator_name: string
+  can_delete: boolean
   activity_type: ActivityType
   content: string | null
   photo_url: string | null

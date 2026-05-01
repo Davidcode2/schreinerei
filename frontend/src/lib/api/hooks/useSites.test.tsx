@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, afterEach } from "vitest"
 import { renderHook } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { useCreateActivity, useUploadSiteAttachment, useUploadSitePhoto } from "./useSites"
+import { useCreateActivity, useDeleteActivity, useUploadSiteAttachment, useUploadSitePhoto } from "./useSites"
+import type { Activity } from "@/types/sites"
 import { apiClient } from "../client"
 
 vi.mock("../client", () => ({
   apiClient: {
     post: vi.fn(),
+    delete: vi.fn(),
   },
 }))
 
@@ -119,6 +121,60 @@ describe("useCreateActivity", () => {
       content: "Montage abgeschlossen",
       attachment_ids: ["att-1", "att-2"],
     })
+  })
+})
+
+describe("useDeleteActivity", () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("trusts the typed can_delete contract from the backend", () => {
+    const activity: Activity = {
+      id: "activity-1",
+      site_id: "site-1",
+      user_id: "user-1",
+      creator_name: "Anna Tischler",
+      can_delete: true,
+      activity_type: "note",
+      content: "Montage abgeschlossen",
+      photo_url: null,
+      attachments: [],
+      created_at: "2026-05-01T10:00:00.000Z",
+    }
+
+    expect(activity.can_delete).toBe(true)
+  })
+
+  it("issues the site activity delete request and invalidates that feed", async () => {
+    vi.mocked(apiClient.delete).mockResolvedValueOnce({ success: true })
+    const queryClient = createQueryClient()
+    const invalidateQueriesSpy = vi.spyOn(queryClient, "invalidateQueries")
+
+    const { result } = renderHook(() => useDeleteActivity(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    await result.current.mutateAsync({ siteId: "site-1", activityId: "activity-1" })
+
+    expect(apiClient.delete).toHaveBeenCalledWith(
+      "/api/v1/sites/site-1/activities/activity-1"
+    )
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+      queryKey: ["activities", "site-1"],
+    })
+  })
+
+  it("surfaces delete failures for UI handling", async () => {
+    vi.mocked(apiClient.delete).mockRejectedValueOnce(new Error("Delete failed"))
+    const queryClient = createQueryClient()
+    const { result } = renderHook(() => useDeleteActivity(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    await expect(
+      result.current.mutateAsync({ siteId: "site-1", activityId: "activity-1" })
+    ).rejects.toThrow("Delete failed")
   })
 })
 
