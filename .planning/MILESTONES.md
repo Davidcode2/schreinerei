@@ -2,6 +2,79 @@
 
 ---
 
+## v1.11 Fleet Calendar on Fleet Page
+
+**Shipped:** 2026-05-01
+**Phases:** 3 | **Plans:** 5
+
+### Summary
+
+Moved fleet booking onto `/fleet` with an embedded calendar, explicit two-tap range selection, bottom-sheet confirmation, stable resource colors, and one canonical reservation entry path.
+
+### Accomplishments
+
+1. Embedded the reservation calendar directly into `FleetPage`
+2. Replaced first-tap booking with two-tap date-range selection
+3. Added bottom-sheet reservation confirmation with optional time entry
+4. Preserved visible reservations while selecting new ranges
+5. Removed the standalone `/fleet/calendar` route in favor of `/fleet`
+
+### Stats
+
+- **Timeline:** 1 day (2026-05-01)
+- **Requirements:** 13/13 verified
+
+### Key Decisions
+
+- `/fleet` is the primary booking surface
+- Range selection completes on the second tap, not the first
+- Confirmation appears in a bottom sheet so the calendar stays visible
+- Resource colors are deterministic frontend-derived accents
+
+### Archives
+
+- `.planning/milestones/v1.11-ROADMAP.md`
+- `.planning/milestones/v1.11-REQUIREMENTS.md`
+- `.planning/v1.11-MILESTONE-AUDIT.md`
+
+---
+
+## v1.10 Baustelle Activity Stream Features
+
+**Shipped:** 2026-05-01
+**Phases:** 4 | **Plans:** 9
+
+### Summary
+
+Completed the Baustelle activity stream overhaul with separate camera/document flows, attachment-backed entries, a fullscreen media viewer, and creator-only entry deletion.
+
+### Accomplishments
+
+1. Dedicated camera upload flow with native picker, preview, and optional note
+2. Document composer supports note-only, attachment-only, and mixed note + image/PDF entries
+3. Fullscreen media viewer with slug URLs, metadata, download, share, and close/back routing
+4. Protected image/PDF preview handling with viewer deep links
+5. Creator-only entry deletion with confirmation dialog and attachment cleanup
+
+### Stats
+
+- **Timeline:** 1 day (2026-05-01)
+- **Requirements:** 20/20 verified
+
+### Key Decisions
+
+- Keep camera upload separate from document composition
+- Preserve upload-first, activity-second orchestration
+- Resolve creator display names and delete permissions on the backend
+- Use route-backed viewer overlays with shareable deep links
+
+### Archives
+
+- `.planning/milestones/v1.10-ROADMAP.md`
+- `.planning/milestones/v1.10-REQUIREMENTS.md`
+
+---
+
 ## v1.9 Inventory Features
 
 **Shipped:** 2026-05-01

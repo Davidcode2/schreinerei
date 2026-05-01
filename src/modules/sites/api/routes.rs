@@ -41,6 +41,8 @@ pub fn create_router() -> Router<AppState> {
         
         // Activities
         .route("/api/v1/sites/{id}/activities", get(list_activities).post(create_activity))
+        .route("/api/v1/sites/{id}/activities/{activity_id}", delete(delete_activity))
+        .route("/api/v1/sites/{id}/attachments", post(upload_site_attachment))
         .route("/api/v1/sites/{id}/attachments/photo", post(upload_site_photo_attachment))
         .route("/api/v1/attachments/{attachment_id}", get(get_attachment_bytes))
         .route("/api/v1/attachments/{attachment_id}/thumbnail", get(get_attachment_thumbnail_bytes))
@@ -154,6 +156,26 @@ pub struct TimeEntryResponse {
     pub work_date: String,
     pub notes: Option<String>,
     pub created_at: String,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct SiteActivityAttachmentResponse {
+    pub attachment_id: String,
+    pub filename: String,
+    pub mime_type: String,
+    pub url: String,
+    pub thumbnail_url: Option<String>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct UploadSiteAttachmentResponse {
+    pub attachment_id: String,
+    pub filename: String,
+    pub mime_type: String,
+    pub url: String,
+    pub thumbnail_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, TS)]
@@ -555,9 +577,12 @@ pub struct ActivityResponse {
     pub id: String,
     pub site_id: String,
     pub user_id: String,
+    pub creator_name: String,
+    pub can_delete: bool,
     pub activity_type: String,
     pub content: Option<String>,
     pub photo_url: Option<String>,
+    pub attachments: Vec<SiteActivityAttachmentResponse>,
     pub created_at: String,
 }
 
@@ -567,10 +592,25 @@ impl From<crate::modules::sites::domain::Activity> for ActivityResponse {
             id: activity.id.to_string(),
             site_id: activity.site_id.to_string(),
             user_id: activity.user_id.to_string(),
+            creator_name: activity.creator_name,
+            can_delete: activity.can_delete,
             activity_type: activity.activity_type.as_str().to_string(),
             content: activity.content,
             photo_url: activity.photo_url,
+            attachments: activity.attachments.into_iter().map(SiteActivityAttachmentResponse::from).collect(),
             created_at: activity.created_at.to_rfc3339(),
+        }
+    }
+}
+
+impl From<crate::modules::sites::domain::ActivityAttachmentMetadata> for SiteActivityAttachmentResponse {
+    fn from(attachment: crate::modules::sites::domain::ActivityAttachmentMetadata) -> Self {
+        Self {
+            attachment_id: attachment.id.to_string(),
+            filename: attachment.filename,
+            mime_type: attachment.mime_type,
+            url: attachment.url,
+            thumbnail_url: attachment.thumbnail_url,
         }
     }
 }
@@ -581,6 +621,8 @@ pub struct CreateActivityRequest {
     pub activity_type: String,  // "photo" or "note"
     pub content: Option<String>,
     pub photo_url: Option<String>,
+    #[serde(default)]
+    pub attachment_ids: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -674,11 +716,109 @@ pub async fn create_activity(
         activity_type,
         content: request.content,
         photo_url: request.photo_url,
+        attachment_ids: request
+            .attachment_ids
+            .into_iter()
+            .map(|attachment_id| {
+                Uuid::parse_str(&attachment_id)
+                    .map_err(|_| AppError::Validation("Invalid attachment ID".to_string()))
+            })
+            .collect::<Result<Vec<_>, _>>()?,
     };
     
     let activity = service.create_activity(create, &ctx).await?;
     
     Ok((StatusCode::CREATED, Json(ActivityResponse::from(activity))))
+}
+
+pub async fn delete_activity(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path((site_id, activity_id)): Path<(String, String)>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+
+    let site_id = Uuid::parse_str(&site_id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+    let activity_id = Uuid::parse_str(&activity_id)
+        .map(crate::common::types::ActivityId)
+        .map_err(|_| AppError::Validation("Invalid activity ID".to_string()))?;
+
+    service.delete_activity(site_id, activity_id, &ctx).await?;
+
+    Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
+}
+
+pub async fn upload_site_attachment(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+    mut multipart: Multipart,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
+    );
+    let ctx = TenantContext::from_auth(&auth);
+
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+
+    let mut attachment_part: Option<(String, String, Vec<u8>)> = None;
+
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| AppError::Validation(format!("Invalid multipart payload: {e}")))?
+    {
+        if field.name() != Some("attachment") {
+            continue;
+        }
+
+        let file_name = field.file_name().unwrap_or("attachment").to_string();
+
+        let mime_type = field
+            .content_type()
+            .ok_or_else(|| AppError::Validation("Attachment MIME type is required".to_string()))?
+            .to_string();
+        let bytes = field
+            .bytes()
+            .await
+            .map_err(|e| AppError::Validation(format!("Unable to read upload bytes: {e}")))?
+            .to_vec();
+        attachment_part = Some((file_name, mime_type, bytes));
+        break;
+    }
+
+    let (original_filename, mime_type, original_bytes) = attachment_part
+        .ok_or_else(|| AppError::Validation("Multipart field 'attachment' is required".to_string()))?;
+
+    let result = service
+        .upload_site_attachment(
+            crate::modules::sites::application::site_service::UploadPhotoCommand {
+                site_id,
+                mime_type,
+                original_bytes,
+                original_filename,
+            },
+            &ctx,
+        )
+        .await?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(UploadSiteAttachmentResponse {
+            attachment_id: result.attachment_id.to_string(),
+            filename: result.filename,
+            mime_type: result.mime_type,
+            url: result.photo_url,
+            thumbnail_url: result.thumbnail_url,
+        }),
+    ))
 }
 
 pub async fn upload_site_photo_attachment(
@@ -696,7 +836,7 @@ pub async fn upload_site_photo_attachment(
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
 
-    let mut image_part: Option<(String, Vec<u8>)> = None;
+    let mut image_part: Option<(String, String, Vec<u8>)> = None;
 
     while let Some(field) = multipart
         .next_field()
@@ -707,6 +847,7 @@ pub async fn upload_site_photo_attachment(
             continue;
         }
 
+        let file_name = field.file_name().unwrap_or("photo").to_string();
         let mime_type = field
             .content_type()
             .ok_or_else(|| AppError::Validation("Photo MIME type is required".to_string()))?
@@ -716,12 +857,12 @@ pub async fn upload_site_photo_attachment(
             .await
             .map_err(|e| AppError::Validation(format!("Unable to read upload bytes: {e}")))?
             .to_vec();
-        image_part = Some((mime_type, bytes));
+        image_part = Some((file_name, mime_type, bytes));
         break;
     }
 
-    let (mime_type, original_bytes) =
-        image_part.ok_or_else(|| AppError::Validation("Multipart field 'photo' is required".to_string()))?;
+    let (original_filename, mime_type, original_bytes) = image_part
+        .ok_or_else(|| AppError::Validation("Multipart field 'photo' is required".to_string()))?;
 
     let result = service
         .upload_photo_attachment(
@@ -729,6 +870,7 @@ pub async fn upload_site_photo_attachment(
                 site_id,
                 mime_type,
                 original_bytes,
+                original_filename,
             },
             &ctx,
         )
@@ -739,7 +881,7 @@ pub async fn upload_site_photo_attachment(
         Json(UploadPhotoAttachmentResponse {
             attachment_id: result.attachment_id.to_string(),
             photo_url: result.photo_url,
-            thumbnail_url: result.thumbnail_url,
+            thumbnail_url: result.thumbnail_url.unwrap_or_default(),
         }),
     ))
 }
@@ -823,7 +965,29 @@ pub async fn get_attachment_thumbnail_bytes(
 
 #[cfg(test)]
 mod tests {
-    use super::UploadPhotoAttachmentResponse;
+    use super::{ActivityResponse, SiteActivityAttachmentResponse, UploadPhotoAttachmentResponse, UploadSiteAttachmentResponse};
+    use crate::common::types::{ActivityId, SiteId, TenantId, UserId};
+    use crate::modules::sites::domain::{Activity, ActivityType};
+    use chrono::Utc;
+
+    #[test]
+    fn activity_response_can_delete_maps_server_permission_bit() {
+        let response = ActivityResponse::from(Activity {
+            id: ActivityId::new(),
+            tenant_id: TenantId::new(),
+            site_id: SiteId::new(),
+            user_id: UserId::new(),
+            creator_name: "Max Mustermann".to_string(),
+            can_delete: true,
+            activity_type: ActivityType::Note,
+            content: Some("Notiz".to_string()),
+            photo_url: None,
+            attachments: Vec::new(),
+            created_at: Utc::now(),
+        });
+
+        assert!(response.can_delete);
+    }
 
     #[test]
     fn upload_response_contains_required_contract_fields() {
@@ -836,5 +1000,35 @@ mod tests {
         assert!(!dto.attachment_id.is_empty());
         assert!(dto.photo_url.contains("/attachments/"));
         assert!(dto.thumbnail_url.ends_with("/thumbnail"));
+    }
+
+    #[test]
+    fn generic_attachment_response_contains_required_contract_fields() {
+        let dto = SiteActivityAttachmentResponse {
+            attachment_id: uuid::Uuid::new_v4().to_string(),
+            filename: "lieferschein.pdf".to_string(),
+            mime_type: "application/pdf".to_string(),
+            url: "/api/v1/attachments/1".to_string(),
+            thumbnail_url: None,
+        };
+
+        assert_eq!(dto.filename, "lieferschein.pdf");
+        assert_eq!(dto.mime_type, "application/pdf");
+        assert!(dto.url.contains("/attachments/"));
+        assert!(dto.thumbnail_url.is_none());
+    }
+
+    #[test]
+    fn upload_site_attachment_response_preserves_filename_and_mime_type() {
+        let dto = UploadSiteAttachmentResponse {
+            attachment_id: uuid::Uuid::new_v4().to_string(),
+            filename: "plan.pdf".to_string(),
+            mime_type: "application/pdf".to_string(),
+            url: "/api/v1/attachments/1".to_string(),
+            thumbnail_url: None,
+        };
+
+        assert_eq!(dto.filename, "plan.pdf");
+        assert_eq!(dto.mime_type, "application/pdf");
     }
 }

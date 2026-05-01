@@ -94,15 +94,26 @@ export interface UpdateTimeEntryRequest {
 
 // === Activity ===
 
-export type ActivityType = 'photo' | 'note'
+export type ActivityType = 'photo' | 'note' | 'status_change'
+
+export interface ActivityAttachment {
+  attachment_id: string
+  filename: string
+  mime_type: string
+  url: string
+  thumbnail_url: string | null
+}
 
 export interface Activity {
   id: string
   site_id: string
   user_id: string
+  creator_name: string
+  can_delete: boolean
   activity_type: ActivityType
   content: string | null
   photo_url: string | null
+  attachments: ActivityAttachment[]
   created_at: string
 }
 
@@ -110,6 +121,7 @@ export interface CreateActivityRequest {
   activity_type: ActivityType
   content?: string
   photo_url?: string
+  attachment_ids?: string[]
 }
 
 export interface UploadPhotoAttachmentResponse {
@@ -117,6 +129,8 @@ export interface UploadPhotoAttachmentResponse {
   photo_url: string
   thumbnail_url: string
 }
+
+export interface UploadSiteAttachmentResponse extends ActivityAttachment {}
 
 export interface ActivityQuery {
   limit?: number

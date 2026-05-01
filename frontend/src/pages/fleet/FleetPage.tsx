@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Plus, Calendar, Car, Wrench } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Plus, Car, Wrench } from "lucide-react"
 import { PageHeader } from "@/components/shared"
 import { VehiclesList } from "./VehiclesList"
 import { ToolsList } from "./ToolsList"
@@ -9,6 +8,7 @@ import { ReservationsList } from "./ReservationsList"
 import { ReservationDialog } from "./ReservationDialog"
 import { AddVehicleDialog } from "./AddVehicleDialog"
 import { AddToolDialog } from "./AddToolDialog"
+import CalendarView from "./CalendarView"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,11 +50,6 @@ export default function FleetPage() {
         description="Fahrzeuge und Werkzeuge verwalten"
         action={
           <div className="flex gap-2">
-            <Link to="/fleet/calendar">
-              <Button variant="outline" size="icon">
-                <Calendar className="h-4 w-4" />
-              </Button>
-            </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className="gap-2">
@@ -76,6 +71,16 @@ export default function FleetPage() {
           </div>
         }
       />
+
+      <section className="space-y-4">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold">Kalender</h2>
+          <p className="text-sm text-muted-foreground">
+            Aktuelle Reservierungen direkt im Fuhrpark sehen.
+          </p>
+        </div>
+        <CalendarView embedded />
+      </section>
 
       {/* Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2 -mb-2">

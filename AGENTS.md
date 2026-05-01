@@ -89,6 +89,117 @@ mod submodule;  // Looks for src/module_name/submodule.rs
 
 Every query MUST be scoped to TenantId. Use request context to extract TenantId from Keycloak JWT.
 
+### Local Database Isolation
+
+Local development must NOT use a shared PostgreSQL database.
+
+- Every developer and every agent must use a dedicated local Postgres container and a dedicated database.
+- Never point `DATABASE_URL` at a teammate's or another agent's database.
+- Never run migrations against a shared local database instance.
+- Shared infrastructure such as Keycloak may stay shared; the application database must be isolated per developer/agent.
+
+Recommended naming convention:
+
+- Container: `schreinerei-db-<owner>`
+- Database: `schreinerei_<owner>`
+- Port: a unique local port per owner, for example `5433`, `5434`, `5435`
+
+Recommended local setup:
+
+1. Start a dedicated Postgres container for your owner id.
+2. Create an uncommitted local env file for that workspace or export shell variables for that session only.
+3. Set `DATABASE_URL` to your dedicated database.
+4. Copy baseline app data from the main local database so auth and manual testing work immediately.
+5. Run migrations only against that dedicated database.
+
+Concrete setup example:
+
+1. Start a dedicated container:
+```bash
+docker run -d \
+  --name "schreinerei-db-<owner>" \
+  -e POSTGRES_USER="schreinerei_<owner>" \
+  -e POSTGRES_PASSWORD="schreinerei_<owner>_pw" \
+  -e POSTGRES_DB="schreinerei_<owner>" \
+  -p <port>:5432 \
+  postgres:16
+```
+
+2. Wait until Postgres is ready:
+```bash
+until docker exec "schreinerei-db-<owner>" pg_isready -U "schreinerei_<owner>" -d "schreinerei_<owner>"; do sleep 1; done
+```
+
+3. Create a workspace-local `.env` in this worktree:
+```bash
+DATABASE_URL=postgres://schreinerei_<owner>:schreinerei_<owner>_pw@localhost:<port>/schreinerei_<owner>
+```
+
+4. Copy baseline data from the main local database into the isolated database.
+
+Assumptions:
+
+- The shared/main local database is reachable from the parent repo's `../.env`.
+- The isolated worktree database is configured by this worktree's `.env`.
+
+Recommended copy flow:
+
+```bash
+set -a
+source ../.env
+SHARED_DATABASE_URL="$DATABASE_URL"
+set +a
+
+set -a
+source ./.env
+LOCAL_DATABASE_URL="$DATABASE_URL"
+set +a
+
+psql "$LOCAL_DATABASE_URL" -v ON_ERROR_STOP=1 -c "TRUNCATE TABLE user_preferences, time_entries, stock_entries, site_assignments, site_activity_attachments, site_activities, order_requests, materials, categories, reservations, tools, vehicles, sites, users, tenants, domain_events RESTART IDENTITY CASCADE;"
+
+pg_dump "$SHARED_DATABASE_URL" --data-only --column-inserts --exclude-table=_sqlx_migrations \
+  | rg -v '^SET transaction_timeout = ' \
+  | psql "$LOCAL_DATABASE_URL" -v ON_ERROR_STOP=1
+```
+
+If the full data import hits schema drift on newer or older tables, import the auth/bootstrap data at minimum:
+
+```bash
+pg_dump "$SHARED_DATABASE_URL" --data-only --column-inserts --table=tenants --table=users --table=user_preferences \
+  | rg -v '^SET transaction_timeout = ' \
+  | psql "$LOCAL_DATABASE_URL" -v ON_ERROR_STOP=1
+```
+
+Minimum required data for auth:
+
+- `tenants` must contain the `keycloak_organization_alias` used by the token.
+- `users` and `user_preferences` should also be copied for realistic manual testing.
+
+Verification checks:
+
+```bash
+set -a
+source ./.env
+set +a
+
+psql "$DATABASE_URL" -c "select id, name, keycloak_organization_alias from tenants;"
+cargo run
+```
+
+If you see `No tenant found for organization alias: ...`, the isolated database is missing tenant bootstrap data from the main database.
+
+Agent rules:
+
+- Before running `cargo run`, `cargo test`, or migrations, verify that `DATABASE_URL` points to an owner-specific database, not a shared one.
+- If the current env points to a shared database, stop and create/use a dedicated database first.
+- Do not change or repair another developer's or agent's database.
+
+Follow-up implementation work to prefer:
+
+- Add a bootstrap script such as `scripts/dev-db.sh` to create a per-owner container, database, and connection string.
+- Prefer workspace-local env files over parent-directory env files so one workspace cannot silently reuse another workspace's database.
+- Update README and env examples to document the per-owner database workflow.
+
 ### ts-rs Type Generation
 
 Backend DTOs use `ts-rs` to auto-generate TypeScript types, preventing frontend-backend type drift.
