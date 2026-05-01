@@ -1,4 +1,4 @@
-import { db, type PendingAction } from './db'
+import { db, type PendingAction, type PhotoUploadQueueData } from './db'
 import { apiClient } from '@/lib/api/client'
 
 const MAX_RETRIES = 3
@@ -39,7 +39,75 @@ const actionHandlers: Record<string, (data: Record<string, unknown>) => Promise<
       end_time: data.endTime,
       notes: data.notes
     })
+  },
+
+  photo_upload: async (data) => {
+    const payload = parsePhotoUploadPayload(data)
+    const file = await fileFromDataUrl(payload.fileDataUrl, payload.mimeType, payload.fileName)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const uploadResponse = await apiClient.post<{ photo_url: string }>(
+      `/api/v1/sites/${payload.siteId}/attachments/photo`,
+      formData
+    )
+
+    await apiClient.post(`/api/v1/sites/${payload.siteId}/activities`, {
+      activity_type: 'photo',
+      content: payload.content,
+      photo_url: uploadResponse.photo_url,
+    })
   }
+}
+
+function parsePhotoUploadPayload(data: Record<string, unknown>): PhotoUploadQueueData {
+  const payload = data as Partial<PhotoUploadQueueData>
+  if (
+    payload.activityType !== 'photo' ||
+    typeof payload.siteId !== 'string' ||
+    typeof payload.fileDataUrl !== 'string' ||
+    typeof payload.mimeType !== 'string'
+  ) {
+    throw new Error('Malformed photo upload queue payload')
+  }
+
+  return {
+    siteId: payload.siteId,
+    activityType: 'photo',
+    content: typeof payload.content === 'string' ? payload.content : undefined,
+    mimeType: payload.mimeType,
+    fileName: typeof payload.fileName === 'string' ? payload.fileName : undefined,
+    fileDataUrl: payload.fileDataUrl,
+  }
+}
+
+async function fileFromDataUrl(dataUrl: string, mimeType: string, fileName?: string): Promise<File> {
+  const base64Marker = 'base64,'
+  const markerIndex = dataUrl.indexOf(base64Marker)
+  if (markerIndex === -1) {
+    throw new Error('Malformed file data URL')
+  }
+
+  const base64 = dataUrl.slice(markerIndex + base64Marker.length)
+  const binary = atob(base64)
+  const bytes = Uint8Array.from(binary, char => char.charCodeAt(0))
+  const blob = new Blob([bytes], { type: mimeType })
+  return new File([blob], fileName ?? 'offline-photo', { type: mimeType })
+}
+
+export async function serializeFileToDataUrl(file: File): Promise<string> {
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result)
+        return
+      }
+      reject(new Error('Failed to serialize file'))
+    }
+    reader.onerror = () => reject(new Error('Failed to serialize file'))
+    reader.readAsDataURL(file)
+  })
 }
 
 // Add action to queue
@@ -55,6 +123,23 @@ export async function queueAction(
   }
 
   return await db.pendingActions.add(action)
+}
+
+export async function queuePhotoUploadAction(params: {
+  siteId: string
+  file: File
+  content?: string
+}): Promise<number> {
+  const fileDataUrl = await serializeFileToDataUrl(params.file)
+
+  return queueAction('photo_upload', {
+    siteId: params.siteId,
+    activityType: 'photo',
+    content: params.content,
+    mimeType: params.file.type,
+    fileName: params.file.name,
+    fileDataUrl,
+  })
 }
 
 // Get all pending actions

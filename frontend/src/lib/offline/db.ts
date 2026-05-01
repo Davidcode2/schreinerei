@@ -3,11 +3,19 @@ import type { Material, Category } from '@/types/inventory'
 import type { Site } from '@/types/sites'
 import type { Vehicle, Tool, Reservation } from '@/types/fleet'
 
-// Pending action for offline queue
+export interface PhotoUploadQueueData {
+  siteId: string
+  activityType: 'photo'
+  content?: string
+  mimeType: string
+  fileName?: string
+  fileDataUrl: string
+}
+
 export interface PendingAction {
   id?: number
-  type: 'withdraw' | 'time_entry' | 'activity' | 'reservation'
-  data: Record<string, unknown>
+  type: 'withdraw' | 'time_entry' | 'activity' | 'reservation' | 'photo_upload'
+  data: Record<string, unknown> | PhotoUploadQueueData
   createdAt: Date
   retryCount: number
   lastError?: string
@@ -34,6 +42,16 @@ export class SchreinereiDB extends Dexie {
     super('SchreinereiDB')
 
     this.version(1).stores({
+      materials: 'id, cachedAt',
+      categories: 'id, cachedAt',
+      sites: 'id, cachedAt',
+      vehicles: 'id, cachedAt',
+      tools: 'id, cachedAt',
+      reservations: 'id, cachedAt',
+      pendingActions: '++id, type, createdAt'
+    })
+
+    this.version(2).stores({
       materials: 'id, cachedAt',
       categories: 'id, cachedAt',
       sites: 'id, cachedAt',
