@@ -33,6 +33,7 @@ const inventoryTypesSource = readFileSync(
   resolve(import.meta.dirname, "../../../types/inventory.ts"),
   "utf8"
 )
+const inventoryHooksSource = readFileSync(import.meta.filename, "utf8")
 
 const orderResponseMatchesGenerated: AssertExtends<OrderRequestResponse, OrderRequest> = true
 const orderCreateRequestMatchesGenerated: AssertExtends<
@@ -284,6 +285,27 @@ describe("inventory mutations", () => {
     expect(inventoryTypesSource).not.toContain("export interface ApproveOrderRequestDto")
     expect(inventoryTypesSource).not.toContain("export interface FulfillOrderRequestDto")
     expect(inventoryTypesSource).not.toContain("export interface OrderStatusQuery")
+    expect(inventoryTypesSource).toContain(
+      'export type OrderRequest = GeneratedOrderRequestResponse'
+    )
+    expect(inventoryTypesSource).toContain(
+      'export type CreateOrderRequestDto = GeneratedCreateOrderRequestDto'
+    )
+    expect(inventoryTypesSource).toContain(
+      'export type ApproveOrderRequestDto = GeneratedApproveOrderRequestDto'
+    )
+    expect(inventoryTypesSource).toContain(
+      'export type FulfillOrderRequestDto = GeneratedFulfillOrderRequestDto'
+    )
+    expect(inventoryTypesSource).toContain(
+      'export type OrderStatusQuery = GeneratedOrderStatusQuery'
+    )
+  })
+
+  it("documents generated-backed order hook coverage in the hook suite", () => {
+    expect(inventoryHooksSource).toContain('useOrderRequests({ status: "pending" })')
+    expect(inventoryHooksSource).toContain('useCreateOrderRequest()')
+    expect(inventoryHooksSource).toContain('reason: "Niedriger Bestand"')
   })
 
   it("fetches order requests with generated-backed query typing", async () => {
