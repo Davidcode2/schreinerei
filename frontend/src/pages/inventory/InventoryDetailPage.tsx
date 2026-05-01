@@ -19,15 +19,16 @@ import {
   StatusBadge,
 } from "@/components/shared"
 import {
-    useMaterial,
-    useMaterialHistory,
-    useStockInMaterial,
-    useWithdrawMaterial,
-    useCreateOrderRequest,
-    usePreferences,
-    useSites,
+  useCreateOrderRequest,
+  useEnrichedMaterialHistory,
+  useMaterial,
+  usePreferences,
+  useSites,
+  useStockInMaterial,
+  useWithdrawMaterial,
 } from "@/lib/api/hooks"
 import { MaterialEditDialog } from "./MaterialEditDialog"
+import { MaterialHistoryFeed } from "./MaterialHistoryFeed"
 import { StockInDialog } from "./StockInDialog"
 import { WithdrawDialog } from "./WithdrawDialog"
 import { toast } from "sonner"
@@ -39,7 +40,12 @@ export default function InventoryDetailPage() {
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false)
 
   const { data: material, isLoading, error, refetch } = useMaterial(id!)
-  const { data: history } = useMaterialHistory(id!)
+  const {
+    data: history = [],
+    error: historyError,
+    isLoading: isHistoryLoading,
+    refetch: refetchHistory,
+  } = useEnrichedMaterialHistory(id!)
   const { data: preferences } = usePreferences()
   const { data: sites } = useSites()
   const stockInMutation = useStockInMaterial()
@@ -241,34 +247,19 @@ export default function InventoryDetailPage() {
           <CardTitle>Historie</CardTitle>
         </CardHeader>
         <CardContent>
-          {!history || history.length === 0 ? (
+          {historyError ? (
+            <ErrorState
+              message="Historie konnte nicht geladen werden. Bitte Seite neu laden oder später erneut versuchen."
+              onRetry={() => {
+                void refetchHistory()
+              }}
+            />
+          ) : isHistoryLoading ? (
             <p className="text-sm text-muted-foreground">
-              Noch keine Entnahmen erfasst
+              Historie wird geladen...
             </p>
           ) : (
-            <div className="space-y-3">
-              {history.map((entry) => (
-                <div key={entry.id} className="rounded-lg border p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm text-muted-foreground">
-                      {new Date(entry.created_at).toLocaleString("de-DE")}
-                    </span>
-                    <span className="font-medium">{entry.quantity_change}</span>
-                  </div>
-
-                  {entry.notes && (
-                    <p className="mt-2 text-sm text-muted-foreground">{entry.notes}</p>
-                  )}
-
-                  {entry.site_name && (
-                    <div className="mt-2 flex items-center gap-2 text-sm">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{entry.site_name}</span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            <MaterialHistoryFeed entries={history} />
           )}
         </CardContent>
       </Card>
