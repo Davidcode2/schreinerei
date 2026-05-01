@@ -10,7 +10,7 @@ Enhance the Baustelle activity stream with separate camera/document upload flows
 - Integer phases (30-33): Planned milestone work for v1.10
 - Prior phases (1-29): See v1.0–v1.8 milestones in MILESTONES.md
 
-- [ ] **Phase 30: Camera Upload Flow** - Separate camera button from document modal with optional note
+- [x] **Phase 30: Camera Upload Flow** - Separate camera button from document modal with optional note (completed 2026-05-01)
 - [ ] **Phase 31: Document Upload Rework** - Support note AND attachments in a single entry (all combinations)
 - [ ] **Phase 32: Media Viewer** - Fullscreen viewer with slug URLs, metadata, download, and share
 - [ ] **Phase 33: Entry Management** - Delete own entries with confirmation
@@ -26,7 +26,7 @@ Enhance the Baustelle activity stream with separate camera/document upload flows
   2. User can attach an optional text note before submitting a camera upload
   3. Selected photo automatically attaches to the activity entry and appears in the feed
 **Plans**: 1 plan
-- [ ] 30-01-PLAN.md — Create CameraUploadFlow component and wire into SiteDetailPage
+- [x] 30-01-PLAN.md — Create CameraUploadFlow component and wire into SiteDetailPage
 
 ### Phase 31: Document Upload Rework
 **Goal**: Users can create activity entries combining notes and file attachments in any combination
@@ -69,7 +69,7 @@ Phases 30 → 31 → 32 → 33 (Phase 32 depends on 30+31; Phase 33 is independe
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 30. Camera Upload Flow | 0/1 | Ready to execute | - |
+| 30. Camera Upload Flow | 1/1 | Complete   | 2026-05-01 |
 | 31. Document Upload Rework | 0/? | Not started | - |
 | 32. Media Viewer | 0/? | Not started | - |
 | 33. Entry Management | 0/? | Not started | - |
