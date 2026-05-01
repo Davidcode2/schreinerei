@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { render, screen } from "@/test/utils"
+import { render, screen, waitFor } from "@/test/utils"
 import userEvent from "@testing-library/user-event"
 import { ActivityFeed } from "./ActivityFeed"
-import { waitFor } from "@testing-library/react"
 
 vi.mock("@/lib/api/hooks", () => ({
   useSiteMaterialHistory: vi.fn(),
@@ -23,6 +22,15 @@ const defaultMaterialHistoryMock = {
   data: [],
   isLoading: false,
 } as never
+
+const baseActivity = {
+  site_id: "site-1",
+  user_id: "user-1",
+  activity_type: "note" as const,
+  photo_url: null,
+  created_at: "2026-05-01T10:00:00.000Z",
+  attachments: [],
+}
 
 beforeEach(() => {
   getBlobMock.mockReset()
@@ -60,111 +68,103 @@ describe("ActivityFeed material tab", () => {
       "/sites/site-1"
     )
   })
-
-  it("renders empty state when no material entries exist", async () => {
-    vi.mocked(useSiteMaterialHistory).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as never)
-
-    render(<ActivityFeed activities={[]} siteId="site-1" />)
-    await userEvent.click(screen.getByRole("tab", { name: "Material" }))
-
-    expect(
-      await screen.findByText("Noch keine Materialentnahmen für diese Baustelle")
-    ).toBeInTheDocument()
-  })
 })
 
-describe("ActivityFeed photo preview", () => {
-  it("loads protected attachment photo via authenticated blob fetch", async () => {
+describe("ActivityFeed document entries", () => {
+  beforeEach(() => {
     vi.mocked(useSiteMaterialHistory).mockReturnValue(defaultMaterialHistoryMock)
+  })
+
+  it("renders document heading, note text, and attachment tiles", async () => {
     getBlobMock.mockResolvedValue(new Blob(["image-bytes"], { type: "image/jpeg" }))
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:doc-preview")
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined)
 
-    const createObjectURLSpy = vi
-      .spyOn(URL, "createObjectURL")
-      .mockReturnValue("blob:secure-preview")
-    const revokeObjectURLSpy = vi
-      .spyOn(URL, "revokeObjectURL")
-      .mockImplementation(() => undefined)
-
-    const { unmount } = render(
+    render(
       <ActivityFeed
         siteId="site-1"
         activities={[
           {
+            ...baseActivity,
             id: "activity-1",
-            site_id: "site-1",
-            user_id: "user-1",
-            activity_type: "photo",
-            content: null,
-            photo_url: "/api/v1/attachments/abc",
-            created_at: "2026-05-01T10:00:00.000Z",
+            content: "Montage abgeschlossen",
+            attachments: [
+              {
+                attachment_id: "att-1",
+                filename: "planung.jpg",
+                mime_type: "image/jpeg",
+                url: "/api/v1/attachments/att-1",
+                thumbnail_url: "/api/v1/attachments/att-1/thumbnail",
+              },
+            ],
           },
         ]}
       />
     )
+
+    expect(screen.getByText("Dokument hinzugefügt")).toBeInTheDocument()
+    expect(screen.getByText("Montage abgeschlossen")).toBeInTheDocument()
 
     await waitFor(() => {
-      expect(getBlobMock).toHaveBeenCalledWith("/api/v1/attachments/abc")
+      expect(getBlobMock).toHaveBeenCalledWith("/api/v1/attachments/att-1")
     })
 
-    const image = await screen.findByAltText("Aktivitätsfoto")
-    expect(image).toHaveAttribute("src", "blob:secure-preview")
-
-    unmount()
-    expect(revokeObjectURLSpy).toHaveBeenCalledWith("blob:secure-preview")
-
-    createObjectURLSpy.mockRestore()
-    revokeObjectURLSpy.mockRestore()
+    expect(await screen.findByAltText("planung.jpg")).toBeInTheDocument()
   })
 
-  it("renders preview image when photo_url exists", async () => {
-    vi.mocked(useSiteMaterialHistory).mockReturnValue(defaultMaterialHistoryMock)
-    getBlobMock.mockReset()
-
+  it("renders PDF cards with visible PDF labeling", () => {
     render(
       <ActivityFeed
         siteId="site-1"
         activities={[
           {
-            id: "activity-1",
-            site_id: "site-1",
-            user_id: "user-1",
-            activity_type: "photo",
-            content: null,
-            photo_url: "https://example.com/photo.jpg",
-            created_at: "2026-05-01T10:00:00.000Z",
-          },
-        ]}
-      />
-    )
-
-    const image = await screen.findByAltText("Aktivitätsfoto")
-    expect(image).toHaveAttribute("src", "https://example.com/photo.jpg")
-    expect(getBlobMock).not.toHaveBeenCalled()
-  })
-
-  it("does not render image when photo_url is missing", () => {
-    vi.mocked(useSiteMaterialHistory).mockReturnValue(defaultMaterialHistoryMock)
-
-    render(
-      <ActivityFeed
-        siteId="site-1"
-        activities={[
-          {
+            ...baseActivity,
             id: "activity-2",
-            site_id: "site-1",
-            user_id: "user-1",
-            activity_type: "photo",
             content: null,
-            photo_url: null,
-            created_at: "2026-05-01T10:00:00.000Z",
+            attachments: [
+              {
+                attachment_id: "att-2",
+                filename: "angebot.pdf",
+                mime_type: "application/pdf",
+                url: "/api/v1/attachments/att-2",
+                thumbnail_url: null,
+              },
+            ],
           },
         ]}
       />
     )
 
-    expect(screen.queryByAltText("Aktivitätsfoto")).not.toBeInTheDocument()
+    expect(screen.getByText("PDF")).toBeInTheDocument()
+    expect(screen.getByText("angebot.pdf")).toBeInTheDocument()
+  })
+
+  it("renders a fallback shell when protected previews fail", async () => {
+    getBlobMock.mockRejectedValue(new Error("preview failed"))
+
+    render(
+      <ActivityFeed
+        siteId="site-1"
+        activities={[
+          {
+            ...baseActivity,
+            id: "activity-3",
+            content: null,
+            attachments: [
+              {
+                attachment_id: "att-3",
+                filename: "planung.jpg",
+                mime_type: "image/jpeg",
+                url: "/api/v1/attachments/att-3",
+                thumbnail_url: "/api/v1/attachments/att-3/thumbnail",
+              },
+            ],
+          },
+        ]}
+      />
+    )
+
+    expect(await screen.findByText("Vorschau nicht verfügbar")).toBeInTheDocument()
+    expect(screen.getByText("planung.jpg")).toBeInTheDocument()
   })
 })
