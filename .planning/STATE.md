@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: Baustelle Activity Stream Features
-status: complete
-stopped_at: Phase 33 verification complete
-last_updated: "2026-05-01T20:29:00Z"
-last_activity: 2026-05-01 -- Phase 33 verified and milestone completed
+status: archived
+stopped_at: v1.10 milestone archived
+last_updated: "2026-05-01T21:05:00Z"
+last_activity: 2026-05-01 -- v1.10 archived and tagged for release
 progress:
   total_phases: 4
   completed_phases: 4
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-01)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler.
-**Current focus:** Milestone complete
+**Current focus:** Awaiting next milestone
 
 ## Current Position
 
 Phase: 33 (entry-management)
 Plan: Complete
-Status: Phase verified — milestone complete
+Status: Milestone archived — ready for next milestone
 Last activity: 2026-05-01
 
 Progress: [██████████] 100%
@@ -83,8 +83,22 @@ Items acknowledged and carried forward from v1.8:
 |----------|------|--------|-------------|
 | Testing | Offline photo queue replay test | Deferred | v1.8 close |
 
+Items acknowledged and deferred at milestone close on 2026-05-01:
+
+| Category | Item | Status | Deferred At |
+|----------|------|--------|-------------|
+| Debug | phase-23-uat-preferences-500 | investigating | v1.10 close |
+| UAT Gap | Phase 23: 23-UAT.md | testing | v1.10 close |
+| Verification Gap | Phase 19: 19-VERIFICATION.md | human_needed | v1.10 close |
+| Verification Gap | Phase 21: 21-VERIFICATION.md | human_needed | v1.10 close |
+| Todo | 2026-04-29-baustelle-time-booking-400-error.md | pending | v1.10 close |
+| Seed | SEED-001-module-extraction-pattern | dormant | v1.10 close |
+| Seed | SEED-002-cad-cnc-integration | dormant | v1.10 close |
+| Seed | SEED-003-rfid-integration | dormant | v1.10 close |
+| Context Questions | Phase 05: 05-CONTEXT.md | open | v1.10 close |
+
 ## Session Continuity
 
-Last session: 2026-05-01T20:29:00Z
-Stopped at: Phase 33 verification complete
+Last session: 2026-05-01T21:05:00Z
+Stopped at: v1.10 milestone archived
 Resume file: None

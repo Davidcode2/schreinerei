@@ -2,6 +2,45 @@
 
 ---
 
+## v1.10 Baustelle Activity Stream Features
+
+**Shipped:** 2026-05-01
+**Phases:** 4 | **Plans:** 9
+
+### Summary
+
+Completed the Baustelle activity stream overhaul with separate camera/document flows, mixed note-plus-attachment entries, a fullscreen media viewer, and creator-only entry deletion.
+
+### Accomplishments
+
+1. Dedicated camera upload flow with native picker, preview, and optional note
+2. Document composer supports note-only, attachment-only, and mixed note + image/PDF entries
+3. Fullscreen media viewer with slug URLs, metadata, download, share, and close/back routing
+4. Protected image/PDF preview handling with fallback behavior for failed previews
+5. Creator-only entry deletion with confirmation dialog and attachment cleanup
+6. Verification hardening fixed schema/runtime issues uncovered in live milestone testing
+
+### Stats
+
+- **Timeline:** 1 day (2026-05-01)
+- **Requirements:** 20/20 verified
+- **Known deferred items at close:** 9 (see `.planning/STATE.md` Deferred Items)
+
+### Key Decisions
+
+- Keep camera and document upload flows separate
+- Preserve upload-first, activity-second orchestration
+- Resolve creator display names on the backend
+- Use route-backed viewer overlays with shareable deep links
+- Expose only server-derived `can_delete` permission bits
+
+### Archives
+
+- `.planning/milestones/v1.10-ROADMAP.md`
+- `.planning/milestones/v1.10-REQUIREMENTS.md`
+
+---
+
 ## v1.8 Activity Feed & Site Status
 
 **Shipped:** 2026-05-01

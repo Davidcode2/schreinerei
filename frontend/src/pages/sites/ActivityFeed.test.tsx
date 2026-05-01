@@ -241,6 +241,34 @@ describe("ActivityFeed document entries", () => {
     )
   })
 
+  it("keeps status-change entries with attachments non-interactive", () => {
+    render(
+      <ActivityFeed
+        siteId="site-1"
+        activities={[
+          {
+            ...baseActivity,
+            id: "activity-status-attachment",
+            activity_type: "status_change",
+            content: '{"old_status":"active","new_status":"completed"}',
+            attachments: [
+              {
+                attachment_id: "att-status",
+                filename: "sollte-nicht-klickbar.pdf",
+                mime_type: "application/pdf",
+                url: "/api/v1/attachments/att-status",
+                thumbnail_url: null,
+              },
+            ],
+          },
+        ]}
+      />
+    )
+
+    expect(screen.queryByRole("link", { name: "Medium öffnen: sollte-nicht-klickbar.pdf" })).not.toBeInTheDocument()
+    expect(screen.queryByText("PDF")).not.toBeInTheDocument()
+  })
+
   it("shows delete actions only for deletable activities", () => {
     render(
       <ActivityFeed
@@ -272,6 +300,27 @@ describe("ActivityFeed document entries", () => {
     expect(screen.getByLabelText("Eintrag löschen: activity-5")).toBeInTheDocument()
     expect(screen.queryByLabelText("Eintrag löschen: activity-6")).not.toBeInTheDocument()
     expect(screen.queryByLabelText("Eintrag löschen: activity-7")).not.toBeInTheDocument()
+  })
+
+  it("renders status changes without raw JSON fallback text", () => {
+    render(
+      <ActivityFeed
+        siteId="site-1"
+        activities={[
+          {
+            ...baseActivity,
+            id: "activity-status",
+            activity_type: "status_change",
+            content: '{"old_status":"active","new_status":"completed"}',
+          },
+        ]}
+      />
+    )
+
+    expect(screen.getByText("Aktiv → Abgeschlossen")).toBeInTheDocument()
+    expect(
+      screen.queryByText('{"old_status":"active","new_status":"completed"}')
+    ).not.toBeInTheDocument()
   })
 
   it("confirms before deleting and closes after success", async () => {

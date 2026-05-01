@@ -159,6 +159,17 @@ function getActivityHeading(activity: Activity) {
   return activity.attachments.length > 0 ? "Dokument hinzugefügt" : "Notiz"
 }
 
+function getStatusChangeSummary(content: string): string {
+  try {
+    const data = JSON.parse(content)
+    const oldStatus = statusLabels[data.old_status] || data.old_status
+    const newStatus = statusLabels[data.new_status] || data.new_status
+    return `${oldStatus} → ${newStatus}`
+  } catch {
+    return content
+  }
+}
+
 function buildViewerPath(
   siteId: string,
   activityId: string,
@@ -229,7 +240,10 @@ function ActivityCard({
   activity: Activity
   onDelete: (activity: Activity) => void
 }) {
-  const hasDocumentAttachments = activity.activity_type !== "photo" && activity.attachments.length > 0
+  const hasDocumentAttachments =
+    activity.activity_type !== "photo" &&
+    activity.activity_type !== "status_change" &&
+    activity.attachments.length > 0
   const photoAttachment = activity.activity_type === "photo" ? buildLegacyPhotoAttachment(activity) : null
 
   return (
@@ -273,22 +287,15 @@ function ActivityCard({
           </div>
 
           {activity.activity_type === "status_change" && activity.content ? (
-            <p className="mt-1 text-sm text-muted-foreground">
-              {(() => {
-                try {
-                  const data = JSON.parse(activity.content)
-                  const oldStatus = statusLabels[data.old_status] || data.old_status
-                  const newStatus = statusLabels[data.new_status] || data.new_status
-                  return `${oldStatus} → ${newStatus}`
-                } catch {
-                  return activity.content
-                }
-              })()}
+            <p className="mt-1 break-all text-sm text-muted-foreground">
+              {getStatusChangeSummary(activity.content)}
             </p>
           ) : null}
 
-          {activity.content ? (
-            <p className="mt-1 text-sm text-muted-foreground">{activity.content}</p>
+          {activity.content && activity.activity_type !== "status_change" ? (
+            <p className="mt-1 break-all text-sm text-muted-foreground">
+              {activity.content}
+            </p>
           ) : null}
 
           {hasDocumentAttachments ? (

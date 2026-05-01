@@ -525,9 +525,25 @@ impl SiteRepository {
 
         let activity = sqlx::query_as::<_, ActivityRow>(
             r#"
-            INSERT INTO site_activities (id, tenant_id, site_id, user_id, activity_type, content, photo_url, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING id, tenant_id, site_id, user_id, activity_type, content, photo_url, created_at
+            WITH inserted_activity AS (
+                INSERT INTO site_activities (id, tenant_id, site_id, user_id, activity_type, content, photo_url, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                RETURNING id, tenant_id, site_id, user_id, activity_type, content, photo_url, created_at
+            )
+            SELECT
+                inserted_activity.id,
+                inserted_activity.tenant_id,
+                inserted_activity.site_id,
+                inserted_activity.user_id,
+                COALESCE(NULLIF(users.name, ''), users.email, inserted_activity.user_id::text) AS creator_name,
+                inserted_activity.activity_type,
+                inserted_activity.content,
+                inserted_activity.photo_url,
+                inserted_activity.created_at
+            FROM inserted_activity
+            LEFT JOIN users
+                ON users.id = inserted_activity.user_id
+               AND users.tenant_id = inserted_activity.tenant_id
             "#
         )
         .bind(id)

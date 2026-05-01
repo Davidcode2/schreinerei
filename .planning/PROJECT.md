@@ -10,23 +10,17 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## Current Milestone: v1.10 Baustelle Activity Stream Features
-
-**Goal:** Fix and enhance the Baustelle activity stream — separate camera/document upload flows, support mixed note+attachment entries, and add a fullscreen media viewer with share links.
-
-**Target features:**
-- Camera button opens camera/gallery picker (distinct from document modal)
-- Document upload modal supports note AND attachments together (currently note OR image)
-- All attachment combinations: note only, note+PDF(s), note+image(s), PDF(s) only, image(s) only
-- Clickable image/document previews in feed open fullscreen viewer
-- Fullscreen view modal with slug: large media, note alongside, timestamp, username, download & share
-- Creator can delete their own entries
-
 ## Current State
 
-**v1.8 shipped on 2026-05-01.** v1.9 (Inventory Features) deferred. Phase 30 complete.
+**v1.10 shipped on 2026-05-01.** The Baustelle activity stream now supports distinct camera/document flows, mixed attachment entries, a route-backed fullscreen media viewer, and creator-only entry deletion.
 
-v1.8 features working:
+Recent shipped additions in v1.10:
+- ✅ Dedicated camera upload flow with optional note
+- ✅ Document composer supports note-only, attachment-only, and mixed note + image/PDF entries
+- ✅ Fullscreen media viewer with slug URLs, creator metadata, share, and protected download
+- ✅ Creator-only entry deletion with confirmation and attachment cleanup
+
+Previously shipped foundation:
 - ✅ Baustelle status workflow (geplant → aktiv → abgeschlossen) with modal
 - ✅ Tabbed activity feed (Notizen/Dokumente + Material)
 - ✅ Material extraction history with Baustelle links and category display
@@ -35,12 +29,16 @@ v1.8 features working:
 - ✅ Offline photo capture queue with reconnect sync (deferred runtime test)
 - ✅ Camera-first modal entry point for photo uploads
 
-v1.10 progress (Phases 30-31 complete):
-- ✅ Camera button opens dedicated CameraUploadFlow (native picker, not document modal)
-- ✅ Camera upload supports optional note
-- ✅ Camera photo automatically attaches to activity entry
-- ✅ Document modal supports note-only, attachment-only, and mixed note + image/PDF entries
-- ✅ Activity feed renders document entries with image previews, PDF cards, and preview fallbacks
+## Next Milestone Goals
+
+**v1.9 Inventory Features (deferred milestone to pick up next):**
+- Category editing via inventory settings page
+- Edit inventory item location and minimum quantity
+- Set available quantity to arbitrary number
+- "Material einlagern" (stock in) action with modal
+- Extended inventory history with user attribution
+- Clickable Baustelle links in history events
+- Category display on inventory overview
 
 ## Previous Milestones
 
@@ -117,22 +115,15 @@ All v1.x requirements validated:
 
 ### Active
 
-- [x] Camera button opens camera/gallery picker on activity stream (Phase 30 ✓)
-- [x] Document upload modal supports note AND attachments (all combinations)
-- [ ] Clickable image/document previews in feed
-- [ ] Fullscreen media viewer with slug, note, timestamp, user, download, share
-- [ ] Delete own entries (creator only)
+- [ ] Define next milestone scope and fresh requirements
 
-### Future (v1.9+)
+### Validated (Latest Milestone)
 
-**Inventory Features (deferred from v1.9):**
-- Category editing via inventory settings page
-- Edit inventory item location and minimum quantity
-- Set available quantity to arbitrary number
-- "Material einlagern" (stock in) action with modal
-- Extended inventory history (material added, location changed, user attribution)
-- Clickable Baustelle links in history events
-- Category display on inventory overview
+**v1.10 Baustelle Activity Stream Features (20 requirements):**
+- ✓ CAM-01 to CAM-03 — Separate camera upload flow with optional note
+- ✓ DOC-01 to DOC-05 — Mixed note + attachment document entries with PDF/image support
+- ✓ VIEW-01 to VIEW-09 — Fullscreen media viewer with deep links, metadata, download, and share
+- ✓ ENTRY-01 to ENTRY-03 — Creator-only entry deletion with confirmation and cleanup
 
 ### Future (v2.0+)
 
@@ -275,4 +266,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-05-01 after Phase 30 completion**
+*Last updated: 2026-05-01 after v1.10 milestone close*

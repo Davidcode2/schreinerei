@@ -170,18 +170,18 @@ export function MediaViewer({ open, target, sharePath, onClose }: MediaViewerPro
           <div className="min-h-0 bg-slate-950/95 p-4 lg:p-6">{mediaPane()}</div>
 
           <aside className="flex flex-col gap-6 border-l bg-slate-50 p-4 lg:p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex gap-2">
-                <Button className="gap-2" onClick={copyShareLink}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-1 flex-col gap-2">
+                <Button className="w-full gap-2 justify-start" onClick={copyShareLink}>
                   <Link2 className="h-4 w-4" />
                   Link kopieren
                 </Button>
-                <Button className="gap-2" onClick={downloadAttachment} variant="outline">
+                <Button className="w-full gap-2 justify-start" onClick={downloadAttachment} variant="outline">
                   <Download className="h-4 w-4" />
                   Herunterladen
                 </Button>
               </div>
-              <Button aria-label="Viewer schließen" onClick={onClose} size="icon" variant="ghost">
+              <Button aria-label="Viewer schließen" className="shrink-0" onClick={onClose} size="icon" variant="ghost">
                 <X className="h-5 w-5" />
               </Button>
             </div>

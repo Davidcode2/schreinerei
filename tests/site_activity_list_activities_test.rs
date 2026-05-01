@@ -471,3 +471,27 @@ async fn delete_activity_photo_cleanup_removes_linked_and_photo_url_attachments(
     assert!(!remaining_attachment_ids.contains(&note_attachment));
     assert!(!remaining_attachment_ids.contains(&photo_attachment));
 }
+
+#[sqlx::test]
+async fn create_activity_returns_creator_name_after_insert(pool: PgPool) {
+    let tenant_id = create_test_tenant(&pool, "Create Activity Tenant").await;
+    let site_id = create_test_site(&pool, tenant_id, "Dachgeschoss").await;
+    let owner_id = create_test_user(&pool, tenant_id, "owner@test.invalid", Some("Max Mustermann")).await;
+
+    let service = SiteService::new(SiteRepository::new(pool.clone()));
+    let activity = service
+        .create_activity(
+            schreinerei::modules::sites::domain::CreateActivity {
+                site_id: SiteId(site_id),
+                activity_type: ActivityType::Photo,
+                content: Some("Baustellenfoto".to_string()),
+                photo_url: Some(format!("/api/v1/attachments/{}", Uuid::new_v4())),
+                attachment_ids: Vec::new(),
+            },
+            &tenant_context(tenant_id, owner_id),
+        )
+        .await
+        .expect("create photo activity");
+
+    assert_eq!(activity.creator_name, "Max Mustermann");
+}
