@@ -11,7 +11,7 @@
 - [x] **Phase 26: Status Change Workflow** - Site status transitions with modal UI and audit trail ✓ 2026-05-01
 - [x] **Phase 27: Tabbed Activity Feed** - Activity feed reorganization with tabs for notes and materials ✓ 2026-05-01
 - [ ] **Phase 28: Material History Tab** - Material extraction history linked to Baustellen
-- [ ] **Phase 29: Photo Upload & Attachments** - Photo capture, storage infrastructure, and activity attachments
+- [x] **Phase 29: Photo Upload & Attachments** - Photo capture, storage infrastructure, and activity attachments (completed 2026-05-01)
 
 ## Phase Details
 
@@ -96,7 +96,7 @@ Plans:
 5. Offline photo capture is queued and syncs when connection restored
 6. File access is authorized by tenant_id preventing cross-tenant leakage
 
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] 29-01-PLAN.md — Add tenant-scoped attachment schema and secure attachment read endpoints
@@ -113,7 +113,7 @@ Plans:
 | 26. Status Change Workflow | 3/3 | ✅ Complete | 2026-05-01 |
 | 27. Tabbed Activity Feed | 2/2 | ✅ Complete | 2026-05-01 |
 | 28. Material History Tab | 3/3 | ✅ Complete | 2026-05-01 |
-| 29. Photo Upload & Attachments | 3/4 | In Progress|  |
+| 29. Photo Upload & Attachments | 4/4 | Complete   | 2026-05-01 |
 
 ## Coverage Map
 

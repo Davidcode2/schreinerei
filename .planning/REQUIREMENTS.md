@@ -26,8 +26,8 @@
 - [x] **FILE-02**: Image preview shown in activity feed
 - [x] **FILE-03**: Photos stored with UUID filenames (security)
 - [x] **FILE-04**: Image thumbnails generated on upload
-- [ ] **FILE-05**: Offline photo capture queued for sync
-- [ ] **FILE-06**: Sync queue processes uploads when online
+- [x] **FILE-05**: Offline photo capture queued for sync
+- [x] **FILE-06**: Sync queue processes uploads when online
 - [x] **FILE-07**: File access authorized by tenant_id
 
 ### Material History
@@ -88,8 +88,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FILE-02 | Phase 29 | Complete |
 | FILE-03 | Phase 29 | Complete |
 | FILE-04 | Phase 29 | Complete |
-| FILE-05 | Phase 29 | Pending |
-| FILE-06 | Phase 29 | Pending |
+| FILE-05 | Phase 29 | Complete |
+| FILE-06 | Phase 29 | Complete |
 | FILE-07 | Phase 29 | Complete |
 
 **Coverage:**
