@@ -18,7 +18,7 @@ use crate::modules::inventory::application::InventoryService;
 use crate::modules::inventory::domain::{
     CreateCategory, CreateMaterial, WithdrawMaterial, AdjustStock,
     CreateOrderRequest, ApproveOrderRequest, FulfillOrderRequest,
-    StockEntryWithSite,
+    StockEntryWithSite, SiteStockHistoryEntry,
 };
 use crate::AppState;
 
@@ -33,6 +33,7 @@ pub fn create_router() -> Router<AppState> {
         .route("/api/v1/inventory/materials", get(list_materials).post(create_material))
         .route("/api/v1/inventory/materials/{id}", get(get_material).delete(delete_material))
         .route("/api/v1/inventory/materials/{id}/history", get(get_material_history))
+        .route("/api/v1/inventory/sites/{site_id}/history", get(get_site_material_history))
         .route("/api/v1/inventory/materials/{id}/withdraw", post(withdraw_material))
         .route("/api/v1/inventory/materials/{id}/adjust", post(adjust_stock))
         .route("/api/v1/inventory/materials/{id}/qr", post(generate_qr_code))
@@ -231,6 +232,40 @@ pub struct StockEntryResponse {
     pub created_at: String,
 }
 
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct SiteStockHistoryResponse {
+    pub id: String,
+    pub material_id: String,
+    pub material_name: String,
+    pub category_name: String,
+    pub quantity_change: i32,
+    pub quantity_after: i32,
+    pub notes: Option<String>,
+    pub site_id: Option<String>,
+    pub site_name: Option<String>,
+    pub extracted_by: String,
+    pub created_at: String,
+}
+
+impl From<SiteStockHistoryEntry> for SiteStockHistoryResponse {
+    fn from(entry: SiteStockHistoryEntry) -> Self {
+        Self {
+            id: entry.id.to_string(),
+            material_id: entry.material_id.to_string(),
+            material_name: entry.material_name,
+            category_name: entry.category_name,
+            quantity_change: entry.quantity_change,
+            quantity_after: entry.quantity_after,
+            notes: entry.notes,
+            site_id: entry.site_id.map(|s| s.to_string()),
+            site_name: entry.site_name,
+            extracted_by: entry.extracted_by,
+            created_at: entry.created_at.to_rfc3339(),
+        }
+    }
+}
+
 impl From<StockEntryWithSite> for StockEntryResponse {
     fn from(entry: StockEntryWithSite) -> Self {
         Self {
@@ -400,6 +435,30 @@ pub async fn get_material_history(
     let entries = repo.list_stock_entries_with_site(material_id, ctx.tenant_id, 50).await?;
     let response: Vec<StockEntryResponse> = entries.into_iter().map(StockEntryResponse::from).collect();
     
+    Ok(Json(response))
+}
+
+/// GET /api/v1/inventory/sites/{site_id}/history - Site-scoped stock history with enrichments
+pub async fn get_site_material_history(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(site_id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let repo = crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool);
+    let ctx = TenantContext::from_auth(&auth);
+
+    let parsed_site_id = Uuid::parse_str(&site_id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+
+    let entries = repo
+        .list_stock_entries_for_site(parsed_site_id, ctx.tenant_id, 50)
+        .await?;
+    let response: Vec<SiteStockHistoryResponse> = entries
+        .into_iter()
+        .map(SiteStockHistoryResponse::from)
+        .collect();
+
     Ok(Json(response))
 }
 

@@ -32,6 +32,24 @@ pub struct StockEntryWithSite {
     pub created_at: DateTime<Utc>,
 }
 
+/// Site-scoped stock history projection with material and user context
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SiteStockHistoryEntry {
+    pub id: uuid::Uuid,
+    pub tenant_id: TenantId,
+    pub material_id: MaterialId,
+    pub material_name: String,
+    pub category_name: String,
+    pub user_id: UserId,
+    pub extracted_by: String,
+    pub quantity_change: i32,
+    pub quantity_after: i32,
+    pub notes: Option<String>,
+    pub site_id: Option<SiteId>,
+    pub site_name: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
 impl StockEntryWithSite {
     /// Check if this is a withdrawal (negative change)
     pub fn is_withdrawal(&self) -> bool {

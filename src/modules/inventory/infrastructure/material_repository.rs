@@ -8,7 +8,7 @@ use crate::common::types::{TenantId, MaterialId, CategoryId, UserId, Unit, Order
 use crate::modules::inventory::domain::{
     Category, Material, CreateCategory, CreateMaterial,
     OrderRequest, OrderStatus, CreateOrderRequest,
-    StockEntryWithSite,
+    StockEntryWithSite, SiteStockHistoryEntry,
 };
 
 /// Repository for material data access with tenant isolation
@@ -499,6 +499,55 @@ impl MaterialRepository {
         Ok(entries.into_iter().map(|row| row.into_stock_entry_with_site()).collect())
     }
 
+    pub async fn list_stock_entries_for_site(
+        &self,
+        site_id: SiteId,
+        tenant_id: TenantId,
+        limit: i32,
+    ) -> Result<Vec<SiteStockHistoryEntry>, AppError> {
+        let entries = sqlx::query_as::<_, SiteStockHistoryRow>(
+            Self::site_history_query(),
+        )
+        .bind(site_id.0)
+        .bind(tenant_id.0)
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(entries
+            .into_iter()
+            .map(SiteStockHistoryRow::into_site_stock_history_entry)
+            .collect())
+    }
+
+    fn site_history_query() -> &'static str {
+        r#"
+        SELECT
+            se.id,
+            se.tenant_id,
+            se.material_id,
+            m.name AS material_name,
+            c.name AS category_name,
+            se.user_id,
+            COALESCE(u.name, u.email, se.user_id::text) AS extracted_by,
+            se.quantity_change,
+            se.quantity_after,
+            se.notes,
+            se.site_id,
+            s.name AS site_name,
+            se.created_at
+        FROM stock_entries se
+        INNER JOIN materials m ON se.material_id = m.id
+        INNER JOIN categories c ON m.category_id = c.id
+        LEFT JOIN users u ON se.user_id = u.id
+        LEFT JOIN sites s ON se.site_id = s.id
+        WHERE se.site_id = $1 AND se.tenant_id = $2
+        ORDER BY se.created_at DESC
+        LIMIT $3
+        "#
+    }
+
     // === Order Request operations ===
 
     pub async fn create_order_request(
@@ -806,6 +855,57 @@ struct StockEntryRow {
     site_id: Option<Uuid>,
     created_at: DateTime<Utc>,
     site_name: Option<String>,
+}
+
+#[derive(Debug, FromRow)]
+struct SiteStockHistoryRow {
+    id: Uuid,
+    tenant_id: Uuid,
+    material_id: Uuid,
+    material_name: String,
+    category_name: String,
+    user_id: Uuid,
+    extracted_by: String,
+    quantity_change: i32,
+    quantity_after: i32,
+    notes: Option<String>,
+    site_id: Option<Uuid>,
+    site_name: Option<String>,
+    created_at: DateTime<Utc>,
+}
+
+impl SiteStockHistoryRow {
+    fn into_site_stock_history_entry(self) -> SiteStockHistoryEntry {
+        SiteStockHistoryEntry {
+            id: self.id,
+            tenant_id: TenantId(self.tenant_id),
+            material_id: MaterialId(self.material_id),
+            material_name: self.material_name,
+            category_name: self.category_name,
+            user_id: UserId(self.user_id),
+            extracted_by: self.extracted_by,
+            quantity_change: self.quantity_change,
+            quantity_after: self.quantity_after,
+            notes: self.notes,
+            site_id: self.site_id.map(SiteId),
+            site_name: self.site_name,
+            created_at: self.created_at,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::MaterialRepository;
+
+    #[test]
+    fn site_history_query_enforces_tenant_and_site_filters() {
+        let sql = MaterialRepository::site_history_query();
+        assert!(sql.contains("WHERE se.site_id = $1 AND se.tenant_id = $2"));
+        assert!(sql.contains("COALESCE(u.name, u.email, se.user_id::text)"));
+        assert!(sql.contains("INNER JOIN materials m"));
+        assert!(sql.contains("INNER JOIN categories c"));
+    }
 }
 
 impl StockEntryRow {
