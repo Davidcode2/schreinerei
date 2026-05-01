@@ -1,540 +1,456 @@
-# Architecture Research
+# Architecture Patterns: Inventory Management v1.9 Improvements
 
-**Domain:** Activity Feed, File Attachments, Status Workflow Integration
+**Domain:** Carpentry SaaS (Schreinerei) — inventory module extension
 **Researched:** 2026-05-01
-**Confidence:** HIGH (based on existing codebase analysis)
+**Overall confidence:** HIGH (codebase-verified)
 
-## Existing Architecture Overview
+## Recommended Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        API Layer (Axum Routes)                      │
-│  /api/v1/sites/{id}/activities, /api/v1/sites/{id}/status          │
-├─────────────────────────────────────────────────────────────────────┤
-│                     Application Layer (Services)                     │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐     │
-│  │   SiteService   │  │ InventoryService│  │   FleetService  │     │
-│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘     │
-│           │                    │                    │               │
-├───────────┴────────────────────┴────────────────────┴───────────────┤
-│                       Domain Layer (Pure)                            │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐   │
-│  │  Site   │  │Activity │  │Material │  │Vehicle  │  │Reservation│  │
-│  │(status) │  │ (note)  │  │ (stock) │  │  (res)  │  │ (status) │   │
-│  └─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘   │
-│                                                                      │
-│  Domain Events: SiteStatusChanged, StockWithdrawn, etc.            │
-├──────────────────────────────────────────────────────────────────────┤
-│                    Infrastructure Layer (Adapters)                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │
-│  │SiteRepository│  │MaterialRepo  │  │ FileStorage  │               │
-│  │  (PostgreSQL)│  │ (PostgreSQL) │  │  (NEW)       │               │
-│  └──────────────┘  └──────────────┘  └──────────────┘               │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-## Integration Points for v1.8
-
-### 1. Activity Feed Enhancement
-
-**Current State:**
-- `site_activities` table exists with: `activity_type`, `content`, `photo_url`
-- `ActivityType` enum: `Photo`, `Note`, `StatusChange`
-- `photo_url` is just a string (no actual upload)
-
-**Required Changes:**
-
-| Component | Change | New/Modified |
-|-----------|--------|--------------|
-| `Activity` domain | Add `attachments` field for multiple documents | Modified |
-| `ActivityType` enum | Add `Document` type | Modified |
-| `site_activities` table | Add JSONB `metadata` column for attachments | Modified |
-| File storage adapter | NEW | New |
-| API routes | Add multipart upload endpoint | New |
-
-### 2. Status Workflow State Machine
-
-**Current State:**
-- `SiteStatus` enum: `Planned`, `Active`, `Completed`, `Archived`
-- `can_transition_to()` method validates transitions
-- No audit trail of status changes
-
-**Required Changes:**
-
-| Component | Change | New/Modified |
-|-----------|--------|--------------|
-| `SiteStatus` | Already exists with valid transitions | None |
-| `SiteService` | Add `change_status()` with event emission | Modified |
-| `SiteStatusChanged` event | Already exists in `events.rs` | None |
-| Status change activity | Auto-create on status change | Modified |
-
-### 3. Material Extraction History
-
-**Current State:**
-- `stock_entries` table has `material_id`, `quantity_change`, `notes`
-- No link to `site_id`
-
-**Required Changes:**
-
-| Component | Change | New/Modified |
-|-----------|--------|--------------|
-| `stock_entries` table | Add `site_id` column (nullable) | Modified |
-| `StockWithdrawn` event | Already has material info | None |
-| Activity feed query | Join `stock_entries` for materials tab | New query |
-
-## New Components
-
-### File Storage Adapter (Port + Adapters)
-
-**Port (Trait) in `common/storage.rs`:**
-
-```rust
-#[async_trait]
-pub trait FileStorage: Send + Sync {
-    /// Store a file and return its key/identifier
-    async fn store(
-        &self,
-        tenant_id: TenantId,
-        folder: &str,
-        filename: &str,
-        content: Vec<u8>,
-        content_type: &str,
-    ) -> Result<String, AppError>;
-
-    /// Retrieve a file by key
-    async fn retrieve(&self, key: &str) -> Result<Option<Vec<u8>>, AppError>;
-
-    /// Delete a file by key
-    async fn delete(&self, key: &str) -> Result<(), AppError>;
-
-    /// Get a signed/ public URL for serving
-    fn get_url(&self, key: &str) -> String;
-}
-```
-
-**Adapters (choose one for v1):**
-
-| Adapter | When to Use | Notes |
-|---------|-------------|-------|
-| `LocalStorage` | Development, single-server deploy | Files in `/var/lib/schreinerei/uploads` |
-| `S3Storage` | Production, scalable | AWS S3, MinIO, or any S3-compatible |
-| `GcsStorage` | GCP deployment | Google Cloud Storage |
-
-**Recommendation for v1.8:** `LocalStorage` for simplicity, with path pattern:
-```
-/var/lib/schreinerei/uploads/{tenant_id}/{folder}/{uuid}.{ext}
-```
-
-### Enhanced Activity Domain
-
-**Updated `Activity` struct:**
-
-```rust
-pub struct Activity {
-    pub id: ActivityId,
-    pub tenant_id: TenantId,
-    pub site_id: SiteId,
-    pub user_id: UserId,
-    pub activity_type: ActivityType,
-    pub content: Option<String>,
-    pub attachments: Vec<Attachment>,  // NEW: multiple files
-    pub created_at: DateTime<Utc>,
-}
-
-pub struct Attachment {
-    pub id: Uuid,
-    pub filename: String,
-    pub content_type: String,
-    pub size_bytes: i64,
-    pub storage_key: String,
-    pub thumbnail_key: Option<String>,  // For images
-}
-
-pub enum ActivityType {
-    Photo,
-    Note,
-    Document,      // NEW
-    StatusChange,  // System-generated
-    MaterialUsed,  // NEW: from stock_entries
-}
-```
-
-### Activity Feed Query Enhancement
-
-**Two-tab structure requires union query:**
-
-```sql
--- Notes/Documents tab
-SELECT 
-    'activity' as source,
-    sa.id,
-    sa.site_id,
-    sa.user_id,
-    sa.activity_type,
-    sa.content,
-    sa.created_at,
-    NULL as material_name,
-    NULL as quantity
-FROM site_activities sa
-WHERE sa.site_id = $1 AND sa.tenant_id = $2
-ORDER BY sa.created_at DESC
-
-UNION ALL
-
--- Materials tab (from stock_entries)
-SELECT
-    'material' as source,
-    se.id,
-    se.site_id,
-    se.user_id,
-    'material_used' as activity_type,
-    se.notes as content,
-    se.created_at,
-    m.name as material_name,
-    se.quantity_change as quantity
-FROM stock_entries se
-JOIN materials m ON se.material_id = m.id
-WHERE se.site_id = $1 AND se.tenant_id = $2 AND se.quantity_change < 0
-ORDER BY created_at DESC
-```
-
-## Data Flow
-
-### Upload Flow (New)
-
-```
-Frontend (FormData)
-    ↓
-POST /api/v1/sites/{id}/activities (multipart)
-    ↓
-Axum Multipart Extractor
-    ↓
-SiteService::create_activity_with_attachments()
-    ↓
-├─ FileStorage::store() → storage_key
-├─ Create Activity with attachment metadata
-├─ SiteRepository::create_activity()
-└─ EventBus::publish(ActivityAdded)
-    ↓
-ActivityResponse (with attachment URLs)
-```
-
-### Status Change Flow (Enhanced)
-
-```
-Frontend (Status Modal)
-    ↓
-PATCH /api/v1/sites/{id}/status
-    ↓
-SiteService::change_status()
-    ↓
-├─ Site.can_transition_to() validation
-├─ SiteRepository::update_site()
-├─ Create Activity (ActivityType::StatusChange)
-├─ SiteRepository::create_activity()
-└─ EventBus::publish(SiteStatusChanged)
-    ↓
-SiteResponse (updated)
-```
-
-### Material History Flow (Enhanced)
-
-```
-Frontend (Materials Tab)
-    ↓
-GET /api/v1/sites/{id}/materials
-    ↓
-SiteService::get_material_history()
-    ↓
-SiteRepository::list_material_entries()  -- NEW method
-    ↓
-JOIN stock_entries + materials
-    ↓
-MaterialHistoryResponse[]
-```
-
-## Project Structure Extensions
+All v1.9 features extend the **existing inventory module**. No new modules needed. Follow the established hexagonal pattern with domain → application → infrastructure → API layers.
 
 ```
 src/
-├── common/
-│   ├── storage.rs           # NEW: FileStorage trait
-│   └── storage/
-│       ├── mod.rs           # NEW
-│       ├── local.rs         # NEW: Local filesystem adapter
-│       └── s3.rs            # FUTURE: S3 adapter
-│
+├── common/                          # Unchanged
+│   ├── events.rs                    # ADD: MaterialAdded, MaterialLocationChanged, CategoryUpdated, CategoryDeleted
+│   └── types.rs                     # Unchanged (all types exist)
 ├── modules/
-│   └── sites/
-│       ├── domain/
-│       │   ├── activity.rs  # MODIFIED: Add attachments
-│       │   └── site.rs      # UNCHANGED: Already has status
-│       ├── application/
-│       │   └── site_service.rs  # MODIFIED: Add methods
-│       ├── infrastructure/
-│       │   └── site_repository.rs  # MODIFIED: Add queries
-│       └── api/
-│           └── routes.rs    # MODIFIED: Add multipart routes
-│
-└── migrations/
-    └── 012_activity_attachments.sql  # NEW: Add metadata column
+│   ├── inventory/
+│   │   ├── domain/
+│   │   │   ├── material.rs          # EXTEND: add UpdateMaterial command, StockIn command
+│   │   │   ├── category.rs          # EXTEND: add UpdateCategory, DeleteCategory commands
+│   │   │   ├── events.rs            # EXTEND: MaterialAdded, MaterialLocationChanged, CategoryUpdated payloads
+│   │   │   ├── stock_entry.rs       # EXTEND: add entry_type discriminators for history enrichment
+│   │   │   └── order_request.rs    # Unchanged
+│   │   ├── application/
+│   │   │   └── inventory_service.rs # EXTEND: add stock_in, update_material, update_category, delete_category
+│   │   ├── infrastructure/
+│   │   │   └── material_repository.rs # EXTEND: add update, stock-in, category CRUD queries
+│   │   └── api/
+│   │       └── routes.rs           # EXTEND: new endpoints (categories PUT/DELETE, materials PATCH, stock-in)
+├── modules/sites/                    # Unchanged (reused for ActivityFeed component)
+└── frontend/
+    └── src/
+        ├── pages/
+        │   ├── inventory/
+        │   │   ├── InventorySettingsPage.tsx    # NEW
+        │   │   ├── InventoryDetailPage.tsx       # EXTEND: richer history, edit actions
+        │   │   └── StockInDialog.tsx            # NEW
+        │   └── settings/
+        │       └── SettingsPage.tsx             # EXTEND: add inventory settings section
+        ├── components/
+        │   ├── inventory/
+        │   │   ├── CategoryFilter.tsx            # EXTEND (or replace with settings page version)
+        │   │   ├── MaterialHistoryFeed.tsx      # NEW: reusable history component
+        │   │   ├── CategoryManager.tsx           # NEW: CRUD grid for categories
+        │   │   └── MaterialEditDialog.tsx        # NEW: edit location, min_quantity
+        │   └── shared/
+        │       └── ActivityFeed.tsx              # EXISTING (reuse pattern, not component)
+        └── types/
+            ├── inventory.ts                      # EXTEND: add new DTOs
+            └── generated.ts                      # AUTO-GENERATED (ts-rs)
 ```
 
-## Architectural Patterns
+### Component Boundaries
 
-### Pattern 1: Port/Adapter for File Storage
+| Component | Responsibility | Communicates With |
+|-----------|---------------|-------------------|
+| `inventory::domain::material` | Material entity, update/stock-in commands | `events.rs` emits domain events |
+| `inventory::domain::category` | Category entity, update/delete commands | `events.rs` emits domain events |
+| `inventory::domain::events` | Event payloads for all new history types | `common::events::EventBus` |
+| `inventory::domain::stock_entry` | Stock history entry with type discriminator | `infrastructure` persists with `entry_type` |
+| `inventory::application::InventoryService` | Orchestrates category CRUD, material update, stock-in | `domain` commands, `infrastructure` repo |
+| `inventory::infrastructure::MaterialRepository` | SQL queries for updates, category CRUD, stock-in | PostgreSQL |
+| `inventory::api::routes` | New REST endpoints for settings, material edit, stock-in | `InventoryService` |
+| `frontend::MaterialHistoryFeed` | Unified history display (replaces basic history list) | Inventory API endpoints |
+| `frontend::CategoryManager` | Category CRUD UI in settings | Categories API endpoints |
+| `frontend::InventorySettingsPage` | Settings page with category management | Settings + Categories APIs |
 
-**What:** Define a trait (Port) in domain/application layer, implement in infrastructure.
+### Data Flow
 
-**When to use:** External dependencies that may change (storage provider).
+**Category CRUD:**
+```
+Frontend CategoryManager → PUT/DELETE /api/v1/inventory/categories/{id}
+  → routes.rs → InventoryService.update_category/delete_category
+  → MaterialRepository → SQL UPDATE/DELETE
+  → DomainEvent::CategoryUpdated/CategoryDeleted emitted
+```
 
-**Trade-offs:**
-- Pros: Easy to swap providers, testable with mock adapters
-- Cons: Additional abstraction layer
+**Material Edit (location, min_quantity):**
+```
+Frontend MaterialEditDialog → PATCH /api/v1/inventory/materials/{id}
+  → routes.rs → InventoryService.update_material
+  → MaterialRepository → SQL UPDATE (location, min_quantity)
+  → DomainEvent::MaterialLocationChanged emitted (if location changed)
+```
 
+**Material einlagern (stock-in):**
+```
+Frontend StockInDialog → POST /api/v1/inventory/materials/{id}/stock-in
+  → routes.rs → InventoryService.stock_in
+  → Material domain: validate positive quantity
+  → MaterialRepository.withdraw_stock (reused!) → SQL INSERT stock_entries + UPDATE materials
+  → DomainEvent::MaterialAdded emitted
+```
+
+**Inventory History (enriched):**
+```
+Frontend MaterialHistoryFeed → GET /api/v1/inventory/materials/{id}/history
+  → routes.rs → MaterialRepository.list_stock_entries_with_site (existing)
+  → Enhanced response with entry_type, user_name, category_name
+  → Client renders colored badges per type
+```
+
+## Patterns to Follow
+
+### Pattern 1: Domain Command + Validation (EXISTING)
+
+**What:** Every mutation goes through a domain command with `validate()`.
+**When:** All new write operations (stock-in, update material, update/delete category).
 **Example:**
-
 ```rust
-// In application layer
-pub struct SiteService<S: FileStorage> {
-    site_repo: SiteRepository,
-    storage: S,
+// domain/material.rs — NEW command
+pub struct StockIn {
+    pub material_id: MaterialId,
+    pub quantity: i32,
+    pub notes: Option<String>,
 }
 
-impl<S: FileStorage> SiteService<S> {
-    pub async fn create_activity_with_attachments(
-        &self,
-        create: CreateActivity,
-        files: Vec<UploadFile>,
-        ctx: &TenantContext,
-    ) -> Result<Activity, AppError> {
-        let mut attachments = Vec::new();
-        for file in files {
-            let key = self.storage.store(
-                ctx.tenant_id,
-                "activities",
-                &file.filename,
-                file.content,
-                &file.content_type,
-            ).await?;
-            attachments.push(Attachment {
-                id: Uuid::new_v4(),
-                filename: file.filename,
-                content_type: file.content_type,
-                size_bytes: file.size,
-                storage_key: key,
-                thumbnail_key: None,
-            });
+impl StockIn {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.quantity <= 0 {
+            return Err("Stock-in quantity must be positive".to_string());
         }
-        // Create activity with attachments...
+        Ok(())
+    }
+}
+
+pub struct UpdateMaterial {
+    pub material_id: MaterialId,
+    pub location: Option<String>,
+    pub min_quantity: Option<i32>,
+}
+
+impl UpdateMaterial {
+    pub fn validate(&self) -> Result<(), String> {
+        if let Some(min) = self.min_quantity {
+            if min < 0 {
+                return Err("Minimum quantity cannot be negative".to_string());
+            }
+        }
+        Ok(())
     }
 }
 ```
 
-### Pattern 2: Domain Events for Cross-Module Communication
+### Pattern 2: Event Payload → EventBus (EXISTING)
 
-**What:** Status changes emit events that can be consumed by other modules.
-
-**When to use:** When action triggers side effects (activity creation, notifications).
-
-**Trade-offs:**
-- Pros: Decoupled, auditable, replay-able
-- Cons: Eventually consistent, more complex
-
-**Example (already exists):**
-
+**What:** Every state change emits a domain event via the existing `EventBus`.
+**When:** All new mutations that alter meaningful state.
+**Example:**
 ```rust
-// SiteService::change_status
-pub async fn change_status(
-    &self,
-    site_id: SiteId,
-    new_status: SiteStatus,
-    ctx: &TenantContext,
-) -> Result<Site, AppError> {
-    let site = self.site_repo.find_site_by_id(ctx.tenant_id, site_id).await?
-        .ok_or(AppError::NotFound("Site not found".to_string()))?;
+// domain/events.rs — NEW payloads
+pub struct MaterialAddedPayload {
+    pub material_id: MaterialId,
+    pub material_name: String,
+    pub quantity_added: i32,
+    pub quantity_after: i32,
+    pub added_by: UserId,
+    pub notes: Option<String>,
+}
 
-    if !site.can_transition_to(new_status) {
-        return Err(AppError::Validation(
-            format!("Invalid status transition from {} to {}", site.status, new_status)
-        ));
+impl MaterialAddedPayload {
+    pub fn into_event(self, tenant_id: TenantId) -> DomainEvent {
+        DomainEvent::new(
+            EventType::MaterialAdded,
+            tenant_id,
+            "Material",
+            self.material_id.to_string(),
+            json!(self),
+        )
     }
+}
 
-    let old_status = site.status;
-    let updated = self.site_repo.update_site(ctx.tenant_id, site_id, &UpdateSite {
-        status: Some(new_status),
-        ..Default::default()
-    }).await?;
+pub struct MaterialLocationChangedPayload {
+    pub material_id: MaterialId,
+    pub material_name: String,
+    pub old_location: Option<String>,
+    pub new_location: Option<String>,
+    pub changed_by: UserId,
+}
+```
 
-    // Emit event
-    let event = SiteStatusChangedPayload {
-        site_id,
-        old_status: old_status.to_string(),
-        new_status: new_status.to_string(),
-        changed_by: ctx.user_id,
+### Pattern 3: Service Method → Repository → Transaction (EXISTING)
+
+**What:** Application service validates, calls repository in transaction, emits events.
+**When:** All new service methods. Follow `withdraw_material` and `adjust_stock` patterns.
+**Example:**
+```rust
+// application/inventory_service.rs — NEW method
+pub async fn stock_in(
+    &self,
+    stock_in: StockIn,
+    ctx: &TenantContext,
+) -> Result<Material, AppError> {
+    stock_in.validate()?;
+    let local_user_id = self.resolve_local_user_id(ctx).await?;
+
+    // REUSE adjust_stock pattern: positive quantity adds to stock
+    let material = self.material_repo
+        .add_stock(stock_in.material_id, stock_in.quantity, local_user_id, &stock_in.notes, ctx.tenant_id)
+        .await?;
+
+    // Emit MaterialAdded event
+    let event = MaterialAddedPayload {
+        material_id: material.id,
+        material_name: material.name.clone(),
+        quantity_added: stock_in.quantity,
+        quantity_after: material.quantity,
+        added_by: local_user_id,
+        notes: stock_in.notes,
     }.into_event(ctx.tenant_id);
 
-    self.site_repo.publish_event(&event).await?;
-
-    // Create activity record
-    self.site_repo.create_activity(ctx.tenant_id, ctx.user_id, &CreateActivity {
-        site_id,
-        activity_type: ActivityType::StatusChange,
-        content: Some(format!("{} → {}", old_status, new_status)),
-        photo_url: None,
-    }).await?;
-
-    Ok(updated)
+    self.material_repo.publish_event(&event).await?;
+    Ok(material)
 }
 ```
 
-### Pattern 3: Union Queries for Activity Feed
+### Pattern 4: Frontend Reusable History Feed (NEW — derived from sites ActivityFeed)
 
-**What:** Combine activities from multiple sources (notes, materials, status) in one feed.
+**What:** A `MaterialHistoryFeed` component that renders enriched history entries with color-coded badges.
+**When:** Rendering inventory history on the detail page.
+**Derivation:** The sites `ActivityFeed` already renders typed entries with icons and timestamps. Extract the same visual pattern but with inventory-specific types:
 
-**When to use:** When displaying a timeline of heterogeneous events.
-
-**Trade-offs:**
-- Pros: Single query, consistent ordering
-- Cons: More complex SQL, needs discriminator column
-
-**Example:**
-
-```rust
-// SiteRepository
-pub async fn list_activity_feed(
-    &self,
-    tenant_id: TenantId,
-    site_id: SiteId,
-    tab: ActivityTab,
-    limit: i32,
-) -> Result<Vec<ActivityFeedItem>, AppError> {
-    match tab {
-        ActivityTab::NotesDocuments => {
-            // Query site_activities only
-        }
-        ActivityTab::Materials => {
-            // Query stock_entries with JOIN
-        }
-    }
+```tsx
+// Color mapping for entry types
+const entryTypeConfig = {
+  withdrawal: { color: "red", label: "Entnahme", icon: ArrowDown },
+  addition:   { color: "green", label: "Einlagerung", icon: ArrowUp },
+  adjustment:  { color: "blue", label: "Anpassung", icon: Scale },
+  location_change: { color: "amber", label: "Standort geändert", icon: MapPin },
 }
 ```
+
+**Key difference from sites ActivityFeed:** The sites feed already has a "Material" tab that renders `SiteMaterialHistoryEntry`. The new `MaterialHistoryFeed` renders `MaterialStockHistoryEntry` (enriched version). Same visual pattern, different data shape. Create a new component rather than sharing because the data shape is different and will diverge further.
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Storing Files in Database
+### Anti-Pattern 1: Creating a Separate "Settings" Module
 
-**What people do:** Store file blobs in PostgreSQL BYTEA columns.
+**What:** Creating `src/modules/settings/` for category CRUD.
+**Why bad:** Categories are an inventory concern. They belong to the inventory bounded context. A separate module creates cross-module coupling and duplicates domain logic.
+**Instead:** Add category update/delete to `inventory::domain::category`, `inventory_service`, and `material_repository`.
 
-**Why it's wrong:** Bloats database, slow backups, can't serve directly, no CDN.
+### Anti-Pattern 2: Bypassing Domain Validation for "Simple" Updates
 
-**Do this instead:** Store files on filesystem or object storage, store only keys/URLs in DB.
+**What:** Direct SQL UPDATE in repository for location/min_quantity changes without domain command validation.
+**Why bad:** Skips the hexagonal architecture. Future validation rules (e.g., location length limits) would need to be added in two places.
+**Instead:** Create `UpdateMaterial` command in `domain/material.rs` with `validate()`, call from service.
 
-### Anti-Pattern 2: Blocking File Uploads
+### Anti-Pattern 3: Stock-In as a Separate Code Path from Stock Adjustment
 
-**What people do:** Await full upload before continuing request.
+**What:** Duplicating the transaction logic from `adjust_stock`/`withdraw_stock` for stock-in.
+**Why bad:** The existing `stock_entries` table already records all stock changes with `quantity_change` (positive or negative). Stock-in is just a positive `quantity_change` with an `entry_type` of "addition".
+**Instead:** Add a new repository method `add_stock()` that follows the same transactional pattern as `withdraw_stock()` but with a positive `quantity_change` and an `entry_type` discriminator. Or better yet, extend `adjust_stock` to record `entry_type`.
 
-**Why it's wrong:** Large files block the async runtime, timeouts.
+### Anti-Pattern 4: Sharing the ActivityFeed Component Directly
 
-**Do this instead:** Stream uploads with `axum::extract::Multipart`, process chunks.
+**What:** Importing `ActivityFeed` from `sites` and trying to force inventory data into site activity shapes.
+**Why bad:** The data shapes are fundamentally different (`Activity` with `activity_type` vs `StockEntryWithSite` with `quantity_change`). Forcing one into the other creates brittle adapter code.
+**Instead:** Create `MaterialHistoryFeed` that follows the same visual pattern (cards with icons, timestamps, badges) but reads from the material history API directly. Both can share a `HistoryEntry` base component if visual consistency is important.
 
-### Anti-Pattern 3: Status Changes Without Audit Trail
+### Anti-Pattern 5: Adding entry_type as a String Column Without Enum
 
-**What people do:** Just update status column, no history.
+**What:** Creating `entry_type VARCHAR` in stock_entries without a Rust enum backing it.
+**Why bad:** No compile-time safety. Typos in entry types cause silent failures.
+**Instead:** Create a Rust `StockEntryType` enum in `domain/stock_entry.rs` with `FromStr`/`Display` impls, matching the pattern used by `Unit`, `SiteStatus`, etc.
 
-**Why it's wrong:** No way to see who changed what when.
+## Scalability Considerations
 
-**Do this instead:** Create activity records for all status changes (already done).
+| Concern | At 100 users | At 10K users | At 1M users |
+|---------|--------------|--------------|-------------|
+| History query performance | Indexed lookups on `stock_entries(material_id, created_at DESC)` — fast | Add `entry_type` to composite index, consider pagination limit default 50 | Partition by `tenant_id`, add materialized view for recent history |
+| Category CRUD on settings page | Simple list + inline edit — straightforward | Consider caching categories in frontend (30s stale time already set) | Materialized view for category counts |
+| Event table growth | Small, acceptable | Index optimization on `domain_events(tenant_id, event_type)` | Archive old events, consider event compaction |
+| Material list with category string | JOIN on every list query — fine for small data | Consider adding `category_name` denormalized field to materials | Pre-computed category string from material select |
 
-## Database Changes
+## Phase-Specific Build Order
 
-### Migration 012: Activity Attachments
+### Phase 1: Backend Foundation — Category CRUD + Material Update Commands
+
+**Why first:** All frontend features depend on API endpoints existing. Build domain + application + infrastructure + API layers for:
+
+1. **Category update** — `PUT /api/v1/inventory/categories/{id}`, `UpdateCategory` command
+2. **Category delete** — `DELETE /api/v1/inventory/categories/{id}`, `DeleteCategory` command (with constraint check: can't delete if materials reference it)
+3. **Material update** — `PATCH /api/v1/inventory/materials/{id}`, `UpdateMaterial` command (location, min_quantity)
+4. **Stock-in** — `POST /api/v1/inventory/materials/{id}/stock-in`, `StockIn` command
+5. **New event types** — `EventType::MaterialAdded`, `EventType::MaterialLocationChanged`, `EventType::CategoryUpdated`, `EventType::CategoryDeleted`
+6. **Enhanced history** — Extend `stock_entries` with `entry_type` enum column + migration, enrich `StockEntryResponse` with `user_name`, `category_name`, `entry_type`
+
+### Phase 2: Frontend — Settings Page + Material Edit + Stock-In Dialog
+
+**Why second:** Depends on Phase 1 APIs.
+
+1. **InventorySettingsPage** — New route `/settings/inventory` with `CategoryManager` component
+2. **MaterialEditDialog** — Dialog for editing location and min_quantity on material detail page
+3. **StockInDialog** — New dialog for "Material einlagern" action, mirrors `WithdrawDialog` pattern
+4. **Category display** — Add `category_name` to `MaterialResponse` (backend join or denormalized)
+
+### Phase 3: Frontend — Enriched History + Clickable Baustelle Links
+
+**Why third:** Depends on Phase 1's enhanced history data.
+
+1. **MaterialHistoryFeed** — New component replacing basic history in `InventoryDetailPage`, renders color-coded entry types
+2. **Clickable site links** — Link `site_name` entries to `/sites/{site_id}` using React Router `Link`
+3. **User attribution** — Show "von {user_name}" in history entries
+
+### Phase 4: ts-rs Type Generation + Tests
+
+**Why last:** Depends on all DTOs being finalized.
+
+1. **ts-rs export** — Add `#[ts(export)]` to all new DTOs, run generation, verify `generated.ts` matches
+2. **Backend tests** — Domain command validation tests for `StockIn`, `UpdateMaterial`, `UpdateCategory`, `DeleteCategory`
+3. **E2E tests** — Playwright tests for settings page, stock-in dialog, history enrichment
+
+## Database Migration Strategy
+
+### Migration 014: Add entry_type to stock_entries
 
 ```sql
--- Add metadata column for attachments
-ALTER TABLE site_activities 
-ADD COLUMN metadata JSONB DEFAULT '{}';
+-- Add entry_type enum for stock history discrimination
+CREATE TYPE stock_entry_type AS ENUM (
+    'withdrawal',    -- Material entnommen (negative change)
+    'addition',      -- Material eingelagert (positive change via stock-in)
+    'adjustment',    -- Stock adjustment (admin correction)
+    'location_change' -- Location changed (metadata-only, quantity unchanged)
+);
 
--- Add site_id to stock_entries for material tracking
-ALTER TABLE stock_entries
-ADD COLUMN site_id UUID REFERENCES sites(id) ON DELETE SET NULL;
+ALTER TABLE stock_entries ADD COLUMN entry_type stock_entry_type NOT NULL DEFAULT 'withdrawal';
 
-CREATE INDEX idx_stock_entries_site ON stock_entries(site_id);
+-- Update existing rows: negative changes are withdrawals, positive are adjustments
+UPDATE stock_entries SET entry_type = 'withdrawal' WHERE quantity_change < 0;
+UPDATE stock_entries SET entry_type = 'adjustment' WHERE quantity_change > 0;
 
--- Update existing activities with empty metadata
-UPDATE site_activities SET metadata = '{}' WHERE metadata IS NULL;
+CREATE INDEX idx_stock_entries_type ON stock_entries(material_id, entry_type);
 ```
 
-## Scaling Considerations
+### Migration 015: Add category_name to materials (denormalization)
 
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| 0-100 users | Local file storage, single server |
-| 100-1000 users | S3-compatible storage, CDN for static files |
-| 1000+ users | Consider separating file upload service |
+```sql
+-- Add denormalized category_name for efficient listing
+-- (Optional: can also be done as a JOIN in the query)
+-- No schema change needed — JOIN is preferred for now.
+-- Only add this column if listing queries become slow.
+```
 
-### Scaling Priorities
+**Decision:** Use JOIN in the material listing query to include `category_name` rather than denormalizing. This mirrors the `SiteStockHistoryRow` pattern which already JOINs `categories`.
 
-1. **First bottleneck:** Disk I/O for file uploads → Move to S3
-2. **Second bottleneck:** Activity feed queries → Add materialized view or cache
+## Category Delete Constraint
 
-## Build Order
+Deleting a category that has materials is a data integrity concern. Two approaches:
 
-Based on dependencies, recommended implementation order:
+| Approach | Implementation | Tradeoff |
+|----------|---------------|----------|
+| **Block delete** (recommended) | Check `COUNT(*) FROM materials WHERE category_id = ? AND deleted_at IS NULL` in service. Return `AppError::Conflict` if materials exist. | Safe, explicit. Forces admin to re-categorize or move materials first. |
+| **Reassign to "Uncategorized"** | Auto-assign orphaned materials to a system category. | More convenient but creates hidden behavior. Risk of "Uncategorized" category being meaningless in Schreinerei context. |
 
-1. **File Storage Infrastructure** (no dependencies)
-   - `common/storage.rs` trait
-   - `common/storage/local.rs` adapter
-   - Configuration for upload path
+**Recommendation:** Block delete with explicit error message. This follows the pattern already established in `delete_material` which checks for pending order requests.
 
-2. **Database Migration**
-   - `012_activity_attachments.sql`
-   - Run migration, verify
+## Settings Page Routing
 
-3. **Enhanced Activity Domain**
-   - Update `Activity` struct
-   - Add `Attachment` struct
-   - Update `ActivityType` enum
+The current `SettingsPage.tsx` has `ProfileSection` and `UserManagementSection`. The inventory settings should be:
 
-4. **Repository Updates**
-   - `SiteRepository::create_activity_with_attachments()`
-   - `SiteRepository::list_material_history()` (for materials tab)
+**Option A (Recommended): Route under Settings**
+```
+/settings              → existing SettingsPage
+/settings/inventory    → new InventorySettingsPage
+```
 
-5. **Service Layer**
-   - `SiteService::change_status()` with activity creation
-   - `SiteService::upload_attachment()` method
+Add a navigation card in `SettingsPage.tsx` linking to `/settings/inventory`. This keeps settings centralized and discoverable.
 
-6. **API Routes**
-   - `POST /api/v1/sites/{id}/activities` with multipart
-   - `GET /api/v1/sites/{id}/materials` for history
+**Option B: Tab within SettingsPage**
+Add a tabbed interface with "Profile", "Benutzer", "Inventar" tabs. More complex, but avoids extra pages.
 
-7. **Frontend Integration**
-   - File upload component
-   - Status change modal
-   - Materials tab in activity feed
+**Recommendation:** Option A — separate page linked from Settings. Follows the pattern of how sites/inventory/fleet all have their own pages under a nav hierarchy. simpler to build and test.
 
-## Integration Checklist
+### Route Addition in App.tsx
 
-- [ ] FileStorage trait in `common/storage.rs`
-- [ ] LocalStorage adapter implementation
-- [ ] Migration for `metadata` and `site_id` columns
-- [ ] `Attachment` domain type
-- [ ] `ActivityType::Document` variant
-- [ ] `SiteRepository::list_material_history()` method
-- [ ] `SiteService::change_status()` with activity creation
-- [ ] Multipart upload route
-- [ ] Material history route
-- [ ] Frontend file upload component
-- [ ] Status change modal
-- [ ] Materials tab in ActivityFeed
+```tsx
+// Add to protected routes
+<Route path="/settings/inventory" element={<InventorySettingsPage />} />
+```
+
+And add a link card in `SettingsPage.tsx`:
+```tsx
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <Package className="h-5 w-5" />
+      Inventar-Einstellungen
+    </CardTitle>
+    <CardDescription>Kategorien verwalten</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Button variant="outline" onClick={() => navigate("/settings/inventory")}>
+      Verwalten
+    </Button>
+  </CardContent>
+</Card>
+```
+
+## Stock-In: Relationship to Existing Deduction System
+
+The "Material einlagern" (stock-in) action is the **inverse** of "Material entnehmen" (withdraw). Both share the same `stock_entries` audit table. The key architectural insight:
+
+| Aspect | Withdraw (existing) | Stock-In (new) |
+|--------|---------------------|-----------------|
+| `quantity_change` | Negative (e.g., -5) | Positive (e.g., +10) |
+| `entry_type` | `withdrawal` | `addition` |
+| Domain command | `WithdrawMaterial` | `StockIn` |
+| Validation | `can_withdraw(amount)` | `quantity > 0` |
+| Event | `StockWithdrawn` | `MaterialAdded` |
+| Admin-only? | No (all users) | No (all users) — any employee can stock in |
+| Site link | Optional `site_id` | Optional `site_id` (where did delivery arrive?) |
+
+**Architecture decision:** Create a separate `add_stock()` method in `MaterialRepository` rather than reusing `adjust_stock()`. Reason:
+- `adjust_stock` is admin-only and uses a `reason` string
+- `stock_in` is available to all users and uses `notes` + optional `site_id`
+- The repository pattern splits these concerns cleanly at the SQL level while sharing the same table
+
+The `stock_entries` table already has a `site_id` column (added for withdrawals linked to Baustellen). Stock-in can use this same column to indicate which site received the delivery.
+
+## Extending EventType for New History Entries
+
+The current `EventType` enum in `common/events.rs` already has inventory events. New entries:
+
+```rust
+pub enum EventType {
+    // Existing
+    MaterialCreated,
+    StockWithdrawn,
+    StockLow,
+    StockAdjusted,
+    OrderRequestCreated,
+    // NEW - inventory v1.9
+    MaterialAdded,           // Stock-in: material was restocked
+    MaterialLocationChanged, // Location field was updated
+    MaterialUpdated,         // Min quantity or other fields changed
+    CategoryUpdated,         // Category name/description changed
+    CategoryDeleted,         // Category removed
+    // Existing - sites
+    SiteCreated,
+    SiteStatusChanged,
+    // ... etc
+}
+```
+
+These new event types are purely additive — they don't break existing consumers. The `event_type` column in `domain_events` is stored as a string (serialized via `serde_json`), so no migration needed for the table structure itself.
 
 ## Sources
 
-- Existing codebase analysis (HIGH confidence)
-- Axum multipart documentation: https://docs.rs/axum/latest/axum/extract/struct.Multipart.html
-- PostgreSQL JSONB patterns: https://www.postgresql.org/docs/current/datatype-json.html
-- Tower middleware for file size limits: https://docs.rs/tower-http/latest/tower_http/limit/index.html
-
----
-*Architecture research for: Schreinerei v1.8 Activity Feed & Site Status*
-*Researched: 2026-05-01*
+- Codebase analysis: `src/modules/inventory/` — all layers examined (domain, application, infrastructure, API)
+- Codebase analysis: `src/common/events.rs` — EventType enum and EventBus
+- Codebase analysis: `src/common/types.rs` — all domain types
+- Codebase analysis: `frontend/src/pages/inventory/` — existing UI patterns
+- Codebase analysis: `frontend/src/pages/sites/ActivityFeed.tsx` — reusable visual pattern
+- Codebase analysis: `frontend/src/lib/api/hooks/useInventory.ts` — existing React Query hooks
+- Codebase analysis: `migrations/002_inventory_schema.sql` — current DB schema
