@@ -9,6 +9,11 @@ vi.mock("@/lib/api/hooks", () => ({
 
 import { useSiteMaterialHistory } from "@/lib/api/hooks"
 
+const defaultMaterialHistoryMock = {
+  data: [],
+  isLoading: false,
+} as never
+
 describe("ActivityFeed material tab", () => {
   it("renders enriched material history row and site link", async () => {
     vi.mocked(useSiteMaterialHistory).mockReturnValue({
@@ -54,5 +59,54 @@ describe("ActivityFeed material tab", () => {
     expect(
       await screen.findByText("Noch keine Materialentnahmen für diese Baustelle")
     ).toBeInTheDocument()
+  })
+})
+
+describe("ActivityFeed photo preview", () => {
+  it("renders preview image when photo_url exists", async () => {
+    vi.mocked(useSiteMaterialHistory).mockReturnValue(defaultMaterialHistoryMock)
+
+    render(
+      <ActivityFeed
+        siteId="site-1"
+        activities={[
+          {
+            id: "activity-1",
+            site_id: "site-1",
+            user_id: "user-1",
+            activity_type: "photo",
+            content: null,
+            photo_url: "https://example.com/photo.jpg",
+            created_at: "2026-05-01T10:00:00.000Z",
+          },
+        ]}
+      />
+    )
+
+    const image = await screen.findByAltText("Aktivitätsfoto")
+    expect(image).toHaveAttribute("src", "https://example.com/photo.jpg")
+  })
+
+  it("does not render image when photo_url is missing", () => {
+    vi.mocked(useSiteMaterialHistory).mockReturnValue(defaultMaterialHistoryMock)
+
+    render(
+      <ActivityFeed
+        siteId="site-1"
+        activities={[
+          {
+            id: "activity-2",
+            site_id: "site-1",
+            user_id: "user-1",
+            activity_type: "photo",
+            content: null,
+            photo_url: null,
+            created_at: "2026-05-01T10:00:00.000Z",
+          },
+        ]}
+      />
+    )
+
+    expect(screen.queryByAltText("Aktivitätsfoto")).not.toBeInTheDocument()
   })
 })

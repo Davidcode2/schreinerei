@@ -55,6 +55,20 @@ describe("useUploadSitePhoto", () => {
       thumbnail_url: "/api/v1/sites/site-1/attachments/att-1/thumbnail",
     })
   })
+
+  it("exposes upload errors for UI handling", async () => {
+    vi.mocked(apiClient.post).mockRejectedValueOnce(new Error("Upload failed"))
+    const queryClient = createQueryClient()
+    const { result } = renderHook(() => useUploadSitePhoto(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    const file = new File(["image"], "photo.jpg", { type: "image/jpeg" })
+
+    await expect(
+      result.current.mutateAsync({ siteId: "site-1", file })
+    ).rejects.toThrow("Upload failed")
+  })
 })
 
 describe("useCreateActivity", () => {
