@@ -17,7 +17,7 @@ tech-stack:
   added: []
   patterns: [upload-first then create-activity, tenant-scoped attachment linking, attachment array DTOs]
 key-files:
-  created: [migrations/014_document_attachments_multi_file.sql]
+  created: [migrations/015_document_attachments_multi_file.sql]
   modified:
     - src/modules/sites/domain/activity.rs
     - src/modules/sites/application/site_service.rs
@@ -62,7 +62,7 @@ Each task was committed atomically:
 _Note: TDD tasks used separate red/green commits._
 
 ## Files Created/Modified
-- `migrations/014_document_attachments_multi_file.sql` - removes the one-attachment-per-activity constraint and stores original filenames.
+- `migrations/015_document_attachments_multi_file.sql` - removes the one-attachment-per-activity constraint and stores original filenames.
 - `src/modules/sites/domain/activity.rs` - adds attachment metadata, attachment IDs, and note-or-attachment validation.
 - `src/modules/sites/application/site_service.rs` - handles PDF-safe uploads, conditional thumbnails, attachment linking, and attachment hydration.
 - `src/modules/sites/infrastructure/site_repository.rs` - persists filename metadata, links multiple attachments, and loads attachment collections per activity.

@@ -7,7 +7,7 @@ use sqlx::PgPool;
 use crate::config::AppConfig;
 use crate::common::error::AppError;
 
-const DOCUMENT_ATTACHMENT_MIGRATION_VERSION: i64 = 14;
+const DOCUMENT_ATTACHMENT_MIGRATION_VERSION: i64 = 15;
 
 /// Create a database connection pool
 pub async fn create_pool(config: &AppConfig) -> Result<PgPool, AppError> {
@@ -101,7 +101,7 @@ async fn ensure_document_attachment_schema_matches(
     }
 
     Err(AppError::Database(
-        "Failed to run migrations: migration 14 checksum mismatch cannot be auto-repaired because the live schema does not match the expected post-migration state".to_string(),
+        "Failed to run migrations: migration 15 checksum mismatch cannot be auto-repaired because the live schema does not match the expected post-migration state".to_string(),
     ))
 }
 
@@ -112,7 +112,7 @@ async fn update_document_attachment_checksum(
     let checksum = migrator
         .iter()
         .find(|migration| migration.version == DOCUMENT_ATTACHMENT_MIGRATION_VERSION)
-        .ok_or_else(|| AppError::Database("Failed to find migration 14 in the compiled migrator".to_string()))?
+        .ok_or_else(|| AppError::Database("Failed to find migration 15 in the compiled migrator".to_string()))?
         .checksum
         .to_vec();
 
@@ -136,7 +136,7 @@ async fn update_document_attachment_checksum(
     }
 
     Err(AppError::Database(
-        "Failed to repair migration 14 checksum because no successful applied migration row was updated".to_string(),
+        "Failed to repair migration 15 checksum because no successful applied migration row was updated".to_string(),
     ))
 }
 
