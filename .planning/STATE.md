@@ -12,37 +12,36 @@
 
 ## Current Position
 
-**Phase:** 27 — Tabbed Activity Feed
-**Status:** Ready to Plan
-**Next Action:** `/gsd-plan-phase 27`
+**Phase:** 28 — Material History Tab
+**Status:** Ready to verify
+**Next Action:** `/gsd-verify-phase 28`
 
 ```
-Progress: [████░░░░░░░░░░░░░░] 25% (1/4 phases)
+Progress: [███████████████░░░] 75% (3/4 phases complete)
 ```
 
 ## Active Context
 
 **Working On:**
-- Phase 27: Tabbed Activity Feed with notes and materials tabs
-- Building on Phase 26 status change workflow
+- Phase 28: Material History Tab linked to Baustellen
+- Building on Phase 27 tabbed activity feed
 
 **Current Focus:**
-- Activity feed needs tab navigation
-- Add notes functionality
-- Material history tab integration
+- Replace Material tab placeholder with real site-linked extraction history
+- Show category and extracting user context
+- Keep backend query eager-loaded (no N+1)
 
 **Recent Completion:**
 - ✅ Phase 26: Status Change Workflow complete (2026-05-01)
-- ✅ Status change modal working
-- ✅ Activity feed shows status changes
-- ✅ "Aktiv" button renamed to "Auswählen"
+- ✅ Phase 27: Tabbed Activity Feed complete (2026-05-01)
+- ✅ Phase 28: Material History Tab complete (2026-05-01)
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Phases Completed | 1/4 |
-| Requirements Done | 5/21 |
+| Phases Completed | 3/4 |
+| Requirements Done | 14/21 |
 | Tests | 116 backend + 28 frontend + 22 E2E |
 | Code Lines | ~12,290 Rust + ~9,100 TypeScript |
 | Velocity | v1.7: 17 reqs, v1.8: 5/21 in progress |
@@ -69,8 +68,8 @@ None.
 
 ## Session Continuity
 
-**Last Session:** Phase 26 completion
-**Handoff:** Ready to plan Phase 27
+**Last Session:** Phase 28 execution
+**Handoff:** Phase 28 implemented, ready for verification
 
 **Key Files:**
 - `.planning/ROADMAP.md` — Phase structure (Phase 26 complete)
@@ -78,9 +77,9 @@ None.
 - `.planning/phases/26-status-change-workflow/` — Phase 26 artifacts
 
 **Next Steps:**
-1. `/gsd-plan-phase 27` — Create execution plan for Tabbed Activity Feed
-2. `/gsd-execute-phase 27` — Implement tabs and notes
-3. Continue through phases 28-29
+1. `/gsd-verify-phase 28` — Verify HIST-01..HIST-05 coverage
+2. `/gsd-plan-phase 29` — Plan photo upload and attachment flow
+3. `/gsd-execute-phase 29` — Implement Phase 29 plans
 
 ---
 

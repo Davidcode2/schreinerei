@@ -71,7 +71,12 @@
 4. Material history shows which user extracted the material
 5. Material history loads efficiently with eager loading (no N+1 queries)
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [x] 28-01-PLAN.md — Add backend site-scoped material history endpoint with eager-loaded category/user/site context
+- [x] 28-02-PLAN.md — Add frontend site history hook + typed contracts for enriched material history rows
+- [x] 28-03-PLAN.md — Implement Material tab UI rendering and Baustelle navigation link with tests
 
 ---
 
@@ -101,7 +106,7 @@
 |-------|----------------|--------|-----------|
 | 26. Status Change Workflow | 3/3 | ✅ Complete | 2026-05-01 |
 | 27. Tabbed Activity Feed | 2/2 | ✅ Complete | 2026-05-01 |
-| 28. Material History Tab | 0/3 | Not started | - |
+| 28. Material History Tab | 3/3 | ✅ Complete | 2026-05-01 |
 | 29. Photo Upload & Attachments | 0/4 | Not started | - |
 
 ## Coverage Map
@@ -117,11 +122,11 @@
 | FEED-02 | Phase 27 | ✅ Complete |
 | FEED-03 | Phase 27 | ✅ Complete |
 | FEED-04 | Phase 27 | ✅ Complete |
-| HIST-01 | Phase 28 | Pending |
-| HIST-02 | Phase 28 | Pending |
-| HIST-03 | Phase 28 | Pending |
-| HIST-04 | Phase 28 | Pending |
-| HIST-05 | Phase 28 | Pending |
+| HIST-01 | Phase 28 | ✅ Complete |
+| HIST-02 | Phase 28 | ✅ Complete |
+| HIST-03 | Phase 28 | ✅ Complete |
+| HIST-04 | Phase 28 | ✅ Complete |
+| HIST-05 | Phase 28 | ✅ Complete |
 | FILE-01 | Phase 29 | Pending |
 | FILE-02 | Phase 29 | Pending |
 | FILE-03 | Phase 29 | Pending |
