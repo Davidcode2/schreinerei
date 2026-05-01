@@ -19,12 +19,13 @@ pub struct UploadPhotoCommand {
     pub site_id: SiteId,
     pub mime_type: String,
     pub original_bytes: Vec<u8>,
+    pub original_filename: String,
 }
 
 pub struct UploadPhotoResult {
     pub attachment_id: Uuid,
     pub photo_url: String,
-    pub thumbnail_url: String,
+    pub thumbnail_url: Option<String>,
 }
 
 /// Service for site business logic
@@ -81,10 +82,10 @@ impl SiteService {
         Ok(out.into_inner())
     }
 
-    fn build_attachment_urls(attachment_id: Uuid) -> (String, String) {
+    fn build_attachment_urls(attachment_id: Uuid) -> (String, Option<String>) {
         (
             format!("/api/v1/attachments/{attachment_id}"),
-            format!("/api/v1/attachments/{attachment_id}/thumbnail"),
+            Some(format!("/api/v1/attachments/{attachment_id}/thumbnail")),
         )
     }
 
@@ -475,7 +476,8 @@ impl SiteService {
                     activity_id: None,
                     site_id: cmd.site_id,
                     storage_key: original_key,
-                    thumbnail_key,
+                    thumbnail_key: Some(thumbnail_key),
+                    original_filename: cmd.original_filename,
                     mime_type: cmd.mime_type,
                     size_bytes: cmd.original_bytes.len() as i64,
                     original_bytes: Some(cmd.original_bytes),
@@ -544,7 +546,7 @@ mod tests {
         let id = uuid::Uuid::new_v4();
         let (photo_url, thumb_url) = SiteService::build_attachment_urls(id);
         assert_eq!(photo_url, format!("/api/v1/attachments/{id}"));
-        assert_eq!(thumb_url, format!("/api/v1/attachments/{id}/thumbnail"));
+        assert_eq!(thumb_url, Some(format!("/api/v1/attachments/{id}/thumbnail")));
     }
 
     #[test]
@@ -552,6 +554,6 @@ mod tests {
         let id = uuid::Uuid::new_v4();
         let (photo_url, thumb_url) = SiteService::build_attachment_urls(id);
         assert!(!photo_url.contains("pending-upload"));
-        assert!(!thumb_url.contains("pending-upload"));
+        assert!(!thumb_url.unwrap_or_default().contains("pending-upload"));
     }
 }

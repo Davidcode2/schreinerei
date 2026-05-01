@@ -2,30 +2,139 @@
 
 export type ActivityQuery = { limit: number | null, };
 
-export type ActivityResponse = { id: string, site_id: string, user_id: string, activity_type: string, content: string | null, photo_url: string | null, created_at: string, };
+export type ActivityResponse = { id: string, site_id: string, user_id: string, activity_type: string, content: string | null, photo_url: string | null, attachments: Array<SiteActivityAttachmentResponse>, created_at: string, };
+
+export type AdjustStockRequest = { quantity: number, reason: string, };
+
+export type ApproveOrderRequestDto = { notes: string | null, };
 
 export type AssignUserRequest = { user_id: string, role: string | null, };
 
 export type AssignmentResponse = { id: string, site_id: string, user_id: string, role: string, created_at: string, };
 
-export type CreateActivityRequest = { activity_type: string, content: string | null, photo_url: string | null, };
+export type AvailabilityQuery = { resource_type: string, resource_id: string, start_time: string, end_time: string, };
+
+export type AvailabilityResponse = { available: boolean, conflicts: Array<ConflictDetail> | null, };
+
+export type CalendarEntryResponse = { resource_type: string, resource_id: string, resource_name: string, reservations: Array<ReservationSummaryResponse>, };
+
+export type CalendarQuery = { start_date: string, end_date: string, resource_type: string | null, };
+
+export type CalendarResponse = { resources: Array<CalendarEntryResponse>, };
+
+export type CategoryResponse = { id: string, name: string, description: string | null, created_at: string, };
+
+export type ConflictDetail = { id: string, user_name: string | null, start_time: string, end_time: string, status: string, };
+
+export type CreateActivityRequest = { activity_type: string, content: string | null, photo_url: string | null, attachment_ids: Array<string>, };
+
+export type CreateCategoryRequest = { name: string, description: string | null, };
+
+export type CreateMaterialRequest = { category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, location: string | null, };
+
+export type CreateOrderRequestDto = { material_id: string, quantity: number, reason: string | null, };
+
+export type CreateReservationRequest = { resource_type: string, resource_id: string, site_id: string | null, start_time: string, end_time: string, notes: string | null, };
 
 export type CreateSiteRequest = { name: string, customer_name: string, location: string | null, description: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, };
 
 export type CreateTimeEntryRequest = { site_id: string | null, work_type: string, hours: number, work_date: string, notes: string | null, };
 
+export type CreateToolRequest = { name: string, category: string | null, description: string | null, location: string | null, qr_code: string | null, };
+
+export type CreateVehicleRequest = { name: string, license_plate: string | null, vehicle_type: string, description: string | null, location: string | null, qr_code: string | null, };
+
 export type DashboardSiteResponse = { id: string, name: string, customer_name: string, location: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, assigned_users: bigint, total_hours: number, };
 
+export type FulfillOrderRequestDto = { actual_quantity: number, notes: string | null, };
+
+/**
+ * Request DTO for inviting a user
+ */
+export type InviteUserRequest = { email: string, name: string | null, role: string, };
+
+export type ListMaterialsQuery = { category_id: string | null, };
+
+export type ListReservationsQuery = { user_id: string | null, resource_type: string | null, resource_id: string | null, };
+
 export type ListSitesQuery = { status: string | null, };
+
+export type ListToolsQuery = { status: string | null, category: string | null, };
+
+export type ListVehiclesQuery = { status: string | null, };
+
+export type MaterialResponse = { id: string, category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, location: string | null, qr_code: string | null, is_low_stock: boolean, created_at: string, };
+
+export type OrderRequestResponse = { id: string, material_id: string, material_name: string, quantity: number, requested_by: string, status: string, reason: string | null, approved_by: string | null, approved_at: string | null, fulfilled_at: string | null, notes: string | null, created_at: string, };
+
+export type OrderStatusQuery = { status: string | null, };
+
+/**
+ * Response DTO for user preferences
+ */
+export type PreferencesResponse = { active_site_id: string | null, };
+
+export type QrCodeResponse = { qr_code: string, material_id: string, material_name: string, };
+
+export type QrStatusResponse = { resource_type: string, resource_id: string, resource_name: string, status: string, current_reservation: ReservationSummaryResponse | null, upcoming_reservations: Array<ReservationSummaryResponse>, };
+
+export type QrSvgResponse = { svg: string, qr_code: string, };
+
+export type ReservationResponse = { id: string, resource_type: string, resource_id: string, resource_name: string, user_id: string, user_name: string | null, site_id: string | null, site_name: string | null, start_time: string, end_time: string, status: string, notes: string | null, created_at: string, updated_at: string, };
+
+export type ReservationSummaryResponse = { id: string, start_time: string, end_time: string, user_name: string | null, site_name: string | null, status: string, };
+
+export type SiteActivityAttachmentResponse = { attachment_id: string, filename: string, mime_type: string, url: string, thumbnail_url: string | null, };
 
 export type SiteResponse = { id: string, name: string, customer_name: string, location: string | null, description: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, created_at: string, };
 
 export type SiteStockHistoryResponse = { id: string, material_id: string, material_name: string, category_name: string, quantity_change: number, quantity_after: number, notes: string | null, site_id: string | null, site_name: string | null, extracted_by: string, created_at: string, };
 
+/**
+ * Response DTO for stock entry history
+ */
+export type StockEntryResponse = { id: string, quantity_change: number, quantity_after: number, notes: string | null, site_id: string | null, site_name: string | null, created_at: string, };
+
 export type TimeEntryResponse = { id: string, site_id: string | null, user_id: string, work_type: string, hours: number, work_date: string, notes: string | null, created_at: string, };
+
+export type ToolResponse = { id: string, name: string, category: string | null, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
+
+export type UpdatePreferences = { active_site_id: string | null, };
+
+/**
+ * Request DTO for updating preferences
+ */
+export type UpdatePreferencesRequest = { active_site_id: string | null, };
+
+/**
+ * Request DTO for updating profile
+ */
+export type UpdateProfileRequest = { name: string | null, };
+
+export type UpdateReservationRequest = { start_time: string | null, end_time: string | null, site_id: string | null, notes: string | null, status: string | null, };
+
+/**
+ * Request DTO for updating role
+ */
+export type UpdateRoleRequest = { role: string, };
 
 export type UpdateSiteRequest = { name: string | null, customer_name: string | null, location: string | null, description: string | null, status: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, };
 
 export type UpdateTimeEntryRequest = { site_id: string | null, work_type: string | null, hours: number | null, work_date: string | null, notes: string | null, };
 
+export type UpdateToolRequest = { name: string | null, category: string | null, description: string | null, status: string | null, location: string | null, qr_code: string | null, };
+
+export type UpdateVehicleRequest = { name: string | null, license_plate: string | null, vehicle_type: string | null, description: string | null, status: string | null, location: string | null, qr_code: string | null, };
+
 export type UploadPhotoAttachmentResponse = { attachment_id: string, photo_url: string, thumbnail_url: string, };
+
+export type UserPreferences = { active_site_id: string | null, };
+
+/**
+ * Response DTO for user data
+ */
+export type UserResponse = { id: string, email: string, name: string | null, role: string, created_at: string, };
+
+export type VehicleResponse = { id: string, name: string, license_plate: string | null, vehicle_type: string, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
+
+export type WithdrawRequest = { quantity: number, notes: string | null, site_id: string | null, };

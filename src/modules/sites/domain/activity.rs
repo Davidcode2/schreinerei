@@ -45,7 +45,17 @@ pub struct Activity {
     pub activity_type: ActivityType,
     pub content: Option<String>,
     pub photo_url: Option<String>,
+    pub attachments: Vec<ActivityAttachmentMetadata>,
     pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ActivityAttachmentMetadata {
+    pub id: uuid::Uuid,
+    pub filename: String,
+    pub mime_type: String,
+    pub url: String,
+    pub thumbnail_url: Option<String>,
 }
 
 /// Metadata and blob keys for activity photo attachments.
@@ -56,7 +66,8 @@ pub struct SiteActivityAttachment {
     pub activity_id: Option<ActivityId>,
     pub site_id: SiteId,
     pub storage_key: String,
-    pub thumbnail_key: String,
+    pub thumbnail_key: Option<String>,
+    pub original_filename: String,
     pub mime_type: String,
     pub size_bytes: i64,
     pub original_bytes: Option<Vec<u8>>,
@@ -71,6 +82,7 @@ pub struct CreateActivity {
     pub activity_type: ActivityType,
     pub content: Option<String>,
     pub photo_url: Option<String>,
+    pub attachment_ids: Vec<uuid::Uuid>,
 }
 
 impl CreateActivity {
@@ -82,8 +94,13 @@ impl CreateActivity {
                 }
             }
             ActivityType::Note => {
-                if self.content.is_none() || self.content.as_ref().map(|c| c.trim().is_empty()).unwrap_or(true) {
-                    return Err("Content is required for note activity".to_string());
+                let has_content = self
+                    .content
+                    .as_ref()
+                    .map(|content| !content.trim().is_empty())
+                    .unwrap_or(false);
+                if !has_content && self.attachment_ids.is_empty() {
+                    return Err("Either content or at least one attachment is required for note activity".to_string());
                 }
             }
             ActivityType::StatusChange => {
@@ -111,7 +128,8 @@ mod tests {
             activity_id: Some(ActivityId::new()),
             site_id: SiteId::new(),
             storage_key: format!("{}.jpg", uuid::Uuid::new_v4()),
-            thumbnail_key: format!("{}.jpg", uuid::Uuid::new_v4()),
+            thumbnail_key: Some(format!("{}.jpg", uuid::Uuid::new_v4())),
+            original_filename: "baustelle.jpg".to_string(),
             mime_type: "image/jpeg".to_string(),
             size_bytes: 12,
             original_bytes: Some(vec![1, 2, 3]),
@@ -120,7 +138,7 @@ mod tests {
         };
 
         assert!(attachment.storage_key.contains('-'));
-        assert!(attachment.thumbnail_key.contains('-'));
+        assert!(attachment.thumbnail_key.as_deref().unwrap_or_default().contains('-'));
     }
 
     #[test]
@@ -155,6 +173,7 @@ mod tests {
             activity_type: ActivityType::Photo,
             content: None,
             photo_url: Some("https://example.com/photo.jpg".to_string()),
+            attachment_ids: vec![],
         };
         assert!(cmd.validate().is_ok());
     }
@@ -166,6 +185,7 @@ mod tests {
             activity_type: ActivityType::Photo,
             content: None,
             photo_url: None,
+            attachment_ids: vec![],
         };
         assert_eq!(cmd.validate(), Err("Photo URL is required for photo activity".to_string()));
     }
@@ -177,6 +197,7 @@ mod tests {
             activity_type: ActivityType::Note,
             content: Some("This is a note".to_string()),
             photo_url: None,
+            attachment_ids: vec![],
         };
         assert!(cmd.validate().is_ok());
     }
@@ -188,8 +209,9 @@ mod tests {
             activity_type: ActivityType::Note,
             content: None,
             photo_url: None,
+            attachment_ids: vec![],
         };
-        assert_eq!(cmd.validate(), Err("Content is required for note activity".to_string()));
+        assert_eq!(cmd.validate(), Err("Either content or at least one attachment is required for note activity".to_string()));
     }
 
     #[test]
@@ -199,8 +221,9 @@ mod tests {
             activity_type: ActivityType::Note,
             content: Some("   ".to_string()),
             photo_url: None,
+            attachment_ids: vec![],
         };
-        assert_eq!(cmd.validate(), Err("Content is required for note activity".to_string()));
+        assert_eq!(cmd.validate(), Err("Either content or at least one attachment is required for note activity".to_string()));
     }
 
     #[test]
@@ -210,6 +233,7 @@ mod tests {
             activity_type: ActivityType::StatusChange,
             content: None,
             photo_url: None,
+            attachment_ids: vec![],
         };
         assert_eq!(cmd.validate(), Err("Cannot manually create status change activity".to_string()));
     }

@@ -800,7 +800,8 @@ struct AttachmentRow {
     activity_id: Option<Uuid>,
     site_id: Uuid,
     storage_key: String,
-    thumbnail_key: String,
+    thumbnail_key: Option<String>,
+    original_filename: String,
     mime_type: String,
     size_bytes: i64,
     original_bytes: Option<Vec<u8>>,
@@ -819,6 +820,7 @@ impl ActivityRow {
             activity_type: self.activity_type.parse().unwrap_or(ActivityType::Note),
             content: self.content,
             photo_url: self.photo_url,
+            attachments: Vec::new(),
             created_at: self.created_at,
         }
     }
@@ -833,6 +835,7 @@ impl AttachmentRow {
             site_id: SiteId(self.site_id),
             storage_key: self.storage_key,
             thumbnail_key: self.thumbnail_key,
+            original_filename: self.original_filename,
             mime_type: self.mime_type,
             size_bytes: self.size_bytes,
             original_bytes: self.original_bytes,

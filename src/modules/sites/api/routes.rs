@@ -41,7 +41,8 @@ pub fn create_router() -> Router<AppState> {
         
         // Activities
         .route("/api/v1/sites/{id}/activities", get(list_activities).post(create_activity))
-        .route("/api/v1/sites/{id}/attachments/photo", post(upload_site_photo_attachment))
+        .route("/api/v1/sites/{id}/attachments", post(upload_site_attachment))
+        .route("/api/v1/sites/{id}/attachments/photo", post(upload_site_attachment))
         .route("/api/v1/attachments/{attachment_id}", get(get_attachment_bytes))
         .route("/api/v1/attachments/{attachment_id}/thumbnail", get(get_attachment_thumbnail_bytes))
         
@@ -154,6 +155,16 @@ pub struct TimeEntryResponse {
     pub work_date: String,
     pub notes: Option<String>,
     pub created_at: String,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct SiteActivityAttachmentResponse {
+    pub attachment_id: String,
+    pub filename: String,
+    pub mime_type: String,
+    pub url: String,
+    pub thumbnail_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, TS)]
@@ -558,6 +569,7 @@ pub struct ActivityResponse {
     pub activity_type: String,
     pub content: Option<String>,
     pub photo_url: Option<String>,
+    pub attachments: Vec<SiteActivityAttachmentResponse>,
     pub created_at: String,
 }
 
@@ -570,7 +582,20 @@ impl From<crate::modules::sites::domain::Activity> for ActivityResponse {
             activity_type: activity.activity_type.as_str().to_string(),
             content: activity.content,
             photo_url: activity.photo_url,
+            attachments: activity.attachments.into_iter().map(SiteActivityAttachmentResponse::from).collect(),
             created_at: activity.created_at.to_rfc3339(),
+        }
+    }
+}
+
+impl From<crate::modules::sites::domain::ActivityAttachmentMetadata> for SiteActivityAttachmentResponse {
+    fn from(attachment: crate::modules::sites::domain::ActivityAttachmentMetadata) -> Self {
+        Self {
+            attachment_id: attachment.id.to_string(),
+            filename: attachment.filename,
+            mime_type: attachment.mime_type,
+            url: attachment.url,
+            thumbnail_url: attachment.thumbnail_url,
         }
     }
 }
@@ -581,6 +606,8 @@ pub struct CreateActivityRequest {
     pub activity_type: String,  // "photo" or "note"
     pub content: Option<String>,
     pub photo_url: Option<String>,
+    #[serde(default)]
+    pub attachment_ids: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -674,6 +701,14 @@ pub async fn create_activity(
         activity_type,
         content: request.content,
         photo_url: request.photo_url,
+        attachment_ids: request
+            .attachment_ids
+            .into_iter()
+            .map(|attachment_id| {
+                Uuid::parse_str(&attachment_id)
+                    .map_err(|_| AppError::Validation("Invalid attachment ID".to_string()))
+            })
+            .collect::<Result<Vec<_>, _>>()?,
     };
     
     let activity = service.create_activity(create, &ctx).await?;
@@ -681,7 +716,7 @@ pub async fn create_activity(
     Ok((StatusCode::CREATED, Json(ActivityResponse::from(activity))))
 }
 
-pub async fn upload_site_photo_attachment(
+pub async fn upload_site_attachment(
     State(state): State<AppState>,
     auth: AuthenticatedUser,
     Path(id): Path<String>,
@@ -729,6 +764,7 @@ pub async fn upload_site_photo_attachment(
                 site_id,
                 mime_type,
                 original_bytes,
+                original_filename: "attachment".to_string(),
             },
             &ctx,
         )
@@ -739,7 +775,7 @@ pub async fn upload_site_photo_attachment(
         Json(UploadPhotoAttachmentResponse {
             attachment_id: result.attachment_id.to_string(),
             photo_url: result.photo_url,
-            thumbnail_url: result.thumbnail_url,
+            thumbnail_url: result.thumbnail_url.unwrap_or_default(),
         }),
     ))
 }
@@ -823,7 +859,7 @@ pub async fn get_attachment_thumbnail_bytes(
 
 #[cfg(test)]
 mod tests {
-    use super::UploadPhotoAttachmentResponse;
+    use super::{SiteActivityAttachmentResponse, UploadPhotoAttachmentResponse};
 
     #[test]
     fn upload_response_contains_required_contract_fields() {
@@ -836,5 +872,21 @@ mod tests {
         assert!(!dto.attachment_id.is_empty());
         assert!(dto.photo_url.contains("/attachments/"));
         assert!(dto.thumbnail_url.ends_with("/thumbnail"));
+    }
+
+    #[test]
+    fn generic_attachment_response_contains_required_contract_fields() {
+        let dto = SiteActivityAttachmentResponse {
+            attachment_id: uuid::Uuid::new_v4().to_string(),
+            filename: "lieferschein.pdf".to_string(),
+            mime_type: "application/pdf".to_string(),
+            url: "/api/v1/attachments/1".to_string(),
+            thumbnail_url: None,
+        };
+
+        assert_eq!(dto.filename, "lieferschein.pdf");
+        assert_eq!(dto.mime_type, "application/pdf");
+        assert!(dto.url.contains("/attachments/"));
+        assert!(dto.thumbnail_url.is_none());
     }
 }
