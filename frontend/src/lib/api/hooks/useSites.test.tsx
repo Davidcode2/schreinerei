@@ -49,6 +49,9 @@ describe("useUploadSitePhoto", () => {
       "/api/v1/sites/site-1/attachments/photo",
       expect.any(FormData)
     )
+    const formData = vi.mocked(apiClient.post).mock.calls[0][1] as FormData
+    expect(formData.get("photo")).toBe(file)
+    expect(formData.get("file")).toBeNull()
     expect(response).toEqual({
       attachment_id: "att-1",
       photo_url: "/api/v1/sites/site-1/attachments/att-1",

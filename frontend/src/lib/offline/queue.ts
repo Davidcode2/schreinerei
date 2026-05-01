@@ -45,7 +45,7 @@ const actionHandlers: Record<string, (data: Record<string, unknown>) => Promise<
     const payload = parsePhotoUploadPayload(data)
     const file = await fileFromDataUrl(payload.fileDataUrl, payload.mimeType, payload.fileName)
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('photo', file)
 
     const uploadResponse = await apiClient.post<{ photo_url: string }>(
       `/api/v1/sites/${payload.siteId}/attachments/photo`,

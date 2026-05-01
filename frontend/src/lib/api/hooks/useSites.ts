@@ -219,7 +219,7 @@ export function useUploadSitePhoto() {
       file: File
     }) => {
       const formData = new FormData()
-      formData.append("file", file)
+      formData.append("photo", file)
 
       return apiClient.post<UploadPhotoAttachmentResponse>(
         `/api/v1/sites/${siteId}/attachments/photo`,

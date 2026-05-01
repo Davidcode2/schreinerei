@@ -95,6 +95,9 @@ describe('offline photo upload queue', () => {
       '/api/v1/sites/site-1/attachments/photo',
       expect.any(FormData)
     )
+    const uploadFormData = vi.mocked(apiClient.post).mock.calls[0][1] as FormData
+    expect(uploadFormData.get('photo')).toBeInstanceOf(File)
+    expect(uploadFormData.get('file')).toBeNull()
     expect(apiClient.post).toHaveBeenNthCalledWith(
       2,
       '/api/v1/sites/site-1/activities',
