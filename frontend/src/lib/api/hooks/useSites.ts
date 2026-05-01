@@ -12,6 +12,7 @@ import type {
   UpdateTimeEntryRequest,
   Activity,
   CreateActivityRequest,
+  UploadPhotoAttachmentResponse,
   ActivityQuery,
   DashboardSite,
 } from "@/types/sites"
@@ -204,6 +205,26 @@ export function useCreateActivity() {
       queryClient.invalidateQueries({
         queryKey: ["activities", variables.siteId],
       })
+    },
+  })
+}
+
+export function useUploadSitePhoto() {
+  return useMutation({
+    mutationFn: async ({
+      siteId,
+      file,
+    }: {
+      siteId: string
+      file: File
+    }) => {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      return apiClient.post<UploadPhotoAttachmentResponse>(
+        `/api/v1/sites/${siteId}/attachments/photo`,
+        formData
+      )
     },
   })
 }

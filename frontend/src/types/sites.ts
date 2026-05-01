@@ -112,6 +112,12 @@ export interface CreateActivityRequest {
   photo_url?: string
 }
 
+export interface UploadPhotoAttachmentResponse {
+  attachment_id: string
+  photo_url: string
+  thumbnail_url: string
+}
+
 export interface ActivityQuery {
   limit?: number
 }

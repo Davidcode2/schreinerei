@@ -60,8 +60,9 @@ class ApiClient {
   ): Promise<T> {
     const token = await this.getAccessToken()
     
+    const isFormData = options.body instanceof FormData
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(options.headers as Record<string, string>),
     }
 
@@ -93,9 +94,10 @@ class ApiClient {
   }
 
   post<T>(endpoint: string, data?: unknown): Promise<T> {
+    const isFormData = data instanceof FormData
     return this.request<T>(endpoint, {
       method: 'POST',
-      body: data ? JSON.stringify(data) : null,
+      body: data ? (isFormData ? data : JSON.stringify(data)) : null,
     })
   }
 
