@@ -10,22 +10,27 @@ Mobile-first PWA für Tablet und Smartphone, mit Offline-Unterstützung für Bau
 
 Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## Current Milestone: v1.9 Inventory Features
+## Current Milestone: v1.11 Fleet Calendar on Fleet Page
 
-**Goal:** Make inventory fully manageable — edit anything, track everything, see the full history.
+**Goal:** Make fleet reservations faster and clearer by embedding the calendar on the fleet page and changing booking from instant-modal taps to an explicit date-range selection flow.
 
 **Target features:**
-- Category editing via inventory settings page
-- Edit inventory item location and minimum quantity
-- Set available quantity to arbitrary number
-- "Material einlagern" (stock in) action
-- Extended history: stock movements with user attribution
-- Clickable Baustelle links in history events
-- Category string on inventory overview page
+- Embedded fleet calendar at the top of the fleet page
+- Existing fleet content moved below the calendar
+- First tap selects a day, second tap completes a sorted date range
+- Same-day double tap creates a one-day booking
+- Bottom-sheet confirmation modal appears only after the second date selection
+- Confirmation modal supports optional start/end time entry via checkbox
+- Reserved ranges remain visible in the calendar with per-resource colors
+- Separate fleet calendar entry point replaced by the embedded page experience
 
 ## Current State
 
 **v1.8 shipped on 2026-05-01.**
+
+**v1.9 was started but not completed.**
+
+Phase 30 (backend API foundation for inventory editing/history) is complete. Frontend-oriented phases 31-33 remain unfinished and are deferred while the next milestone focuses on fleet calendar UX.
 
 All v1.8 features working:
 - ✅ Baustelle status workflow (geplant → aktiv → abgeschlossen) with modal
@@ -111,16 +116,24 @@ All v1.x requirements validated:
 
 ### Active
 
-- [ ] Inventory category editing via settings page
-- [ ] Inventory item editing (location, minimum quantity)
-- [ ] Set available quantity to arbitrary number
-- [ ] "Material einlagern" (stock in) action with modal
-- [ ] Extended inventory history for stock movements with user attribution
-- [ ] Clickable Baustelle links in history events
-- [ ] Category display on inventory overview
+- [ ] Fleet page shows the reservation calendar directly at the top of the page
+- [ ] User can select a reservation date range by tapping a start day and an end day
+- [ ] User can select the same day twice to create a one-day reservation
+- [ ] Confirmation modal opens only after the second selection and appears from the bottom of the screen
+- [ ] Confirmation modal lets the user confirm or cancel the current selection
+- [ ] Confirmation modal optionally collects start and end times for the booking
+- [ ] Reserved date ranges stay visible in the calendar with each vehicle or machine using its unique color
+- [ ] Embedded calendar replaces the separate calendar entry point on the fleet page
 
-### Deferred in v1.9
+### Deferred from v1.9
 
+- Inventory category editing via settings page
+- Inventory item editing (location, minimum quantity)
+- Set available quantity to arbitrary number
+- "Material einlagern" (stock in) action with modal
+- Extended inventory history for stock movements with user attribution
+- Clickable Baustelle links in history events
+- Category display on inventory overview
 - Metadata-only inventory history entries for `location_changed` and `min_quantity_changed`.
   Concern: writing non-stock edits into `stock_entries` mixes stock movement audit data with metadata changes. If this feature returns later, it should use a separate audit model instead of overloading `stock_entries`.
 
@@ -258,4 +271,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-*Last updated: 2026-05-01 after starting v1.9 milestone**
+*Last updated: 2026-05-01 after starting v1.11 milestone**

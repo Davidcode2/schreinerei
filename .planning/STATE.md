@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.9
-milestone_name: Inventory Features
-status: ready_to_plan
-last_updated: "2026-05-01T17:00:00Z"
+milestone: v1.11
+milestone_name: Fleet Calendar on Fleet Page
+status: planning
+last_updated: "2026-05-01T14:27:59.685Z"
 last_activity: 2026-05-01
 progress:
-  total_phases: 4
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 25
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # State: Schreinerei — v1.9 Inventory Features
@@ -26,16 +26,15 @@ See: `.planning/PROJECT.md` (updated 2026-05-01)
 
 ## Current Position
 
-Phase: 31 of 33 (Settings, Editing & Stock-In)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-05-01 — Phase 30 completed
-
-Progress: [███░░░░░░░] 25%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-01 — Milestone v1.11 started
 
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 2
 - Completed this session: Phase 30 (2/2 plans)
 
@@ -53,6 +52,7 @@ Progress: [███░░░░░░░] 25%
 ### Decisions
 
 Recent decisions affecting current work:
+
 - v1.9 scope: Category editing, material editing, stock-in, enriched history
 - Settings wheel icon → dedicated `/settings/inventory` route for category management
 - StockIn is a separate domain command (not reusing AdjustStock) — available to all users, uses notes instead of reason
