@@ -51,7 +51,7 @@
 **Requirements**: (enabler phase — no v1 requirements mapped directly; all requirements in Phase 31-32 depend on this phase)
 **Success Criteria** (what must be TRUE):
   1. Category update endpoint handles PATCH requests with name validation and returns updated category
-  2. Category delete endpoint returns Conflict error when materials reference the category, otherwise deletes cleanly
+  2. Category delete endpoint returns Conflict error when any material rows exist for the category so inventory history is preserved
   3. Material PATCH endpoint accepts location and min_quantity partial updates (Option<T> fields)
   4. Stock-in endpoint records positive quantity changes as MaterialAdded entries with notes
   5. Inventory history endpoint returns entry_type, user_name, and category_name for each entry
@@ -77,12 +77,13 @@
 **Depends on**: Phase 31
 **Requirements**: STOCK-02, HIST-01, HIST-02, HIST-03
 **Success Criteria** (what must be TRUE):
-  1. History events display color-coded badges by entry type (green for stock-in, red for withdrawal, blue for location/quantity changes)
+  1. History events display color-coded badges by stock entry type (for example stock-in, withdrawal, adjustment)
   2. Each history entry shows the user who performed the action (e.g., "von Max Mustermann")
   3. Baustelle names in withdrawal entries are clickable links that navigate to the site detail page
   4. Stock-in records appear in the history feed with MaterialAdded type and visual distinction
 **Plans**: TBD
 **UI hint**: yes
+**Deferred note**: `location_changed` and `min_quantity_changed` history entries are intentionally deferred until a separate audit model exists; do not force metadata edits into `stock_entries`.
 
 ### Phase 33: Type Safety & Coverage
 **Goal:** Generated types are consistent between Rust and TypeScript, and all new flows have automated test coverage
@@ -102,7 +103,7 @@ Phases execute in numeric order: 30 → 31 → 32 → 33
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 30. Backend API Foundation | v1.9 | 2/2 | Complete   | 2026-05-01 |
+| 30. Backend API Foundation | v1.9 | 2/2 | Complete    | 2026-05-01 |
 | 31. Settings, Editing & Stock-In | v1.9 | 0/? | Not started | - |
 | 32. Enriched History | v1.9 | 0/? | Not started | - |
 | 33. Type Safety & Coverage | v1.9 | 0/? | Not started | - |

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Inventory Features
-status: executing
+status: ready_to_plan
 stopped_at: Completed 30-01-PLAN.md
 last_updated: "2026-05-01T13:14:28.619Z"
 last_activity: 2026-05-01
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
   completed_plans: 1
-  percent: 50
+  percent: 25
 ---
 
 # State: Schreinerei — v1.9 Inventory Features
@@ -27,9 +27,9 @@ See: .planning/PROJECT.md (updated 2026-05-01)
 
 ## Current Position
 
-Phase: 30 (backend-api-foundation) — EXECUTING
-Plan: 2 of 2
-Status: Ready to execute
+Phase: 31
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-05-01
 
 Progress: [█████░░░░░] 50%
@@ -38,7 +38,7 @@ Progress: [█████░░░░░] 50%
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 2
 - This milestone: v1.9 just started
 
 **By Phase:**
@@ -49,6 +49,7 @@ Progress: [█████░░░░░] 50%
 | 31. Settings, Editing & Stock-In | 0/? | - | - |
 | 32. Enriched History | 0/? | - | - |
 | 33. Type Safety & Coverage | 0/? | - | - |
+| 30 | 2 | - | - |
 
 *Updated after each plan completion*
 | Phase 30-backend-api-foundation P01 | 9min | 4 tasks | 8 files |

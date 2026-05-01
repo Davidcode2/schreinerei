@@ -19,7 +19,7 @@ Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, 
 - Edit inventory item location and minimum quantity
 - Set available quantity to arbitrary number
 - "Material einlagern" (stock in) action
-- Extended history: material added (green), location changed (blue), with user attribution
+- Extended history: stock movements with user attribution
 - Clickable Baustelle links in history events
 - Category string on inventory overview page
 
@@ -115,9 +115,14 @@ All v1.x requirements validated:
 - [ ] Inventory item editing (location, minimum quantity)
 - [ ] Set available quantity to arbitrary number
 - [ ] "Material einlagern" (stock in) action with modal
-- [ ] Extended inventory history (material added, location changed, user attribution)
+- [ ] Extended inventory history for stock movements with user attribution
 - [ ] Clickable Baustelle links in history events
 - [ ] Category display on inventory overview
+
+### Deferred in v1.9
+
+- Metadata-only inventory history entries for `location_changed` and `min_quantity_changed`.
+  Concern: writing non-stock edits into `stock_entries` mixes stock movement audit data with metadata changes. If this feature returns later, it should use a separate audit model instead of overloading `stock_entries`.
 
 ### Future (v2.0+)
 
@@ -231,6 +236,8 @@ src/
 | Opaque UUID attachment routes | No internal storage keys in URLs | ✓ v1.8 shipped |
 | Nullable activity_id for uploads | Decouple upload from activity creation | ✓ v1.8 shipped |
 | Authenticated blob fetch for images | No unauthenticated image URLs | ✓ v1.8 shipped |
+| Category deletion preserves history | Soft-deleted materials, stock entries, and order requests must remain intact | ✓ v1.9 phase 30 |
+| Metadata edits stay out of stock_entries | Location/min-quantity changes need a separate audit model if tracked later | ✓ Deferred in v1.9 |
 
 ## Evolution
 

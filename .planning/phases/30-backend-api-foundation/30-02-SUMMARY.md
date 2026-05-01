@@ -33,6 +33,8 @@ key-decisions:
   - "New edit and stock-in endpoints reuse existing AuthenticatedUser plus TenantContext extraction pattern"
   - "Enriched history gets a dedicated /history/enriched endpoint instead of changing the existing history contract"
   - "Frontend keeps a manual EntryType union in inventory.ts while generated.ts stays backend-derived"
+  - "Category deletion is blocked when any material row exists so stock and order history remain intact"
+  - "location_changed and min_quantity_changed are deferred until a separate audit model exists; they must not be forced into stock_entries"
 
 requirements-completed: []
 
@@ -62,6 +64,7 @@ completed: 2026-05-01
 
 ## Deviations from Plan
 - Used `cargo test` for ts-rs generation because this repo's current `ts-rs` version no longer supports the planned `--features ts-rs/export` flag
+- Deferred metadata-only history entries for location/min-quantity edits after product review; the current enriched feed remains stock-movement-focused
 
 ## Issues Encountered
 - The original Wave 2 executor returned without producing commits or a summary, so this plan was completed inline from the orchestrator
@@ -69,6 +72,7 @@ completed: 2026-05-01
 ## Next Phase Readiness
 - Phase 31 can now consume the new inventory edit, stock-in, and enriched history endpoints
 - Generated bindings now include `UpdateCategoryRequest`, `UpdateMaterialRequest`, `StockInRequest`, and `EnrichedStockHistoryResponse`
+- Category delete now preserves historical data by returning Conflict while any material row still exists in the category
 
 ## Self-Check: PASSED
 

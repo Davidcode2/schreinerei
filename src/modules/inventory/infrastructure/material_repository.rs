@@ -153,7 +153,7 @@ impl MaterialRepository {
         let count: i64 = sqlx::query_scalar(
             r#"
             SELECT COUNT(*) FROM materials
-            WHERE category_id = $1 AND tenant_id = $2 AND deleted_at IS NULL
+            WHERE category_id = $1 AND tenant_id = $2
             "#
         )
         .bind(id.0)
@@ -164,21 +164,9 @@ impl MaterialRepository {
 
         if count > 0 {
             return Err(AppError::Conflict(
-                "Cannot delete category: materials still reference it".to_string()
+                "Cannot delete category: material history must be preserved".to_string()
             ));
         }
-
-        sqlx::query(
-            r#"
-            DELETE FROM materials
-            WHERE category_id = $1 AND tenant_id = $2 AND deleted_at IS NOT NULL
-            "#
-        )
-        .bind(id.0)
-        .bind(tenant_id.0)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
 
         let result = sqlx::query(
             r#"
@@ -1209,13 +1197,13 @@ impl SiteStockHistoryRow {
 
     #[test]
     fn delete_category_query_checks_material_count() {
-        // Verify active materials block deletion while deleted materials are purged first.
+        // Verify deletion is blocked when any material row still exists for history preservation.
         let sql = r#"
             SELECT COUNT(*) FROM materials
-            WHERE category_id = $1 AND tenant_id = $2 AND deleted_at IS NULL
+            WHERE category_id = $1 AND tenant_id = $2
             "#;
         assert!(sql.contains("category_id"));
-        assert!(sql.contains("deleted_at IS NULL"));
+        assert!(!sql.contains("deleted_at IS NULL"));
     }
 }
 
