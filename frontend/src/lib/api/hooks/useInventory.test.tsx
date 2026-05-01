@@ -1,17 +1,48 @@
 import { describe, it, expect, vi, afterEach } from "vitest"
 import { renderHook } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
 import {
   useAdjustMaterialStock,
+  useCreateOrderRequest,
   useDeleteCategory,
   useEnrichedMaterialHistory,
   useMaterialHistory,
+  useOrderRequests,
   useSiteMaterialHistory,
   useStockInMaterial,
   useUpdateCategory,
   useUpdateMaterial,
 } from "./useInventory"
 import { apiClient } from "../client"
+import type {
+  CreateOrderRequestDto,
+  OrderRequest,
+  OrderStatusQuery,
+} from "@/types/inventory"
+import type {
+  CreateOrderRequestDto as GeneratedCreateOrderRequestDto,
+  OrderRequestResponse,
+  OrderStatusQuery as GeneratedOrderStatusQuery,
+} from "@/types/generated"
+
+type AssertExtends<Actual extends Expected, Expected> = true
+
+const inventoryTypesSource = readFileSync(
+  resolve(import.meta.dirname, "../../../types/inventory.ts"),
+  "utf8"
+)
+
+const orderResponseMatchesGenerated: AssertExtends<OrderRequestResponse, OrderRequest> = true
+const orderCreateRequestMatchesGenerated: AssertExtends<
+  CreateOrderRequestDto,
+  GeneratedCreateOrderRequestDto
+> = true
+const orderStatusQueryMatchesGenerated: AssertExtends<
+  GeneratedOrderStatusQuery,
+  OrderStatusQuery
+> = true
 
 vi.mock("../client", () => ({
   apiClient: {
@@ -245,5 +276,50 @@ describe("inventory mutations", () => {
     expect(invalidateQueries).toHaveBeenNthCalledWith(1, { queryKey: ["materials"] })
     expect(invalidateQueries).toHaveBeenNthCalledWith(2, { queryKey: ["material"] })
     expect(invalidateQueries).toHaveBeenNthCalledWith(3, { queryKey: ["low-stock"] })
+  })
+
+  it("keeps inventory order DTOs sourced from generated bindings", () => {
+    expect(inventoryTypesSource).not.toContain("export interface OrderRequest")
+    expect(inventoryTypesSource).not.toContain("export interface CreateOrderRequestDto")
+    expect(inventoryTypesSource).not.toContain("export interface ApproveOrderRequestDto")
+    expect(inventoryTypesSource).not.toContain("export interface FulfillOrderRequestDto")
+    expect(inventoryTypesSource).not.toContain("export interface OrderStatusQuery")
+  })
+
+  it("fetches order requests with generated-backed query typing", async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce([])
+    const queryClient = createQueryClient()
+
+    const { result } = renderHook(
+      () => useOrderRequests({ status: "pending" }),
+      { wrapper: createWrapper(queryClient) }
+    )
+
+    await result.current.refetch()
+
+    expect(apiClient.get).toHaveBeenCalledWith("/api/v1/inventory/orders?status=pending")
+  })
+
+  it("creates order requests through the orders endpoint", async () => {
+    vi.mocked(apiClient.post).mockResolvedValueOnce({ id: "order-123" })
+    const queryClient = createQueryClient()
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries")
+
+    const { result } = renderHook(() => useCreateOrderRequest(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    await result.current.mutateAsync({
+      material_id: "mat-123",
+      quantity: 5,
+      reason: "Niedriger Bestand",
+    })
+
+    expect(apiClient.post).toHaveBeenCalledWith("/api/v1/inventory/orders", {
+      material_id: "mat-123",
+      quantity: 5,
+      reason: "Niedriger Bestand",
+    })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["order-requests"] })
   })
 })
