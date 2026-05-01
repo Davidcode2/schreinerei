@@ -201,7 +201,7 @@ export default function SiteDetailPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <ActivityFeed activities={activities || []} />
+            <ActivityFeed activities={activities || []} siteId={site.id} />
           </CardContent>
         </Card>
       </div>

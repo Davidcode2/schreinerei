@@ -1,9 +1,11 @@
 import { useState } from "react"
+import { Link } from "react-router-dom"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Camera, FileText, ArrowRight } from "lucide-react"
 import type { Activity } from "@/types/sites"
+import { useSiteMaterialHistory } from "@/lib/api/hooks"
 
 const statusLabels: Record<string, string> = {
   planned: "Geplant",
@@ -14,6 +16,7 @@ const statusLabels: Record<string, string> = {
 
 interface ActivityFeedProps {
   activities: Activity[]
+  siteId: string
   maxItems?: number
 }
 
@@ -111,8 +114,10 @@ function ActivityCard({ activity }: { activity: Activity }) {
   )
 }
 
-export function ActivityFeed({ activities, maxItems }: ActivityFeedProps) {
+export function ActivityFeed({ activities, siteId, maxItems }: ActivityFeedProps) {
   const [activeTab, setActiveTab] = useState("notes")
+  const { data: materialHistory, isLoading: isMaterialHistoryLoading } =
+    useSiteMaterialHistory(siteId)
 
   const noteActivities = activities.filter(
     (a) => a.activity_type === "photo" || a.activity_type === "note" || a.activity_type === "status_change"
@@ -157,17 +162,51 @@ export function ActivityFeed({ activities, maxItems }: ActivityFeedProps) {
       </TabsContent>
 
       <TabsContent value="materials" className="mt-0">
-        <div className="text-center py-8">
-          <div className="rounded-full bg-muted p-4 mx-auto w-fit mb-3">
-            <FileText className="h-6 w-6 text-muted-foreground" />
+        {isMaterialHistoryLoading ? (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            Material-Historie wird geladen...
+          </p>
+        ) : materialHistory && materialHistory.length > 0 ? (
+          <div className="space-y-3 mt-4">
+            {materialHistory.map((entry) => (
+              <Card key={entry.id} className="p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium">{entry.material_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Kategorie: {entry.category_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Entnommen von: {entry.extracted_by}
+                    </p>
+                    {entry.site_id && entry.site_name && (
+                      <Link
+                        to={`/sites/${entry.site_id}`}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        {entry.site_name}
+                      </Link>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">
+                      {entry.quantity_change < 0
+                        ? `Entnahme ${Math.abs(entry.quantity_change)}`
+                        : `+${entry.quantity_change}`}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatRelativeTime(entry.created_at)}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
-          <p className="text-sm text-muted-foreground">
-            Material-Historie folgt in Kürze
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            Noch keine Materialentnahmen für diese Baustelle
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Diese Funktion wird in einem kommenden Update verfügbar sein
-          </p>
-        </div>
+        )}
       </TabsContent>
     </Tabs>
   )
