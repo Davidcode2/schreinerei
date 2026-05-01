@@ -96,13 +96,14 @@ Plans:
 5. Offline photo capture is queued and syncs when connection restored
 6. File access is authorized by tenant_id preventing cross-tenant leakage
 
-**Plans:** 4/4 plans complete
+**Plans:** 5 plans (4 complete, 1 gap-closure pending)
 
 Plans:
 - [ ] 29-01-PLAN.md — Add tenant-scoped attachment schema and secure attachment read endpoints
 - [ ] 29-02-PLAN.md — Implement multipart photo upload pipeline with UUID filenames and thumbnail generation
 - [ ] 29-03-PLAN.md — Wire frontend camera/gallery upload flow and activity feed image previews
 - [ ] 29-04-PLAN.md — Add offline photo queueing and reconnect sync processing
+- [ ] 29-05-PLAN.md — Close multipart field mismatch and wire functional photo icon entrypoint
 
 ---
 
