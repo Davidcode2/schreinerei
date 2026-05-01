@@ -1,18 +1,32 @@
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { render, screen } from "@/test/utils"
 import userEvent from "@testing-library/user-event"
 import { ActivityFeed } from "./ActivityFeed"
+import { waitFor } from "@testing-library/react"
 
 vi.mock("@/lib/api/hooks", () => ({
   useSiteMaterialHistory: vi.fn(),
 }))
 
+vi.mock("@/lib/api/client", () => ({
+  apiClient: {
+    getBlob: vi.fn(),
+  },
+}))
+
 import { useSiteMaterialHistory } from "@/lib/api/hooks"
+import { apiClient } from "@/lib/api/client"
+
+const getBlobMock = vi.mocked(apiClient.getBlob)
 
 const defaultMaterialHistoryMock = {
   data: [],
   isLoading: false,
 } as never
+
+beforeEach(() => {
+  getBlobMock.mockReset()
+})
 
 describe("ActivityFeed material tab", () => {
   it("renders enriched material history row and site link", async () => {
@@ -63,8 +77,51 @@ describe("ActivityFeed material tab", () => {
 })
 
 describe("ActivityFeed photo preview", () => {
+  it("loads protected attachment photo via authenticated blob fetch", async () => {
+    vi.mocked(useSiteMaterialHistory).mockReturnValue(defaultMaterialHistoryMock)
+    getBlobMock.mockResolvedValue(new Blob(["image-bytes"], { type: "image/jpeg" }))
+
+    const createObjectURLSpy = vi
+      .spyOn(URL, "createObjectURL")
+      .mockReturnValue("blob:secure-preview")
+    const revokeObjectURLSpy = vi
+      .spyOn(URL, "revokeObjectURL")
+      .mockImplementation(() => undefined)
+
+    const { unmount } = render(
+      <ActivityFeed
+        siteId="site-1"
+        activities={[
+          {
+            id: "activity-1",
+            site_id: "site-1",
+            user_id: "user-1",
+            activity_type: "photo",
+            content: null,
+            photo_url: "/api/v1/attachments/abc",
+            created_at: "2026-05-01T10:00:00.000Z",
+          },
+        ]}
+      />
+    )
+
+    await waitFor(() => {
+      expect(getBlobMock).toHaveBeenCalledWith("/api/v1/attachments/abc")
+    })
+
+    const image = await screen.findByAltText("Aktivitätsfoto")
+    expect(image).toHaveAttribute("src", "blob:secure-preview")
+
+    unmount()
+    expect(revokeObjectURLSpy).toHaveBeenCalledWith("blob:secure-preview")
+
+    createObjectURLSpy.mockRestore()
+    revokeObjectURLSpy.mockRestore()
+  })
+
   it("renders preview image when photo_url exists", async () => {
     vi.mocked(useSiteMaterialHistory).mockReturnValue(defaultMaterialHistoryMock)
+    getBlobMock.mockReset()
 
     render(
       <ActivityFeed
@@ -85,6 +142,7 @@ describe("ActivityFeed photo preview", () => {
 
     const image = await screen.findByAltText("Aktivitätsfoto")
     expect(image).toHaveAttribute("src", "https://example.com/photo.jpg")
+    expect(getBlobMock).not.toHaveBeenCalled()
   })
 
   it("does not render image when photo_url is missing", () => {

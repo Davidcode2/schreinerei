@@ -93,6 +93,31 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'GET' })
   }
 
+  async getBlob(endpoint: string, options: RequestInit = {}): Promise<Blob> {
+    const token = await this.getAccessToken()
+    const headers: Record<string, string> = {
+      ...(options.headers as Record<string, string>),
+    }
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      ...options,
+      method: 'GET',
+      headers,
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      const errorMessage = errorData.error || errorData.message || `HTTP ${response.status}`
+      throw new Error(errorMessage)
+    }
+
+    return response.blob()
+  }
+
   post<T>(endpoint: string, data?: unknown): Promise<T> {
     const isFormData = data instanceof FormData
     return this.request<T>(endpoint, {

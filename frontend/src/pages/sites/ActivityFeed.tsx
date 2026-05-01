@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Camera, FileText, ArrowRight } from "lucide-react"
 import type { Activity } from "@/types/sites"
 import { useSiteMaterialHistory } from "@/lib/api/hooks"
+import { apiClient } from "@/lib/api/client"
 
 const statusLabels: Record<string, string> = {
   planned: "Geplant",
@@ -40,6 +41,58 @@ function formatRelativeTime(dateString: string): string {
       month: "2-digit",
     })
   }
+}
+
+function isProtectedAttachmentPath(url: string): boolean {
+  return url.startsWith("/api/v1/attachments/")
+}
+
+function ActivityImage({ photoUrl }: { photoUrl: string }) {
+  const [resolvedSrc, setResolvedSrc] = useState<string>(photoUrl)
+
+  useEffect(() => {
+    if (!isProtectedAttachmentPath(photoUrl)) {
+      setResolvedSrc(photoUrl)
+      return
+    }
+
+    let objectUrl: string | null = null
+    let mounted = true
+
+    apiClient
+      .getBlob(photoUrl)
+      .then((blob) => {
+        if (!mounted) {
+          return
+        }
+        objectUrl = URL.createObjectURL(blob)
+        setResolvedSrc(objectUrl)
+      })
+      .catch(() => {
+        if (mounted) {
+          setResolvedSrc("")
+        }
+      })
+
+    return () => {
+      mounted = false
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl)
+      }
+    }
+  }, [photoUrl])
+
+  if (!resolvedSrc) {
+    return null
+  }
+
+  return (
+    <img
+      src={resolvedSrc}
+      alt="Aktivitätsfoto"
+      className="rounded-lg max-h-32 object-cover"
+    />
+  )
 }
 
 function ActivityCard({ activity }: { activity: Activity }) {
@@ -101,11 +154,7 @@ function ActivityCard({ activity }: { activity: Activity }) {
 
           {activity.photo_url && (
             <div className="mt-2">
-              <img
-                src={activity.photo_url}
-                alt="Aktivitätsfoto"
-                className="rounded-lg max-h-32 object-cover"
-              />
+              <ActivityImage photoUrl={activity.photo_url} />
             </div>
           )}
         </div>
