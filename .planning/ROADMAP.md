@@ -73,7 +73,7 @@
 - [x] 31-01-PLAN.md — Shared inventory mutation hooks, settings route, and inventory gear entrypoint
 - [x] 31-02-PLAN.md — Category management UI and overview category labels
 - [x] 31-03-PLAN.md — Material edit dialog, direct stock correction, and stock-in dialog
-- [ ] 31-04-PLAN.md — Gap closure for blocked category delete copy and regression coverage
+- [x] 31-04-PLAN.md — Gap closure for blocked category delete copy and regression coverage
 **UI hint**: yes
 
 ### Phase 32: Enriched History
@@ -113,11 +113,11 @@ Phases execute in numeric order: 30 → 31 → 32 → 33
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 30. Backend API Foundation | v1.9 | 2/2 | Complete    | 2026-05-01 |
-| 31. Settings, Editing & Stock-In | v1.9 | 3/3 | Complete   | 2026-05-01 |
+| 31. Settings, Editing & Stock-In | v1.9 | 4/4 | Complete    | 2026-05-01 |
 | 32. Enriched History | v1.9 | 2/2 | Complete    | 2026-05-01 |
 | 33. Type Safety & Coverage | v1.9 | 3/3 | Complete   | 2026-05-01 |
 
 ---
 
 *Roadmap last updated: 2026-05-01*
-*Next: `/gsd-execute-phase 33`*
+*Next: `/gsd-progress`*

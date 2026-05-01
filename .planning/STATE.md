@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Inventory Features
 status: verifying
-stopped_at: Phase 33 plans created
-last_updated: "2026-05-01T16:05:02.389Z"
+stopped_at: Phase 31 gap closure complete
+last_updated: "2026-05-01T18:15:30.000Z"
 last_activity: 2026-05-01
 progress:
   total_phases: 4
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 11
+  completed_plans: 11
   percent: 100
 ---
 
@@ -23,13 +23,13 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-05-01)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Überblick. Weniger Suchzeit, weniger Fehler.
-**Current focus:** Phase 33 complete — ready for verification
+**Current focus:** v1.9 gap closure complete — ready for verification/transition
 
 ## Current Position
 
-Phase: 33 (type-safety-coverage) — EXECUTING
+Phase: 33 (type-safety-coverage) — COMPLETE
 Plan: 3 of 3
-Status: Phase complete — ready for verification
+Status: Phase 31 gap closure complete — verification passed
 Last activity: 2026-05-01
 
 Progress: [██████████] 100%
@@ -38,15 +38,15 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 7
-- Completed this session: Phase 33 (3/3 plans)
+- Total plans completed: 11
+- Completed this session: Phase 31 gap closure (1/1 plan)
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 30. Backend API Foundation | 2/2 | - | - |
-| 31. Settings, Editing & Stock-In | 3/3 | - | - |
+| 31. Settings, Editing & Stock-In | 4/4 | - | - |
 | 32. Enriched History | 2/2 | - | - |
 | 33. Type Safety & Coverage | 3/3 | - | - |
 | Phase 31 P01 | 10m | 3 tasks | 6 files |
@@ -57,6 +57,7 @@ Progress: [██████████] 100%
 | Phase 33 P01 | 12m | 2 tasks | 4 files |
 | Phase 33 P02 | 14m | 2 tasks | 3 files |
 | Phase 33 P03 | 40m | 2 tasks | 5 files |
+| Phase 31 P04 | 2m | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Recent decisions affecting current work:
 - [Phase 33]: Inventory keeps stable local type names through a thin facade while `generated.ts` becomes the only DTO source of truth. — Frontend/backend drift is removed without churn in UI imports.
 - [Phase 33]: Route-layer tests now pin inventory PATCH semantics and enriched-history conversion fields directly. — Backend validation covers the exact contract the frontend consumes.
 - [Phase 33]: Inventory Playwright checks verify persisted API state after UI actions and start fresh local servers. — Browser coverage now exercises the current workspace instead of stale shared processes.
+- [Phase 31]: Known category-delete backend conflicts are translated to the fixed German row copy before rendering. — The settings UI no longer leaks backend FK error strings to users.
+- [Phase 31]: Inventory MSW handlers now use wildcard `/api/v1` route patterns. — Settings and overview regressions cover the app's absolute API base in Vitest.
 
 ### Pending Todos
 
@@ -102,6 +105,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-01T18:46:00.000Z
-Stopped at: Phase 33 complete — ready for verification
+Last session: 2026-05-01T18:15:30.000Z
+Stopped at: Phase 31 gap closure complete
 Resume file: None
