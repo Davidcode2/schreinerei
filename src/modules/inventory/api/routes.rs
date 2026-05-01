@@ -18,7 +18,8 @@ use crate::modules::inventory::application::InventoryService;
 use crate::modules::inventory::domain::{
     CreateCategory, CreateMaterial, WithdrawMaterial, AdjustStock,
     CreateOrderRequest, ApproveOrderRequest, FulfillOrderRequest,
-    StockEntryWithSite, SiteStockHistoryEntry,
+    EnrichedStockEntry, SiteStockHistoryEntry,
+    StockEntryWithSite, StockIn, UpdateCategory, UpdateMaterial,
 };
 use crate::AppState;
 
@@ -27,15 +28,17 @@ pub fn create_router() -> Router<AppState> {
     Router::new()
         // Categories
         .route("/api/v1/inventory/categories", get(list_categories).post(create_category))
-        .route("/api/v1/inventory/categories/{id}", get(get_category))
+        .route("/api/v1/inventory/categories/{id}", get(get_category).patch(update_category).delete(delete_category))
         
         // Materials
         .route("/api/v1/inventory/materials", get(list_materials).post(create_material))
-        .route("/api/v1/inventory/materials/{id}", get(get_material).delete(delete_material))
+        .route("/api/v1/inventory/materials/{id}", get(get_material).patch(update_material).delete(delete_material))
         .route("/api/v1/inventory/materials/{id}/history", get(get_material_history))
+        .route("/api/v1/inventory/materials/{id}/history/enriched", get(get_enriched_material_history))
         .route("/api/v1/inventory/sites/{site_id}/history", get(get_site_material_history))
         .route("/api/v1/inventory/materials/{id}/withdraw", post(withdraw_material))
         .route("/api/v1/inventory/materials/{id}/adjust", post(adjust_stock))
+        .route("/api/v1/inventory/materials/{id}/stock-in", post(stock_in_material))
         .route("/api/v1/inventory/materials/{id}/qr", post(generate_qr_code))
         .route("/api/v1/inventory/materials/{id}/qr/svg", get(get_qr_svg))
         
@@ -77,6 +80,13 @@ impl From<crate::modules::inventory::domain::Category> for CategoryResponse {
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CreateCategoryRequest {
     pub name: String,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct UpdateCategoryRequest {
+    pub name: Option<String>,
     pub description: Option<String>,
 }
 
@@ -128,6 +138,14 @@ pub struct CreateMaterialRequest {
 
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct UpdateMaterialRequest {
+    pub location: Option<String>,
+    pub min_quantity: Option<i32>,
+    pub clear_location: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct WithdrawRequest {
     pub quantity: i32,
     pub notes: Option<String>,
@@ -139,6 +157,13 @@ pub struct WithdrawRequest {
 pub struct AdjustStockRequest {
     pub quantity: i32,
     pub reason: String,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct StockInRequest {
+    pub quantity: i32,
+    pub notes: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -248,6 +273,23 @@ pub struct SiteStockHistoryResponse {
     pub created_at: String,
 }
 
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct EnrichedStockHistoryResponse {
+    pub id: String,
+    pub material_id: String,
+    pub user_id: String,
+    pub user_name: String,
+    pub entry_type: String,
+    pub quantity_change: i32,
+    pub quantity_after: i32,
+    pub notes: Option<String>,
+    pub site_id: Option<String>,
+    pub site_name: Option<String>,
+    pub category_name: String,
+    pub created_at: String,
+}
+
 impl From<SiteStockHistoryEntry> for SiteStockHistoryResponse {
     fn from(entry: SiteStockHistoryEntry) -> Self {
         Self {
@@ -261,6 +303,25 @@ impl From<SiteStockHistoryEntry> for SiteStockHistoryResponse {
             site_id: entry.site_id.map(|s| s.to_string()),
             site_name: entry.site_name,
             extracted_by: entry.extracted_by,
+            created_at: entry.created_at.to_rfc3339(),
+        }
+    }
+}
+
+impl From<EnrichedStockEntry> for EnrichedStockHistoryResponse {
+    fn from(entry: EnrichedStockEntry) -> Self {
+        Self {
+            id: entry.id.to_string(),
+            material_id: entry.material_id.to_string(),
+            user_id: entry.user_id.to_string(),
+            user_name: entry.user_name,
+            entry_type: entry.entry_type.to_string(),
+            quantity_change: entry.quantity_change,
+            quantity_after: entry.quantity_after,
+            notes: entry.notes,
+            site_id: entry.site_id.map(|s| s.to_string()),
+            site_name: entry.site_name,
+            category_name: entry.category_name,
             created_at: entry.created_at.to_rfc3339(),
         }
     }
@@ -284,6 +345,25 @@ impl From<StockEntryWithSite> for StockEntryResponse {
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct OrderStatusQuery {
     pub status: Option<String>,
+}
+
+impl From<UpdateCategoryRequest> for UpdateCategory {
+    fn from(request: UpdateCategoryRequest) -> Self {
+        Self {
+            name: request.name,
+            description: request.description,
+        }
+    }
+}
+
+impl From<UpdateMaterialRequest> for UpdateMaterial {
+    fn from(request: UpdateMaterialRequest) -> Self {
+        Self {
+            location: request.location,
+            min_quantity: request.min_quantity,
+            clear_location: request.clear_location,
+        }
+    }
 }
 
 // === Handlers ===
@@ -340,6 +420,45 @@ pub async fn get_category(
     let category = service.get_category(category_id, &ctx).await?;
     
     Ok(Json(CategoryResponse::from(category)))
+}
+
+pub async fn update_category(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+    Json(request): Json<UpdateCategoryRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = InventoryService::new(
+        crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+
+    let category_id = Uuid::parse_str(&id)
+        .map(CategoryId)
+        .map_err(|_| AppError::Validation("Invalid category ID".to_string()))?;
+
+    let category = service.update_category(category_id, request.into(), &ctx).await?;
+
+    Ok(Json(CategoryResponse::from(category)))
+}
+
+pub async fn delete_category(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = InventoryService::new(
+        crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+
+    let category_id = Uuid::parse_str(&id)
+        .map(CategoryId)
+        .map_err(|_| AppError::Validation("Invalid category ID".to_string()))?;
+
+    service.delete_category(category_id, &ctx).await?;
+
+    Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
 }
 
 pub async fn list_materials(
@@ -414,6 +533,26 @@ pub async fn get_material(
     Ok(Json(MaterialResponse::from(material)))
 }
 
+pub async fn update_material(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+    Json(request): Json<UpdateMaterialRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = InventoryService::new(
+        crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+
+    let material_id = Uuid::parse_str(&id)
+        .map(MaterialId)
+        .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
+
+    let material = service.update_material(material_id, request.into(), &ctx).await?;
+
+    Ok(Json(MaterialResponse::from(material)))
+}
+
 /// GET /api/v1/inventory/materials/{id}/history - Get stock change history for a material
 pub async fn get_material_history(
     State(state): State<AppState>,
@@ -435,6 +574,29 @@ pub async fn get_material_history(
     let entries = repo.list_stock_entries_with_site(material_id, ctx.tenant_id, 50).await?;
     let response: Vec<StockEntryResponse> = entries.into_iter().map(StockEntryResponse::from).collect();
     
+    Ok(Json(response))
+}
+
+pub async fn get_enriched_material_history(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = InventoryService::new(
+        crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+
+    let material_id = Uuid::parse_str(&id)
+        .map(MaterialId)
+        .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
+
+    let entries = service.list_enriched_history(material_id, &ctx).await?;
+    let response: Vec<EnrichedStockHistoryResponse> = entries
+        .into_iter()
+        .map(EnrichedStockHistoryResponse::from)
+        .collect();
+
     Ok(Json(response))
 }
 
@@ -537,6 +699,35 @@ pub async fn adjust_stock(
     
     let material = service.adjust_stock(adjust, &ctx).await?;
     
+    Ok(Json(MaterialResponse::from(material)))
+}
+
+pub async fn stock_in_material(
+    State(state): State<AppState>,
+    auth: AuthenticatedUser,
+    Path(id): Path<String>,
+    Json(request): Json<StockInRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = InventoryService::new(
+        crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool)
+    );
+    let ctx = TenantContext::from_auth(&auth);
+
+    let material_id = Uuid::parse_str(&id)
+        .map(MaterialId)
+        .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
+
+    let material = service
+        .stock_in(
+            StockIn {
+                material_id,
+                quantity: request.quantity,
+                notes: request.notes,
+            },
+            &ctx,
+        )
+        .await?;
+
     Ok(Json(MaterialResponse::from(material)))
 }
 
