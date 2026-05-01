@@ -603,6 +603,35 @@ impl SiteRepository {
         Ok(row.into_attachment())
     }
 
+    pub async fn update_activity_photo_url(
+        &self,
+        tenant_id: TenantId,
+        activity_id: ActivityId,
+        site_id: SiteId,
+        photo_url: &str,
+    ) -> Result<(), AppError> {
+        let result = sqlx::query(
+            r#"
+            UPDATE site_activities
+            SET photo_url = $1
+            WHERE id = $2 AND tenant_id = $3 AND site_id = $4 AND activity_type = 'photo'
+            "#,
+        )
+        .bind(photo_url)
+        .bind(activity_id.0)
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        if result.rows_affected() == 0 {
+            return Err(AppError::NotFound("Photo activity not found".to_string()));
+        }
+
+        Ok(())
+    }
+
     pub async fn find_attachment_by_id(
         &self,
         attachment_id: Uuid,
