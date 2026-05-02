@@ -26,6 +26,11 @@ function getCalendarButtons() {
     .filter((button) => button.getAttribute("aria-label")?.startsWith("Sprinter am "))
 }
 
+function requireElement<T>(value: T | undefined): T {
+  expect(value).toBeDefined()
+  return value as T
+}
+
 function setCalendarData(resources: Array<{
   resource_type: "vehicle" | "tool"
   resource_id: string
@@ -94,7 +99,7 @@ describe("CalendarView", () => {
 
     const [dayButton] = getCalendarButtons()
 
-    await user.click(dayButton)
+    await user.click(requireElement(dayButton))
 
     expect(dayButton).toHaveAttribute("data-selection-state", "pending")
     expect(screen.queryByTestId("reservation-confirmation-sheet")).not.toBeInTheDocument()
@@ -133,10 +138,10 @@ describe("CalendarView", () => {
       .getAllByRole("button")
       .filter((button) => button.getAttribute("aria-label")?.startsWith("Bohrhammer am "))
 
-    await user.click(toolButtons[0])
+    await user.click(requireElement(toolButtons[0]))
     expect(screen.getByText("Alex")).toBeInTheDocument()
 
-    await user.click(toolButtons[2])
+    await user.click(requireElement(toolButtons[2]))
     expect(await screen.findByTestId("reservation-confirmation-sheet")).toBeInTheDocument()
     expect(screen.getByText("Alex")).toBeInTheDocument()
   })
@@ -186,8 +191,8 @@ describe("CalendarView", () => {
     const laterButton = buttons[4]
     const earlierButton = buttons[2]
 
-    await user.click(laterButton)
-    await user.click(earlierButton)
+    await user.click(requireElement(laterButton))
+    await user.click(requireElement(earlierButton))
 
     expect(await screen.findByTestId("reservation-confirmation-sheet")).toBeInTheDocument()
     expect(screen.getAllByText(/bis/).length).toBeGreaterThan(0)
@@ -199,8 +204,8 @@ describe("CalendarView", () => {
 
     const [dayButton] = getCalendarButtons()
 
-    await user.click(dayButton)
-    await user.click(dayButton)
+    await user.click(requireElement(dayButton))
+    await user.click(requireElement(dayButton))
 
     expect(await screen.findByTestId("reservation-confirmation-sheet")).toBeInTheDocument()
     expect(screen.queryByText(/bis/)).not.toBeInTheDocument()
@@ -214,8 +219,8 @@ describe("CalendarView", () => {
     const startButton = buttons[1]
     const endButton = buttons[3]
 
-    await user.click(startButton)
-    await user.click(endButton)
+    await user.click(requireElement(startButton))
+    await user.click(requireElement(endButton))
     await user.click(screen.getByRole("button", { name: /abbrechen/i }))
 
     await waitFor(() => {
@@ -233,8 +238,8 @@ describe("CalendarView", () => {
     const startButton = buttons[1]
     const endButton = buttons[3]
 
-    await user.click(startButton)
-    await user.click(endButton)
+    await user.click(requireElement(startButton))
+    await user.click(requireElement(endButton))
 
     const toggle = screen.getByRole("checkbox", { name: /zeitangaben anpassen/i })
 
@@ -255,12 +260,17 @@ describe("CalendarView", () => {
     const laterButton = buttons[4]
     const earlierButton = buttons[2]
 
-    await user.click(laterButton)
-    await user.click(earlierButton)
+    await user.click(requireElement(laterButton))
+    await user.click(requireElement(earlierButton))
     await user.click(screen.getByRole("button", { name: /reservierung bestaetigen/i }))
 
     await waitFor(() => {
-      const [payload] = mutateAsyncMock.mock.calls[0] ?? []
+      const payload = mutateAsyncMock.mock.calls[0]?.[0]
+
+      expect(payload).toBeDefined()
+      if (!payload) {
+        return
+      }
 
       expect(mutateAsyncMock).toHaveBeenCalledWith({
         resource_id: "vehicle-1",

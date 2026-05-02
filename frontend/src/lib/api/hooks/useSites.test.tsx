@@ -51,7 +51,9 @@ describe("useUploadSitePhoto", () => {
       "/api/v1/sites/site-1/attachments/photo",
       expect.any(FormData)
     )
-    const formData = vi.mocked(apiClient.post).mock.calls[0][1] as FormData
+    const firstCall = vi.mocked(apiClient.post).mock.calls[0]
+    expect(firstCall).toBeDefined()
+    const formData = firstCall?.[1] as FormData
     expect(formData.get("photo")).toBe(file)
     expect(formData.get("file")).toBeNull()
     expect(response).toEqual({
@@ -205,7 +207,9 @@ describe("useUploadSiteAttachment", () => {
       expect.any(FormData)
     )
 
-    const formData = vi.mocked(apiClient.post).mock.calls[0][1] as FormData
+    const firstCall = vi.mocked(apiClient.post).mock.calls[0]
+    expect(firstCall).toBeDefined()
+    const formData = firstCall?.[1] as FormData
     expect(formData.get("attachment")).toBe(file)
     expect(formData.get("photo")).toBeNull()
   })

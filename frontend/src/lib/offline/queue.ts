@@ -74,10 +74,10 @@ function parsePhotoUploadPayload(data: Record<string, unknown>): PhotoUploadQueu
   return {
     siteId: payload.siteId,
     activityType: 'photo',
-    content: typeof payload.content === 'string' ? payload.content : undefined,
     mimeType: payload.mimeType,
-    fileName: typeof payload.fileName === 'string' ? payload.fileName : undefined,
     fileDataUrl: payload.fileDataUrl,
+    ...(typeof payload.content === 'string' ? { content: payload.content } : {}),
+    ...(typeof payload.fileName === 'string' ? { fileName: payload.fileName } : {}),
   }
 }
 

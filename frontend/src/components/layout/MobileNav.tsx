@@ -13,10 +13,10 @@ export function MobileNav() {
   const navigate = useNavigate()
 
   return (
-    <header className="flex md:hidden h-16 items-center border-b bg-card px-4 fixed top-0 left-0 right-0 z-50">
+    <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center gap-2 border-b bg-card px-3 md:hidden">
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="mr-2">
+          <Button variant="ghost" size="icon" className="flex-shrink-0">
             <Menu className="h-5 w-5" />
             <span className="sr-only">Menü öffnen</span>
           </Button>
@@ -46,10 +46,10 @@ export function MobileNav() {
           </div>
         </SheetContent>
       </Sheet>
-      <h1 className="text-lg font-semibold text-primary flex-1">Schreinerei</h1>
 
-      {/* Right side actions */}
-      <div className="flex items-center gap-2">
+      <ActiveSiteIndicator compact className="flex-1" />
+
+      <div className="flex flex-shrink-0 items-center gap-1">
         <PendingActionsBadge />
         <SyncButton />
         <Button

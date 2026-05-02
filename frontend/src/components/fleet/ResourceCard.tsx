@@ -5,8 +5,10 @@ import { MapPin, QrCode, Trash2 } from "lucide-react"
 import { StatusBadge } from "@/components/shared"
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
 import { useDeleteVehicle, useDeleteTool } from "@/lib/api/hooks"
+import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import type { Vehicle, Tool } from "@/types/fleet"
+import { getResourceCalendarColor } from "@/pages/fleet/resourceCalendarColor"
 
 interface ResourceCardProps {
   resource: Vehicle | Tool
@@ -25,6 +27,7 @@ export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
 
   const isAvailable = resource.status === "available"
   const deleteMutation = type === "vehicle" ? deleteVehicleMutation : deleteToolMutation
+  const resourceColor = getResourceCalendarColor(type, resource.id)
 
   const handleDelete = () => {
     deleteMutation.mutate(resource.id, {
@@ -40,36 +43,43 @@ export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
 
   return (
     <>
-      <Card className="hover:border-primary/50 transition-colors">
+      <Card className={cn("overflow-hidden transition-colors hover:border-primary/50 hover:shadow-sm", resourceColor.borderClassName)}>
+        <div className={cn("h-1.5 w-full", resourceColor.markerClassName)} />
         <CardContent className="p-4">
-          <div className="flex items-start justify-between mb-3">
-            <div className="space-y-1">
-              <h3 className="font-semibold">{resource.name}</h3>
-              {isVehicle(resource) ? (
-                <p className="text-sm text-muted-foreground capitalize">
-                  {resource.vehicle_type}
-                  {resource.license_plate && ` • ${resource.license_plate}`}
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {resource.category || "Werkzeug"}
-                </p>
-              )}
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-3">
+              <span
+                aria-hidden="true"
+                className={cn("mt-1 h-3 w-3 flex-shrink-0 rounded-full ring-4 ring-background", resourceColor.markerClassName)}
+              />
+              <div className="min-w-0 space-y-1">
+                <h3 className="truncate font-semibold">{resource.name}</h3>
+                {isVehicle(resource) ? (
+                  <p className="truncate text-sm text-muted-foreground capitalize">
+                    {resource.vehicle_type}
+                    {resource.license_plate && ` • ${resource.license_plate}`}
+                  </p>
+                ) : (
+                  <p className="truncate text-sm text-muted-foreground">
+                    {resource.category || "Werkzeug"}
+                  </p>
+                )}
+              </div>
             </div>
             <StatusBadge status={resource.status} />
           </div>
 
           {resource.location && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+            <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin className="h-3 w-3" />
               <span>{resource.location}</span>
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-3 border-t">
+          <div className={cn("flex items-center justify-between border-t pt-3", resourceColor.borderClassName)}>
             <div className="flex items-center gap-2">
               {resource.qr_code && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <div className={cn("flex items-center gap-1 rounded-full border px-2 py-1 text-xs", resourceColor.borderClassName, resourceColor.tintClassName)}>
                   <QrCode className="h-3 w-3" />
                   <span className="font-mono">{resource.qr_code}</span>
                 </div>

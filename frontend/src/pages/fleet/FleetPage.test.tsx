@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { render, screen } from "@/test/utils"
 import FleetPage from "./FleetPage"
 
-const reservationDialogMock = vi.fn(() => null)
+const reservationDialogMock = vi.fn<(props: unknown) => void>()
 
 vi.mock("./CalendarView", () => ({
   default: ({ embedded }: { embedded?: boolean }) => (

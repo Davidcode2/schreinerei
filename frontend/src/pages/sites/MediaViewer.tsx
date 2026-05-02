@@ -39,24 +39,23 @@ function fileTypeLabel(mimeType: string): string {
   return mimeType
 }
 
-export function MediaViewer({ open, target, sharePath, onClose }: MediaViewerProps) {
+function MediaPreviewPane({
+  target,
+  onClose,
+}: {
+  target: MediaViewerTarget | null
+  onClose: () => void
+}) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
   const [hasPreviewError, setHasPreviewError] = useState(false)
 
   useEffect(() => {
-    if (!open || !target) {
-      setPreviewUrl(null)
-      setHasPreviewError(false)
-      setIsLoading(false)
+    if (!target) {
       return
     }
 
     let active = true
     let objectUrl: string | null = null
-
-    setIsLoading(true)
-    setHasPreviewError(false)
 
     apiClient
       .getBlob(target.attachment.url)
@@ -67,17 +66,10 @@ export function MediaViewer({ open, target, sharePath, onClose }: MediaViewerPro
 
         objectUrl = URL.createObjectURL(blob)
         setPreviewUrl(objectUrl)
-        setHasPreviewError(false)
       })
       .catch(() => {
         if (active) {
-          setPreviewUrl(null)
           setHasPreviewError(true)
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setIsLoading(false)
         }
       })
 
@@ -87,8 +79,52 @@ export function MediaViewer({ open, target, sharePath, onClose }: MediaViewerPro
         URL.revokeObjectURL(objectUrl)
       }
     }
-  }, [open, target])
+  }, [target])
 
+  if (!target || hasPreviewError) {
+    return (
+      <div className="flex h-full min-h-[320px] flex-col items-center justify-center gap-4 rounded-xl bg-slate-100 p-6 text-center dark:bg-slate-900">
+        <FileText className="h-10 w-10 text-muted-foreground" />
+        <p className="max-w-sm text-sm text-muted-foreground">{PREVIEW_ERROR_COPY}</p>
+        <Button variant="outline" onClick={onClose}>
+          Schließen
+        </Button>
+      </div>
+    )
+  }
+
+  if (!previewUrl) {
+    return (
+      <div className="flex h-full min-h-[320px] items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-900">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-muted border-t-primary" />
+      </div>
+    )
+  }
+
+  if (target.attachment.mime_type === "application/pdf") {
+    return (
+      <div className="h-full min-h-[320px] rounded-xl bg-white p-4">
+        <iframe
+          className="h-[60dvh] w-full rounded-lg border"
+          src={previewUrl}
+          title={`Dokumentvorschau: ${target.attachment.filename}`}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-full min-h-[320px] items-center justify-center rounded-xl bg-slate-950 p-4">
+      <img
+        alt={target.attachment.filename}
+        className="max-h-[70dvh] w-full object-contain"
+        src={previewUrl}
+      />
+    </div>
+  )
+}
+
+export function MediaViewer({ open, target, sharePath, onClose }: MediaViewerProps) {
   const shareUrl = useMemo(() => `${window.location.origin}${sharePath}`, [sharePath])
 
   const copyShareLink = async () => {
@@ -114,60 +150,25 @@ export function MediaViewer({ open, target, sharePath, onClose }: MediaViewerPro
     URL.revokeObjectURL(downloadUrl)
   }
 
-  const mediaPane = () => {
-    if (!target || hasPreviewError) {
-      return (
-        <div className="flex h-full min-h-[320px] flex-col items-center justify-center gap-4 rounded-xl bg-slate-100 p-6 text-center dark:bg-slate-900">
-          <FileText className="h-10 w-10 text-muted-foreground" />
-          <p className="max-w-sm text-sm text-muted-foreground">{PREVIEW_ERROR_COPY}</p>
-          <Button variant="outline" onClick={onClose}>
-            Schließen
-          </Button>
-        </div>
-      )
-    }
-
-    if (isLoading || !previewUrl) {
-      return (
-        <div className="flex h-full min-h-[320px] items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-900">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-muted border-t-primary" />
-        </div>
-      )
-    }
-
-    if (target.attachment.mime_type === "application/pdf") {
-      return (
-        <div className="h-full min-h-[320px] rounded-xl bg-white p-4">
-          <iframe
-            className="h-[60dvh] w-full rounded-lg border"
-            src={previewUrl}
-            title={`Dokumentvorschau: ${target.attachment.filename}`}
-          />
-        </div>
-      )
-    }
-
-    return (
-      <div className="flex h-full min-h-[320px] items-center justify-center rounded-xl bg-slate-950 p-4">
-        <img
-          alt={target.attachment.filename}
-          className="max-h-[70dvh] w-full object-contain"
-          src={previewUrl}
-        />
-      </div>
-    )
-  }
-
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
-      <DialogContent className="h-[100dvh] w-[100dvw] max-w-none translate-x-[-50%] translate-y-[-50%] gap-0 rounded-none border-0 p-0 sm:h-[calc(100dvh-32px)] sm:w-[calc(100dvw-32px)] sm:rounded-xl">
+      <DialogContent
+        showCloseButton={false}
+        className="h-[100dvh] w-[100dvw] max-w-none translate-x-[-50%] translate-y-[-50%] gap-0 rounded-none border-0 p-0 sm:h-[calc(100dvh-32px)] sm:w-[calc(100dvw-32px)] sm:rounded-xl"
+      >
         <DialogTitle className="sr-only">Medienansicht</DialogTitle>
         <DialogDescription className="sr-only">
           Vollbildansicht für Baustellenmedien mit Metadaten und Aktionen.
         </DialogDescription>
 
         <div className="grid h-full grid-cols-1 bg-background lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="min-h-0 bg-slate-950/95 p-4 lg:p-6">{mediaPane()}</div>
+          <div className="min-h-0 bg-slate-950/95 p-4 lg:p-6">
+            <MediaPreviewPane
+              key={target ? `${target.activity.id}:${target.attachment.attachment_id}` : "empty"}
+              target={open ? target : null}
+              onClose={onClose}
+            />
+          </div>
 
           <aside className="flex flex-col gap-6 border-l bg-slate-50 p-4 lg:p-6">
             <div className="flex items-start justify-between gap-3">

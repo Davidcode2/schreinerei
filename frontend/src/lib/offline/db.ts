@@ -4,6 +4,7 @@ import type { Site } from '@/types/sites'
 import type { Vehicle, Tool, Reservation } from '@/types/fleet'
 
 export interface PhotoUploadQueueData {
+  [key: string]: unknown
   siteId: string
   activityType: 'photo'
   content?: string

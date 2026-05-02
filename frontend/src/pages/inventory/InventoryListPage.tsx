@@ -61,34 +61,35 @@ export default function InventoryListPage() {
         }
       />
 
-      {/* Category Filter */}
-      {!categoriesLoading && categories && categories.length > 0 && (
-        <CategoryFilter
-          categories={categories}
-          selectedId={selectedCategory}
-          onSelect={setSelectedCategory}
-        />
-      )}
-
-      {/* Search */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Material suchen..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+      <div className="space-y-4">
+        {!categoriesLoading && categories && categories.length > 0 && (
+          <CategoryFilter
+            categories={categories}
+            selectedId={selectedCategory}
+            onSelect={setSelectedCategory}
+            className="pt-1"
           />
+        )}
+
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Material suchen..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            className="flex-shrink-0"
+            onClick={() => navigate("/scan")}
+          >
+            <QrCode className="h-4 w-4" />
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          size="icon"
-          className="flex-shrink-0"
-          onClick={() => navigate("/scan")}
-        >
-          <QrCode className="h-4 w-4" />
-        </Button>
       </div>
 
       {/* Materials List */}

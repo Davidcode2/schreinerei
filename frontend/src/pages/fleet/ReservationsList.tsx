@@ -106,7 +106,7 @@ export function ReservationsList({ showOnlyMine = false }: ReservationsListProps
               </div>
             )}
 
-            {(reservation.status === "confirmed" || reservation.status === "active") && (
+            {(reservation.status === "confirmed" || reservation.status === "in_use") && (
               <div className="flex justify-end mt-3 pt-3 border-t">
                 <Button
                   variant="outline"

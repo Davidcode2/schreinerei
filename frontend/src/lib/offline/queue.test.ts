@@ -59,13 +59,13 @@ describe('offline photo upload queue', () => {
 
     const actions = await getPendingActions()
     expect(actions).toHaveLength(1)
-    expect(actions[0].type).toBe('photo_upload')
-    expect(actions[0].data).toMatchObject({
+    expect(actions[0]?.type).toBe('photo_upload')
+    expect(actions[0]?.data).toMatchObject({
       siteId: 'site-1',
       content: 'Mangel dokumentiert',
       mimeType: 'image/jpeg',
     })
-    expect(actions[0].data.fileDataUrl).toMatch(/^data:image\/jpeg;base64,/) 
+    expect((actions[0]?.data as { fileDataUrl?: string } | undefined)?.fileDataUrl).toMatch(/^data:image\/jpeg;base64,/)
   })
 
   it('processes deserialized queued photo upload after reload', async () => {
@@ -95,7 +95,9 @@ describe('offline photo upload queue', () => {
       '/api/v1/sites/site-1/attachments/photo',
       expect.any(FormData)
     )
-    const uploadFormData = vi.mocked(apiClient.post).mock.calls[0][1] as FormData
+    const firstCall = vi.mocked(apiClient.post).mock.calls[0]
+    expect(firstCall).toBeDefined()
+    const uploadFormData = firstCall?.[1] as FormData
     expect(uploadFormData.get('photo')).toBeInstanceOf(File)
     expect(uploadFormData.get('file')).toBeNull()
     expect(apiClient.post).toHaveBeenNthCalledWith(

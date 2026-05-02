@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event"
 
 import { render, screen, waitFor } from "@/test/utils"
 import { apiClient } from "@/lib/api/client"
+import type { Activity } from "@/types/sites"
 import { MediaViewer } from "./MediaViewer"
 
 import {
@@ -31,12 +32,13 @@ vi.mock("sonner", async (importOriginal) => {
 
 const getBlobMock = vi.mocked(apiClient.getBlob)
 
-const activities = [
+const activities: Activity[] = [
   {
     id: "activity-1",
     site_id: "site-1",
     user_id: "user-1",
     creator_name: "Anna Tischler",
+    can_delete: true,
     activity_type: "note" as const,
     content: "Montage abgeschlossen",
     photo_url: null,
@@ -56,6 +58,7 @@ const activities = [
     site_id: "site-1",
     user_id: "user-2",
     creator_name: "Max Muster",
+    can_delete: true,
     activity_type: "photo" as const,
     content: null,
     photo_url: "/api/v1/attachments/legacy-photo-id",
@@ -63,6 +66,9 @@ const activities = [
     created_at: "2026-05-01T09:00:00.000Z",
   },
 ]
+
+const firstActivity = activities[0]!
+const firstAttachment = firstActivity.attachments[0]!
 
 describe("mediaViewerRoute", () => {
   it("builds canonical viewer paths with slugified filenames", () => {
@@ -114,16 +120,16 @@ describe("MediaViewer", () => {
     getBlobMock.mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" }))
 
     render(
-      <MediaViewer
-        open={true}
-        target={{
-          activity: {
-            ...activities[0],
-            content: null,
-          },
-          attachment: activities[0].attachments[0],
-          title: activities[0].attachments[0].filename,
-        }}
+        <MediaViewer
+          open={true}
+          target={{
+            activity: {
+              ...firstActivity,
+              content: null,
+            },
+            attachment: firstAttachment,
+            title: firstAttachment.filename,
+          }}
         sharePath="/sites/site-1/media/activity-1/attachment-1/montage-plan-pdf"
         onClose={vi.fn()}
       />
@@ -142,13 +148,13 @@ describe("MediaViewer", () => {
     getBlobMock.mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" }))
 
     render(
-      <MediaViewer
-        open={true}
-        target={{
-          activity: activities[0],
-          attachment: activities[0].attachments[0],
-          title: activities[0].attachments[0].filename,
-        }}
+        <MediaViewer
+          open={true}
+          target={{
+            activity: firstActivity,
+            attachment: firstAttachment,
+            title: firstAttachment.filename,
+          }}
         sharePath="/sites/site-1/media/activity-1/attachment-1/montage-plan-pdf"
         onClose={vi.fn()}
       />
@@ -179,13 +185,13 @@ describe("MediaViewer", () => {
     getBlobMock.mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" }))
 
     render(
-      <MediaViewer
-        open={true}
-        target={{
-          activity: activities[0],
-          attachment: activities[0].attachments[0],
-          title: activities[0].attachments[0].filename,
-        }}
+        <MediaViewer
+          open={true}
+          target={{
+            activity: firstActivity,
+            attachment: firstAttachment,
+            title: firstAttachment.filename,
+          }}
         sharePath="/sites/site-1/media/activity-1/attachment-1/montage-plan-pdf"
         onClose={vi.fn()}
       />

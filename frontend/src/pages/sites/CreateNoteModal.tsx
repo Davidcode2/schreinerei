@@ -152,8 +152,8 @@ export function CreateNoteModal({
       await createActivity.mutateAsync({
         siteId,
         activity_type: "note",
-        content: hasContent ? content.trim() : undefined,
         attachment_ids: uploadedAttachments.map((attachment) => attachment.attachment_id),
+        ...(hasContent ? { content: content.trim() } : {}),
       })
 
       toast.success("Eintrag gespeichert")

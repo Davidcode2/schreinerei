@@ -2,16 +2,17 @@ import { http, HttpResponse, delay } from 'msw';
 
 const API_BASE = '/api/v1';
 const apiRoute = (path: string) => `*${API_BASE}${path}`;
+type MockRecord = Record<string, unknown>;
 
 // Mock data stores (can be modified in tests)
 export const mockData = {
-  materials: [] as any[],
-  categories: [] as any[],
-  sites: [] as any[],
-  vehicles: [] as any[],
-  tools: [] as any[],
-  reservations: [] as any[],
-  timeEntries: [] as any[],
+  materials: [] as MockRecord[],
+  categories: [] as MockRecord[],
+  sites: [] as MockRecord[],
+  vehicles: [] as MockRecord[],
+  tools: [] as MockRecord[],
+  reservations: [] as MockRecord[],
+  timeEntries: [] as MockRecord[],
 };
 
 export const handlers = [
@@ -22,7 +23,7 @@ export const handlers = [
   }),
 
   http.post(apiRoute('/inventory/materials'), async ({ request }) => {
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
     const newMaterial = {
       id: crypto.randomUUID(),
       created_at: new Date().toISOString(),
@@ -42,7 +43,7 @@ export const handlers = [
   }),
 
   http.post(apiRoute('/inventory/categories'), async ({ request }) => {
-    const body = await request.json() as any;
+    const body = await request.json() as MockRecord;
     const newCategory = {
       id: crypto.randomUUID(),
       name: body.name,
@@ -60,7 +61,7 @@ export const handlers = [
   }),
 
   http.post(`${API_BASE}/sites`, async ({ request }) => {
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
     const newSite = {
       id: crypto.randomUUID(),
       status: 'planned',
@@ -83,7 +84,7 @@ export const handlers = [
   }),
 
   http.post(`${API_BASE}/fleet/vehicles`, async ({ request }) => {
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
     const newVehicle = {
       id: crypto.randomUUID(),
       license_plate: null,
@@ -106,7 +107,7 @@ export const handlers = [
   }),
 
   http.post(`${API_BASE}/fleet/tools`, async ({ request }) => {
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
     const newTool = {
       id: crypto.randomUUID(),
       category: null,
@@ -129,7 +130,7 @@ export const handlers = [
   }),
 
   http.post(`${API_BASE}/fleet/reservations`, async ({ request }) => {
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
     const newReservation = {
       id: crypto.randomUUID(),
       site_id: null,
@@ -156,7 +157,7 @@ export const handlers = [
   }),
 
   http.post(`${API_BASE}/time-entries`, async ({ request }) => {
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
     const newTimeEntry = {
       id: crypto.randomUUID(),
       site_id: null,

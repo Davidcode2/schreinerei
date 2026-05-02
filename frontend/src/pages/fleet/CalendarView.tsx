@@ -1,10 +1,10 @@
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { LoadingSpinner, EmptyState } from "@/components/shared"
 import { useCalendar } from "@/lib/api/hooks"
+import { cn } from "@/lib/utils"
 import type { CalendarEntry, ReservationSummary, ResourceType } from "@/types/fleet"
 import { ReservationConfirmationSheet } from "./ReservationConfirmationSheet"
 import {
@@ -45,6 +45,30 @@ function formatWeekHeader(startDate: Date): string {
 }
 
 const dayNames = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+const calendarGridColumns = "minmax(220px, 1.25fr) repeat(7, minmax(96px, 1fr))"
+
+const reservationStatusStyles = {
+  confirmed: {
+    badgeClassName: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
+    label: "Bestätigt",
+  },
+  in_use: {
+    badgeClassName: "bg-blue-100 text-blue-800 dark:bg-blue-500/15 dark:text-blue-200",
+    label: "Im Einsatz",
+  },
+  pending: {
+    badgeClassName: "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200",
+    label: "Anfrage",
+  },
+  completed: {
+    badgeClassName: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
+    label: "Erledigt",
+  },
+  cancelled: {
+    badgeClassName: "bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-200",
+    label: "Storniert",
+  },
+} as const
 
 function isDateInRange(date: string, startDate: string, endDate: string): boolean {
   return date >= startDate && date <= endDate
@@ -138,34 +162,6 @@ export default function CalendarView({ embedded = false }: CalendarViewProps) {
         </span>
       </div>
 
-      {/* Week Grid Header */}
-      <div className="grid grid-cols-8 gap-2">
-        <div className="p-2 text-sm font-medium text-muted-foreground">
-          Ressource
-        </div>
-        {Array.from({ length: 7 }).map((_, i) => {
-          const date = new Date(weekStart)
-          date.setDate(date.getDate() + i)
-          const isToday = (date.toISOString().split("T")[0] ?? "") === today
-
-          return (
-            <div
-              key={i}
-              className={`p-2 text-center text-sm ${
-                isToday
-                  ? "bg-primary text-primary-foreground rounded-md"
-                  : "text-muted-foreground"
-              }`}
-            >
-              <div className="font-medium">{dayNames[i]}</div>
-              <div className={isToday ? "" : "text-foreground"}>
-                {date.getDate()}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
       {/* Resources Grid */}
       {isLoading ? (
         <LoadingSpinner className="py-8" />
@@ -182,109 +178,180 @@ export default function CalendarView({ embedded = false }: CalendarViewProps) {
           description="Es sind keine Ressourcen für die Kalenderansicht verfügbar."
         />
       ) : (
-        <div className="space-y-2">
-          {calendarData.resources.map((entry: CalendarEntry) => {
-            const resourceColor = getResourceCalendarColor(
-              entry.resource_type,
-              entry.resource_id
-            )
+        <div className="overflow-x-auto rounded-2xl border bg-card/70 shadow-sm">
+          <div className="min-w-[980px]">
+            <div
+              className="grid gap-px border-b bg-border/60"
+              style={{ gridTemplateColumns: calendarGridColumns }}
+            >
+              <div className="bg-muted/40 px-4 py-3 text-sm font-semibold text-muted-foreground">
+                Ressource
+              </div>
+              {Array.from({ length: 7 }).map((_, i) => {
+                const date = new Date(weekStart)
+                date.setDate(date.getDate() + i)
+                const isToday = (date.toISOString().split("T")[0] ?? "") === today
 
-            return (
-              <Card key={`${entry.resource_type}-${entry.resource_id}`}>
-                <CardContent className="p-0">
-                  <div className="grid grid-cols-8 gap-2">
-                    <div
-                      className={`border-r p-3 ${resourceColor.tintClassName}`}
-                      data-resource-color={resourceColor.token}
-                    >
+                return (
+                  <div
+                    key={i}
+                    className={cn(
+                      "px-3 py-3 text-center text-sm",
+                      isToday
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted/30 text-muted-foreground"
+                    )}
+                  >
+                    <div className="font-medium">{dayNames[i]}</div>
+                    <div className={isToday ? "text-primary-foreground" : "text-foreground"}>
+                      {date.getDate()}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {calendarData.resources.map((entry: CalendarEntry) => {
+              const resourceColor = getResourceCalendarColor(
+                entry.resource_type,
+                entry.resource_id
+              )
+
+              return (
+                <div
+                  key={`${entry.resource_type}-${entry.resource_id}`}
+                  className="grid gap-px border-b bg-border/60 last:border-b-0"
+                  style={{ gridTemplateColumns: calendarGridColumns }}
+                >
+                  <div
+                    className={cn(
+                      "flex min-h-[88px] items-center px-4 py-3",
+                      resourceColor.tintClassName
+                    )}
+                    data-resource-color={resourceColor.token}
+                  >
+                    <div className="min-w-0 space-y-2">
                       <div className="flex items-center gap-2">
                         <span
                           aria-hidden="true"
-                          className={`h-2.5 w-2.5 rounded-full ${resourceColor.markerClassName}`}
+                          className={cn(
+                            "h-3 w-3 rounded-full ring-4 ring-background/80",
+                            resourceColor.markerClassName
+                          )}
                         />
-                        <p className={`line-clamp-1 text-sm font-medium ${resourceColor.labelClassName}`}>
+                        <p className={cn("line-clamp-1 text-sm font-semibold", resourceColor.labelClassName)}>
                           {entry.resource_name}
                         </p>
                       </div>
+                      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                        <span>{entry.resource_type === "vehicle" ? "Fahrzeug" : "Werkzeug"}</span>
+                      </div>
                     </div>
-                    {Array.from({ length: 7 }).map((_, i) => {
-                      const date = new Date(weekStart)
-                      date.setDate(date.getDate() + i)
-                      const dateStr = date.toISOString().split("T")[0] ?? ""
-
-                      const dayReservations = entry.reservations.filter(
-                        (r: ReservationSummary) => {
-                          const startDate = r.start_time.split("T")[0] ?? ""
-                          const endDate = r.end_time.split("T")[0] ?? ""
-                          return dateStr >= startDate && dateStr <= endDate
-                        }
-                      )
-
-                      const isEmpty = dayReservations.length === 0
-                      const isPendingStart =
-                        pendingSelection?.resourceId === entry.resource_id &&
-                        pendingSelection.resourceType === entry.resource_type &&
-                        pendingSelection.firstDate === dateStr
-                      const isCompletedSelection =
-                        completedSelection?.resourceId === entry.resource_id &&
-                        completedSelection.resourceType === entry.resource_type &&
-                        isDateInRange(
-                          dateStr,
-                          completedSelection.startDate,
-                          completedSelection.endDate
-                        )
-                      const selectionClassName = isPendingStart
-                        ? "bg-primary/10 ring-2 ring-primary/40"
-                        : isCompletedSelection
-                          ? "bg-primary/5 ring-1 ring-primary/30"
-                          : ""
-
-                      return (
-                        <div key={i} className="min-h-[60px] border-l last:border-r">
-                          {isEmpty ? (
-                            <button
-                              type="button"
-                              className={`h-full min-h-[60px] w-full p-2 text-left transition hover:bg-muted/50 ${selectionClassName}`}
-                              aria-label={`${entry.resource_name} am ${formatDateLabel(dateStr)} auswaehlen`}
-                              aria-pressed={isPendingStart || isCompletedSelection}
-                              data-selection-state={
-                                isPendingStart
-                                  ? "pending"
-                                  : isCompletedSelection
-                                    ? "completed"
-                                    : "idle"
-                              }
-                              onClick={() => handleSlotClick(entry, dateStr)}
-                            />
-                          ) : (
-                            <div className={`p-2 ${selectionClassName}`}>
-                              {dayReservations.map((r: ReservationSummary) => (
-                                <div
-                                  key={r.id}
-                                  className={`mb-1 border-l-4 p-1 text-xs ${resourceColor.borderClassName} ${
-                                    r.status === "confirmed"
-                                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                                      : r.status === "in_use"
-                                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                        : r.status === "pending"
-                                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                                          : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
-                                  }`}
-                                  data-resource-color={resourceColor.token}
-                                >
-                                  <p className="truncate">{r.user_name}</p>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
                   </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+
+                  {Array.from({ length: 7 }).map((_, i) => {
+                    const date = new Date(weekStart)
+                    date.setDate(date.getDate() + i)
+                    const dateStr = date.toISOString().split("T")[0] ?? ""
+
+                    const dayReservations = entry.reservations.filter((r: ReservationSummary) => {
+                      const startDate = r.start_time.split("T")[0] ?? ""
+                      const endDate = r.end_time.split("T")[0] ?? ""
+                      return dateStr >= startDate && dateStr <= endDate
+                    })
+
+                    const isEmpty = dayReservations.length === 0
+                    const isPendingStart =
+                      pendingSelection?.resourceId === entry.resource_id &&
+                      pendingSelection.resourceType === entry.resource_type &&
+                      pendingSelection.firstDate === dateStr
+                    const isCompletedSelection =
+                      completedSelection?.resourceId === entry.resource_id &&
+                      completedSelection.resourceType === entry.resource_type &&
+                      isDateInRange(
+                        dateStr,
+                        completedSelection.startDate,
+                        completedSelection.endDate
+                      )
+                    const selectionClassName = isPendingStart
+                      ? "bg-primary/10 ring-2 ring-inset ring-primary/40"
+                      : isCompletedSelection
+                        ? "bg-primary/5 ring-1 ring-inset ring-primary/30"
+                        : ""
+
+                    return (
+                      <div key={i} className="bg-background">
+                        {isEmpty ? (
+                          <button
+                            type="button"
+                            className={cn(
+                              "h-full min-h-[88px] w-full p-2 text-left transition hover:bg-muted/40",
+                              selectionClassName
+                            )}
+                            aria-label={`${entry.resource_name} am ${formatDateLabel(dateStr)} auswaehlen`}
+                            aria-pressed={isPendingStart || isCompletedSelection}
+                            data-selection-state={
+                              isPendingStart
+                                ? "pending"
+                                : isCompletedSelection
+                                  ? "completed"
+                                  : "idle"
+                            }
+                            onClick={() => handleSlotClick(entry, dateStr)}
+                          />
+                        ) : (
+                          <div className={cn("min-h-[88px] p-2", selectionClassName)}>
+                            <div className="space-y-2">
+                              {dayReservations.map((r: ReservationSummary) => {
+                                const reservationStatus = reservationStatusStyles[r.status]
+
+                                return (
+                                  <div
+                                    key={r.id}
+                                    className={cn(
+                                      "rounded-xl border px-2.5 py-2 shadow-sm",
+                                      resourceColor.borderClassName,
+                                      resourceColor.softTintClassName
+                                    )}
+                                    data-resource-color={resourceColor.token}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span
+                                        aria-hidden="true"
+                                        className={cn("h-2 w-2 rounded-full", resourceColor.markerClassName)}
+                                      />
+                                      <p className="truncate text-xs font-semibold text-foreground">
+                                        {r.user_name}
+                                      </p>
+                                    </div>
+                                    <div className="mt-2 flex items-center gap-2 text-[11px]">
+                                      <span
+                                        className={cn(
+                                          "inline-flex rounded-full px-2 py-0.5 font-medium",
+                                          reservationStatus.badgeClassName
+                                        )}
+                                      >
+                                        {reservationStatus.label}
+                                      </span>
+                                      {r.site_name ? (
+                                        <span className="truncate text-muted-foreground">
+                                          {r.site_name}
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 

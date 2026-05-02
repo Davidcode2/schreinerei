@@ -3,45 +3,51 @@ import type { ResourceType } from "@/types/fleet"
 const RESOURCE_COLOR_PALETTE = [
   {
     token: "sky",
-    labelClassName: "text-sky-700 dark:text-sky-300",
+    labelClassName: "text-sky-950 dark:text-sky-100",
     markerClassName: "bg-sky-500",
-    borderClassName: "border-sky-300 dark:border-sky-700",
-    tintClassName: "bg-sky-50 dark:bg-sky-950/40",
+    borderClassName: "border-sky-200 dark:border-sky-800",
+    tintClassName: "bg-sky-50/90 dark:bg-sky-950/35",
+    softTintClassName: "bg-sky-100/80 dark:bg-sky-950/45",
   },
   {
     token: "emerald",
-    labelClassName: "text-emerald-700 dark:text-emerald-300",
+    labelClassName: "text-emerald-950 dark:text-emerald-100",
     markerClassName: "bg-emerald-500",
-    borderClassName: "border-emerald-300 dark:border-emerald-700",
-    tintClassName: "bg-emerald-50 dark:bg-emerald-950/40",
+    borderClassName: "border-emerald-200 dark:border-emerald-800",
+    tintClassName: "bg-emerald-50/90 dark:bg-emerald-950/35",
+    softTintClassName: "bg-emerald-100/80 dark:bg-emerald-950/45",
   },
   {
     token: "amber",
-    labelClassName: "text-amber-700 dark:text-amber-300",
+    labelClassName: "text-amber-950 dark:text-amber-100",
     markerClassName: "bg-amber-500",
-    borderClassName: "border-amber-300 dark:border-amber-700",
-    tintClassName: "bg-amber-50 dark:bg-amber-950/40",
+    borderClassName: "border-amber-200 dark:border-amber-800",
+    tintClassName: "bg-amber-50/90 dark:bg-amber-950/35",
+    softTintClassName: "bg-amber-100/80 dark:bg-amber-950/45",
   },
   {
     token: "rose",
-    labelClassName: "text-rose-700 dark:text-rose-300",
+    labelClassName: "text-rose-950 dark:text-rose-100",
     markerClassName: "bg-rose-500",
-    borderClassName: "border-rose-300 dark:border-rose-700",
-    tintClassName: "bg-rose-50 dark:bg-rose-950/40",
+    borderClassName: "border-rose-200 dark:border-rose-800",
+    tintClassName: "bg-rose-50/90 dark:bg-rose-950/35",
+    softTintClassName: "bg-rose-100/80 dark:bg-rose-950/45",
   },
   {
     token: "indigo",
-    labelClassName: "text-indigo-700 dark:text-indigo-300",
+    labelClassName: "text-indigo-950 dark:text-indigo-100",
     markerClassName: "bg-indigo-500",
-    borderClassName: "border-indigo-300 dark:border-indigo-700",
-    tintClassName: "bg-indigo-50 dark:bg-indigo-950/40",
+    borderClassName: "border-indigo-200 dark:border-indigo-800",
+    tintClassName: "bg-indigo-50/90 dark:bg-indigo-950/35",
+    softTintClassName: "bg-indigo-100/80 dark:bg-indigo-950/45",
   },
   {
     token: "cyan",
-    labelClassName: "text-cyan-700 dark:text-cyan-300",
+    labelClassName: "text-cyan-950 dark:text-cyan-100",
     markerClassName: "bg-cyan-500",
-    borderClassName: "border-cyan-300 dark:border-cyan-700",
-    tintClassName: "bg-cyan-50 dark:bg-cyan-950/40",
+    borderClassName: "border-cyan-200 dark:border-cyan-800",
+    tintClassName: "bg-cyan-50/90 dark:bg-cyan-950/35",
+    softTintClassName: "bg-cyan-100/80 dark:bg-cyan-950/45",
   },
 ] as const
 
@@ -51,6 +57,7 @@ export interface ResourceCalendarColor {
   markerClassName: string
   borderClassName: string
   tintClassName: string
+  softTintClassName: string
 }
 
 function hashValue(input: string): number {

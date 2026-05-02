@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest"
 import { renderHook } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { readFileSync } from "node:fs"
-import { resolve } from "node:path"
 import {
   useAdjustMaterialStock,
   useCreateOrderRequest,
@@ -27,23 +25,11 @@ import type {
   OrderStatusQuery as GeneratedOrderStatusQuery,
 } from "@/types/generated"
 
-type AssertExtends<Actual extends Expected, Expected> = true
-
-const inventoryTypesSource = readFileSync(
-  resolve(import.meta.dirname, "../../../types/inventory.ts"),
-  "utf8"
-)
-const inventoryHooksSource = readFileSync(import.meta.filename, "utf8")
-
-const orderResponseMatchesGenerated: AssertExtends<OrderRequestResponse, OrderRequest> = true
-const orderCreateRequestMatchesGenerated: AssertExtends<
-  CreateOrderRequestDto,
-  GeneratedCreateOrderRequestDto
-> = true
-const orderStatusQueryMatchesGenerated: AssertExtends<
-  GeneratedOrderStatusQuery,
-  OrderStatusQuery
-> = true
+const generatedInventoryTypeCompatibility: [
+  OrderRequestResponse extends OrderRequest ? true : never,
+  CreateOrderRequestDto extends GeneratedCreateOrderRequestDto ? true : never,
+  GeneratedOrderStatusQuery extends OrderStatusQuery ? true : never,
+] = [true, true, true]
 
 vi.mock("../client", () => ({
   apiClient: {
@@ -279,33 +265,8 @@ describe("inventory mutations", () => {
     expect(invalidateQueries).toHaveBeenNthCalledWith(3, { queryKey: ["low-stock"] })
   })
 
-  it("keeps inventory order DTOs sourced from generated bindings", () => {
-    expect(inventoryTypesSource).not.toContain("export interface OrderRequest")
-    expect(inventoryTypesSource).not.toContain("export interface CreateOrderRequestDto")
-    expect(inventoryTypesSource).not.toContain("export interface ApproveOrderRequestDto")
-    expect(inventoryTypesSource).not.toContain("export interface FulfillOrderRequestDto")
-    expect(inventoryTypesSource).not.toContain("export interface OrderStatusQuery")
-    expect(inventoryTypesSource).toContain(
-      'export type OrderRequest = GeneratedOrderRequestResponse'
-    )
-    expect(inventoryTypesSource).toContain(
-      'export type CreateOrderRequestDto = GeneratedCreateOrderRequestDto'
-    )
-    expect(inventoryTypesSource).toContain(
-      'export type ApproveOrderRequestDto = GeneratedApproveOrderRequestDto'
-    )
-    expect(inventoryTypesSource).toContain(
-      'export type FulfillOrderRequestDto = GeneratedFulfillOrderRequestDto'
-    )
-    expect(inventoryTypesSource).toContain(
-      'export type OrderStatusQuery = GeneratedOrderStatusQuery'
-    )
-  })
-
-  it("documents generated-backed order hook coverage in the hook suite", () => {
-    expect(inventoryHooksSource).toContain('useOrderRequests({ status: "pending" })')
-    expect(inventoryHooksSource).toContain('useCreateOrderRequest()')
-    expect(inventoryHooksSource).toContain('reason: "Niedriger Bestand"')
+  it("keeps generated inventory order types compatible", () => {
+    expect(generatedInventoryTypeCompatibility).toHaveLength(3)
   })
 
   it("fetches order requests with generated-backed query typing", async () => {

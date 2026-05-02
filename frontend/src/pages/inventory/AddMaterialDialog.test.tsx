@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { render } from '@/test/utils';
@@ -98,12 +98,13 @@ describe('AddMaterialDialog', () => {
 
   it('submits form with correct payload', async () => {
     const user = userEvent.setup();
-    let submittedPayload: unknown = null;
+    let submittedPayload: Record<string, unknown> | null = null;
 
     server.use(
       http.post('/api/v1/inventory/materials', async ({ request }) => {
-        submittedPayload = await request.json();
-        return HttpResponse.json({ id: 'new-material', ...submittedPayload }, { status: 201 });
+        const body = await request.json() as Record<string, unknown>;
+        submittedPayload = body;
+        return HttpResponse.json({ id: 'new-material', ...body }, { status: 201 });
       })
     );
 

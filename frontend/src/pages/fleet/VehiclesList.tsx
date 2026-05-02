@@ -40,7 +40,7 @@ export function VehiclesList({ onReserve }: VehiclesListProps) {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div className="space-y-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -50,7 +50,7 @@ export function VehiclesList({ onReserve }: VehiclesListProps) {
             className="pl-10"
           />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+        <div className="flex gap-2 overflow-x-auto pb-2 pt-1">
           {statusFilters.map((filter) => (
             <Button
               key={filter.label}

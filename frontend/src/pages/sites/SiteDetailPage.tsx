@@ -61,9 +61,6 @@ export default function SiteDetailPage() {
     () => resolveMediaViewerTarget(activities || [], activityId, attachmentId),
     [activities, activityId, attachmentId]
   )
-  const viewerPath = viewerTarget
-    ? buildMediaViewerPath(site.id, viewerTarget.activity.id, viewerTarget.attachment.attachment_id, viewerTarget.title)
-    : buildSiteDetailPath(id || "")
 
   if (isLoading) {
     return <LoadingSpinner className="min-h-[400px]" size="lg" />
@@ -77,6 +74,10 @@ export default function SiteDetailPage() {
       />
     )
   }
+
+  const viewerPath = viewerTarget
+    ? buildMediaViewerPath(site.id, viewerTarget.activity.id, viewerTarget.attachment.attachment_id, viewerTarget.title)
+    : buildSiteDetailPath(id || "")
 
   const totalHours = timeEntries?.reduce((sum, e) => sum + e.hours, 0) || 0
 

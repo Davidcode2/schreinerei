@@ -30,20 +30,20 @@ export function CameraUploadFlow({
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [note, setNote] = useState("")
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [pickerTriggered, setPickerTriggered] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const pickerTriggeredRef = useRef(false)
   const createActivity = useCreateActivity()
   const uploadPhoto = useUploadSitePhoto()
 
   useEffect(() => {
-    if (open && !pickerTriggered) {
+    if (open && !pickerTriggeredRef.current) {
       requestAnimationFrame(() => fileInputRef.current?.click())
-      setPickerTriggered(true)
+      pickerTriggeredRef.current = true
     }
     if (!open) {
-      setPickerTriggered(false)
+      pickerTriggeredRef.current = false
     }
-  }, [open, pickerTriggered])
+  }, [open])
 
   useEffect(() => {
     return () => {
@@ -83,11 +83,18 @@ export function CameraUploadFlow({
       const trimmedNote = note.trim() || undefined
 
       if (!isOnline()) {
-        await queuePhotoUploadAction({
-          siteId,
-          file: selectedFile,
-          content: trimmedNote,
-        })
+        await queuePhotoUploadAction(
+          trimmedNote
+            ? {
+                siteId,
+                file: selectedFile,
+                content: trimmedNote,
+              }
+            : {
+                siteId,
+                file: selectedFile,
+              }
+        )
 
         toast.success("Foto offline gespeichert", {
           description: "Wird automatisch hochgeladen, sobald Sie wieder online sind.",
@@ -106,8 +113,8 @@ export function CameraUploadFlow({
       await createActivity.mutateAsync({
         siteId,
         activity_type: "photo",
-        content: trimmedNote,
         photo_url: uploadResponse.photo_url,
+        ...(trimmedNote ? { content: trimmedNote } : {}),
       })
 
       toast.success("Foto hinzugefügt")

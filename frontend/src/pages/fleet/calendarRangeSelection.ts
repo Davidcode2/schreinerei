@@ -47,7 +47,8 @@ export function advanceRangeSelection(
     }
   }
 
-  const [startDate, endDate] = [pendingSelection.firstDate, tap.date].toSorted()
+  const startDate = pendingSelection.firstDate <= tap.date ? pendingSelection.firstDate : tap.date
+  const endDate = pendingSelection.firstDate <= tap.date ? tap.date : pendingSelection.firstDate
 
   return {
     completedSelection: {

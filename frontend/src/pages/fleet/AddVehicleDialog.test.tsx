@@ -60,12 +60,13 @@ describe('AddVehicleDialog', () => {
 
   it('submits form with correct payload', async () => {
     const user = userEvent.setup();
-    let submittedPayload: unknown = null;
+    let submittedPayload: Record<string, unknown> | null = null;
 
     server.use(
       http.post('/api/v1/fleet/vehicles', async ({ request }) => {
-        submittedPayload = await request.json();
-        return HttpResponse.json({ id: 'new-vehicle', ...submittedPayload }, { status: 201 });
+        const body = await request.json() as Record<string, unknown>;
+        submittedPayload = body;
+        return HttpResponse.json({ id: 'new-vehicle', ...body }, { status: 201 });
       })
     );
 
