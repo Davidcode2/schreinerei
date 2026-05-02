@@ -32,6 +32,8 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    let run_mode = std::env::args().nth(1);
+
     // Load configuration
     let config = AppConfig::load();
     tracing::info!("Loaded configuration for server at {}:{}", config.host, config.port);
@@ -41,9 +43,19 @@ async fn main() {
         .expect("Failed to create database pool");
     tracing::info!("Database pool created");
 
-    // Run migrations (only applies unapplied migrations, tracked in _sqlx_migrations)
-    run_migrations(&pool).await
-        .expect("Failed to run migrations");
+    if run_mode.as_deref() == Some("migrate") {
+        run_migrations(&pool)
+            .await
+            .expect("Failed to run migrations");
+        tracing::info!("Migration command completed successfully");
+        return;
+    }
+
+    if config.run_migrations {
+        run_migrations(&pool)
+            .await
+            .expect("Failed to run migrations");
+    }
 
     // Initialize JWKS client
     let jwks_client = JwksClient::new(&config.keycloak_url, &config.keycloak_realm);

@@ -7,6 +7,7 @@ pub struct AppConfig {
     pub keycloak_url: String,
     pub keycloak_realm: String,
     pub jwt_issuer: String,
+    pub run_migrations: bool,
     pub host: String,
     pub port: u16,
 }
@@ -21,6 +22,8 @@ impl AppConfig {
             .expect("Failed to set default host")
             .set_default("port", "3000")
             .expect("Failed to set default port")
+            .set_default("run_migrations", true)
+            .expect("Failed to set default run_migrations")
             .add_source(config::Environment::default())
             .build()
             .expect("Failed to build configuration");

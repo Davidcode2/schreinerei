@@ -213,9 +213,11 @@ describe("CameraUploadFlow", () => {
     await userEvent.click(screen.getByRole("button", { name: "Hochladen" }))
 
     await waitFor(() => {
-      expect(createActivityMutate).toHaveBeenCalledWith(
-        expect.objectContaining({ content: undefined })
-      )
+      expect(createActivityMutate).toHaveBeenCalledWith({
+        siteId: "site-1",
+        activity_type: "photo",
+        photo_url: "https://example.com/photo.jpg",
+      })
     })
 
     expect(onSuccess).toHaveBeenCalledOnce()

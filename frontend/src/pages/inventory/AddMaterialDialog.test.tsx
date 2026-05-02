@@ -130,6 +130,7 @@ describe('AddMaterialDialog', () => {
       expect(submittedPayload).toEqual({
         category_id: 'cat-1',
         name: 'Schrauben M8',
+        description: null,
         quantity: 100,
         unit: 'Stück',
         min_quantity: 10,

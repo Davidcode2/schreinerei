@@ -1,0 +1,250 @@
+name: Build and Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  GITHUB_OWNER: Davidcode2
+  APP_REPO_NAME: schreinerei
+  APP_OF_APPS_REPO: app-of-apps
+  DEPLOYMENT_DIR: schreinerei
+  BACKEND_DEPLOYMENT_FILE: schreinerei-backend-deployment.yaml
+  FRONTEND_DEPLOYMENT_FILE: schreinerei-frontend-deployment.yaml
+  DOMAIN: schreinerei.jakob-lingel.dev
+  KEYCLOAK_URL: https://auth.jakob-lingel.dev
+  KEYCLOAK_REALM: schreinerei
+  KEYCLOAK_CLIENT_ID: schreinerei_pwa
+
+jobs:
+  check-for-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Check for relevant changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            app:
+              - 'src/**'
+              - 'migrations/**'
+              - 'frontend/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'dockerfile.backend'
+              - 'dockerfile.frontend'
+              - 'nginx.conf'
+              - '.dockerignore'
+              - '.github/workflows/main.yml'
+              - '.github/workflows/build-and-push.yml'
+
+  backend-check:
+    runs-on: ubuntu-latest
+    needs: check-for-changes
+    if: needs.check-for-changes.outputs.app == 'true' || github.event_name == 'workflow_dispatch'
+    env:
+      CARGO_TERM_COLOR: always
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/schreinerei_test
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: schreinerei_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Check formatting
+        run: cargo fmt -- --check
+
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run backend tests
+        run: cargo test --all
+
+  frontend-check:
+    runs-on: ubuntu-latest
+    needs: check-for-changes
+    if: needs.check-for-changes.outputs.app == 'true' || github.event_name == 'workflow_dispatch'
+    env:
+      VITE_KEYCLOAK_URL: https://auth.jakob-lingel.dev
+      VITE_KEYCLOAK_REALM: schreinerei
+      VITE_KEYCLOAK_CLIENT_ID: schreinerei_pwa
+      VITE_API_URL: https://schreinerei.jakob-lingel.dev
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run frontend unit tests
+        working-directory: frontend
+        run: npm run test:run
+
+      - name: Run frontend build
+        working-directory: frontend
+        run: npm run build
+
+  bump-version:
+    runs-on: ubuntu-latest
+    needs: [check-for-changes, backend-check, frontend-check]
+    if: needs.check-for-changes.outputs.app == 'true' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      sha: ${{ steps.push.outputs.sha }}
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3.0.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ env.GITHUB_OWNER }}
+          repositories: ${{ env.APP_REPO_NAME }},${{ env.APP_OF_APPS_REPO }}
+
+      - name: Checkout code
+        uses: actions/checkout@v6.0.2
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          python3 scripts/bump_version.py patch | tee /tmp/bump-version.log
+          VERSION=$(tail -n1 /tmp/bump-version.log)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Commit version bump
+        id: push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Cargo.toml frontend/package.json frontend/package-lock.json
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.version }} [skip ci]"
+          git push
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  build-backend:
+    needs: bump-version
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build-and-push.yml
+    with:
+      image_name: ghcr.io/${{ github.repository }}-backend
+      context: .
+      dockerfile: dockerfile.backend
+      ref: ${{ needs.bump-version.outputs.sha }}
+      version: ${{ needs.bump-version.outputs.version }}
+    secrets: inherit
+
+  build-frontend:
+    needs: bump-version
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build-and-push.yml
+    with:
+      image_name: ghcr.io/${{ github.repository }}-frontend
+      context: .
+      dockerfile: dockerfile.frontend
+      ref: ${{ needs.bump-version.outputs.sha }}
+      version: ${{ needs.bump-version.outputs.version }}
+      build_args: |
+        VITE_KEYCLOAK_URL=${{ env.KEYCLOAK_URL }}
+        VITE_KEYCLOAK_REALM=${{ env.KEYCLOAK_REALM }}
+        VITE_KEYCLOAK_CLIENT_ID=${{ env.KEYCLOAK_CLIENT_ID }}
+        VITE_API_URL=https://${{ env.DOMAIN }}
+    secrets: inherit
+
+  deploy-app:
+    runs-on: ubuntu-latest
+    needs: [bump-version, build-backend, build-frontend]
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ needs.bump-version.outputs.version }}
+      MIGRATION_JOB_FILE: schreinerei-migration-job.yaml
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3.0.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ env.GITHUB_OWNER }}
+          repositories: ${{ env.APP_OF_APPS_REPO }}
+
+      - name: Checkout app-of-apps repo
+        uses: actions/checkout@v6.0.2
+        with:
+          repository: ${{ env.GITHUB_OWNER }}/${{ env.APP_OF_APPS_REPO }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Update deployment image tags
+        working-directory: ${{ env.DEPLOYMENT_DIR }}
+        run: |
+          sed -i "s|image: ghcr.io/davidcode2/schreinerei-backend:.*|image: ghcr.io/davidcode2/schreinerei-backend:${VERSION}|g" "${{ env.BACKEND_DEPLOYMENT_FILE }}"
+          sed -i "s|image: ghcr.io/davidcode2/schreinerei-frontend:.*|image: ghcr.io/davidcode2/schreinerei-frontend:${VERSION}|g" "${{ env.FRONTEND_DEPLOYMENT_FILE }}"
+          sed -i "s|image: ghcr.io/davidcode2/schreinerei-backend:.*|image: ghcr.io/davidcode2/schreinerei-backend:${VERSION}|g" "${{ env.MIGRATION_JOB_FILE }}"
+          echo "Updated deployment images to ${VERSION}"
+
+      - name: Commit and push deployment changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git diff --exit-code && echo "No changes to commit" && exit 0
+          git add "${{ env.DEPLOYMENT_DIR }}/${{ env.BACKEND_DEPLOYMENT_FILE }}" "${{ env.DEPLOYMENT_DIR }}/${{ env.FRONTEND_DEPLOYMENT_FILE }}" "${{ env.DEPLOYMENT_DIR }}/${{ env.MIGRATION_JOB_FILE }}"
+          git commit -m "deploy: ${{ env.APP_REPO_NAME }} v${VERSION}"
+          git push
