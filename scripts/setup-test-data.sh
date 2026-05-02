@@ -1,32 +1,31 @@
-#!/bin/bash
-# Setup test tenant and data for local development
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
-DB_URL="postgres://schreinerei:bfGkOLzqH7klHp5ApkcTUUgDX1gTlDiG@localhost:5433/schreinerei"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+if [ -z "${DATABASE_URL:-}" ] && [ -f "$REPO_ROOT/.env" ]; then
+  DATABASE_URL="$(grep '^DATABASE_URL=' "$REPO_ROOT/.env" | cut -d= -f2-)"
+  export DATABASE_URL
+fi
+
+: "${DATABASE_URL:?DATABASE_URL must be set or present in .env}"
 
 TENANT_ID="${TENANT_ID:-a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d}"
+ORG_ALIAS="${ORG_ALIAS:-schreinerei_saur_affalterwang}"
 
-echo "Setting up test data..."
+echo "Loading realistic test data into $DATABASE_URL"
+echo "Tenant: $TENANT_ID"
+echo "Organization alias: $ORG_ALIAS"
+echo "Existing data for this tenant will be replaced."
 
-# Create test tenant
-psql "$DB_URL" <<EOF
--- Create test tenant if not exists
-INSERT INTO tenants (id, keycloak_realm, name, slug)
-VALUES (
-    '$TENANT_ID',
-    'schreinerei',
-    'Test Schreinerei',
-    'test-schreinerei'
-) ON CONFLICT (id) DO NOTHING;
+psql "$DATABASE_URL" \
+  -v ON_ERROR_STOP=1 \
+  -v tenant_id="$TENANT_ID" \
+  -v org_alias="$ORG_ALIAS" \
+  -f "$SCRIPT_DIR/realistic-test-data.sql"
 
--- Verify tenant
-SELECT * FROM tenants WHERE id = '$TENANT_ID';
-EOF
-
-echo ""
-echo "✓ Test tenant created: $TENANT_ID"
-echo ""
-echo "Next steps:"
-echo "1. In Keycloak, add attribute 'tenant_id' = '$TENANT_ID' to your test user"
-echo "2. Run: ./scripts/test-api.sh"
+echo
+echo "Realistic test data loaded successfully."
+echo "Use the Keycloak organization alias '$ORG_ALIAS' for tenant resolution."
