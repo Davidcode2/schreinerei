@@ -18,7 +18,7 @@ export function CategoryFilter({
   return (
     <div
       className={cn(
-        "w-full overflow-x-auto pb-2 -mb-2",
+        "w-full overflow-x-auto pb-2",
         className
       )}
     >
