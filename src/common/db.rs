@@ -4,8 +4,8 @@ use sqlx::migrate::{Migrate, MigrateError, Migrator};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 
-use crate::config::AppConfig;
 use crate::common::error::AppError;
+use crate::config::AppConfig;
 
 const DOCUMENT_ATTACHMENT_MIGRATION_VERSION: i64 = 15;
 
@@ -36,7 +36,7 @@ pub async fn run_migrations(pool: &PgPool) -> Result<(), AppError> {
     let unlock_result = conn.unlock().await.map_err(migration_error);
     result?;
     unlock_result?;
-    
+
     tracing::info!("Database migrations completed");
     Ok(())
 }
@@ -112,7 +112,9 @@ async fn update_document_attachment_checksum(
     let checksum = migrator
         .iter()
         .find(|migration| migration.version == DOCUMENT_ATTACHMENT_MIGRATION_VERSION)
-        .ok_or_else(|| AppError::Database("Failed to find migration 15 in the compiled migrator".to_string()))?
+        .ok_or_else(|| {
+            AppError::Database("Failed to find migration 15 in the compiled migrator".to_string())
+        })?
         .checksum
         .to_vec();
 

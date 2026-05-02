@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::common::types::{TenantId, MaterialId, CategoryId, Unit, SiteId};
+use crate::common::types::{CategoryId, MaterialId, SiteId, TenantId, Unit};
 
 /// Material aggregate with stock information
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -71,7 +71,7 @@ pub struct WithdrawMaterial {
     pub material_id: MaterialId,
     pub quantity: i32,
     pub notes: Option<String>,
-    pub site_id: Option<SiteId>,  // Optional link to Baustelle
+    pub site_id: Option<SiteId>, // Optional link to Baustelle
 }
 
 impl WithdrawMaterial {
@@ -249,7 +249,10 @@ mod tests {
             min_quantity: 5,
             location: None,
         };
-        assert_eq!(cmd.validate(), Err("Quantity cannot be negative".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Quantity cannot be negative".to_string())
+        );
     }
 
     #[test]
@@ -263,7 +266,10 @@ mod tests {
             min_quantity: -1,
             location: None,
         };
-        assert_eq!(cmd.validate(), Err("Minimum quantity cannot be negative".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Minimum quantity cannot be negative".to_string())
+        );
     }
 
     #[test]
@@ -285,7 +291,10 @@ mod tests {
             notes: None,
             site_id: None,
         };
-        assert_eq!(cmd.validate(), Err("Withdrawal quantity must be positive".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Withdrawal quantity must be positive".to_string())
+        );
     }
 
     #[test]
@@ -296,7 +305,10 @@ mod tests {
             notes: None,
             site_id: None,
         };
-        assert_eq!(cmd.validate(), Err("Withdrawal quantity must be positive".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Withdrawal quantity must be positive".to_string())
+        );
     }
 
     #[test]
@@ -316,7 +328,10 @@ mod tests {
             quantity: 5,
             reason: "".to_string(),
         };
-        assert_eq!(cmd.validate(), Err("Reason is required for stock adjustment".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Reason is required for stock adjustment".to_string())
+        );
     }
 
     // === UpdateMaterial tests ===
@@ -368,7 +383,10 @@ mod tests {
             min_quantity: Some(-1),
             clear_location: None,
         };
-        assert_eq!(cmd.validate(), Err("Minimum quantity cannot be negative".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Minimum quantity cannot be negative".to_string())
+        );
     }
 
     #[test]
@@ -378,7 +396,10 @@ mod tests {
             min_quantity: None,
             clear_location: Some(true),
         };
-        assert_eq!(cmd.validate(), Err("Cannot set location and clear location at the same time".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Cannot set location and clear location at the same time".to_string())
+        );
     }
 
     // === StockIn tests ===
@@ -410,7 +431,10 @@ mod tests {
             quantity: 0,
             notes: None,
         };
-        assert_eq!(cmd.validate(), Err("Stock-in quantity must be positive".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Stock-in quantity must be positive".to_string())
+        );
     }
 
     #[test]
@@ -420,6 +444,9 @@ mod tests {
             quantity: -5,
             notes: None,
         };
-        assert_eq!(cmd.validate(), Err("Stock-in quantity must be positive".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Stock-in quantity must be positive".to_string())
+        );
     }
 }

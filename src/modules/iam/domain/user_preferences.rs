@@ -4,18 +4,10 @@ use ts_rs::TS;
 
 use crate::common::types::{TenantId, UserId};
 
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct UserPreferences {
     pub active_site_id: Option<String>,
-}
-
-impl Default for UserPreferences {
-    fn default() -> Self {
-        Self {
-            active_site_id: None,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

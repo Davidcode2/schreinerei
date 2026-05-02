@@ -94,7 +94,10 @@ mod tests {
             name: "a".repeat(101),
             description: None,
         };
-        assert_eq!(cmd.validate(), Err("Category name too long (max 100 chars)".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Category name too long (max 100 chars)".to_string())
+        );
     }
 
     #[test]
@@ -150,7 +153,10 @@ mod tests {
             name: Some("".to_string()),
             description: None,
         };
-        assert_eq!(cmd.validate(), Err("Category name cannot be empty".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Category name cannot be empty".to_string())
+        );
     }
 
     #[test]
@@ -159,7 +165,10 @@ mod tests {
             name: Some("   ".to_string()),
             description: None,
         };
-        assert_eq!(cmd.validate(), Err("Category name cannot be empty".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Category name cannot be empty".to_string())
+        );
     }
 
     #[test]
@@ -168,7 +177,10 @@ mod tests {
             name: Some("a".repeat(101)),
             description: None,
         };
-        assert_eq!(cmd.validate(), Err("Category name too long (max 100 chars)".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Category name too long (max 100 chars)".to_string())
+        );
     }
 
     #[test]

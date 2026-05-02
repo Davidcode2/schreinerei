@@ -1,17 +1,17 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::{PgPool, FromRow};
+use sqlx::{FromRow, PgPool};
 use uuid::Uuid;
 
 use crate::common::error::AppError;
-use crate::common::events::{EventBus, DomainEvent};
+use crate::common::events::{DomainEvent, EventBus};
 use crate::common::types::{
-    TenantId, VehicleId, ToolId, VehicleType, ResourceStatus,
-    ReservationId, ReservationStatus, ResourceType, UserId, SiteId,
+    ReservationId, ReservationStatus, ResourceStatus, ResourceType, SiteId, TenantId, ToolId,
+    UserId, VehicleId, VehicleType,
 };
 use crate::modules::fleet::domain::{
-    Vehicle, Tool, CreateVehicle, UpdateVehicle, CreateTool, UpdateTool,
-    Reservation, CreateReservation, UpdateReservation, ReservationWithDetails,
+    CreateReservation, CreateTool, CreateVehicle, Reservation, ReservationWithDetails, Tool,
+    UpdateReservation, UpdateTool, UpdateVehicle, Vehicle,
 };
 
 /// Repository for fleet data access with tenant isolation
@@ -140,15 +140,18 @@ impl FleetRepository {
         update: &UpdateVehicle,
     ) -> Result<Vehicle, AppError> {
         // First get the current vehicle
-        let current = self.find_vehicle_by_id(tenant_id, id).await?
+        let current = self
+            .find_vehicle_by_id(tenant_id, id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Vehicle not found".to_string()))?;
 
         // Validate status transition if status is being changed
         if let Some(new_status) = &update.status {
             if !current.can_transition_to(*new_status) {
-                return Err(AppError::Validation(
-                    format!("Invalid status transition from {} to {}", current.status, new_status)
-                ));
+                return Err(AppError::Validation(format!(
+                    "Invalid status transition from {} to {}",
+                    current.status, new_status
+                )));
             }
         }
 
@@ -185,17 +188,13 @@ impl FleetRepository {
         Ok(vehicle.into_vehicle())
     }
 
-    pub async fn delete_vehicle(
-        &self,
-        tenant_id: TenantId,
-        id: VehicleId,
-    ) -> Result<(), AppError> {
+    pub async fn delete_vehicle(&self, tenant_id: TenantId, id: VehicleId) -> Result<(), AppError> {
         let result = sqlx::query(
             r#"
             UPDATE vehicles
             SET deleted_at = NOW(), updated_at = NOW()
             WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
-            "#
+            "#,
         )
         .bind(id.0)
         .bind(tenant_id.0)
@@ -225,7 +224,7 @@ impl FleetRepository {
               AND resource_id = $3 
               AND status NOT IN ('cancelled', 'completed')
               AND end_time > NOW()
-            "#
+            "#,
         )
         .bind(tenant_id.0)
         .bind(resource_type.as_str())
@@ -395,15 +394,18 @@ impl FleetRepository {
         update: &UpdateTool,
     ) -> Result<Tool, AppError> {
         // First get the current tool
-        let current = self.find_tool_by_id(tenant_id, id).await?
+        let current = self
+            .find_tool_by_id(tenant_id, id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Tool not found".to_string()))?;
 
         // Validate status transition if status is being changed
         if let Some(new_status) = &update.status {
             if !current.can_transition_to(*new_status) {
-                return Err(AppError::Validation(
-                    format!("Invalid status transition from {} to {}", current.status, new_status)
-                ));
+                return Err(AppError::Validation(format!(
+                    "Invalid status transition from {} to {}",
+                    current.status, new_status
+                )));
             }
         }
 
@@ -438,17 +440,13 @@ impl FleetRepository {
         Ok(tool.into_tool())
     }
 
-    pub async fn delete_tool(
-        &self,
-        tenant_id: TenantId,
-        id: ToolId,
-    ) -> Result<(), AppError> {
+    pub async fn delete_tool(&self, tenant_id: TenantId, id: ToolId) -> Result<(), AppError> {
         let result = sqlx::query(
             r#"
             UPDATE tools
             SET deleted_at = NOW(), updated_at = NOW()
             WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
-            "#
+            "#,
         )
         .bind(id.0)
         .bind(tenant_id.0)
@@ -668,7 +666,10 @@ impl FleetRepository {
         }
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-        Ok(reservations.into_iter().map(|r| r.into_reservation()).collect())
+        Ok(reservations
+            .into_iter()
+            .map(|r| r.into_reservation())
+            .collect())
     }
 
     pub async fn update_reservation(
@@ -678,15 +679,18 @@ impl FleetRepository {
         update: &UpdateReservation,
     ) -> Result<Reservation, AppError> {
         // First get the current reservation
-        let current = self.find_reservation_by_id(tenant_id, id).await?
+        let current = self
+            .find_reservation_by_id(tenant_id, id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Reservation not found".to_string()))?;
 
         // Validate status transition if status is being changed
         if let Some(new_status) = &update.status {
             if !current.can_transition_to(*new_status) {
-                return Err(AppError::Validation(
-                    format!("Invalid status transition from {} to {}", current.status, new_status)
-                ));
+                return Err(AppError::Validation(format!(
+                    "Invalid status transition from {} to {}",
+                    current.status, new_status
+                )));
             }
         }
 
@@ -707,8 +711,8 @@ impl FleetRepository {
             RETURNING id, tenant_id, resource_type, resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at
             "#
         )
-        .bind(&update.start_time)
-        .bind(&update.end_time)
+        .bind(update.start_time)
+        .bind(update.end_time)
         .bind(update.site_id.map(|s| s.0))
         .bind(&update.notes)
         .bind(update.status.as_ref().map(|s| s.as_str()))
@@ -731,7 +735,7 @@ impl FleetRepository {
             r#"
             DELETE FROM reservations
             WHERE id = $1 AND tenant_id = $2
-            "#
+            "#,
         )
         .bind(id.0)
         .bind(tenant_id.0)
@@ -766,7 +770,7 @@ impl FleetRepository {
               AND status != 'cancelled'
               AND (start_time, end_time) OVERLAPS ($4, $5)
               AND ($6::uuid IS NULL OR id != $6)
-            "#
+            "#,
         )
         .bind(tenant_id.0)
         .bind(resource_type.as_str())
@@ -809,7 +813,7 @@ impl FleetRepository {
               AND r.status != 'cancelled'
               AND (r.start_time, r.end_time) OVERLAPS ($4, $5)
             ORDER BY r.start_time
-            "#
+            "#,
         )
         .bind(tenant_id.0)
         .bind(resource_type.as_str())
@@ -870,7 +874,7 @@ impl FleetRepository {
             WHERE ($4::text IS NULL OR r.resource_type = $4)
             GROUP BY r.resource_type, r.id, r.name
             ORDER BY r.resource_type, r.name
-            "#
+            "#,
         )
         .bind(tenant_id.0)
         .bind(start_date)
@@ -891,12 +895,28 @@ impl FleetRepository {
     ) -> Result<Option<ResourceStatusInfo>, AppError> {
         // Try to find vehicle first
         if let Some(vehicle) = self.find_vehicle_by_qr_code(tenant_id, qr_code).await? {
-            return self.build_resource_status(tenant_id, ResourceType::Vehicle, vehicle.id.0, vehicle.name, vehicle.status).await;
+            return self
+                .build_resource_status(
+                    tenant_id,
+                    ResourceType::Vehicle,
+                    vehicle.id.0,
+                    vehicle.name,
+                    vehicle.status,
+                )
+                .await;
         }
 
         // Try to find tool
         if let Some(tool) = self.find_tool_by_qr_code(tenant_id, qr_code).await? {
-            return self.build_resource_status(tenant_id, ResourceType::Tool, tool.id.0, tool.name, tool.status).await;
+            return self
+                .build_resource_status(
+                    tenant_id,
+                    ResourceType::Tool,
+                    tool.id.0,
+                    tool.name,
+                    tool.status,
+                )
+                .await;
         }
 
         Ok(None)
@@ -991,7 +1011,7 @@ impl FleetRepository {
             LEFT JOIN users u ON u.id = res.user_id
             LEFT JOIN sites s ON s.id = res.site_id
             WHERE res.id = $1 AND res.tenant_id = $2
-            "#
+            "#,
         )
         .bind(id.0)
         .bind(tenant_id.0)
@@ -1149,9 +1169,9 @@ struct CalendarRow {
 
 impl CalendarRow {
     fn into_calendar_entry(self) -> CalendarEntry {
-        let reservations: Vec<ReservationSummary> = 
+        let reservations: Vec<ReservationSummary> =
             serde_json::from_value(self.reservations).unwrap_or_default();
-        
+
         CalendarEntry {
             resource_type: self.resource_type.parse().unwrap_or(ResourceType::Vehicle),
             resource_id: self.resource_id,

@@ -88,19 +88,28 @@ mod tests {
     #[test]
     fn tenant_slug_new_fails_with_invalid_characters() {
         let result = TenantSlug::new("invalid_slug!".to_string());
-        assert_eq!(result, Err("Slug can only contain alphanumeric characters and hyphens".to_string()));
+        assert_eq!(
+            result,
+            Err("Slug can only contain alphanumeric characters and hyphens".to_string())
+        );
     }
 
     #[test]
     fn tenant_slug_new_fails_when_starts_with_hyphen() {
         let result = TenantSlug::new("-starts-hyphen".to_string());
-        assert_eq!(result, Err("Slug cannot start or end with hyphen".to_string()));
+        assert_eq!(
+            result,
+            Err("Slug cannot start or end with hyphen".to_string())
+        );
     }
 
     #[test]
     fn tenant_slug_new_fails_when_ends_with_hyphen() {
         let result = TenantSlug::new("ends-hyphen-".to_string());
-        assert_eq!(result, Err("Slug cannot start or end with hyphen".to_string()));
+        assert_eq!(
+            result,
+            Err("Slug cannot start or end with hyphen".to_string())
+        );
     }
 
     #[test]

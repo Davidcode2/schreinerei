@@ -1,11 +1,11 @@
-pub mod config;
-pub mod common;
 pub mod auth;
+pub mod common;
+pub mod config;
 pub mod modules;
 
-use sqlx::PgPool;
 use crate::auth::jwks::JwksClient;
 use crate::config::AppConfig;
+use sqlx::PgPool;
 
 /// Application state shared across handlers
 #[derive(Clone)]

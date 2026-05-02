@@ -93,6 +93,15 @@ jobs:
           path: target
           key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Apply database migrations for SQLx checks
+        run: |
+          for file in migrations/*.sql; do
+            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$file"
+          done
+
       - name: Check formatting
         run: cargo fmt -- --check
 
@@ -202,10 +211,10 @@ jobs:
       ref: ${{ needs.bump-version.outputs.sha }}
       version: ${{ needs.bump-version.outputs.version }}
       build_args: |
-        VITE_KEYCLOAK_URL=${{ env.KEYCLOAK_URL }}
-        VITE_KEYCLOAK_REALM=${{ env.KEYCLOAK_REALM }}
-        VITE_KEYCLOAK_CLIENT_ID=${{ env.KEYCLOAK_CLIENT_ID }}
-        VITE_API_URL=https://${{ env.DOMAIN }}
+        VITE_KEYCLOAK_URL=https://auth.jakob-lingel.dev
+        VITE_KEYCLOAK_REALM=schreinerei
+        VITE_KEYCLOAK_CLIENT_ID=schreinerei_pwa
+        VITE_API_URL=https://schreinerei.jakob-lingel.dev
     secrets: inherit
 
   deploy-app:

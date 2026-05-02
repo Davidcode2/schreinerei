@@ -1,4 +1,4 @@
-pub mod types;
-pub mod error;
 pub mod db;
+pub mod error;
 pub mod events;
+pub mod types;

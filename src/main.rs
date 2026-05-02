@@ -1,23 +1,17 @@
-use axum::{
-    routing::get,
-    Router,
-    response::IntoResponse,
-    http::StatusCode,
-    middleware,
-};
+use axum::{http::StatusCode, middleware, response::IntoResponse, routing::get, Router};
 use std::net::SocketAddr;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use schreinerei::{
     auth::jwks::JwksClient,
-    auth::middleware::{AuthState, auth_middleware},
+    auth::middleware::{auth_middleware, AuthState},
     common::db::{create_pool, run_migrations},
     config::AppConfig,
+    modules::fleet::api::routes::create_router as fleet_router,
     modules::iam::api::routes::create_router as iam_router,
     modules::inventory::api::routes::create_router as inventory_router,
     modules::sites::api::routes::create_router as sites_router,
-    modules::fleet::api::routes::create_router as fleet_router,
     AppState,
 };
 
@@ -36,10 +30,15 @@ async fn main() {
 
     // Load configuration
     let config = AppConfig::load();
-    tracing::info!("Loaded configuration for server at {}:{}", config.host, config.port);
+    tracing::info!(
+        "Loaded configuration for server at {}:{}",
+        config.host,
+        config.port
+    );
 
     // Initialize database pool
-    let pool = create_pool(&config).await
+    let pool = create_pool(&config)
+        .await
         .expect("Failed to create database pool");
     tracing::info!("Database pool created");
 
@@ -59,11 +58,13 @@ async fn main() {
 
     // Initialize JWKS client
     let jwks_client = JwksClient::new(&config.keycloak_url, &config.keycloak_realm);
-    
+
     // Fetch initial JWKS
-    jwks_client.fetch_jwks().await
+    jwks_client
+        .fetch_jwks()
+        .await
         .expect("Failed to fetch initial JWKS");
-    
+
     // Start background refresh
     jwks_client.clone().refresh_periodically();
 
@@ -100,15 +101,20 @@ async fn main() {
 
     tracing::info!("Server starting on {}", addr);
 
-    let listener = tokio::net::TcpListener::bind(addr).await.expect("Failed to bind");
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .expect("Failed to bind");
     axum::serve(listener, app)
         .await
         .expect("Failed to start server");
 }
 
 async fn health_handler() -> impl IntoResponse {
-    (StatusCode::OK, axum::Json(serde_json::json!({
-        "status": "healthy",
-        "service": "schreinerei"
-    })))
+    (
+        StatusCode::OK,
+        axum::Json(serde_json::json!({
+            "status": "healthy",
+            "service": "schreinerei"
+        })),
+    )
 }

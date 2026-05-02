@@ -1,14 +1,14 @@
 use crate::common::error::AppError;
-use crate::common::types::{ActivityId, SiteId, UserId, Role, TimeEntryId};
 use crate::common::events::EventType;
+use crate::common::types::{ActivityId, Role, SiteId, TimeEntryId, UserId};
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::sites::domain::{
-    Site, TimeEntry, Activity, CreateSite, UpdateSite, CreateTimeEntry, UpdateTimeEntry, AssignUser, CreateActivity,
-    SiteCreatedPayload, SiteStatusChangedPayload, UserAssignedToSitePayload, TimeEntryCreatedPayload,
-    ActivityAttachmentMetadata, SiteActivityAttachment,
+    Activity, ActivityAttachmentMetadata, AssignUser, CreateActivity, CreateSite, CreateTimeEntry,
+    Site, SiteActivityAttachment, SiteCreatedPayload, SiteStatusChangedPayload, TimeEntry,
+    TimeEntryCreatedPayload, UpdateSite, UpdateTimeEntry, UserAssignedToSitePayload,
 };
-use crate::modules::sites::infrastructure::site_repository::{SiteRepository, DashboardSite};
+use crate::modules::sites::infrastructure::site_repository::{DashboardSite, SiteRepository};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -45,13 +45,19 @@ impl SiteService {
     pub fn validate_upload_payload(mime_type: &str, byte_len: usize) -> Result<(), AppError> {
         let allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
         if !allowed.contains(&mime_type) {
-            return Err(AppError::Validation("Unsupported attachment MIME type".to_string()));
+            return Err(AppError::Validation(
+                "Unsupported attachment MIME type".to_string(),
+            ));
         }
         if byte_len == 0 {
-            return Err(AppError::Validation("Uploaded attachment is empty".to_string()));
+            return Err(AppError::Validation(
+                "Uploaded attachment is empty".to_string(),
+            ));
         }
         if byte_len > MAX_UPLOAD_SIZE_BYTES {
-            return Err(AppError::Validation("Uploaded attachment exceeds size limit".to_string()));
+            return Err(AppError::Validation(
+                "Uploaded attachment exceeds size limit".to_string(),
+            ));
         }
         Ok(())
     }
@@ -62,7 +68,9 @@ impl SiteService {
             "image/png" => Ok("png"),
             "image/webp" => Ok("webp"),
             "application/pdf" => Ok("pdf"),
-            _ => Err(AppError::Validation("Unsupported attachment MIME type".to_string())),
+            _ => Err(AppError::Validation(
+                "Unsupported attachment MIME type".to_string(),
+            )),
         }
     }
 
@@ -80,7 +88,11 @@ impl SiteService {
             "image/jpeg" => image::ImageFormat::Jpeg,
             "image/png" => image::ImageFormat::Png,
             "image/webp" => image::ImageFormat::WebP,
-            _ => return Err(AppError::Validation("Unsupported image MIME type".to_string())),
+            _ => {
+                return Err(AppError::Validation(
+                    "Unsupported image MIME type".to_string(),
+                ))
+            }
         };
 
         thumb
@@ -102,14 +114,20 @@ impl SiteService {
         let attachment_id = photo_url
             .strip_prefix("/api/v1/attachments/")
             .and_then(|value| value.split('/').next())
-            .ok_or_else(|| AppError::Internal("Stored photo URL does not reference a protected attachment".to_string()))?;
+            .ok_or_else(|| {
+                AppError::Internal(
+                    "Stored photo URL does not reference a protected attachment".to_string(),
+                )
+            })?;
 
-        Uuid::parse_str(attachment_id)
-            .map_err(|_| AppError::Internal("Stored photo URL contains an invalid attachment id".to_string()))
+        Uuid::parse_str(attachment_id).map_err(|_| {
+            AppError::Internal("Stored photo URL contains an invalid attachment id".to_string())
+        })
     }
 
     fn to_attachment_metadata(attachment: SiteActivityAttachment) -> ActivityAttachmentMetadata {
-        let (url, thumbnail_url) = Self::build_attachment_urls(attachment.id, &attachment.mime_type);
+        let (url, thumbnail_url) =
+            Self::build_attachment_urls(attachment.id, &attachment.mime_type);
         ActivityAttachmentMetadata {
             id: attachment.id,
             filename: attachment.original_filename,
@@ -120,8 +138,11 @@ impl SiteService {
     }
 
     fn can_delete_activity(activity: &Activity, requester_id: UserId) -> bool {
-        matches!(activity.activity_type, crate::modules::sites::domain::ActivityType::Note | crate::modules::sites::domain::ActivityType::Photo)
-            && activity.user_id == requester_id
+        matches!(
+            activity.activity_type,
+            crate::modules::sites::domain::ActivityType::Note
+                | crate::modules::sites::domain::ActivityType::Photo
+        ) && activity.user_id == requester_id
     }
 
     async fn resolve_local_user_id(&self, ctx: &TenantContext) -> Result<UserId, AppError> {
@@ -131,7 +152,11 @@ impl SiteService {
                 &ctx.user_id.to_string(),
                 ctx.tenant_id,
                 &ctx.email,
-                if ctx.is_admin() { Role::Admin } else { Role::Employee },
+                if ctx.is_admin() {
+                    Role::Admin
+                } else {
+                    Role::Employee
+                },
             )
             .await?;
         Ok(user.id)
@@ -156,7 +181,8 @@ impl SiteService {
             site_id: site.id,
             name: site.name.clone(),
             customer_name: site.customer_name.clone(),
-        }.into_event(ctx.tenant_id);
+        }
+        .into_event(ctx.tenant_id);
 
         self.site_repo.publish_event(&event).await?;
 
@@ -173,10 +199,16 @@ impl SiteService {
             return Err(AppError::Forbidden("Admin access required".to_string()));
         }
 
-        let old_site = self.site_repo.find_site_by_id(ctx.tenant_id, site_id).await?
+        let old_site = self
+            .site_repo
+            .find_site_by_id(ctx.tenant_id, site_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Site not found".to_string()))?;
 
-        let site = self.site_repo.update_site(ctx.tenant_id, site_id, &update).await?;
+        let site = self
+            .site_repo
+            .update_site(ctx.tenant_id, site_id, &update)
+            .await?;
 
         // Emit SiteStatusChanged event if status changed
         if let Some(new_status) = &update.status {
@@ -186,7 +218,8 @@ impl SiteService {
                     old_status: old_site.status.to_string(),
                     new_status: new_status.to_string(),
                     changed_by: ctx.user_id,
-                }.into_event(ctx.tenant_id);
+                }
+                .into_event(ctx.tenant_id);
 
                 self.site_repo.publish_event(&event).await?;
 
@@ -195,7 +228,8 @@ impl SiteService {
                 let activity_content = serde_json::json!({
                     "old_status": old_site.status.to_string(),
                     "new_status": new_status.to_string(),
-                }).to_string();
+                })
+                .to_string();
 
                 sqlx::query!(
                     r#"
@@ -219,11 +253,7 @@ impl SiteService {
         Ok(site)
     }
 
-    pub async fn get_site(
-        &self,
-        site_id: SiteId,
-        ctx: &TenantContext,
-    ) -> Result<Site, AppError> {
+    pub async fn get_site(&self, site_id: SiteId, ctx: &TenantContext) -> Result<Site, AppError> {
         self.site_repo
             .find_site_by_id(ctx.tenant_id, site_id)
             .await?
@@ -240,25 +270,27 @@ impl SiteService {
 
     /// Delete a site (soft delete)
     /// Returns Conflict error if there are active reservations
-    pub async fn delete_site(
-        &self,
-        site_id: SiteId,
-        ctx: &TenantContext,
-    ) -> Result<(), AppError> {
+    pub async fn delete_site(&self, site_id: SiteId, ctx: &TenantContext) -> Result<(), AppError> {
         if !ctx.is_admin() {
             return Err(AppError::Forbidden("Admin access required".to_string()));
         }
 
         // Verify site exists
-        self.site_repo.find_site_by_id(ctx.tenant_id, site_id).await?
+        self.site_repo
+            .find_site_by_id(ctx.tenant_id, site_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Site not found".to_string()))?;
 
         // Check for active reservations
-        let active_count = self.site_repo.count_active_reservations(site_id, ctx.tenant_id).await?;
+        let active_count = self
+            .site_repo
+            .count_active_reservations(site_id, ctx.tenant_id)
+            .await?;
         if active_count > 0 {
-            return Err(AppError::Conflict(
-                format!("Cannot delete: {} active reservation(s) exist", active_count)
-            ));
+            return Err(AppError::Conflict(format!(
+                "Cannot delete: {} active reservation(s) exist",
+                active_count
+            )));
         }
 
         // Perform soft delete
@@ -290,7 +322,8 @@ impl SiteService {
             user_id: assign.user_id,
             role: assign.role.to_string(),
             assigned_by: ctx.user_id,
-        }.into_event(ctx.tenant_id);
+        }
+        .into_event(ctx.tenant_id);
 
         self.site_repo.publish_event(&event).await?;
 
@@ -307,7 +340,9 @@ impl SiteService {
             return Err(AppError::Forbidden("Admin access required".to_string()));
         }
 
-        self.site_repo.remove_assignment(ctx.tenant_id, site_id, user_id).await
+        self.site_repo
+            .remove_assignment(ctx.tenant_id, site_id, user_id)
+            .await
     }
 
     pub async fn list_assignments(
@@ -318,7 +353,9 @@ impl SiteService {
         // Verify site exists
         let _site = self.get_site(site_id, ctx).await?;
 
-        self.site_repo.list_assignments(ctx.tenant_id, site_id).await
+        self.site_repo
+            .list_assignments(ctx.tenant_id, site_id)
+            .await
     }
 
     // === Time entry operations ===
@@ -337,7 +374,8 @@ impl SiteService {
 
         let local_user_id = self.resolve_local_user_id(ctx).await?;
 
-        let entry = self.site_repo
+        let entry = self
+            .site_repo
             .create_time_entry(ctx.tenant_id, local_user_id, &create)
             .await?;
 
@@ -348,7 +386,8 @@ impl SiteService {
             hours: create.hours,
             work_type: create.work_type.to_string(),
             work_date: create.work_date.to_string(),
-        }.into_event(ctx.tenant_id);
+        }
+        .into_event(ctx.tenant_id);
 
         self.site_repo.publish_event(&event).await?;
 
@@ -366,7 +405,9 @@ impl SiteService {
             let _site = self.get_site(site_id, ctx).await?;
         }
 
-        self.site_repo.list_time_entries(ctx.tenant_id, site_id, user_id).await
+        self.site_repo
+            .list_time_entries(ctx.tenant_id, site_id, user_id)
+            .await
     }
 
     pub async fn list_my_time_entries(
@@ -374,7 +415,9 @@ impl SiteService {
         ctx: &TenantContext,
     ) -> Result<Vec<TimeEntry>, AppError> {
         let local_user_id = self.resolve_local_user_id(ctx).await?;
-        self.site_repo.list_time_entries(ctx.tenant_id, None, Some(local_user_id)).await
+        self.site_repo
+            .list_time_entries(ctx.tenant_id, None, Some(local_user_id))
+            .await
     }
 
     pub async fn get_time_entry(
@@ -398,7 +441,8 @@ impl SiteService {
         update.validate()?;
 
         // Fetch existing entry to check ownership
-        let existing = self.site_repo
+        let existing = self
+            .site_repo
             .find_time_entry_by_id(ctx.tenant_id, entry_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Time entry not found".to_string()))?;
@@ -406,7 +450,9 @@ impl SiteService {
         // Check ownership: only the owner or admin can edit
         let local_user_id = self.resolve_local_user_id(ctx).await?;
         if existing.user_id != local_user_id && !ctx.is_admin() {
-            return Err(AppError::Forbidden("Can only edit own time entries".to_string()));
+            return Err(AppError::Forbidden(
+                "Can only edit own time entries".to_string(),
+            ));
         }
 
         // If site_id is being set (not None), verify site exists
@@ -414,7 +460,9 @@ impl SiteService {
             let _site = self.get_site(site_id, ctx).await?;
         }
 
-        self.site_repo.update_time_entry(ctx.tenant_id, entry_id, &update).await
+        self.site_repo
+            .update_time_entry(ctx.tenant_id, entry_id, &update)
+            .await
     }
 
     pub async fn delete_time_entry(
@@ -423,7 +471,8 @@ impl SiteService {
         ctx: &TenantContext,
     ) -> Result<(), AppError> {
         // Fetch existing entry to check ownership
-        let existing = self.site_repo
+        let existing = self
+            .site_repo
             .find_time_entry_by_id(ctx.tenant_id, entry_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Time entry not found".to_string()))?;
@@ -431,10 +480,14 @@ impl SiteService {
         // Check ownership: only the owner or admin can delete
         let local_user_id = self.resolve_local_user_id(ctx).await?;
         if existing.user_id != local_user_id && !ctx.is_admin() {
-            return Err(AppError::Forbidden("Can only delete own time entries".to_string()));
+            return Err(AppError::Forbidden(
+                "Can only delete own time entries".to_string(),
+            ));
         }
 
-        self.site_repo.delete_time_entry(ctx.tenant_id, entry_id).await
+        self.site_repo
+            .delete_time_entry(ctx.tenant_id, entry_id)
+            .await
     }
 
     // === Activity operations ===
@@ -452,7 +505,8 @@ impl SiteService {
 
         let local_user_id = self.resolve_local_user_id(ctx).await?;
 
-        let activity = self.site_repo
+        let activity = self
+            .site_repo
             .create_activity(ctx.tenant_id, local_user_id, &create)
             .await?;
 
@@ -460,7 +514,12 @@ impl SiteService {
             Vec::new()
         } else {
             self.site_repo
-                .link_activity_attachments(ctx.tenant_id, create.site_id, activity.id, &create.attachment_ids)
+                .link_activity_attachments(
+                    ctx.tenant_id,
+                    create.site_id,
+                    activity.id,
+                    &create.attachment_ids,
+                )
                 .await?
                 .into_iter()
                 .map(Self::to_attachment_metadata)
@@ -499,7 +558,10 @@ impl SiteService {
         let _site = self.get_site(site_id, ctx).await?;
 
         let local_user_id = self.resolve_local_user_id(ctx).await?;
-        let activities = self.site_repo.list_activities(ctx.tenant_id, site_id, limit).await?;
+        let activities = self
+            .site_repo
+            .list_activities(ctx.tenant_id, site_id, limit)
+            .await?;
         let activity_ids: Vec<_> = activities.iter().map(|activity| activity.id).collect();
         let attachments_by_activity = self
             .site_repo
@@ -570,7 +632,10 @@ impl SiteService {
         let thumbnail_key = Self::should_generate_thumbnail(&cmd.mime_type)
             .then(|| format!("{}.{}", Uuid::new_v4(), extension));
         let thumbnail_bytes = if Self::should_generate_thumbnail(&cmd.mime_type) {
-            Some(Self::generate_thumbnail_bytes(&cmd.original_bytes, &cmd.mime_type)?)
+            Some(Self::generate_thumbnail_bytes(
+                &cmd.original_bytes,
+                &cmd.mime_type,
+            )?)
         } else {
             None
         };
@@ -618,10 +683,7 @@ impl SiteService {
 
     // === Dashboard operations ===
 
-    pub async fn get_dashboard(
-        &self,
-        ctx: &TenantContext,
-    ) -> Result<Vec<DashboardSite>, AppError> {
+    pub async fn get_dashboard(&self, ctx: &TenantContext) -> Result<Vec<DashboardSite>, AppError> {
         self.site_repo.get_dashboard_sites(ctx.tenant_id).await
     }
 }
@@ -631,8 +693,8 @@ mod tests {
     use super::SiteService;
     use crate::common::types::{ActivityId, SiteId, TenantId, UserId};
     use crate::modules::sites::domain::{Activity, ActivityType};
-    use image::GenericImageView;
     use chrono::Utc;
+    use image::GenericImageView;
 
     #[test]
     fn activity_response_can_delete_for_owned_note_and_photo_only() {
@@ -644,7 +706,10 @@ mod tests {
 
         assert!(SiteService::can_delete_activity(&note, owner_id));
         assert!(SiteService::can_delete_activity(&photo, owner_id));
-        assert!(!SiteService::can_delete_activity(&other_user_note, owner_id));
+        assert!(!SiteService::can_delete_activity(
+            &other_user_note,
+            owner_id
+        ));
     }
 
     #[test]
@@ -692,7 +757,8 @@ mod tests {
         let mut bytes = std::io::Cursor::new(Vec::new());
         img.write_to(&mut bytes, image::ImageFormat::Png).unwrap();
 
-        let thumb = SiteService::generate_thumbnail_bytes(&bytes.into_inner(), "image/png").unwrap();
+        let thumb =
+            SiteService::generate_thumbnail_bytes(&bytes.into_inner(), "image/png").unwrap();
         let decoded = image::load_from_memory(&thumb).unwrap();
         let (w, h) = decoded.dimensions();
 
@@ -706,7 +772,10 @@ mod tests {
         let id = uuid::Uuid::new_v4();
         let (photo_url, thumb_url) = SiteService::build_attachment_urls(id, "image/jpeg");
         assert_eq!(photo_url, format!("/api/v1/attachments/{id}"));
-        assert_eq!(thumb_url, Some(format!("/api/v1/attachments/{id}/thumbnail")));
+        assert_eq!(
+            thumb_url,
+            Some(format!("/api/v1/attachments/{id}/thumbnail"))
+        );
     }
 
     #[test]

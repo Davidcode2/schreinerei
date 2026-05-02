@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::common::types::{TenantId, ToolId, ResourceStatus};
+use crate::common::types::{ResourceStatus, TenantId, ToolId};
 
 /// Tool aggregate representing a tool (Werkzeug)
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::common::types::{
-    TenantId, ReservationId, ReservationStatus, ResourceType, SiteId, UserId,
+    ReservationId, ReservationStatus, ResourceType, SiteId, TenantId, UserId,
 };
 
 /// Reservation aggregate representing a reservation for a vehicle or tool
@@ -280,7 +280,10 @@ mod tests {
             end_time: future_time,
             notes: None,
         };
-        assert_eq!(cmd.validate(), Err("End time must be after start time".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("End time must be after start time".to_string())
+        );
     }
 
     #[test]
@@ -295,7 +298,10 @@ mod tests {
             end_time: future_end,
             notes: None,
         };
-        assert_eq!(cmd.validate(), Err("Start time cannot be in the past".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Start time cannot be in the past".to_string())
+        );
     }
 
     // UpdateReservation validation tests

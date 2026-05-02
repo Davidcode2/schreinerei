@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::common::types::{TenantId, MaterialId, UserId, OrderRequestId};
+use crate::common::types::{MaterialId, OrderRequestId, TenantId, UserId};
 
 /// Order request for restocking materials
 #[derive(Debug, Clone, Serialize, Deserialize)]
