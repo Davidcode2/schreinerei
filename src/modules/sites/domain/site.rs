@@ -1,7 +1,7 @@
-use chrono::{DateTime, Utc, NaiveDate};
+use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::common::types::{TenantId, SiteId, UserId, SiteStatus, AssignmentRole};
+use crate::common::types::{AssignmentRole, SiteId, SiteStatus, TenantId, UserId};
 
 /// Site aggregate representing a construction site (Baustelle)
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -228,7 +228,10 @@ mod tests {
             end_date: Some(NaiveDate::from_ymd_opt(2024, 12, 1).unwrap()),
             estimated_days: None,
         };
-        assert_eq!(cmd.validate(), Err("End date cannot be before start date".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("End date cannot be before start date".to_string())
+        );
     }
 
     #[test]
@@ -242,6 +245,9 @@ mod tests {
             end_date: None,
             estimated_days: Some(-5),
         };
-        assert_eq!(cmd.validate(), Err("Estimated days cannot be negative".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Estimated days cannot be negative".to_string())
+        );
     }
 }

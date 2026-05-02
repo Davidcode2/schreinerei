@@ -145,8 +145,8 @@ struct UserPreferenceRow {
 
 impl UserPreferenceRow {
     fn into_record(self) -> UserPreferenceRecord {
-        let preferences: UserPreferences = serde_json::from_value(self.preferences)
-            .unwrap_or_else(|_| UserPreferences::default());
+        let preferences: UserPreferences =
+            serde_json::from_value(self.preferences).unwrap_or_else(|_| UserPreferences::default());
 
         UserPreferenceRecord {
             id: self.id,

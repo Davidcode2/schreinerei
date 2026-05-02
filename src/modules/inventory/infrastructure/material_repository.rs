@@ -1,14 +1,16 @@
 use chrono::{DateTime, Utc};
-use sqlx::{PgPool, FromRow};
+use sqlx::{FromRow, PgPool};
 use uuid::Uuid;
 
 use crate::common::error::AppError;
-use crate::common::events::{EventBus, DomainEvent};
-use crate::common::types::{TenantId, MaterialId, CategoryId, UserId, Unit, OrderRequestId, SiteId};
+use crate::common::events::{DomainEvent, EventBus};
+use crate::common::types::{
+    CategoryId, MaterialId, OrderRequestId, SiteId, TenantId, Unit, UserId,
+};
 use crate::modules::inventory::domain::{
-    Category, Material, CreateCategory, CreateMaterial, UpdateCategory, UpdateMaterial,
-    OrderRequest, OrderStatus, CreateOrderRequest,
-    StockEntryWithSite, SiteStockHistoryEntry, EnrichedStockEntry, EntryType,
+    Category, CreateCategory, CreateMaterial, CreateOrderRequest, EnrichedStockEntry, EntryType,
+    Material, OrderRequest, OrderStatus, SiteStockHistoryEntry, StockEntryWithSite, UpdateCategory,
+    UpdateMaterial,
 };
 
 /// Repository for material data access with tenant isolation
@@ -19,7 +21,7 @@ pub struct MaterialRepository {
 
 impl MaterialRepository {
     pub fn new(pool: PgPool) -> Self {
-        Self { 
+        Self {
             pool,
             event_bus: EventBus::new(),
         }
@@ -44,7 +46,7 @@ impl MaterialRepository {
             INSERT INTO categories (id, tenant_id, name, description, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING id, tenant_id, name, description, created_at, updated_at
-            "#
+            "#,
         )
         .bind(id)
         .bind(tenant_id.0)
@@ -65,17 +67,14 @@ impl MaterialRepository {
         Ok(category.into_category())
     }
 
-    pub async fn list_categories(
-        &self,
-        tenant_id: TenantId,
-    ) -> Result<Vec<Category>, AppError> {
+    pub async fn list_categories(&self, tenant_id: TenantId) -> Result<Vec<Category>, AppError> {
         let categories = sqlx::query_as::<_, CategoryRow>(
             r#"
             SELECT id, tenant_id, name, description, created_at, updated_at
             FROM categories
             WHERE tenant_id = $1
             ORDER BY name
-            "#
+            "#,
         )
         .bind(tenant_id.0)
         .fetch_all(&self.pool)
@@ -95,7 +94,7 @@ impl MaterialRepository {
             SELECT id, tenant_id, name, description, created_at, updated_at
             FROM categories
             WHERE id = $1 AND tenant_id = $2
-            "#
+            "#,
         )
         .bind(id.0)
         .bind(tenant_id.0)
@@ -124,7 +123,7 @@ impl MaterialRepository {
                 updated_at = NOW()
             WHERE id = $1 AND tenant_id = $4
             RETURNING id, tenant_id, name, description, created_at, updated_at
-            "#
+            "#,
         )
         .bind(id.0)
         .bind(update.name.as_deref())
@@ -151,15 +150,15 @@ impl MaterialRepository {
     ) -> Result<(), AppError> {
         // Check if any materials reference this category
         let count: i64 = sqlx::query_scalar(Self::delete_category_conflict_count_query())
-        .bind(id.0)
-        .bind(tenant_id.0)
-        .fetch_one(&self.pool)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+            .bind(id.0)
+            .bind(tenant_id.0)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
 
         if count > 0 {
             return Err(AppError::Conflict(
-                "Cannot delete category: material history must be preserved".to_string()
+                "Cannot delete category: material history must be preserved".to_string(),
             ));
         }
 
@@ -167,7 +166,7 @@ impl MaterialRepository {
             r#"
             DELETE FROM categories
             WHERE id = $1 AND tenant_id = $2
-            "#
+            "#,
         )
         .bind(id.0)
         .bind(tenant_id.0)
@@ -175,7 +174,9 @@ impl MaterialRepository {
         .await
         .map_err(|e| match &e {
             sqlx::Error::Database(db_err) if db_err.code().as_deref() == Some("23503") => {
-                AppError::Conflict("Cannot delete category: materials still reference it".to_string())
+                AppError::Conflict(
+                    "Cannot delete category: materials still reference it".to_string(),
+                )
             }
             _ => AppError::Database(e.to_string()),
         })?;
@@ -387,11 +388,14 @@ impl MaterialRepository {
         quantity: i32,
         user_id: UserId,
         notes: Option<String>,
-        site_id: Option<SiteId>,  // Optional link to Baustelle
+        site_id: Option<SiteId>, // Optional link to Baustelle
         tenant_id: TenantId,
     ) -> Result<Material, AppError> {
         // Use transaction for atomic update + audit log
-        let mut tx = self.pool.begin().await
+        let mut tx = self
+            .pool
+            .begin()
+            .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
         // Get current material with lock
@@ -413,9 +417,10 @@ impl MaterialRepository {
         let current_material = current.into_material();
 
         if !current_material.can_withdraw(quantity) {
-            return Err(AppError::Validation(
-                format!("Insufficient stock. Current: {}, Requested: {}", current_material.quantity, quantity)
-            ));
+            return Err(AppError::Validation(format!(
+                "Insufficient stock. Current: {}, Requested: {}",
+                current_material.quantity, quantity
+            )));
         }
 
         let new_quantity = current_material.quantity - quantity;
@@ -456,7 +461,8 @@ impl MaterialRepository {
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-        tx.commit().await
+        tx.commit()
+            .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(updated.into_material())
@@ -470,7 +476,10 @@ impl MaterialRepository {
         user_id: UserId,
         tenant_id: TenantId,
     ) -> Result<Material, AppError> {
-        let mut tx = self.pool.begin().await
+        let mut tx = self
+            .pool
+            .begin()
+            .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
         // Update stock (can be positive or negative)
@@ -511,7 +520,8 @@ impl MaterialRepository {
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-        tx.commit().await
+        tx.commit()
+            .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(material)
@@ -525,7 +535,10 @@ impl MaterialRepository {
         user_id: UserId,
         tenant_id: TenantId,
     ) -> Result<Material, AppError> {
-        let mut tx = self.pool.begin().await
+        let mut tx = self
+            .pool
+            .begin()
+            .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
         // Select material FOR UPDATE to prevent concurrent modifications
@@ -582,7 +595,8 @@ impl MaterialRepository {
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-        tx.commit().await
+        tx.commit()
+            .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(updated.into_material())
@@ -610,7 +624,7 @@ impl MaterialRepository {
             WHERE se.material_id = $1 AND se.tenant_id = $2
             ORDER BY se.created_at DESC
             LIMIT $3
-            "#
+            "#,
         )
         .bind(material_id.0)
         .bind(tenant_id.0)
@@ -619,7 +633,10 @@ impl MaterialRepository {
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-        Ok(entries.into_iter().map(|row| row.into_enriched_stock_entry()).collect())
+        Ok(entries
+            .into_iter()
+            .map(|row| row.into_enriched_stock_entry())
+            .collect())
     }
 
     pub async fn update_qr_code(
@@ -683,7 +700,7 @@ impl MaterialRepository {
             r#"
             SELECT COUNT(*) FROM order_requests
             WHERE tenant_id = $1 AND material_id = $2 AND status = 'pending'
-            "#
+            "#,
         )
         .bind(tenant_id.0)
         .bind(material_id.0)
@@ -705,7 +722,7 @@ impl MaterialRepository {
             UPDATE materials
             SET deleted_at = NOW(), updated_at = NOW()
             WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
-            "#
+            "#,
         )
         .bind(id.0)
         .bind(tenant_id.0)
@@ -739,7 +756,7 @@ impl MaterialRepository {
             WHERE se.material_id = $1 AND se.tenant_id = $2
             ORDER BY se.created_at DESC
             LIMIT $3
-            "#
+            "#,
         )
         .bind(material_id.0)
         .bind(tenant_id.0)
@@ -748,7 +765,10 @@ impl MaterialRepository {
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-        Ok(entries.into_iter().map(|row| row.into_stock_entry_with_site()).collect())
+        Ok(entries
+            .into_iter()
+            .map(|row| row.into_stock_entry_with_site())
+            .collect())
     }
 
     pub async fn list_stock_entries_for_site(
@@ -757,15 +777,13 @@ impl MaterialRepository {
         tenant_id: TenantId,
         limit: i32,
     ) -> Result<Vec<SiteStockHistoryEntry>, AppError> {
-        let entries = sqlx::query_as::<_, SiteStockHistoryRow>(
-            Self::site_history_query(),
-        )
-        .bind(site_id.0)
-        .bind(tenant_id.0)
-        .bind(limit)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+        let entries = sqlx::query_as::<_, SiteStockHistoryRow>(Self::site_history_query())
+            .bind(site_id.0)
+            .bind(tenant_id.0)
+            .bind(limit)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(entries
             .into_iter()
@@ -913,7 +931,10 @@ impl MaterialRepository {
         let now = Utc::now();
 
         // Use transaction to update both order and material stock
-        let mut tx = self.pool.begin().await
+        let mut tx = self
+            .pool
+            .begin()
+            .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
         // Get the order request
@@ -938,7 +959,7 @@ impl MaterialRepository {
             UPDATE materials
             SET quantity = quantity + $1, updated_at = NOW()
             WHERE id = $2 AND tenant_id = $3
-            "#
+            "#,
         )
         .bind(actual_quantity)
         .bind(order.material_id)
@@ -964,7 +985,8 @@ impl MaterialRepository {
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-        tx.commit().await
+        tx.commit()
+            .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(updated.into_order_request())
@@ -1184,8 +1206,26 @@ impl SiteStockHistoryRow {
     }
 }
 
+impl StockEntryRow {
+    fn into_stock_entry_with_site(self) -> StockEntryWithSite {
+        StockEntryWithSite {
+            id: self.id,
+            tenant_id: TenantId(self.tenant_id),
+            material_id: MaterialId(self.material_id),
+            user_id: UserId(self.user_id),
+            entry_type: self.entry_type.parse().unwrap_or(EntryType::Adjusted),
+            quantity_change: self.quantity_change,
+            quantity_after: self.quantity_after,
+            notes: self.notes,
+            site_id: self.site_id.map(SiteId),
+            site_name: self.site_name,
+            created_at: self.created_at,
+        }
+    }
+}
+
 #[cfg(test)]
-    mod tests {
+mod tests {
     use super::MaterialRepository;
 
     #[test]
@@ -1210,23 +1250,5 @@ impl SiteStockHistoryRow {
         let sql = MaterialRepository::delete_category_conflict_count_query();
         assert!(sql.contains("tenant_id = $2"));
         assert!(sql.contains("COUNT(*)"));
-    }
-}
-
-impl StockEntryRow {
-    fn into_stock_entry_with_site(self) -> StockEntryWithSite {
-        StockEntryWithSite {
-            id: self.id,
-            tenant_id: TenantId(self.tenant_id),
-            material_id: MaterialId(self.material_id),
-            user_id: UserId(self.user_id),
-            entry_type: self.entry_type.parse().unwrap_or(EntryType::Adjusted),
-            quantity_change: self.quantity_change,
-            quantity_after: self.quantity_after,
-            notes: self.notes,
-            site_id: self.site_id.map(SiteId),
-            site_name: self.site_name,
-            created_at: self.created_at,
-        }
     }
 }

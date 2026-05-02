@@ -102,7 +102,10 @@ impl CreateActivity {
                     .map(|content| !content.trim().is_empty())
                     .unwrap_or(false);
                 if !has_content && self.attachment_ids.is_empty() {
-                    return Err("Either content or at least one attachment is required for note activity".to_string());
+                    return Err(
+                        "Either content or at least one attachment is required for note activity"
+                            .to_string(),
+                    );
                 }
             }
             ActivityType::StatusChange => {
@@ -140,7 +143,11 @@ mod tests {
         };
 
         assert!(attachment.storage_key.contains('-'));
-        assert!(attachment.thumbnail_key.as_deref().unwrap_or_default().contains('-'));
+        assert!(attachment
+            .thumbnail_key
+            .as_deref()
+            .unwrap_or_default()
+            .contains('-'));
     }
 
     #[test]
@@ -189,7 +196,10 @@ mod tests {
             photo_url: None,
             attachment_ids: vec![],
         };
-        assert_eq!(cmd.validate(), Err("Photo URL is required for photo activity".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Photo URL is required for photo activity".to_string())
+        );
     }
 
     #[test]
@@ -213,7 +223,13 @@ mod tests {
             photo_url: None,
             attachment_ids: vec![],
         };
-        assert_eq!(cmd.validate(), Err("Either content or at least one attachment is required for note activity".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err(
+                "Either content or at least one attachment is required for note activity"
+                    .to_string()
+            )
+        );
     }
 
     #[test]
@@ -225,7 +241,13 @@ mod tests {
             photo_url: None,
             attachment_ids: vec![],
         };
-        assert_eq!(cmd.validate(), Err("Either content or at least one attachment is required for note activity".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err(
+                "Either content or at least one attachment is required for note activity"
+                    .to_string()
+            )
+        );
     }
 
     #[test]
@@ -237,7 +259,10 @@ mod tests {
             photo_url: None,
             attachment_ids: vec![],
         };
-        assert_eq!(cmd.validate(), Err("Cannot manually create status change activity".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Cannot manually create status change activity".to_string())
+        );
     }
 
     #[test]
@@ -278,7 +303,10 @@ mod tests {
 
         assert_eq!(
             cmd.validate(),
-            Err("Either content or at least one attachment is required for note activity".to_string())
+            Err(
+                "Either content or at least one attachment is required for note activity"
+                    .to_string()
+            )
         );
     }
 }

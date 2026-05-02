@@ -111,11 +111,7 @@ impl EventBus {
     }
 
     /// Publish an event (stores to database)
-    pub async fn publish(
-        &self,
-        event: &DomainEvent,
-        pool: &PgPool,
-    ) -> Result<(), AppError> {
+    pub async fn publish(&self, event: &DomainEvent, pool: &PgPool) -> Result<(), AppError> {
         sqlx::query(
             r#"
             INSERT INTO domain_events (id, event_type, tenant_id, aggregate_type, aggregate_id, payload, occurred_at, created_at)

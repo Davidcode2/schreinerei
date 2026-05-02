@@ -1,7 +1,7 @@
 use crate::auth::extractor::AuthenticatedUser;
 use crate::common::error::AppError;
-use crate::common::types::{TenantId, UserId, Role};
-use crate::modules::iam::domain::user::{User, CreateUser, InviteUser, UpdateProfile};
+use crate::common::types::{Role, TenantId, UserId};
+use crate::modules::iam::domain::user::{CreateUser, InviteUser, UpdateProfile, User};
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
 
 /// Context for tenant-scoped operations
@@ -49,7 +49,8 @@ impl UserService {
         let tenant_id = auth.tenant_id;
 
         // Check if user exists
-        if let Some(user) = self.user_repo
+        if let Some(user) = self
+            .user_repo
             .find_by_keycloak_id(&auth.user_id.to_string(), tenant_id)
             .await?
         {
@@ -61,7 +62,11 @@ impl UserService {
             keycloak_user_id: auth.user_id.to_string(),
             email: auth.email.clone(),
             name: None,
-            role: if auth.is_admin() { Role::Admin } else { Role::Employee },
+            role: if auth.is_admin() {
+                Role::Admin
+            } else {
+                Role::Employee
+            },
         };
 
         self.user_repo.create(&create_user, tenant_id).await
@@ -77,11 +82,7 @@ impl UserService {
     }
 
     /// Get current user by ID
-    pub async fn get_user(
-        &self,
-        user_id: UserId,
-        ctx: &TenantContext,
-    ) -> Result<User, AppError> {
+    pub async fn get_user(&self, user_id: UserId, ctx: &TenantContext) -> Result<User, AppError> {
         self.user_repo
             .find_by_id(user_id, ctx.tenant_id)
             .await?
@@ -134,10 +135,14 @@ impl UserService {
 
         // Prevent admin from demoting themselves
         if user_id == ctx.user_id && new_role != Role::Admin {
-            return Err(AppError::Validation("Cannot demote yourself from admin".to_string()));
+            return Err(AppError::Validation(
+                "Cannot demote yourself from admin".to_string(),
+            ));
         }
 
-        self.user_repo.update_role(user_id, new_role, ctx.tenant_id).await
+        self.user_repo
+            .update_role(user_id, new_role, ctx.tenant_id)
+            .await
     }
 
     /// Update own profile
@@ -146,6 +151,8 @@ impl UserService {
         update: UpdateProfile,
         ctx: &TenantContext,
     ) -> Result<User, AppError> {
-        self.user_repo.update_profile(ctx.user_id, update.name, ctx.tenant_id).await
+        self.user_repo
+            .update_profile(ctx.user_id, update.name, ctx.tenant_id)
+            .await
     }
 }

@@ -1,10 +1,10 @@
 use chrono::{DateTime, Utc};
-use sqlx::{PgPool, FromRow};
+use sqlx::{FromRow, PgPool};
 use uuid::Uuid;
 
 use crate::common::error::AppError;
-use crate::common::types::{TenantId, UserId, Role};
-use crate::modules::iam::domain::user::{User, CreateUser};
+use crate::common::types::{Role, TenantId, UserId};
+use crate::modules::iam::domain::user::{CreateUser, User};
 
 /// Repository for user data access with tenant isolation
 pub struct UserRepository {
@@ -28,7 +28,7 @@ impl UserRepository {
             SELECT id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at
             FROM users
             WHERE id = $1 AND tenant_id = $2
-            "#
+            "#,
         )
         .bind(id.0)
         .bind(tenant_id.0)
@@ -50,7 +50,7 @@ impl UserRepository {
             SELECT id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at
             FROM users
             WHERE keycloak_user_id = $1 AND tenant_id = $2
-            "#
+            "#,
         )
         .bind(keycloak_user_id)
         .bind(tenant_id.0)
@@ -69,7 +69,7 @@ impl UserRepository {
             FROM users
             WHERE tenant_id = $1
             ORDER BY created_at DESC
-            "#
+            "#,
         )
         .bind(tenant_id.0)
         .fetch_all(&self.pool)
@@ -129,7 +129,7 @@ impl UserRepository {
             SET role = $1, updated_at = NOW()
             WHERE id = $2 AND tenant_id = $3
             RETURNING id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at
-            "#
+            "#,
         )
         .bind(role.to_string())
         .bind(id.0)
@@ -151,7 +151,10 @@ impl UserRepository {
         email: &str,
         role: Role,
     ) -> Result<User, AppError> {
-        if let Some(user) = self.find_by_keycloak_id(keycloak_user_id, tenant_id).await? {
+        if let Some(user) = self
+            .find_by_keycloak_id(keycloak_user_id, tenant_id)
+            .await?
+        {
             return Ok(user);
         }
 
@@ -171,7 +174,9 @@ impl UserRepository {
         keycloak_user_id: &str,
         tenant_id: TenantId,
     ) -> Result<Uuid, AppError> {
-        let user = self.find_by_keycloak_id(keycloak_user_id, tenant_id).await?
+        let user = self
+            .find_by_keycloak_id(keycloak_user_id, tenant_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("User not found in local database".to_string()))?;
         Ok(user.id.0)
     }
@@ -189,7 +194,7 @@ impl UserRepository {
             SET name = $1, updated_at = NOW()
             WHERE id = $2 AND tenant_id = $3
             RETURNING id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at
-            "#
+            "#,
         )
         .bind(&name)
         .bind(id.0)

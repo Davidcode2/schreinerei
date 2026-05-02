@@ -1,11 +1,8 @@
-use axum::{
-    extract::FromRequestParts,
-    http::request::Parts,
-};
+use axum::{extract::FromRequestParts, http::request::Parts};
 use serde::{Deserialize, Serialize};
 
 use crate::common::error::AppError;
-use crate::common::types::{TenantId, UserId, Role};
+use crate::common::types::{Role, TenantId, UserId};
 
 /// Authenticated user extracted from JWT
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,10 +31,7 @@ where
 {
     type Rejection = AppError;
 
-    async fn from_request_parts(
-        parts: &mut Parts,
-        _state: &S,
-    ) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         parts
             .extensions
             .get::<AuthenticatedUser>()

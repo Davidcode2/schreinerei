@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::common::types::{TenantId, VehicleId, VehicleType, ResourceStatus};
+use crate::common::types::{ResourceStatus, TenantId, VehicleId, VehicleType};
 
 /// Vehicle aggregate representing a vehicle (Fahrzeug)
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -196,6 +196,9 @@ mod tests {
             location: None,
             qr_code: None,
         };
-        assert_eq!(cmd.validate(), Err("License plate cannot be empty if provided".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("License plate cannot be empty if provided".to_string())
+        );
     }
 }

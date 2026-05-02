@@ -2,46 +2,65 @@ use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
-    Json,
-    Router,
     routing::get,
+    Json, Router,
 };
-use chrono::{DateTime, Utc, NaiveDate};
+use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use uuid::Uuid;
 
 use crate::auth::extractor::AuthenticatedUser;
 use crate::common::error::AppError;
-use crate::common::types::{VehicleId, ToolId, VehicleType, ResourceStatus, ReservationId, ResourceType, ReservationStatus};
-use crate::modules::iam::application::user_service::TenantContext;
+use crate::common::types::{
+    ReservationId, ReservationStatus, ResourceStatus, ResourceType, ToolId, VehicleId, VehicleType,
+};
 use crate::modules::fleet::application::fleet_service::FleetService;
-use crate::modules::fleet::domain::{CreateVehicle, UpdateVehicle, CreateTool, UpdateTool, CreateReservation, UpdateReservation};
-use crate::modules::fleet::infrastructure::fleet_repository::{FleetRepository, ReservationSummary};
+use crate::modules::fleet::domain::{
+    CreateReservation, CreateTool, CreateVehicle, UpdateReservation, UpdateTool, UpdateVehicle,
+};
+use crate::modules::fleet::infrastructure::fleet_repository::{
+    FleetRepository, ReservationSummary,
+};
+use crate::modules::iam::application::user_service::TenantContext;
 use crate::AppState;
 
 /// Create the fleet API router
 pub fn create_router() -> Router<AppState> {
     Router::new()
         // Vehicles
-        .route("/api/v1/fleet/vehicles", get(list_vehicles).post(create_vehicle))
-        .route("/api/v1/fleet/vehicles/{id}", get(get_vehicle).patch(update_vehicle).delete(delete_vehicle))
-        
+        .route(
+            "/api/v1/fleet/vehicles",
+            get(list_vehicles).post(create_vehicle),
+        )
+        .route(
+            "/api/v1/fleet/vehicles/{id}",
+            get(get_vehicle)
+                .patch(update_vehicle)
+                .delete(delete_vehicle),
+        )
         // Tools
         .route("/api/v1/fleet/tools", get(list_tools).post(create_tool))
-        .route("/api/v1/fleet/tools/{id}", get(get_tool).patch(update_tool).delete(delete_tool))
-        
+        .route(
+            "/api/v1/fleet/tools/{id}",
+            get(get_tool).patch(update_tool).delete(delete_tool),
+        )
         // Reservations
-        .route("/api/v1/fleet/reservations", get(list_reservations).post(create_reservation))
+        .route(
+            "/api/v1/fleet/reservations",
+            get(list_reservations).post(create_reservation),
+        )
         .route("/api/v1/fleet/reservations/my", get(list_my_reservations))
-        .route("/api/v1/fleet/reservations/{id}", get(get_reservation).patch(update_reservation).delete(cancel_reservation))
-        
+        .route(
+            "/api/v1/fleet/reservations/{id}",
+            get(get_reservation)
+                .patch(update_reservation)
+                .delete(cancel_reservation),
+        )
         // Calendar
         .route("/api/v1/fleet/calendar", get(get_calendar))
-        
         // Availability
         .route("/api/v1/fleet/availability", get(check_availability))
-        
         // QR Code
         .route("/api/v1/fleet/qr/{code}", get(get_status_by_qr))
 }
@@ -253,13 +272,19 @@ pub struct CalendarEntryResponse {
     pub reservations: Vec<ReservationSummaryResponse>,
 }
 
-impl From<crate::modules::fleet::infrastructure::fleet_repository::CalendarEntry> for CalendarEntryResponse {
+impl From<crate::modules::fleet::infrastructure::fleet_repository::CalendarEntry>
+    for CalendarEntryResponse
+{
     fn from(entry: crate::modules::fleet::infrastructure::fleet_repository::CalendarEntry) -> Self {
         Self {
             resource_type: entry.resource_type.to_string(),
             resource_id: entry.resource_id.to_string(),
             resource_name: entry.resource_name,
-            reservations: entry.reservations.into_iter().map(ReservationSummaryResponse::from).collect(),
+            reservations: entry
+                .reservations
+                .into_iter()
+                .map(ReservationSummaryResponse::from)
+                .collect(),
         }
     }
 }
@@ -334,15 +359,25 @@ pub struct QrStatusResponse {
     pub upcoming_reservations: Vec<ReservationSummaryResponse>,
 }
 
-impl From<crate::modules::fleet::infrastructure::fleet_repository::ResourceStatusInfo> for QrStatusResponse {
-    fn from(info: crate::modules::fleet::infrastructure::fleet_repository::ResourceStatusInfo) -> Self {
+impl From<crate::modules::fleet::infrastructure::fleet_repository::ResourceStatusInfo>
+    for QrStatusResponse
+{
+    fn from(
+        info: crate::modules::fleet::infrastructure::fleet_repository::ResourceStatusInfo,
+    ) -> Self {
         Self {
             resource_type: info.resource_type.to_string(),
             resource_id: info.resource_id.to_string(),
             resource_name: info.resource_name,
             status: info.status.to_string(),
-            current_reservation: info.current_reservation.map(ReservationSummaryResponse::from),
-            upcoming_reservations: info.upcoming_reservations.into_iter().map(ReservationSummaryResponse::from).collect(),
+            current_reservation: info
+                .current_reservation
+                .map(ReservationSummaryResponse::from),
+            upcoming_reservations: info
+                .upcoming_reservations
+                .into_iter()
+                .map(ReservationSummaryResponse::from)
+                .collect(),
         }
     }
 }
@@ -356,10 +391,10 @@ pub async fn list_vehicles(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let vehicles = service.list_vehicles(query.status, &ctx).await?;
     let response: Vec<VehicleResponse> = vehicles.into_iter().map(VehicleResponse::from).collect();
-    
+
     Ok(Json(response))
 }
 
@@ -370,10 +405,12 @@ pub async fn create_vehicle(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
-    let vehicle_type = request.vehicle_type.parse::<VehicleType>()
+
+    let vehicle_type = request
+        .vehicle_type
+        .parse::<VehicleType>()
         .map_err(|e: String| AppError::Validation(e))?;
-    
+
     let create = CreateVehicle {
         name: request.name,
         license_plate: request.license_plate,
@@ -382,9 +419,9 @@ pub async fn create_vehicle(
         location: request.location,
         qr_code: request.qr_code,
     };
-    
+
     let vehicle = service.create_vehicle(create, &ctx).await?;
-    
+
     Ok((StatusCode::CREATED, Json(VehicleResponse::from(vehicle))))
 }
 
@@ -395,13 +432,13 @@ pub async fn get_vehicle(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let vehicle_id = Uuid::parse_str(&id)
         .map(VehicleId)
         .map_err(|_| AppError::Validation("Invalid vehicle ID".to_string()))?;
-    
+
     let vehicle = service.get_vehicle(vehicle_id, &ctx).await?;
-    
+
     Ok(Json(VehicleResponse::from(vehicle)))
 }
 
@@ -413,21 +450,23 @@ pub async fn update_vehicle(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let vehicle_id = Uuid::parse_str(&id)
         .map(VehicleId)
         .map_err(|_| AppError::Validation("Invalid vehicle ID".to_string()))?;
-    
-    let vehicle_type = request.vehicle_type
+
+    let vehicle_type = request
+        .vehicle_type
         .map(|s| s.parse::<VehicleType>())
         .transpose()
         .map_err(|e: String| AppError::Validation(e))?;
-    
-    let status = request.status
+
+    let status = request
+        .status
         .map(|s| s.parse::<ResourceStatus>())
         .transpose()
         .map_err(|e: String| AppError::Validation(e))?;
-    
+
     let update = UpdateVehicle {
         name: request.name,
         license_plate: request.license_plate,
@@ -437,9 +476,9 @@ pub async fn update_vehicle(
         location: request.location,
         qr_code: request.qr_code,
     };
-    
+
     let vehicle = service.update_vehicle(vehicle_id, update, &ctx).await?;
-    
+
     Ok(Json(VehicleResponse::from(vehicle)))
 }
 
@@ -450,13 +489,13 @@ pub async fn delete_vehicle(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let vehicle_id = Uuid::parse_str(&id)
         .map(VehicleId)
         .map_err(|_| AppError::Validation("Invalid vehicle ID".to_string()))?;
-    
+
     service.delete_vehicle(vehicle_id, &ctx).await?;
-    
+
     Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
 }
 
@@ -469,10 +508,12 @@ pub async fn list_tools(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
-    let tools = service.list_tools(query.status, query.category, &ctx).await?;
+
+    let tools = service
+        .list_tools(query.status, query.category, &ctx)
+        .await?;
     let response: Vec<ToolResponse> = tools.into_iter().map(ToolResponse::from).collect();
-    
+
     Ok(Json(response))
 }
 
@@ -483,7 +524,7 @@ pub async fn create_tool(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let create = CreateTool {
         name: request.name,
         category: request.category,
@@ -491,9 +532,9 @@ pub async fn create_tool(
         location: request.location,
         qr_code: request.qr_code,
     };
-    
+
     let tool = service.create_tool(create, &ctx).await?;
-    
+
     Ok((StatusCode::CREATED, Json(ToolResponse::from(tool))))
 }
 
@@ -504,13 +545,13 @@ pub async fn get_tool(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let tool_id = Uuid::parse_str(&id)
         .map(ToolId)
         .map_err(|_| AppError::Validation("Invalid tool ID".to_string()))?;
-    
+
     let tool = service.get_tool(tool_id, &ctx).await?;
-    
+
     Ok(Json(ToolResponse::from(tool)))
 }
 
@@ -522,16 +563,17 @@ pub async fn update_tool(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let tool_id = Uuid::parse_str(&id)
         .map(ToolId)
         .map_err(|_| AppError::Validation("Invalid tool ID".to_string()))?;
-    
-    let status = request.status
+
+    let status = request
+        .status
         .map(|s| s.parse::<ResourceStatus>())
         .transpose()
         .map_err(|e: String| AppError::Validation(e))?;
-    
+
     let update = UpdateTool {
         name: request.name,
         category: request.category,
@@ -540,9 +582,9 @@ pub async fn update_tool(
         location: request.location,
         qr_code: request.qr_code,
     };
-    
+
     let tool = service.update_tool(tool_id, update, &ctx).await?;
-    
+
     Ok(Json(ToolResponse::from(tool)))
 }
 
@@ -553,13 +595,13 @@ pub async fn delete_tool(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let tool_id = Uuid::parse_str(&id)
         .map(ToolId)
         .map_err(|_| AppError::Validation("Invalid tool ID".to_string()))?;
-    
+
     service.delete_tool(tool_id, &ctx).await?;
-    
+
     Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
 }
 
@@ -572,26 +614,34 @@ pub async fn list_reservations(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
-    let user_id = query.user_id
+
+    let user_id = query
+        .user_id
         .map(|s| Uuid::parse_str(&s))
         .transpose()
         .map_err(|_| AppError::Validation("Invalid user ID".to_string()))?
         .map(crate::common::types::UserId);
-    
-    let resource_type = query.resource_type
+
+    let resource_type = query
+        .resource_type
         .map(|s| s.parse::<ResourceType>())
         .transpose()
         .map_err(|e: String| AppError::Validation(e))?;
-    
-    let resource_id = query.resource_id
+
+    let resource_id = query
+        .resource_id
         .map(|s| Uuid::parse_str(&s))
         .transpose()
         .map_err(|_| AppError::Validation("Invalid resource ID".to_string()))?;
-    
-    let reservations = service.list_reservations(user_id, resource_type, resource_id, &ctx).await?;
-    let response: Vec<ReservationResponse> = reservations.into_iter().map(ReservationResponse::from).collect();
-    
+
+    let reservations = service
+        .list_reservations(user_id, resource_type, resource_id, &ctx)
+        .await?;
+    let response: Vec<ReservationResponse> = reservations
+        .into_iter()
+        .map(ReservationResponse::from)
+        .collect();
+
     Ok(Json(response))
 }
 
@@ -601,10 +651,13 @@ pub async fn list_my_reservations(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let reservations = service.list_my_reservations(&ctx).await?;
-    let response: Vec<ReservationResponse> = reservations.into_iter().map(ReservationResponse::from).collect();
-    
+    let response: Vec<ReservationResponse> = reservations
+        .into_iter()
+        .map(ReservationResponse::from)
+        .collect();
+
     Ok(Json(response))
 }
 
@@ -615,27 +668,30 @@ pub async fn create_reservation(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
-    let resource_type = request.resource_type.parse::<ResourceType>()
+
+    let resource_type = request
+        .resource_type
+        .parse::<ResourceType>()
         .map_err(|e: String| AppError::Validation(e))?;
-    
+
     let resource_id = Uuid::parse_str(&request.resource_id)
         .map_err(|_| AppError::Validation("Invalid resource ID".to_string()))?;
-    
-    let site_id = request.site_id
+
+    let site_id = request
+        .site_id
         .map(|s| Uuid::parse_str(&s))
         .transpose()
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?
         .map(crate::common::types::SiteId);
-    
+
     let start_time = DateTime::parse_from_rfc3339(&request.start_time)
         .map_err(|_| AppError::Validation("Invalid start time format".to_string()))?
         .with_timezone(&Utc);
-    
+
     let end_time = DateTime::parse_from_rfc3339(&request.end_time)
         .map_err(|_| AppError::Validation("Invalid end time format".to_string()))?
         .with_timezone(&Utc);
-    
+
     let create = CreateReservation {
         resource_type,
         resource_id,
@@ -644,13 +700,16 @@ pub async fn create_reservation(
         end_time,
         notes: request.notes,
     };
-    
+
     let reservation = service.create_reservation(create, &ctx).await?;
-    
+
     // Get the full details for the response
     let details = service.get_reservation(reservation.id, &ctx).await?;
-    
-    Ok((StatusCode::CREATED, Json(ReservationResponse::from(details))))
+
+    Ok((
+        StatusCode::CREATED,
+        Json(ReservationResponse::from(details)),
+    ))
 }
 
 pub async fn get_reservation(
@@ -660,13 +719,13 @@ pub async fn get_reservation(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let reservation_id = Uuid::parse_str(&id)
         .map(ReservationId)
         .map_err(|_| AppError::Validation("Invalid reservation ID".to_string()))?;
-    
+
     let reservation = service.get_reservation(reservation_id, &ctx).await?;
-    
+
     Ok(Json(ReservationResponse::from(reservation)))
 }
 
@@ -678,34 +737,38 @@ pub async fn update_reservation(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let reservation_id = Uuid::parse_str(&id)
         .map(ReservationId)
         .map_err(|_| AppError::Validation("Invalid reservation ID".to_string()))?;
-    
-    let start_time = request.start_time
+
+    let start_time = request
+        .start_time
         .map(|s| DateTime::parse_from_rfc3339(&s))
         .transpose()
         .map_err(|_| AppError::Validation("Invalid start time format".to_string()))?
         .map(|dt| dt.with_timezone(&Utc));
-    
-    let end_time = request.end_time
+
+    let end_time = request
+        .end_time
         .map(|s| DateTime::parse_from_rfc3339(&s))
         .transpose()
         .map_err(|_| AppError::Validation("Invalid end time format".to_string()))?
         .map(|dt| dt.with_timezone(&Utc));
-    
-    let site_id = request.site_id
+
+    let site_id = request
+        .site_id
         .map(|s| Uuid::parse_str(&s))
         .transpose()
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?
         .map(crate::common::types::SiteId);
-    
-    let status = request.status
+
+    let status = request
+        .status
         .map(|s| s.parse::<ReservationStatus>())
         .transpose()
         .map_err(|e: String| AppError::Validation(e))?;
-    
+
     let update = UpdateReservation {
         start_time,
         end_time,
@@ -713,12 +776,14 @@ pub async fn update_reservation(
         notes: request.notes,
         status,
     };
-    
-    let reservation = service.update_reservation(reservation_id, update, &ctx).await?;
-    
+
+    let reservation = service
+        .update_reservation(reservation_id, update, &ctx)
+        .await?;
+
     // Get the full details for the response
     let details = service.get_reservation(reservation.id, &ctx).await?;
-    
+
     Ok(Json(ReservationResponse::from(details)))
 }
 
@@ -729,13 +794,13 @@ pub async fn cancel_reservation(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let reservation_id = Uuid::parse_str(&id)
         .map(ReservationId)
         .map_err(|_| AppError::Validation("Invalid reservation ID".to_string()))?;
-    
+
     service.cancel_reservation(reservation_id, &ctx).await?;
-    
+
     Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
 }
 
@@ -748,32 +813,48 @@ pub async fn get_calendar(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
-    let start_date = parse_date_time(&query.start_date, 0, 0, 0)
-        .map_err(|_| AppError::Validation("Invalid start_date format. Use YYYY-MM-DD or RFC3339".to_string()))?;
-    
-    let end_date = parse_date_time(&query.end_date, 23, 59, 59)
-        .map_err(|_| AppError::Validation("Invalid end_date format. Use YYYY-MM-DD or RFC3339".to_string()))?;
-    
-    let resource_type = query.resource_type
+
+    let start_date = parse_date_time(&query.start_date, 0, 0, 0).map_err(|_| {
+        AppError::Validation("Invalid start_date format. Use YYYY-MM-DD or RFC3339".to_string())
+    })?;
+
+    let end_date = parse_date_time(&query.end_date, 23, 59, 59).map_err(|_| {
+        AppError::Validation("Invalid end_date format. Use YYYY-MM-DD or RFC3339".to_string())
+    })?;
+
+    let resource_type = query
+        .resource_type
         .map(|s| s.parse::<ResourceType>())
         .transpose()
         .map_err(|e: String| AppError::Validation(e))?;
-    
-    let entries = service.get_calendar(start_date, end_date, resource_type, &ctx).await?;
+
+    let entries = service
+        .get_calendar(start_date, end_date, resource_type, &ctx)
+        .await?;
     let response = CalendarResponse {
-        resources: entries.into_iter().map(CalendarEntryResponse::from).collect(),
+        resources: entries
+            .into_iter()
+            .map(CalendarEntryResponse::from)
+            .collect(),
     };
-    
+
     Ok(Json(response))
 }
 
-fn parse_date_time(s: &str, default_hour: u32, default_minute: u32, default_second: u32) -> Result<DateTime<Utc>, ()> {
+fn parse_date_time(
+    s: &str,
+    default_hour: u32,
+    default_minute: u32,
+    default_second: u32,
+) -> Result<DateTime<Utc>, ()> {
     DateTime::parse_from_rfc3339(s)
         .map(|dt| dt.with_timezone(&Utc))
         .or_else(|_| {
-            NaiveDate::parse_from_str(s, "%Y-%m-%d")
-                .map(|d| d.and_hms_opt(default_hour, default_minute, default_second).unwrap().and_utc())
+            NaiveDate::parse_from_str(s, "%Y-%m-%d").map(|d| {
+                d.and_hms_opt(default_hour, default_minute, default_second)
+                    .unwrap()
+                    .and_utc()
+            })
         })
         .map_err(|_| ())
 }
@@ -787,23 +868,27 @@ pub async fn check_availability(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
-    let resource_type = query.resource_type.parse::<ResourceType>()
+
+    let resource_type = query
+        .resource_type
+        .parse::<ResourceType>()
         .map_err(|e: String| AppError::Validation(e))?;
-    
+
     let resource_id = Uuid::parse_str(&query.resource_id)
         .map_err(|_| AppError::Validation("Invalid resource ID".to_string()))?;
-    
+
     let start_time = DateTime::parse_from_rfc3339(&query.start_time)
         .map_err(|_| AppError::Validation("Invalid start_time format".to_string()))?
         .with_timezone(&Utc);
-    
+
     let end_time = DateTime::parse_from_rfc3339(&query.end_time)
         .map_err(|_| AppError::Validation("Invalid end_time format".to_string()))?
         .with_timezone(&Utc);
-    
-    let info = service.check_availability_with_conflicts(resource_type, resource_id, start_time, end_time, &ctx).await?;
-    
+
+    let info = service
+        .check_availability_with_conflicts(resource_type, resource_id, start_time, end_time, &ctx)
+        .await?;
+
     let conflicts = if info.conflicts.is_empty() {
         None
     } else {
@@ -817,10 +902,10 @@ pub async fn check_availability(
                     end_time: c.end_time.to_rfc3339(),
                     status: c.status.to_string(),
                 })
-                .collect()
+                .collect(),
         )
     };
-    
+
     Ok(Json(AvailabilityResponse {
         available: info.available,
         conflicts,
@@ -836,8 +921,8 @@ pub async fn get_status_by_qr(
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let status_info = service.get_status_by_qr(&code, &ctx).await?;
-    
+
     Ok(Json(QrStatusResponse::from(status_info)))
 }

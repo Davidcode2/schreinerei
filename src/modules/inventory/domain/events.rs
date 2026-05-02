@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::common::events::{DomainEvent, EventType};
-use crate::common::types::{TenantId, MaterialId, UserId};
+use crate::common::types::{MaterialId, TenantId, UserId};
 
 /// Payload for StockLow event
 #[derive(Debug, Clone, Serialize, Deserialize)]

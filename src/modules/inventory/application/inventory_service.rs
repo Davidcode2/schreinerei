@@ -1,14 +1,13 @@
 use crate::common::error::AppError;
-use crate::common::types::{MaterialId, CategoryId, OrderRequestId, UserId, Role};
+use crate::common::types::{CategoryId, MaterialId, OrderRequestId, Role, UserId};
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::inventory::domain::{
-    Category, Material, CreateCategory, CreateMaterial, WithdrawMaterial, AdjustStock,
-    UpdateCategory, UpdateMaterial, StockIn,
-    OrderRequest, OrderStatus, CreateOrderRequest, ApproveOrderRequest, FulfillOrderRequest,
-    StockLowPayload, StockWithdrawnPayload, MaterialCreatedPayload, StockAdjustedPayload,
-    OrderRequestCreatedPayload, MaterialAddedPayload, LocationChangedPayload, MinQuantityChangedPayload,
-    EnrichedStockEntry,
+    AdjustStock, ApproveOrderRequest, Category, CreateCategory, CreateMaterial, CreateOrderRequest,
+    EnrichedStockEntry, FulfillOrderRequest, LocationChangedPayload, Material,
+    MaterialAddedPayload, MaterialCreatedPayload, MinQuantityChangedPayload, OrderRequest,
+    OrderRequestCreatedPayload, OrderStatus, StockAdjustedPayload, StockIn, StockLowPayload,
+    StockWithdrawnPayload, UpdateCategory, UpdateMaterial, WithdrawMaterial,
 };
 use crate::modules::inventory::infrastructure::MaterialRepository;
 use qrcode::render::svg;
@@ -24,7 +23,10 @@ pub struct InventoryService {
 impl InventoryService {
     pub fn new(material_repo: MaterialRepository) -> Self {
         let pool = material_repo.pool();
-        Self { material_repo, pool }
+        Self {
+            material_repo,
+            pool,
+        }
     }
 
     async fn resolve_local_user_id(&self, ctx: &TenantContext) -> Result<UserId, AppError> {
@@ -34,7 +36,11 @@ impl InventoryService {
                 &ctx.user_id.to_string(),
                 ctx.tenant_id,
                 &ctx.email,
-                if ctx.is_admin() { Role::Admin } else { Role::Employee },
+                if ctx.is_admin() {
+                    Role::Admin
+                } else {
+                    Role::Employee
+                },
             )
             .await?;
         Ok(user.id)
@@ -51,13 +57,12 @@ impl InventoryService {
             return Err(AppError::Forbidden("Admin access required".to_string()));
         }
         create.validate()?;
-        self.material_repo.create_category(&create, ctx.tenant_id).await
+        self.material_repo
+            .create_category(&create, ctx.tenant_id)
+            .await
     }
 
-    pub async fn list_categories(
-        &self,
-        ctx: &TenantContext,
-    ) -> Result<Vec<Category>, AppError> {
+    pub async fn list_categories(&self, ctx: &TenantContext) -> Result<Vec<Category>, AppError> {
         self.material_repo.list_categories(ctx.tenant_id).await
     }
 
@@ -82,7 +87,9 @@ impl InventoryService {
             return Err(AppError::Forbidden("Admin access required".to_string()));
         }
         update.validate()?;
-        self.material_repo.update_category(id, &update, ctx.tenant_id).await
+        self.material_repo
+            .update_category(id, &update, ctx.tenant_id)
+            .await
     }
 
     pub async fn delete_category(
@@ -114,7 +121,10 @@ impl InventoryService {
             .await?
             .ok_or_else(|| AppError::Validation("Category not found".to_string()))?;
 
-        let material = self.material_repo.create_material(&create, ctx.tenant_id).await?;
+        let material = self
+            .material_repo
+            .create_material(&create, ctx.tenant_id)
+            .await?;
 
         // Emit MaterialCreated event
         let event = MaterialCreatedPayload {
@@ -123,7 +133,8 @@ impl InventoryService {
             category_id: create.category_id.to_string(),
             initial_quantity: create.quantity,
             created_by: ctx.user_id,
-        }.into_event(ctx.tenant_id);
+        }
+        .into_event(ctx.tenant_id);
 
         self.material_repo.publish_event(&event).await?;
 
@@ -135,7 +146,9 @@ impl InventoryService {
         category_id: Option<CategoryId>,
         ctx: &TenantContext,
     ) -> Result<Vec<Material>, AppError> {
-        self.material_repo.list_materials(ctx.tenant_id, category_id).await
+        self.material_repo
+            .list_materials(ctx.tenant_id, category_id)
+            .await
     }
 
     pub async fn get_material(
@@ -171,13 +184,14 @@ impl InventoryService {
 
         let local_user_id = self.resolve_local_user_id(ctx).await?;
 
-        let material = self.material_repo
+        let material = self
+            .material_repo
             .withdraw_stock(
                 withdraw.material_id,
                 withdraw.quantity,
                 local_user_id,
                 withdraw.notes.clone(),
-                withdraw.site_id,  // Pass site_id from command
+                withdraw.site_id, // Pass site_id from command
                 ctx.tenant_id,
             )
             .await?;
@@ -191,7 +205,8 @@ impl InventoryService {
             withdrawn_by: local_user_id,
             notes: withdraw.notes,
             is_last_unit: material.is_last_unit(),
-        }.into_event(ctx.tenant_id);
+        }
+        .into_event(ctx.tenant_id);
 
         self.material_repo.publish_event(&event).await?;
 
@@ -203,7 +218,8 @@ impl InventoryService {
                 current_quantity: material.quantity,
                 min_quantity: material.min_quantity,
                 triggered_by_user_id: Some(local_user_id),
-            }.into_event(ctx.tenant_id);
+            }
+            .into_event(ctx.tenant_id);
 
             self.material_repo.publish_event(&low_event).await?;
         }
@@ -224,7 +240,8 @@ impl InventoryService {
 
         let local_user_id = self.resolve_local_user_id(ctx).await?;
 
-        let material = self.material_repo
+        let material = self
+            .material_repo
             .adjust_stock(
                 adjust.material_id,
                 adjust.quantity,
@@ -242,7 +259,8 @@ impl InventoryService {
             quantity_after: material.quantity,
             reason: adjust.reason,
             adjusted_by: local_user_id,
-        }.into_event(ctx.tenant_id);
+        }
+        .into_event(ctx.tenant_id);
 
         self.material_repo.publish_event(&event).await?;
 
@@ -254,7 +272,8 @@ impl InventoryService {
                 current_quantity: material.quantity,
                 min_quantity: material.min_quantity,
                 triggered_by_user_id: Some(local_user_id),
-            }.into_event(ctx.tenant_id);
+            }
+            .into_event(ctx.tenant_id);
 
             self.material_repo.publish_event(&low_event).await?;
         }
@@ -275,12 +294,16 @@ impl InventoryService {
         update.validate()?;
 
         // Record old values for events before update
-        let old_material = self.material_repo
+        let old_material = self
+            .material_repo
             .find_material_by_id(id, ctx.tenant_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
 
-        let updated = self.material_repo.update_material(id, &update, ctx.tenant_id).await?;
+        let updated = self
+            .material_repo
+            .update_material(id, &update, ctx.tenant_id)
+            .await?;
 
         // Emit events for changed fields
         let local_user_id = self.resolve_local_user_id(ctx).await?;
@@ -292,7 +315,8 @@ impl InventoryService {
                 old_location: old_material.location.clone(),
                 new_location: updated.location.clone(),
                 changed_by: local_user_id,
-            }.into_event(ctx.tenant_id);
+            }
+            .into_event(ctx.tenant_id);
             self.material_repo.publish_event(&event).await?;
         }
 
@@ -303,7 +327,8 @@ impl InventoryService {
                 old_min_quantity: old_material.min_quantity,
                 new_min_quantity: updated.min_quantity,
                 changed_by: local_user_id,
-            }.into_event(ctx.tenant_id);
+            }
+            .into_event(ctx.tenant_id);
             self.material_repo.publish_event(&event).await?;
         }
 
@@ -320,7 +345,8 @@ impl InventoryService {
 
         let local_user_id = self.resolve_local_user_id(ctx).await?;
 
-        let material = self.material_repo
+        let material = self
+            .material_repo
             .stock_in(
                 stock_in.material_id,
                 stock_in.quantity,
@@ -338,7 +364,8 @@ impl InventoryService {
             quantity_after: material.quantity,
             added_by: local_user_id,
             notes: stock_in.notes,
-        }.into_event(ctx.tenant_id);
+        }
+        .into_event(ctx.tenant_id);
 
         self.material_repo.publish_event(&event).await?;
 
@@ -355,17 +382,18 @@ impl InventoryService {
             .await?
             .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
 
-        self.material_repo.list_enriched_stock_entries(material_id, ctx.tenant_id, 50).await
+        self.material_repo
+            .list_enriched_stock_entries(material_id, ctx.tenant_id, 50)
+            .await
     }
 
-    pub async fn list_low_stock(
-        &self,
-        ctx: &TenantContext,
-    ) -> Result<Vec<Material>, AppError> {
+    pub async fn list_low_stock(&self, ctx: &TenantContext) -> Result<Vec<Material>, AppError> {
         if !ctx.is_admin() {
             return Err(AppError::Forbidden("Admin access required".to_string()));
         }
-        self.material_repo.list_low_stock_materials(ctx.tenant_id).await
+        self.material_repo
+            .list_low_stock_materials(ctx.tenant_id)
+            .await
     }
 
     /// Delete a material (soft delete)
@@ -380,19 +408,27 @@ impl InventoryService {
         }
 
         // Check for pending order requests
-        let pending_count = self.material_repo.count_pending_order_requests(material_id, ctx.tenant_id).await?;
+        let pending_count = self
+            .material_repo
+            .count_pending_order_requests(material_id, ctx.tenant_id)
+            .await?;
         if pending_count > 0 {
-            return Err(AppError::Conflict(
-                format!("Cannot delete: {} pending order request(s) exist", pending_count)
-            ));
+            return Err(AppError::Conflict(format!(
+                "Cannot delete: {} pending order request(s) exist",
+                pending_count
+            )));
         }
 
         // Verify material exists
-        self.material_repo.find_material_by_id(material_id, ctx.tenant_id).await?
+        self.material_repo
+            .find_material_by_id(material_id, ctx.tenant_id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
 
         // Perform soft delete
-        self.material_repo.delete_material(material_id, ctx.tenant_id).await
+        self.material_repo
+            .delete_material(material_id, ctx.tenant_id)
+            .await
     }
 
     // === QR Code operations ===
@@ -410,7 +446,8 @@ impl InventoryService {
         let _material = self.get_material(material_id, ctx).await?;
 
         // Generate QR code identifier
-        let qr_identifier = format!("MAT-{}-{}",
+        let qr_identifier = format!(
+            "MAT-{}-{}",
             &ctx.tenant_id.to_string()[..8].to_uppercase(),
             &material_id.to_string()[..8].to_uppercase()
         );
@@ -430,8 +467,9 @@ impl InventoryService {
     ) -> Result<String, AppError> {
         let material = self.get_material(material_id, ctx).await?;
 
-        let qr_code = material.qr_code
-            .ok_or_else(|| AppError::NotFound("QR code not generated for this material".to_string()))?;
+        let qr_code = material.qr_code.ok_or_else(|| {
+            AppError::NotFound("QR code not generated for this material".to_string())
+        })?;
 
         // Generate QR code SVG
         let code = QrCode::new(&qr_code)
@@ -460,7 +498,8 @@ impl InventoryService {
 
         let local_user_id = self.resolve_local_user_id(ctx).await?;
 
-        let order = self.material_repo
+        let order = self
+            .material_repo
             .create_order_request(&create, local_user_id, ctx.tenant_id)
             .await?;
 
@@ -472,7 +511,8 @@ impl InventoryService {
             quantity_requested: create.quantity,
             requested_by: local_user_id,
             reason: create.reason.clone(),
-        }.into_event(ctx.tenant_id);
+        }
+        .into_event(ctx.tenant_id);
 
         self.material_repo.publish_event(&event).await?;
 
@@ -487,7 +527,9 @@ impl InventoryService {
         if !ctx.is_admin() {
             return Err(AppError::Forbidden("Admin access required".to_string()));
         }
-        self.material_repo.list_order_requests(ctx.tenant_id, status).await
+        self.material_repo
+            .list_order_requests(ctx.tenant_id, status)
+            .await
     }
 
     pub async fn get_order_request(

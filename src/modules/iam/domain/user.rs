@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::common::types::{TenantId, UserId, Role};
+use crate::common::types::{Role, TenantId, UserId};
 
 /// User aggregate representing a user in the system
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -170,7 +170,10 @@ mod tests {
             name: None,
             role: Role::Employee,
         };
-        assert_eq!(cmd.validate(), Err("Keycloak user ID is required".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Keycloak user ID is required".to_string())
+        );
     }
 
     #[test]
