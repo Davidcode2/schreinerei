@@ -3,7 +3,7 @@ import type { AuthTokens, User, KeycloakTokenPayload } from '../../types/user'
 
 const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL || 'https://auth.jakob-lingel.dev'
 const REALM = import.meta.env.VITE_KEYCLOAK_REALM || 'schreinerei'
-const CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'schreinerei_pwa'
+const CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'schreinerei_pwa_dev'
 
 const AUTH_URL = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/auth`
 const TOKEN_URL = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`

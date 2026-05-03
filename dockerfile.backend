@@ -9,8 +9,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY Cargo.toml Cargo.lock ./
+COPY .sqlx ./.sqlx
 COPY migrations ./migrations
 COPY src ./src
+
+ENV SQLX_OFFLINE=true
 
 RUN cargo build --release
 
@@ -28,7 +31,7 @@ WORKDIR /app
 COPY --from=builder /app/target/release/schreinerei /usr/local/bin/schreinerei
 COPY migrations ./migrations
 
-USER schreinerei
+USER 10001:10001
 
 ENV HOST=0.0.0.0
 ENV PORT=3000
