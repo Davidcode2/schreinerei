@@ -141,6 +141,14 @@ export const handlers = [
     return HttpResponse.json(mockData.reservations);
   }),
 
+  http.get(apiRoute('/fleet/reservations/:id'), async ({ params }) => {
+    await delay(10);
+    const reservation = mockData.reservations.find((entry) => entry.id === params.id);
+    return reservation
+      ? HttpResponse.json(reservation)
+      : HttpResponse.json({ error: 'Not found' }, { status: 404 });
+  }),
+
   http.post(apiRoute('/fleet/reservations'), async ({ request }) => {
     const body = await request.json() as Record<string, unknown>;
     const newReservation = {

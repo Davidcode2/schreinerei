@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { LoadingSpinner, EmptyState, PageHeader } from "@/components/shared"
-import { useCalendar } from "@/lib/api/hooks"
+import { useCalendar, useReservation } from "@/lib/api/hooks"
 import { cn, formatLocalDateKey, startOfLocalWeek } from "@/lib/utils"
 import type { CalendarEntry, ReservationSummary, ResourceType } from "@/types/fleet"
 import { ReservationConfirmationSheet } from "./ReservationConfirmationSheet"
+import { ReservationDialog } from "./ReservationDialog"
 import {
   advanceRangeSelection,
   type CompletedRangeSelection,
@@ -94,13 +96,19 @@ export default function CalendarView({ embedded = false, resourceType }: Calenda
   const [completedSelection, setCompletedSelection] = useState<
     (CompletedRangeSelection & { resourceName: string }) | null
   >(null)
+  const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null)
 
   const { start, end } = getWeekDates(currentWeek)
   const { data: calendarData, isLoading, error } = useCalendar({
     start_date: start,
     end_date: end,
-    resource_type: resourceType,
+    ...(resourceType ? { resource_type: resourceType } : {}),
   })
+  const {
+    data: selectedReservation,
+    isLoading: isReservationLoading,
+    error: reservationError,
+  } = useReservation(selectedReservationId)
 
   const weekStart = startOfLocalWeek(currentWeek)
 
@@ -121,6 +129,10 @@ export default function CalendarView({ embedded = false, resourceType }: Calenda
   const clearSelection = () => {
     setPendingSelection(null)
     setCompletedSelection(null)
+  }
+
+  const closeReservationDetails = () => {
+    setSelectedReservationId(null)
   }
 
   const handleSlotClick = (entry: CalendarEntry, dateStr: string) => {
@@ -311,12 +323,21 @@ export default function CalendarView({ embedded = false, resourceType }: Calenda
                                 return (
                                   <div
                                     key={r.id}
+                                    role="button"
+                                    tabIndex={0}
                                     className={cn(
-                                      "rounded-xl border px-2.5 py-2 shadow-sm",
+                                      "rounded-xl border px-2.5 py-2 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
                                       resourceColor.borderClassName,
                                       resourceColor.softTintClassName
                                     )}
                                     data-resource-color={resourceColor.token}
+                                    onClick={() => setSelectedReservationId(r.id)}
+                                    onKeyDown={(event) => {
+                                      if (event.key === "Enter" || event.key === " ") {
+                                        event.preventDefault()
+                                        setSelectedReservationId(r.id)
+                                      }
+                                    }}
                                   >
                                     <div className="flex items-center gap-2">
                                       <span
@@ -379,6 +400,33 @@ export default function CalendarView({ embedded = false, resourceType }: Calenda
           resourceName={completedSelection.resourceName}
           startDate={completedSelection.startDate}
           endDate={completedSelection.endDate}
+        />
+      )}
+
+      {selectedReservationId && !selectedReservation && (
+        <Dialog open onOpenChange={(open) => !open && closeReservationDetails()}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Reservierung laden</DialogTitle>
+              <DialogDescription>
+                {reservationError
+                  ? "Die Reservierungsdetails konnten nicht geladen werden."
+                  : "Reservierungsdetails werden geladen."}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex min-h-24 items-center justify-center">
+              {isReservationLoading ? <LoadingSpinner /> : null}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {selectedReservation && (
+        <ReservationDialog
+          open
+          onOpenChange={(open) => !open && closeReservationDetails()}
+          mode="edit"
+          initialData={selectedReservation}
         />
       )}
     </div>

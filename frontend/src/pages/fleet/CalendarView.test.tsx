@@ -8,14 +8,24 @@ vi.mock("@/lib/api/hooks", () => ({
   useCalendar: vi.fn(),
   useCreateReservation: vi.fn(),
   usePreferences: vi.fn(),
+  useReservation: vi.fn(),
   useSites: vi.fn(),
+  useTools: vi.fn(),
+  useUpdateReservation: vi.fn(),
+  useVehicles: vi.fn(),
+  useAvailability: vi.fn(),
 }))
 
 import {
   useCalendar,
   useCreateReservation,
   usePreferences,
+  useReservation,
   useSites,
+  useTools,
+  useUpdateReservation,
+  useVehicles,
+  useAvailability,
 } from "@/lib/api/hooks"
 import { getResourceCalendarColor } from "./resourceCalendarColor"
 
@@ -74,6 +84,18 @@ describe("CalendarView", () => {
     } as never)
     vi.mocked(usePreferences).mockReturnValue({
       data: { active_site_id: "site-1" },
+    } as never)
+    vi.mocked(useReservation).mockReturnValue({
+      data: null,
+      isLoading: false,
+      error: null,
+    } as never)
+    vi.mocked(useVehicles).mockReturnValue({ data: [], isLoading: false } as never)
+    vi.mocked(useTools).mockReturnValue({ data: [], isLoading: false } as never)
+    vi.mocked(useAvailability).mockReturnValue({ data: { available: true } } as never)
+    vi.mocked(useUpdateReservation).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
     } as never)
     vi.mocked(useSites).mockReturnValue({
       data: [{ id: "site-1", name: "Baustelle Nord" }],
@@ -193,6 +215,55 @@ describe("CalendarView", () => {
 
     expect(rerenderedRowHeader).toHaveAttribute("data-resource-color", expectedColor)
     expect(rerenderedReservationChip).toHaveAttribute("data-resource-color", expectedColor)
+  })
+
+  it("opens reservation details when clicking an existing booking", async () => {
+    const user = userEvent.setup()
+    vi.mocked(useReservation).mockImplementation((id) => ({
+      data: id === "existing-1" ? {
+        id: "existing-1",
+        resource_type: "vehicle",
+        resource_id: "vehicle-1",
+        resource_name: "Sprinter",
+        user_id: "user-1",
+        user_name: "Alex",
+        site_id: "site-1",
+        site_name: "Baustelle Nord",
+        start_time: weekDateIso(0, 8),
+        end_time: weekDateIso(0, 17),
+        status: "confirmed",
+        notes: "Mit Material beladen",
+        created_at: weekDateIso(0, 7),
+        updated_at: weekDateIso(0, 7),
+      } : null,
+      isLoading: false,
+      error: null,
+    }) as never)
+    setCalendarData([
+      {
+        resource_type: "vehicle",
+        resource_id: "vehicle-1",
+        resource_name: "Sprinter",
+        reservations: [
+          {
+            id: "existing-1",
+            start_time: weekDateIso(0, 8),
+            end_time: weekDateIso(0, 17),
+            user_name: "Alex",
+            site_name: "Baustelle Nord",
+            status: "confirmed",
+          },
+        ],
+      },
+    ])
+
+    render(<CalendarView embedded />)
+
+    await user.click(screen.getByText("Alex"))
+
+    expect(await screen.findByText("Reservierung bearbeiten")).toBeInTheDocument()
+    expect(screen.getByText("Gebucht von")).toBeInTheDocument()
+    expect(screen.getByDisplayValue("Mit Material beladen")).toBeInTheDocument()
   })
 
   it("opens confirmation with a sorted date range on the second tap", async () => {

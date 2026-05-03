@@ -42,6 +42,16 @@ const formatTimeRange = (start: string, end: string): string => {
   return `${startDate.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })} ${startDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} - ${endDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`
 }
 
+const formatTimestamp = (value: string): string => {
+  return new Date(value).toLocaleString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
 interface ReservationDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -191,9 +201,14 @@ export function ReservationDialog({
 
         <div className="space-y-4 py-4">
           {isEditing && (
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <div className="flex items-center gap-2">
+            <div className="space-y-4 rounded-xl border bg-muted/30 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                    Reservierungsdetails
+                  </p>
+                  <p className="mt-1 text-sm font-semibold">{initialData.resource_name}</p>
+                </div>
                 <span className={cn(
                   "inline-flex rounded-full px-3 py-1 text-xs font-medium border",
                   initialData.status === "confirmed" ? "bg-success/15 text-success border-success/20" :
@@ -205,6 +220,24 @@ export function ReservationDialog({
                 )}>
                   {statusLabels[initialData.status]}
                 </span>
+              </div>
+              <div className="grid gap-3 text-sm sm:grid-cols-2">
+                <div>
+                  <p className="text-muted-foreground">Gebucht von</p>
+                  <p className="font-medium">{initialData.user_name || "Unbekannt"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Baustelle</p>
+                  <p className="font-medium">{initialData.site_name || "Keine Zuordnung"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Erstellt</p>
+                  <p className="font-medium">{formatTimestamp(initialData.created_at)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Aktualisiert</p>
+                  <p className="font-medium">{formatTimestamp(initialData.updated_at)}</p>
+                </div>
               </div>
             </div>
           )}

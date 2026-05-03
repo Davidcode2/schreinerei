@@ -171,6 +171,15 @@ export function useMyReservations() {
   })
 }
 
+export function useReservation(id: string | null) {
+  return useQuery({
+    queryKey: ["reservation", id],
+    queryFn: () => apiClient.get<Reservation>(`/api/v1/fleet/reservations/${id}`),
+    enabled: !!id,
+    staleTime: 30000,
+  })
+}
+
 export function useCreateReservation() {
   const queryClient = useQueryClient()
 
