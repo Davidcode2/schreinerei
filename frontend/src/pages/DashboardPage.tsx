@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Package, ArrowRight, Building2, Clock, Calendar } from "lucide-react"
 import { Link } from "react-router-dom"
-import { StatusBadge, LoadingSpinner, ErrorState, EmptyState } from "@/components/shared"
+import { StatusBadge, LoadingSpinner, ErrorState, EmptyState, PageHeader } from "@/components/shared"
 import {
   useDashboardSites,
   useLowStockMaterials,
@@ -45,12 +45,11 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Übersicht über alle Aktivitäten</p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Übersicht über alle Aktivitäten"
+      />
 
-      {/* Stats Grid */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <StatsCard
           title="Aktive Baustellen"
@@ -75,12 +74,11 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Active Sites */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Aktive Baustellen</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="font-display text-lg">Aktive Baustellen</CardTitle>
           <Link to="/sites">
-            <Button variant="ghost" size="sm" className="gap-2">
+            <Button variant="ghost" size="sm" className="gap-2 h-9">
               Alle anzeigen
               <ArrowRight className="h-4 w-4" />
             </Button>
@@ -98,7 +96,7 @@ export default function DashboardPage() {
               description="Es gibt derzeit keine aktiven Baustellen."
               action={
                 <Link to="/sites">
-                  <Button size="sm">Baustellen anzeigen</Button>
+                  <Button size="sm" className="h-10">Baustellen anzeigen</Button>
                 </Link>
               }
             />
@@ -118,34 +116,38 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Low Stock Alert */}
       {lowStock && lowStock.length > 0 && (
-        <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+        <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-display text-lg flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
               Niedrige Bestände
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {lowStock.slice(0, 5).map((material: Material) => (
                 <Link
                   key={material.id}
                   to={`/inventory/${material.id}`}
-                  className="flex items-center justify-between p-2 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900 transition-colors"
+                  className="flex items-center justify-between p-2.5 rounded-lg hover:bg-amber-100/60 dark:hover:bg-amber-900/30 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <Package className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{material.name}</span>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-7 w-7 rounded bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
+                      <Package className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <span className="font-medium text-sm truncate">{material.name}</span>
                   </div>
                   <StatusBadge status="low_stock" />
                 </Link>
               ))}
               {lowStock.length > 5 && (
-                <Link to="/inventory">
-                  <Button variant="link" className="w-full">
+                <Link to="/inventory" className="block">
+                  <Button variant="ghost" size="sm" className="w-full h-9 gap-2 mt-1">
                     {lowStock.length - 5} weitere anzeigen
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </Link>
               )}
