@@ -15,18 +15,18 @@ export function EmptyState({
   action,
 }: EmptyStateProps) {
   return (
-    <Card className="border-dashed">
-      <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="rounded-full bg-muted p-4 mb-4">
+    <Card className="border-dashed border-2 bg-card/50">
+      <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="rounded-2xl bg-accent/60 p-4 mb-5">
           <Icon className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold mb-1">{title}</h3>
+        <h3 className="font-display text-xl mb-2">{title}</h3>
         {description && (
-          <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+          <p className="text-sm text-muted-foreground mb-5 max-w-sm leading-relaxed">
             {description}
           </p>
         )}
-        {action && <div className="mt-2">{action}</div>}
+        {action && <div>{action}</div>}
       </CardContent>
     </Card>
   )

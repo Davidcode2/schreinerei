@@ -8,24 +8,20 @@ interface StatusBadgeProps {
 }
 
 const statusVariantMap: Record<string, "default" | "success" | "warning" | "destructive" | "outline"> = {
-  // Success (green)
   available: "success",
   active: "success",
   confirmed: "success",
   completed: "success",
 
-  // Warning (yellow)
   maintenance: "warning",
   low_stock: "warning",
   pending: "warning",
   planned: "warning",
 
-  // Destructive/Red
   in_use: "destructive",
   reserved: "destructive",
   cancelled: "destructive",
 
-  // Default/Outline (gray)
   archived: "outline",
 }
 
@@ -53,17 +49,17 @@ export function StatusBadge({
   const label = statusLabels[status] || status
 
   const variantClasses = {
-    default: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-    success: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    warning: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    destructive: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    default: "bg-secondary text-secondary-foreground",
+    success: "bg-success/15 text-success border-success/20",
+    warning: "bg-warning/15 text-warning-foreground border-warning/25",
+    destructive: "bg-destructive/10 text-destructive border-destructive/20",
     outline: "border border-input bg-background",
   }
 
   return (
     <Badge
       className={cn(
-        "font-normal",
+        "font-medium border text-xs",
         variantClasses[resolvedVariant],
         className
       )}
