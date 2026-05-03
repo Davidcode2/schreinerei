@@ -45,16 +45,16 @@ vi.mock("./AddToolDialog", () => ({
 }))
 
 describe("FleetPage", () => {
-  it("renders the calendar section above the fleet tabs and content", () => {
+  it("renders the vehicle calendar section above the vehicle list", () => {
     reservationDialogMock.mockClear()
     render(<FleetPage />)
 
     const calendarSection = screen.getByTestId("fleet-calendar")
-    const vehiclesTab = screen.getByRole("button", { name: "Fahrzeuge" })
+    const pageHeading = screen.getByRole("heading", { name: "Fuhrpark" })
     const vehiclesList = screen.getByTestId("vehicles-list")
 
     expect(calendarSection).toHaveTextContent("embedded-calendar")
-    expect(calendarSection.compareDocumentPosition(vehiclesTab)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    expect(pageHeading).toBeInTheDocument()
     expect(calendarSection.compareDocumentPosition(vehiclesList)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
   })
 

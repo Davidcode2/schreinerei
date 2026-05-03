@@ -4,6 +4,7 @@ import {
   Package,
   Settings,
   Truck,
+  Wrench,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -18,5 +19,6 @@ export const mainNavItems: NavItem[] = [
   { label: "Inventar", href: "/inventory", icon: Package },
   { label: "Baustellen", href: "/sites", icon: Building2 },
   { label: "Fuhrpark", href: "/fleet", icon: Truck },
+  { label: "Werkzeuge", href: "/tools", icon: Wrench },
   { label: "Einstellungen", href: "/settings", icon: Settings },
 ]
