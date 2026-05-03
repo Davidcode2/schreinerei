@@ -2,9 +2,8 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
-    Json,
-    Router,
     routing::{get, patch, post},
+    Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -26,10 +25,11 @@ pub fn create_router() -> Router<AppState> {
         // Current user endpoints (any authenticated user)
         .route("/api/v1/auth/me", get(get_current_user))
         .route("/api/v1/users/me", patch(update_own_profile))
-        
         // Preferences endpoints
-        .route("/api/v1/preferences", get(get_preferences).patch(update_preferences))
-        
+        .route(
+            "/api/v1/preferences",
+            get(get_preferences).patch(update_preferences),
+        )
         // User management endpoints (admin only)
         .route("/api/v1/users", get(list_users))
         .route("/api/v1/users/invite", post(invite_user))
@@ -110,11 +110,13 @@ pub async fn get_current_user(
     State(state): State<AppState>,
     auth: AuthenticatedUser,
 ) -> Result<impl IntoResponse, AppError> {
-    let service = UserService::new(crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool));
+    let service = UserService::new(
+        crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
+    );
     let _ctx = TenantContext::from_auth(&auth);
-    
+
     let user = service.get_or_create_from_auth(&auth).await?;
-    
+
     Ok(Json(UserResponse::from(user)))
 }
 
@@ -123,12 +125,14 @@ pub async fn list_users(
     State(state): State<AppState>,
     auth: AuthenticatedUser,
 ) -> Result<impl IntoResponse, AppError> {
-    let service = UserService::new(crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool));
+    let service = UserService::new(
+        crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
+    );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let users = service.list_users(&ctx).await?;
     let response: Vec<UserResponse> = users.into_iter().map(UserResponse::from).collect();
-    
+
     Ok(Json(response))
 }
 
@@ -138,15 +142,17 @@ pub async fn get_user(
     auth: AuthenticatedUser,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
-    let service = UserService::new(crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool));
+    let service = UserService::new(
+        crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
+    );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let user_id = Uuid::parse_str(&id)
         .map(UserId)
         .map_err(|_| AppError::Validation("Invalid user ID".to_string()))?;
-    
+
     let user = service.get_user(user_id, &ctx).await?;
-    
+
     Ok(Json(UserResponse::from(user)))
 }
 
@@ -156,20 +162,24 @@ pub async fn invite_user(
     auth: AuthenticatedUser,
     Json(request): Json<InviteUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    let service = UserService::new(crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool));
+    let service = UserService::new(
+        crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
+    );
     let ctx = TenantContext::from_auth(&auth);
-    
-    let role = request.role.parse()
+
+    let role = request
+        .role
+        .parse()
         .map_err(|e: String| AppError::Validation(e))?;
-    
+
     let invite = InviteUser {
         email: request.email,
         name: request.name,
         role,
     };
-    
+
     let user = service.invite_user(invite, &ctx).await?;
-    
+
     Ok((StatusCode::CREATED, Json(UserResponse::from(user))))
 }
 
@@ -180,18 +190,22 @@ pub async fn update_user_role(
     Path(id): Path<String>,
     Json(request): Json<UpdateRoleRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    let service = UserService::new(crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool));
+    let service = UserService::new(
+        crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
+    );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let user_id = Uuid::parse_str(&id)
         .map(UserId)
         .map_err(|_| AppError::Validation("Invalid user ID".to_string()))?;
-    
-    let new_role = request.role.parse()
+
+    let new_role = request
+        .role
+        .parse()
         .map_err(|e: String| AppError::Validation(e))?;
-    
+
     let user = service.update_role(user_id, new_role, &ctx).await?;
-    
+
     Ok(Json(UserResponse::from(user)))
 }
 
@@ -201,15 +215,15 @@ pub async fn update_own_profile(
     auth: AuthenticatedUser,
     Json(request): Json<UpdateProfileRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    let service = UserService::new(crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool));
+    let service = UserService::new(
+        crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
+    );
     let ctx = TenantContext::from_auth(&auth);
-    
-    let update = UpdateProfile {
-        name: request.name,
-    };
-    
+
+    let update = UpdateProfile { name: request.name };
+
     let user = service.update_profile(update, &ctx).await?;
-    
+
     Ok(Json(UserResponse::from(user)))
 }
 
@@ -226,7 +240,7 @@ pub async fn get_preferences(
     let preferences = service
         .get_validated_preferences(user_id, ctx.tenant_id)
         .await?;
-    
+
     Ok(Json(PreferencesResponse::from(preferences)))
 }
 
@@ -248,13 +262,15 @@ pub async fn update_preferences(
             let site_id = SiteId::parse(&site_id_str)
                 .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
 
-            service.set_active_site(user_id, ctx.tenant_id, site_id).await?
+            service
+                .set_active_site(user_id, ctx.tenant_id, site_id)
+                .await?
         }
         None => {
             // Clear active site
             service.clear_active_site(user_id, ctx.tenant_id).await?
         }
     };
-    
+
     Ok(Json(PreferencesResponse::from(preferences)))
 }

@@ -7,6 +7,8 @@ import { server } from '@/test/mocks/server';
 import { mockData } from '@/test/mocks/handlers';
 import { AddToolDialog } from './AddToolDialog';
 
+const apiRoute = (path: string) => `*/api/v1${path}`;
+
 describe('AddToolDialog', () => {
   const mockOnOpenChange = vi.fn();
 
@@ -50,7 +52,7 @@ describe('AddToolDialog', () => {
     let submittedPayload: Record<string, unknown> | null = null;
 
     server.use(
-      http.post('/api/v1/fleet/tools', async ({ request }) => {
+      http.post(apiRoute('/fleet/tools'), async ({ request }) => {
         const body = await request.json() as Record<string, unknown>;
         submittedPayload = body;
         return HttpResponse.json({ id: 'new-tool', ...body }, { status: 201 });

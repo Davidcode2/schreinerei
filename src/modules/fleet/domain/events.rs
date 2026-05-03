@@ -3,7 +3,7 @@ use serde_json::json;
 use uuid::Uuid;
 
 use crate::common::events::{DomainEvent, EventType};
-use crate::common::types::{TenantId, VehicleId, ToolId, ReservationId, ResourceType};
+use crate::common::types::{ReservationId, ResourceType, TenantId, ToolId, VehicleId};
 
 /// Payload for VehicleCreated event
 #[derive(Debug, Clone, Serialize, Deserialize)]

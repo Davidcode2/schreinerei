@@ -3,21 +3,23 @@ use axum::{
     http::header,
     http::StatusCode,
     response::IntoResponse,
-    Json,
-    Router,
-    routing::{get, post, delete},
+    routing::{delete, get, post},
+    Json, Router,
 };
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
-use chrono::NaiveDate;
 use uuid::Uuid;
 
 use crate::auth::extractor::AuthenticatedUser;
 use crate::common::error::AppError;
-use crate::common::types::{SiteId, UserId, SiteStatus, AssignmentRole, WorkType, TimeEntryId};
+use crate::common::types::{AssignmentRole, SiteId, SiteStatus, TimeEntryId, UserId, WorkType};
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::sites::application::site_service::SiteService;
-use crate::modules::sites::domain::{CreateSite, UpdateSite, CreateTimeEntry, UpdateTimeEntry, AssignUser, CreateActivity, ActivityType};
+use crate::modules::sites::domain::{
+    ActivityType, AssignUser, CreateActivity, CreateSite, CreateTimeEntry, UpdateSite,
+    UpdateTimeEntry,
+};
 use crate::modules::sites::infrastructure::site_repository::DashboardSite;
 use crate::AppState;
 
@@ -26,27 +28,55 @@ pub fn create_router() -> Router<AppState> {
     Router::new()
         // Sites
         .route("/api/v1/sites", get(list_sites).post(create_site))
-        .route("/api/v1/sites/{id}", get(get_site).patch(update_site).delete(delete_site))
-        
+        .route(
+            "/api/v1/sites/{id}",
+            get(get_site).patch(update_site).delete(delete_site),
+        )
         // Assignments
         .route("/api/v1/sites/{id}/assign", post(assign_user))
-        .route("/api/v1/sites/{id}/assign/{user_id}", delete(remove_assignment))
+        .route(
+            "/api/v1/sites/{id}/assign/{user_id}",
+            delete(remove_assignment),
+        )
         .route("/api/v1/sites/{id}/assignments", get(list_assignments))
-        
         // Time entries
-        .route("/api/v1/sites/{id}/time-entries", get(list_site_time_entries))
+        .route(
+            "/api/v1/sites/{id}/time-entries",
+            get(list_site_time_entries),
+        )
         .route("/api/v1/time-entries", post(create_time_entry))
         .route("/api/v1/time-entries/my", get(list_my_time_entries))
-        .route("/api/v1/time-entries/{id}", get(get_time_entry).patch(update_time_entry).delete(delete_time_entry))
-        
+        .route(
+            "/api/v1/time-entries/{id}",
+            get(get_time_entry)
+                .patch(update_time_entry)
+                .delete(delete_time_entry),
+        )
         // Activities
-        .route("/api/v1/sites/{id}/activities", get(list_activities).post(create_activity))
-        .route("/api/v1/sites/{id}/activities/{activity_id}", delete(delete_activity))
-        .route("/api/v1/sites/{id}/attachments", post(upload_site_attachment))
-        .route("/api/v1/sites/{id}/attachments/photo", post(upload_site_photo_attachment))
-        .route("/api/v1/attachments/{attachment_id}", get(get_attachment_bytes))
-        .route("/api/v1/attachments/{attachment_id}/thumbnail", get(get_attachment_thumbnail_bytes))
-        
+        .route(
+            "/api/v1/sites/{id}/activities",
+            get(list_activities).post(create_activity),
+        )
+        .route(
+            "/api/v1/sites/{id}/activities/{activity_id}",
+            delete(delete_activity),
+        )
+        .route(
+            "/api/v1/sites/{id}/attachments",
+            post(upload_site_attachment),
+        )
+        .route(
+            "/api/v1/sites/{id}/attachments/photo",
+            post(upload_site_photo_attachment),
+        )
+        .route(
+            "/api/v1/attachments/{attachment_id}",
+            get(get_attachment_bytes),
+        )
+        .route(
+            "/api/v1/attachments/{attachment_id}/thumbnail",
+            get(get_attachment_thumbnail_bytes),
+        )
         // Dashboard
         .route("/api/v1/dashboard/sites", get(get_dashboard))
 }
@@ -229,13 +259,13 @@ pub async fn list_sites(
     Query(query): Query<ListSitesQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let sites = service.list_sites(query.status, &ctx).await?;
     let response: Vec<SiteResponse> = sites.into_iter().map(SiteResponse::from).collect();
-    
+
     Ok(Json(response))
 }
 
@@ -245,22 +275,26 @@ pub async fn create_site(
     Json(request): Json<CreateSiteRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let create = CreateSite {
         name: request.name,
         customer_name: request.customer_name,
         location: request.location,
         description: request.description,
-        start_date: request.start_date.and_then(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").ok()),
-        end_date: request.end_date.and_then(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").ok()),
+        start_date: request
+            .start_date
+            .and_then(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").ok()),
+        end_date: request
+            .end_date
+            .and_then(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").ok()),
         estimated_days: request.estimated_days,
     };
-    
+
     let site = service.create_site(create, &ctx).await?;
-    
+
     Ok((StatusCode::CREATED, Json(SiteResponse::from(site))))
 }
 
@@ -270,16 +304,16 @@ pub async fn get_site(
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
-    
+
     let site = service.get_site(site_id, &ctx).await?;
-    
+
     Ok(Json(SiteResponse::from(site)))
 }
 
@@ -290,32 +324,37 @@ pub async fn update_site(
     Json(request): Json<UpdateSiteRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
-    
-    let status = request.status
+
+    let status = request
+        .status
         .map(|s| s.parse::<SiteStatus>())
         .transpose()
         .map_err(|e: String| AppError::Validation(e))?;
-    
+
     let update = UpdateSite {
         name: request.name,
         customer_name: request.customer_name,
         location: request.location,
         description: request.description,
         status,
-        start_date: request.start_date.and_then(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").ok()),
-        end_date: request.end_date.and_then(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").ok()),
+        start_date: request
+            .start_date
+            .and_then(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").ok()),
+        end_date: request
+            .end_date
+            .and_then(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").ok()),
         estimated_days: request.estimated_days,
     };
-    
+
     let site = service.update_site(site_id, update, &ctx).await?;
-    
+
     Ok(Json(SiteResponse::from(site)))
 }
 
@@ -325,16 +364,16 @@ pub async fn delete_site(
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
-    
+
     service.delete_site(site_id, &ctx).await?;
-    
+
     Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
 }
 
@@ -345,28 +384,29 @@ pub async fn assign_user(
     Json(request): Json<AssignUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
-    
+
     let user_id = Uuid::parse_str(&request.user_id)
         .map(UserId)
         .map_err(|_| AppError::Validation("Invalid user ID".to_string()))?;
-    
-    let role = request.role
+
+    let role = request
+        .role
         .map(|s| s.parse::<AssignmentRole>())
         .transpose()
         .map_err(|e: String| AppError::Validation(e))?
         .unwrap_or(AssignmentRole::Worker);
-    
+
     let assign = AssignUser { user_id, role };
-    
+
     service.assign_user(site_id, assign, &ctx).await?;
-    
+
     Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
 }
 
@@ -376,20 +416,20 @@ pub async fn remove_assignment(
     Path((id, user_id)): Path<(String, String)>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
-    
+
     let user_id = Uuid::parse_str(&user_id)
         .map(UserId)
         .map_err(|_| AppError::Validation("Invalid user ID".to_string()))?;
-    
+
     service.remove_assignment(site_id, user_id, &ctx).await?;
-    
+
     Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
 }
 
@@ -399,17 +439,20 @@ pub async fn list_assignments(
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
-    
+
     let assignments = service.list_assignments(site_id, &ctx).await?;
-    let response: Vec<AssignmentResponse> = assignments.into_iter().map(AssignmentResponse::from).collect();
-    
+    let response: Vec<AssignmentResponse> = assignments
+        .into_iter()
+        .map(AssignmentResponse::from)
+        .collect();
+
     Ok(Json(response))
 }
 
@@ -419,17 +462,18 @@ pub async fn list_site_time_entries(
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
-    
+
     let entries = service.list_time_entries(Some(site_id), None, &ctx).await?;
-    let response: Vec<TimeEntryResponse> = entries.into_iter().map(TimeEntryResponse::from).collect();
-    
+    let response: Vec<TimeEntryResponse> =
+        entries.into_iter().map(TimeEntryResponse::from).collect();
+
     Ok(Json(response))
 }
 
@@ -439,21 +483,25 @@ pub async fn create_time_entry(
     Json(request): Json<CreateTimeEntryRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
-    let site_id = request.site_id
+
+    let site_id = request
+        .site_id
         .map(|s| Uuid::parse_str(&s).map(SiteId))
         .transpose()
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
-    
-    let work_type = request.work_type.parse::<WorkType>()
+
+    let work_type = request
+        .work_type
+        .parse::<WorkType>()
         .map_err(|e: String| AppError::Validation(e))?;
-    
-    let work_date = NaiveDate::parse_from_str(&request.work_date, "%Y-%m-%d")
-        .map_err(|_| AppError::Validation("Invalid work date format (expected YYYY-MM-DD)".to_string()))?;
-    
+
+    let work_date = NaiveDate::parse_from_str(&request.work_date, "%Y-%m-%d").map_err(|_| {
+        AppError::Validation("Invalid work date format (expected YYYY-MM-DD)".to_string())
+    })?;
+
     let create = CreateTimeEntry {
         site_id,
         work_type,
@@ -461,9 +509,9 @@ pub async fn create_time_entry(
         work_date,
         notes: request.notes,
     };
-    
+
     let entry = service.create_time_entry(create, &ctx).await?;
-    
+
     Ok((StatusCode::CREATED, Json(TimeEntryResponse::from(entry))))
 }
 
@@ -472,13 +520,14 @@ pub async fn list_my_time_entries(
     auth: AuthenticatedUser,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let entries = service.list_my_time_entries(&ctx).await?;
-    let response: Vec<TimeEntryResponse> = entries.into_iter().map(TimeEntryResponse::from).collect();
-    
+    let response: Vec<TimeEntryResponse> =
+        entries.into_iter().map(TimeEntryResponse::from).collect();
+
     Ok(Json(response))
 }
 
@@ -488,16 +537,16 @@ pub async fn get_time_entry(
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let entry_id = Uuid::parse_str(&id)
         .map(TimeEntryId)
         .map_err(|_| AppError::Validation("Invalid time entry ID".to_string()))?;
-    
+
     let entry = service.get_time_entry(entry_id, &ctx).await?;
-    
+
     Ok(Json(TimeEntryResponse::from(entry)))
 }
 
@@ -508,15 +557,16 @@ pub async fn update_time_entry(
     Json(request): Json<UpdateTimeEntryRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let entry_id = Uuid::parse_str(&id)
         .map(TimeEntryId)
         .map_err(|_| AppError::Validation("Invalid time entry ID".to_string()))?;
-    
-    let site_id = request.site_id
+
+    let site_id = request
+        .site_id
         .map(|s| {
             if s.is_empty() {
                 Ok(None)
@@ -526,17 +576,21 @@ pub async fn update_time_entry(
         })
         .transpose()
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
-    
-    let work_type = request.work_type
+
+    let work_type = request
+        .work_type
         .map(|s| s.parse::<WorkType>())
         .transpose()
         .map_err(|e: String| AppError::Validation(e))?;
-    
-    let work_date = request.work_date
+
+    let work_date = request
+        .work_date
         .map(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d"))
         .transpose()
-        .map_err(|_| AppError::Validation("Invalid work date format (expected YYYY-MM-DD)".to_string()))?;
-    
+        .map_err(|_| {
+            AppError::Validation("Invalid work date format (expected YYYY-MM-DD)".to_string())
+        })?;
+
     let update = UpdateTimeEntry {
         site_id,
         work_type,
@@ -544,9 +598,9 @@ pub async fn update_time_entry(
         work_date,
         notes: request.notes.map(Some),
     };
-    
+
     let entry = service.update_time_entry(entry_id, update, &ctx).await?;
-    
+
     Ok(Json(TimeEntryResponse::from(entry)))
 }
 
@@ -556,16 +610,16 @@ pub async fn delete_time_entry(
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let entry_id = Uuid::parse_str(&id)
         .map(TimeEntryId)
         .map_err(|_| AppError::Validation("Invalid time entry ID".to_string()))?;
-    
+
     service.delete_time_entry(entry_id, &ctx).await?;
-    
+
     Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
 }
 
@@ -597,13 +651,19 @@ impl From<crate::modules::sites::domain::Activity> for ActivityResponse {
             activity_type: activity.activity_type.as_str().to_string(),
             content: activity.content,
             photo_url: activity.photo_url,
-            attachments: activity.attachments.into_iter().map(SiteActivityAttachmentResponse::from).collect(),
+            attachments: activity
+                .attachments
+                .into_iter()
+                .map(SiteActivityAttachmentResponse::from)
+                .collect(),
             created_at: activity.created_at.to_rfc3339(),
         }
     }
 }
 
-impl From<crate::modules::sites::domain::ActivityAttachmentMetadata> for SiteActivityAttachmentResponse {
+impl From<crate::modules::sites::domain::ActivityAttachmentMetadata>
+    for SiteActivityAttachmentResponse
+{
     fn from(attachment: crate::modules::sites::domain::ActivityAttachmentMetadata) -> Self {
         Self {
             attachment_id: attachment.id.to_string(),
@@ -618,7 +678,7 @@ impl From<crate::modules::sites::domain::ActivityAttachmentMetadata> for SiteAct
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CreateActivityRequest {
-    pub activity_type: String,  // "photo" or "note"
+    pub activity_type: String, // "photo" or "note"
     pub content: Option<String>,
     pub photo_url: Option<String>,
     #[serde(default)]
@@ -674,19 +734,20 @@ pub async fn list_activities(
     Query(query): Query<ActivityQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
-    
+
     let limit = query.limit.unwrap_or(50).min(100);
-    
+
     let activities = service.list_activities(site_id, limit, &ctx).await?;
-    let response: Vec<ActivityResponse> = activities.into_iter().map(ActivityResponse::from).collect();
-    
+    let response: Vec<ActivityResponse> =
+        activities.into_iter().map(ActivityResponse::from).collect();
+
     Ok(Json(response))
 }
 
@@ -697,20 +758,24 @@ pub async fn create_activity(
     Json(request): Json<CreateActivityRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
-    
+
     let activity_type = match request.activity_type.as_str() {
         "photo" => ActivityType::Photo,
         "note" => ActivityType::Note,
-        _ => return Err(AppError::Validation("Invalid activity type (expected 'photo' or 'note')".to_string())),
+        _ => {
+            return Err(AppError::Validation(
+                "Invalid activity type (expected 'photo' or 'note')".to_string(),
+            ))
+        }
     };
-    
+
     let create = CreateActivity {
         site_id,
         activity_type,
@@ -725,9 +790,9 @@ pub async fn create_activity(
             })
             .collect::<Result<Vec<_>, _>>()?,
     };
-    
+
     let activity = service.create_activity(create, &ctx).await?;
-    
+
     Ok((StatusCode::CREATED, Json(ActivityResponse::from(activity))))
 }
 
@@ -737,7 +802,7 @@ pub async fn delete_activity(
     Path((site_id, activity_id)): Path<(String, String)>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
 
@@ -794,8 +859,9 @@ pub async fn upload_site_attachment(
         break;
     }
 
-    let (original_filename, mime_type, original_bytes) = attachment_part
-        .ok_or_else(|| AppError::Validation("Multipart field 'attachment' is required".to_string()))?;
+    let (original_filename, mime_type, original_bytes) = attachment_part.ok_or_else(|| {
+        AppError::Validation("Multipart field 'attachment' is required".to_string())
+    })?;
 
     let result = service
         .upload_site_attachment(
@@ -893,13 +959,14 @@ pub async fn get_dashboard(
     auth: AuthenticatedUser,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
-        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool)
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let ctx = TenantContext::from_auth(&auth);
-    
+
     let sites = service.get_dashboard(&ctx).await?;
-    let response: Vec<DashboardSiteResponse> = sites.into_iter().map(DashboardSiteResponse::from).collect();
-    
+    let response: Vec<DashboardSiteResponse> =
+        sites.into_iter().map(DashboardSiteResponse::from).collect();
+
     Ok(Json(response))
 }
 
@@ -909,7 +976,8 @@ pub async fn get_attachment_bytes(
     Path(attachment_id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let ctx = TenantContext::from_auth(&auth);
-    let repo = crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool);
+    let repo =
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool);
 
     let attachment_uuid = Uuid::parse_str(&attachment_id)
         .map_err(|_| AppError::Validation("Invalid attachment ID".to_string()))?;
@@ -939,7 +1007,8 @@ pub async fn get_attachment_thumbnail_bytes(
     Path(attachment_id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let ctx = TenantContext::from_auth(&auth);
-    let repo = crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool);
+    let repo =
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool);
 
     let attachment_uuid = Uuid::parse_str(&attachment_id)
         .map_err(|_| AppError::Validation("Invalid attachment ID".to_string()))?;
@@ -965,7 +1034,10 @@ pub async fn get_attachment_thumbnail_bytes(
 
 #[cfg(test)]
 mod tests {
-    use super::{ActivityResponse, SiteActivityAttachmentResponse, UploadPhotoAttachmentResponse, UploadSiteAttachmentResponse};
+    use super::{
+        ActivityResponse, SiteActivityAttachmentResponse, UploadPhotoAttachmentResponse,
+        UploadSiteAttachmentResponse,
+    };
     use crate::common::types::{ActivityId, SiteId, TenantId, UserId};
     use crate::modules::sites::domain::{Activity, ActivityType};
     use chrono::Utc;

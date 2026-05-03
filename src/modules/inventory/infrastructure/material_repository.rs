@@ -527,7 +527,6 @@ impl MaterialRepository {
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
         }
-
         tx.commit()
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -1610,6 +1609,24 @@ impl SiteStockHistoryRow {
     }
 }
 
+impl StockEntryRow {
+    fn into_stock_entry_with_site(self) -> StockEntryWithSite {
+        StockEntryWithSite {
+            id: self.id,
+            tenant_id: TenantId(self.tenant_id),
+            material_id: MaterialId(self.material_id),
+            user_id: UserId(self.user_id),
+            entry_type: self.entry_type.parse().unwrap_or(EntryType::Adjusted),
+            quantity_change: self.quantity_change,
+            quantity_after: self.quantity_after,
+            notes: self.notes,
+            site_id: self.site_id.map(SiteId),
+            site_name: self.site_name,
+            created_at: self.created_at,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::MaterialRepository;
@@ -1636,23 +1653,5 @@ mod tests {
         let sql = MaterialRepository::delete_category_conflict_count_query();
         assert!(sql.contains("tenant_id = $2"));
         assert!(sql.contains("COUNT(*)"));
-    }
-}
-
-impl StockEntryRow {
-    fn into_stock_entry_with_site(self) -> StockEntryWithSite {
-        StockEntryWithSite {
-            id: self.id,
-            tenant_id: TenantId(self.tenant_id),
-            material_id: MaterialId(self.material_id),
-            user_id: UserId(self.user_id),
-            entry_type: self.entry_type.parse().unwrap_or(EntryType::Adjusted),
-            quantity_change: self.quantity_change,
-            quantity_after: self.quantity_after,
-            notes: self.notes,
-            site_id: self.site_id.map(SiteId),
-            site_name: self.site_name,
-            created_at: self.created_at,
-        }
     }
 }

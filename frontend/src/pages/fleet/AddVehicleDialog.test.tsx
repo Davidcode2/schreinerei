@@ -7,6 +7,8 @@ import { server } from '@/test/mocks/server';
 import { mockData } from '@/test/mocks/handlers';
 import { AddVehicleDialog } from './AddVehicleDialog';
 
+const apiRoute = (path: string) => `*/api/v1${path}`;
+
 // Helper to select an option from a Radix UI Select
 async function selectOption(
   user: ReturnType<typeof userEvent.setup>,
@@ -63,7 +65,7 @@ describe('AddVehicleDialog', () => {
     let submittedPayload: Record<string, unknown> | null = null;
 
     server.use(
-      http.post('/api/v1/fleet/vehicles', async ({ request }) => {
+      http.post(apiRoute('/fleet/vehicles'), async ({ request }) => {
         const body = await request.json() as Record<string, unknown>;
         submittedPayload = body;
         return HttpResponse.json({ id: 'new-vehicle', ...body }, { status: 201 });

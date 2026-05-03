@@ -1,18 +1,17 @@
-use chrono::{DateTime, Utc, NaiveDate};
+use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
+use sqlx::{FromRow, PgPool};
 use std::collections::HashMap;
-use sqlx::{PgPool, FromRow};
 use uuid::Uuid;
 
 use crate::common::error::AppError;
-use crate::common::events::{EventBus, DomainEvent};
+use crate::common::events::{DomainEvent, EventBus};
 use crate::common::types::{
-    TenantId, SiteId, TimeEntryId, UserId, SiteStatus, AssignmentRole, WorkType, ActivityId,
+    ActivityId, AssignmentRole, SiteId, SiteStatus, TenantId, TimeEntryId, UserId, WorkType,
 };
 use crate::modules::sites::domain::{
-    Site, SiteAssignment, TimeEntry,
-    CreateSite, UpdateSite, CreateTimeEntry, UpdateTimeEntry, Activity, CreateActivity,
-    SiteActivityAttachment,
+    Activity, CreateActivity, CreateSite, CreateTimeEntry, Site, SiteActivityAttachment,
+    SiteAssignment, TimeEntry, UpdateSite, UpdateTimeEntry,
 };
 
 /// Repository for site data access with tenant isolation
@@ -142,15 +141,18 @@ impl SiteRepository {
         update: &UpdateSite,
     ) -> Result<Site, AppError> {
         // First get the current site
-        let current = self.find_site_by_id(tenant_id, id).await?
+        let current = self
+            .find_site_by_id(tenant_id, id)
+            .await?
             .ok_or_else(|| AppError::NotFound("Site not found".to_string()))?;
 
         // Validate status transition if status is being changed
         if let Some(new_status) = &update.status {
             if !current.can_transition_to(*new_status) {
-                return Err(AppError::Validation(
-                    format!("Invalid status transition from {} to {}", current.status, new_status)
-                ));
+                return Err(AppError::Validation(format!(
+                    "Invalid status transition from {} to {}",
+                    current.status, new_status
+                )));
             }
         }
 
@@ -202,7 +204,7 @@ impl SiteRepository {
               AND site_id = $2 
               AND status NOT IN ('cancelled', 'completed')
               AND end_time > NOW()
-            "#
+            "#,
         )
         .bind(tenant_id.0)
         .bind(site_id.0)
@@ -214,17 +216,13 @@ impl SiteRepository {
     }
 
     /// Soft delete a site by setting deleted_at timestamp
-    pub async fn delete_site(
-        &self,
-        id: SiteId,
-        tenant_id: TenantId,
-    ) -> Result<(), AppError> {
+    pub async fn delete_site(&self, id: SiteId, tenant_id: TenantId) -> Result<(), AppError> {
         let result = sqlx::query(
             r#"
             UPDATE sites
             SET deleted_at = NOW(), updated_at = NOW()
             WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
-            "#
+            "#,
         )
         .bind(id.0)
         .bind(tenant_id.0)
@@ -254,7 +252,7 @@ impl SiteRepository {
             VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT (tenant_id, site_id, user_id) 
             DO UPDATE SET role = $5
-            "#
+            "#,
         )
         .bind(Uuid::new_v4())
         .bind(tenant_id.0)
@@ -279,7 +277,7 @@ impl SiteRepository {
             r#"
             DELETE FROM site_assignments
             WHERE tenant_id = $1 AND site_id = $2 AND user_id = $3
-            "#
+            "#,
         )
         .bind(tenant_id.0)
         .bind(site_id.0)
@@ -306,7 +304,7 @@ impl SiteRepository {
             FROM site_assignments
             WHERE tenant_id = $1 AND site_id = $2
             ORDER BY created_at
-            "#
+            "#,
         )
         .bind(tenant_id.0)
         .bind(site_id.0)
@@ -314,7 +312,10 @@ impl SiteRepository {
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-        Ok(assignments.into_iter().map(|a| a.into_assignment()).collect())
+        Ok(assignments
+            .into_iter()
+            .map(|a| a.into_assignment())
+            .collect())
     }
 
     // === Time entry operations ===
@@ -430,7 +431,7 @@ impl SiteRepository {
             SELECT id, tenant_id, site_id, user_id, work_type, hours, work_date, notes, created_at
             FROM time_entries
             WHERE id = $1 AND tenant_id = $2
-            "#
+            "#,
         )
         .bind(id.0)
         .bind(tenant_id.0)
@@ -497,7 +498,7 @@ impl SiteRepository {
             r#"
             DELETE FROM time_entries
             WHERE id = $1 AND tenant_id = $2
-            "#
+            "#,
         )
         .bind(id.0)
         .bind(tenant_id.0)
@@ -784,7 +785,10 @@ impl SiteRepository {
             ));
         }
 
-        Ok(rows.into_iter().map(AttachmentRow::into_attachment).collect())
+        Ok(rows
+            .into_iter()
+            .map(AttachmentRow::into_attachment)
+            .collect())
     }
 
     pub async fn list_activity_attachments(
@@ -854,7 +858,10 @@ impl SiteRepository {
 
     // === Dashboard operations ===
 
-    pub async fn get_dashboard_sites(&self, tenant_id: TenantId) -> Result<Vec<DashboardSite>, AppError> {
+    pub async fn get_dashboard_sites(
+        &self,
+        tenant_id: TenantId,
+    ) -> Result<Vec<DashboardSite>, AppError> {
         let sites = sqlx::query_as::<_, DashboardSiteRow>(
             r#"
             SELECT 
@@ -873,7 +880,7 @@ impl SiteRepository {
                     WHEN 'planned' THEN 2 
                 END,
                 s.start_date ASC NULLS LAST
-            "#
+            "#,
         )
         .bind(tenant_id.0)
         .fetch_all(&self.pool)

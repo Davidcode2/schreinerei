@@ -1,14 +1,14 @@
-use chrono::{DateTime, Utc, NaiveDate};
+use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::common::types::{TenantId, SiteId, TimeEntryId, UserId, WorkType};
+use crate::common::types::{SiteId, TenantId, TimeEntryId, UserId, WorkType};
 
 /// TimeEntry aggregate representing work time booking
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TimeEntry {
     pub id: TimeEntryId,
     pub tenant_id: TenantId,
-    pub site_id: Option<SiteId>,  // NULL for workshop work
+    pub site_id: Option<SiteId>, // NULL for workshop work
     pub user_id: UserId,
     pub work_type: WorkType,
     pub hours: f64,
@@ -56,7 +56,7 @@ impl CreateTimeEntry {
 /// Option<Option<T>> distinguishes between "not provided" (None) and "set to null" (Some(None))
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct UpdateTimeEntry {
-    pub site_id: Option<Option<SiteId>>,  // None = not provided, Some(None) = set to null
+    pub site_id: Option<Option<SiteId>>, // None = not provided, Some(None) = set to null
     pub work_type: Option<WorkType>,
     pub hours: Option<f64>,
     pub work_date: Option<NaiveDate>,
@@ -145,7 +145,10 @@ mod tests {
             work_date: today(),
             notes: None,
         };
-        assert_eq!(cmd.validate(), Err("Hours cannot exceed 24 per day".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Hours cannot exceed 24 per day".to_string())
+        );
     }
 
     #[test]
@@ -181,6 +184,9 @@ mod tests {
             work_date: tomorrow(),
             notes: None,
         };
-        assert_eq!(cmd.validate(), Err("Work date cannot be in the future".to_string()));
+        assert_eq!(
+            cmd.validate(),
+            Err("Work date cannot be in the future".to_string())
+        );
     }
 }

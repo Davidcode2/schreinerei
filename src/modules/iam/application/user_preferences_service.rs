@@ -1,10 +1,8 @@
 use sqlx::PgPool;
 
 use crate::common::error::AppError;
-use crate::common::types::{SiteId, TenantId, UserId, SiteStatus};
-use crate::modules::iam::domain::user_preferences::{
-    UpdatePreferences, UserPreferenceRecord,
-};
+use crate::common::types::{SiteId, SiteStatus, TenantId, UserId};
+use crate::modules::iam::domain::user_preferences::{UpdatePreferences, UserPreferenceRecord};
 use crate::modules::iam::infrastructure::user_preferences_repository::UserPreferencesRepository;
 use crate::modules::sites::infrastructure::site_repository::SiteRepository;
 
@@ -28,7 +26,9 @@ impl UserPreferencesService {
         user_id: UserId,
         tenant_id: TenantId,
     ) -> Result<UserPreferenceRecord, AppError> {
-        self.preferences_repo.get_or_create(user_id, tenant_id).await
+        self.preferences_repo
+            .get_or_create(user_id, tenant_id)
+            .await
     }
 
     /// Set active site with validation
@@ -58,7 +58,9 @@ impl UserPreferencesService {
             active_site_id: Some(site_id.0.to_string()),
         };
 
-        self.preferences_repo.update(user_id, tenant_id, &update).await
+        self.preferences_repo
+            .update(user_id, tenant_id, &update)
+            .await
     }
 
     /// Clear active site
@@ -73,7 +75,9 @@ impl UserPreferencesService {
             .await?;
 
         // Return updated preferences
-        self.preferences_repo.get_or_create(user_id, tenant_id).await
+        self.preferences_repo
+            .get_or_create(user_id, tenant_id)
+            .await
     }
 
     /// Validate and auto-clear if active site is invalid
@@ -83,7 +87,10 @@ impl UserPreferencesService {
         user_id: UserId,
         tenant_id: TenantId,
     ) -> Result<UserPreferenceRecord, AppError> {
-        let prefs = self.preferences_repo.get_or_create(user_id, tenant_id).await?;
+        let prefs = self
+            .preferences_repo
+            .get_or_create(user_id, tenant_id)
+            .await?;
 
         // If no active site, return as-is
         let Some(active_site_id_str) = &prefs.preferences.active_site_id else {
@@ -105,14 +112,18 @@ impl UserPreferencesService {
                 self.preferences_repo
                     .clear_active_site(user_id, tenant_id)
                     .await?;
-                self.preferences_repo.get_or_create(user_id, tenant_id).await
+                self.preferences_repo
+                    .get_or_create(user_id, tenant_id)
+                    .await
             }
             None => {
                 // Site not found (deleted or never existed), auto-clear
                 self.preferences_repo
                     .clear_active_site(user_id, tenant_id)
                     .await?;
-                self.preferences_repo.get_or_create(user_id, tenant_id).await
+                self.preferences_repo
+                    .get_or_create(user_id, tenant_id)
+                    .await
             }
         }
     }

@@ -66,30 +66,32 @@ export default function SitesListPage() {
         }
       />
 
-      {/* Status Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2 -mb-2">
-        {statusTabs.map((tab) => (
-          <Button
-            key={tab.label}
-            variant={selectedStatus === tab.value ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedStatus(tab.value)}
-            className="rounded-full whitespace-nowrap"
-          >
-            {tab.label}
-          </Button>
-        ))}
-      </div>
+      <div className="space-y-4">
+        {/* Status Tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-2 -mb-2">
+          {statusTabs.map((tab) => (
+            <Button
+              key={tab.label}
+              variant={selectedStatus === tab.value ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedStatus(tab.value)}
+              className="rounded-full whitespace-nowrap"
+            >
+              {tab.label}
+            </Button>
+          ))}
+        </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Baustelle suchen..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Baustelle suchen..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
       </div>
 
       {/* Sites Grid */}

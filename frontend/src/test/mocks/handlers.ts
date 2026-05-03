@@ -62,12 +62,12 @@ export const handlers = [
   }),
 
   // Sites
-  http.get(`${API_BASE}/sites`, async () => {
+  http.get(apiRoute('/sites'), async () => {
     await delay(10);
     return HttpResponse.json(mockData.sites);
   }),
 
-  http.post(`${API_BASE}/sites`, async ({ request }) => {
+  http.post(apiRoute('/sites'), async ({ request }) => {
     const body = await request.json() as Record<string, unknown>;
     const newSite = {
       id: crypto.randomUUID(),
@@ -85,12 +85,12 @@ export const handlers = [
   }),
 
   // Vehicles (fleet module)
-  http.get(`${API_BASE}/fleet/vehicles`, async () => {
+  http.get(apiRoute('/fleet/vehicles'), async () => {
     await delay(10);
     return HttpResponse.json(mockData.vehicles);
   }),
 
-  http.post(`${API_BASE}/fleet/vehicles`, async ({ request }) => {
+  http.post(apiRoute('/fleet/vehicles'), async ({ request }) => {
     const body = await request.json() as Record<string, unknown>;
     const newVehicle = {
       id: crypto.randomUUID(),
@@ -108,12 +108,12 @@ export const handlers = [
   }),
 
   // Tools (fleet module)
-  http.get(`${API_BASE}/fleet/tools`, async () => {
+  http.get(apiRoute('/fleet/tools'), async () => {
     await delay(10);
     return HttpResponse.json(mockData.tools);
   }),
 
-  http.post(`${API_BASE}/fleet/tools`, async ({ request }) => {
+  http.post(apiRoute('/fleet/tools'), async ({ request }) => {
     const body = await request.json() as Record<string, unknown>;
     const newTool = {
       id: crypto.randomUUID(),
@@ -131,12 +131,12 @@ export const handlers = [
   }),
 
   // Reservations (fleet module)
-  http.get(`${API_BASE}/fleet/reservations`, async () => {
+  http.get(apiRoute('/fleet/reservations'), async () => {
     await delay(10);
     return HttpResponse.json(mockData.reservations);
   }),
 
-  http.post(`${API_BASE}/fleet/reservations`, async ({ request }) => {
+  http.post(apiRoute('/fleet/reservations'), async ({ request }) => {
     const body = await request.json() as Record<string, unknown>;
     const newReservation = {
       id: crypto.randomUUID(),
@@ -153,17 +153,17 @@ export const handlers = [
   }),
 
   // Time Entries
-  http.get(`${API_BASE}/time-entries`, async () => {
+  http.get(apiRoute('/time-entries'), async () => {
     await delay(10);
     return HttpResponse.json(mockData.timeEntries);
   }),
 
-  http.get(`${API_BASE}/time-entries/my`, async () => {
+  http.get(apiRoute('/time-entries/my'), async () => {
     await delay(10);
     return HttpResponse.json(mockData.timeEntries);
   }),
 
-  http.post(`${API_BASE}/time-entries`, async ({ request }) => {
+  http.post(apiRoute('/time-entries'), async ({ request }) => {
     const body = await request.json() as Record<string, unknown>;
     const newTimeEntry = {
       id: crypto.randomUUID(),

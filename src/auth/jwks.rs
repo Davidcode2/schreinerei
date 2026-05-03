@@ -1,8 +1,8 @@
+use jsonwebtoken::jwk::JwkSet;
+use reqwest::Client;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
-use jsonwebtoken::jwk::JwkSet;
-use reqwest::Client;
 
 use crate::common::error::AppError;
 
@@ -31,7 +31,8 @@ impl JwksClient {
 
     /// Fetch JWKS from Keycloak
     pub async fn fetch_jwks(&self) -> Result<JwkSet, AppError> {
-        let response = self.client
+        let response = self
+            .client
             .get(&self.jwks_url)
             .send()
             .await

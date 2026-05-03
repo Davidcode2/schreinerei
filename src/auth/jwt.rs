@@ -1,5 +1,5 @@
-use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
 use jsonwebtoken::jwk::JwkSet;
+use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 
 use crate::common::error::AppError;
@@ -38,21 +38,19 @@ pub struct RealmAccess {
 }
 
 /// Validate a JWT token against the JWKS
-pub fn validate_jwt(
-    token: &str,
-    jwks: &JwkSet,
-    issuer: &str,
-) -> Result<Claims, AppError> {
+pub fn validate_jwt(token: &str, jwks: &JwkSet, issuer: &str) -> Result<Claims, AppError> {
     // Extract header to get kid
     let header = jsonwebtoken::decode_header(token)
         .map_err(|e| AppError::Auth(format!("Failed to decode JWT header: {}", e)))?;
 
-    let kid = header.kid.ok_or_else(|| {
-        AppError::Auth("JWT header missing 'kid' field".to_string())
-    })?;
+    let kid = header
+        .kid
+        .ok_or_else(|| AppError::Auth("JWT header missing 'kid' field".to_string()))?;
 
     // Find matching key in JWKS
-    let jwk = jwks.keys.iter()
+    let jwk = jwks
+        .keys
+        .iter()
         .find(|k| k.common.key_id.as_deref() == Some(kid.as_str()))
         .ok_or_else(|| AppError::Auth("No matching key found in JWKS".to_string()))?;
 

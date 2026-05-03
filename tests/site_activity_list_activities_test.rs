@@ -1,9 +1,9 @@
 use chrono::{Duration, Utc};
 use schreinerei::common::error::AppError;
 use schreinerei::common::types::{ActivityId, Role, SiteId, TenantId, UserId};
-use schreinerei::modules::sites::domain::ActivityType;
 use schreinerei::modules::iam::application::user_service::TenantContext;
 use schreinerei::modules::sites::application::site_service::SiteService;
+use schreinerei::modules::sites::domain::ActivityType;
 use schreinerei::modules::sites::infrastructure::site_repository::SiteRepository;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -49,12 +49,7 @@ async fn create_test_site(pool: &PgPool, tenant_id: Uuid, name: &str) -> Uuid {
     id
 }
 
-async fn create_test_user(
-    pool: &PgPool,
-    tenant_id: Uuid,
-    email: &str,
-    name: Option<&str>,
-) -> Uuid {
+async fn create_test_user(pool: &PgPool, tenant_id: Uuid, email: &str, name: Option<&str>) -> Uuid {
     let id = Uuid::new_v4();
 
     sqlx::query(
@@ -97,6 +92,7 @@ async fn create_test_activity(
     .await
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn create_test_activity_with_type(
     pool: &PgPool,
     tenant_id: Uuid,
@@ -179,7 +175,8 @@ fn tenant_context(tenant_id: Uuid, user_id: Uuid) -> TenantContext {
 async fn list_activities_uses_creator_name_display_value(pool: PgPool) {
     let tenant_id = create_test_tenant(&pool, "Viewer Tenant").await;
     let site_id = create_test_site(&pool, tenant_id, "Innenausbau").await;
-    let user_id = create_test_user(&pool, tenant_id, "anna@test.invalid", Some("Anna Tischler")).await;
+    let user_id =
+        create_test_user(&pool, tenant_id, "anna@test.invalid", Some("Anna Tischler")).await;
 
     create_test_activity(
         &pool,
@@ -207,12 +204,17 @@ async fn creator_name_falls_back_to_email_then_user_id_text(pool: PgPool) {
     let tenant_id = create_test_tenant(&pool, "Viewer Tenant").await;
     let other_tenant_id = create_test_tenant(&pool, "Other Tenant").await;
     let site_id = create_test_site(&pool, tenant_id, "Innenausbau").await;
-    let viewer_user_id = create_test_user(&pool, tenant_id, "viewer@test.invalid", Some("Viewer"))
-        .await;
+    let viewer_user_id =
+        create_test_user(&pool, tenant_id, "viewer@test.invalid", Some("Viewer")).await;
     let email_fallback_user_id =
         create_test_user(&pool, tenant_id, "fallback@test.invalid", Some("")).await;
-    let cross_tenant_user_id =
-        create_test_user(&pool, other_tenant_id, "secret@test.invalid", Some("Secret User")).await;
+    let cross_tenant_user_id = create_test_user(
+        &pool,
+        other_tenant_id,
+        "secret@test.invalid",
+        Some("Secret User"),
+    )
+    .await;
 
     create_test_activity(
         &pool,
@@ -237,7 +239,11 @@ async fn creator_name_falls_back_to_email_then_user_id_text(pool: PgPool) {
 
     let service = SiteService::new(SiteRepository::new(pool.clone()));
     let activities = service
-        .list_activities(SiteId(site_id), 10, &tenant_context(tenant_id, viewer_user_id))
+        .list_activities(
+            SiteId(site_id),
+            10,
+            &tenant_context(tenant_id, viewer_user_id),
+        )
         .await
         .expect("list activities");
 
@@ -249,7 +255,8 @@ async fn creator_name_falls_back_to_email_then_user_id_text(pool: PgPool) {
 async fn list_activities_preserves_order_and_attachment_hydration(pool: PgPool) {
     let tenant_id = create_test_tenant(&pool, "Viewer Tenant").await;
     let site_id = create_test_site(&pool, tenant_id, "Innenausbau").await;
-    let user_id = create_test_user(&pool, tenant_id, "anna@test.invalid", Some("Anna Tischler")).await;
+    let user_id =
+        create_test_user(&pool, tenant_id, "anna@test.invalid", Some("Anna Tischler")).await;
 
     let newest_activity_id = create_test_activity(
         &pool,
@@ -290,12 +297,18 @@ async fn list_activities_preserves_order_and_attachment_hydration(pool: PgPool) 
 
     assert_eq!(activities.len(), 2);
     assert_eq!(activities[0].id.0, newest_activity_id);
-    assert_eq!(activities[0].photo_url.as_deref(), Some("/api/v1/attachments/photo-id"));
+    assert_eq!(
+        activities[0].photo_url.as_deref(),
+        Some("/api/v1/attachments/photo-id")
+    );
     assert_eq!(activities[1].id.0, oldest_activity_id);
     assert_eq!(activities[1].attachments.len(), 1);
     assert_eq!(activities[1].attachments[0].id, attachment_id);
     assert_eq!(activities[1].attachments[0].filename, "plan.pdf");
-    assert_eq!(activities[1].attachments[0].url, format!("/api/v1/attachments/{attachment_id}"));
+    assert_eq!(
+        activities[1].attachments[0].url,
+        format!("/api/v1/attachments/{attachment_id}")
+    );
 }
 
 #[sqlx::test]
@@ -476,7 +489,13 @@ async fn delete_activity_photo_cleanup_removes_linked_and_photo_url_attachments(
 async fn create_activity_returns_creator_name_after_insert(pool: PgPool) {
     let tenant_id = create_test_tenant(&pool, "Create Activity Tenant").await;
     let site_id = create_test_site(&pool, tenant_id, "Dachgeschoss").await;
-    let owner_id = create_test_user(&pool, tenant_id, "owner@test.invalid", Some("Max Mustermann")).await;
+    let owner_id = create_test_user(
+        &pool,
+        tenant_id,
+        "owner@test.invalid",
+        Some("Max Mustermann"),
+    )
+    .await;
 
     let service = SiteService::new(SiteRepository::new(pool.clone()));
     let activity = service
