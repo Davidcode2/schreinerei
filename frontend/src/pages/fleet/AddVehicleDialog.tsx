@@ -20,12 +20,14 @@ import {
 } from "@/components/ui/select"
 import { Car } from "lucide-react"
 import { toast } from "sonner"
-import { useCreateVehicle } from "@/lib/api/hooks"
-import type { VehicleType } from "@/types/fleet"
+import { useCreateVehicle, useUpdateVehicle } from "@/lib/api/hooks"
+import type { ResourceStatus, Vehicle, VehicleType } from "@/types/fleet"
 
 interface AddVehicleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  mode?: "create" | "edit"
+  initialData?: Vehicle
 }
 
 const VEHICLE_TYPE_OPTIONS: { value: VehicleType; label: string }[] = [
@@ -36,24 +38,49 @@ const VEHICLE_TYPE_OPTIONS: { value: VehicleType; label: string }[] = [
   { value: "other", label: "Sonstige" },
 ]
 
+const RESOURCE_STATUS_OPTIONS: { value: ResourceStatus; label: string }[] = [
+  { value: "available", label: "Verfügbar" },
+  { value: "in_use", label: "In Benutzung" },
+  { value: "maintenance", label: "Wartung" },
+  { value: "reserved", label: "Reserviert" },
+]
+
 export function AddVehicleDialog({
   open,
   onOpenChange,
+  mode = "create",
+  initialData,
 }: AddVehicleDialogProps) {
-  const [name, setName] = useState("")
-  const [licensePlate, setLicensePlate] = useState("")
-  const [vehicleType, setVehicleType] = useState<VehicleType | "">("")
-  const [location, setLocation] = useState("")
-  const [description, setDescription] = useState("")
+  const [name, setName] = useState(initialData?.name ?? "")
+  const [licensePlate, setLicensePlate] = useState(initialData?.license_plate ?? "")
+  const [vehicleType, setVehicleType] = useState<VehicleType | "">(initialData?.vehicle_type ?? "")
+  const [location, setLocation] = useState(initialData?.location ?? "")
+  const [description, setDescription] = useState(initialData?.description ?? "")
+  const [status, setStatus] = useState<ResourceStatus>(initialData?.status ?? "available")
+  const [qrCode, setQrCode] = useState(initialData?.qr_code ?? "")
 
   const createVehicle = useCreateVehicle()
+  const updateVehicle = useUpdateVehicle()
 
   const resetForm = () => {
+    if (mode === "edit" && initialData) {
+      setName(initialData.name)
+      setLicensePlate(initialData.license_plate ?? "")
+      setVehicleType(initialData.vehicle_type)
+      setLocation(initialData.location ?? "")
+      setDescription(initialData.description ?? "")
+      setStatus(initialData.status)
+      setQrCode(initialData.qr_code ?? "")
+      return
+    }
+
     setName("")
     setLicensePlate("")
     setVehicleType("")
     setLocation("")
     setDescription("")
+    setStatus("available")
+    setQrCode("")
   }
 
   const handleOpenChange = (open: boolean) => {
@@ -74,6 +101,7 @@ export function AddVehicleDialog({
       license_plate?: string
       location?: string
       description?: string
+      qr_code?: string
     } = {
       name,
       vehicle_type: vehicleType as VehicleType,
@@ -88,6 +116,30 @@ export function AddVehicleDialog({
     if (description) {
       payload.description = description
     }
+    if (qrCode) {
+      payload.qr_code = qrCode
+    }
+
+    if (mode === "edit" && initialData) {
+      updateVehicle.mutate(
+        {
+          id: initialData.id,
+          ...payload,
+          status,
+        },
+        {
+          onSuccess: () => {
+            toast.success("Fahrzeug aktualisiert")
+            handleOpenChange(false)
+          },
+          onError: (error) => {
+            toast.error("Fahrzeug konnte nicht aktualisiert werden")
+            console.error("Update vehicle error:", error)
+          },
+        }
+      )
+      return
+    }
 
     createVehicle.mutate(payload, {
       onSuccess: () => {
@@ -101,6 +153,8 @@ export function AddVehicleDialog({
     })
   }
 
+  const isPending = createVehicle.isPending || updateVehicle.isPending
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -109,10 +163,12 @@ export function AddVehicleDialog({
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
               <Car className="h-4 w-4" />
             </div>
-            Fahrzeug hinzufügen
+            {mode === "edit" ? "Fahrzeug bearbeiten" : "Fahrzeug hinzufügen"}
           </DialogTitle>
           <DialogDescription>
-            Neues Fahrzeug zum Fuhrpark hinzufügen
+            {mode === "edit"
+              ? "Fahrzeugdaten anpassen"
+              : "Neues Fahrzeug zum Fuhrpark hinzufügen"}
           </DialogDescription>
         </DialogHeader>
 
@@ -170,6 +226,38 @@ export function AddVehicleDialog({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="qrCode">QR-Code</Label>
+            <Input
+              id="qrCode"
+              placeholder="z.B. fleet-van-01"
+              value={qrCode}
+              onChange={(e) => setQrCode(e.target.value)}
+              className="h-10"
+            />
+          </div>
+
+          {mode === "edit" && (
+            <div className="space-y-2">
+              <Label htmlFor="vehicleStatus">Status</Label>
+              <Select
+                value={status}
+                onValueChange={(value) => setStatus(value as ResourceStatus)}
+              >
+                <SelectTrigger id="vehicleStatus" className="h-10">
+                  <SelectValue placeholder="Status wählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {RESOURCE_STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="space-y-2">
             <Label htmlFor="description">Beschreibung</Label>
             <Textarea
               id="description"
@@ -187,10 +275,16 @@ export function AddVehicleDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!isFormValid || createVehicle.isPending}
+            disabled={!isFormValid || isPending}
             className="shadow-sm"
           >
-            {createVehicle.isPending ? "Wird erstellt..." : "Erstellen"}
+            {isPending
+              ? mode === "edit"
+                ? "Wird gespeichert..."
+                : "Wird erstellt..."
+              : mode === "edit"
+                ? "Speichern"
+                : "Erstellen"}
           </Button>
         </DialogFooter>
       </DialogContent>

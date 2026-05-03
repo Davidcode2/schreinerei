@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MapPin, QrCode, Trash2, Car, Wrench } from "lucide-react"
+import { Link } from "react-router-dom"
 import { StatusBadge } from "@/components/shared"
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
 import { useDeleteVehicle, useDeleteTool } from "@/lib/api/hooks"
@@ -29,6 +30,7 @@ export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
   const deleteMutation = type === "vehicle" ? deleteVehicleMutation : deleteToolMutation
   const resourceColor = getResourceCalendarColor(type, resource.id)
   const IconComponent = type === "vehicle" ? Car : Wrench
+  const detailPath = type === "vehicle" ? `/fleet/${resource.id}` : `/tools/${resource.id}`
 
   const handleDelete = () => {
     deleteMutation.mutate(resource.id, {
@@ -48,12 +50,12 @@ export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
         <div className={cn("h-1.5 w-full", resourceColor.markerClassName)} />
         <CardContent className="p-5">
           <div className="mb-3 flex items-start justify-between gap-3">
-            <div className="flex min-w-0 items-start gap-3">
+            <Link to={detailPath} className="flex min-w-0 items-start gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
               <div className={cn("flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl", resourceColor.tintClassName)}>
                 <IconComponent className={cn("h-5 w-5", resourceColor.labelClassName)} />
               </div>
               <div className="min-w-0 space-y-0.5">
-                <h3 className="font-display font-normal truncate">{resource.name}</h3>
+                <h3 className="font-display font-normal truncate transition-colors hover:text-primary">{resource.name}</h3>
                 {isVehicle(resource) ? (
                   <p className="truncate text-sm text-muted-foreground capitalize">
                     {resource.vehicle_type}
@@ -65,18 +67,20 @@ export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
                   </p>
                 )}
               </div>
-            </div>
+            </Link>
             <StatusBadge status={resource.status} />
           </div>
 
-          {resource.location && (
-            <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="flex h-5 w-5 items-center justify-center">
-                <MapPin className="h-3 w-3" />
+          <Link to={detailPath} className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            {resource.location && (
+              <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex h-5 w-5 items-center justify-center">
+                  <MapPin className="h-3 w-3" />
+                </div>
+                <span>{resource.location}</span>
               </div>
-              <span>{resource.location}</span>
-            </div>
-          )}
+            )}
+          </Link>
 
           <div className="flex items-center justify-between border-t border-border/60 pt-3">
             <div className="flex items-center gap-2">
