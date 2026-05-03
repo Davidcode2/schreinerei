@@ -14,27 +14,27 @@ const entryTypeConfig: Record<
 > = {
   material_added: {
     label: "Eingelagert",
-    badgeClassName: "bg-green-100 text-green-700 border-green-200",
+    badgeClassName: "bg-success/15 text-success border-success/20",
   },
   withdrawn: {
     label: "Entnommen",
-    badgeClassName: "bg-red-100 text-red-700 border-red-200",
+    badgeClassName: "bg-destructive/10 text-destructive border-destructive/20",
   },
   disposed: {
     label: "Entsorgt",
-    badgeClassName: "bg-red-100 text-red-700 border-red-200",
+    badgeClassName: "bg-destructive/10 text-destructive border-destructive/20",
   },
   adjusted: {
     label: "Bestand korrigiert",
-    badgeClassName: "bg-blue-100 text-blue-700 border-blue-200",
+    badgeClassName: "bg-primary/10 text-primary border-primary/20",
   },
   location_changed: {
     label: "Lagerort geändert",
-    badgeClassName: "bg-blue-100 text-blue-700 border-blue-200",
+    badgeClassName: "bg-primary/10 text-primary border-primary/20",
   },
   min_quantity_changed: {
     label: "Mindestbestand geändert",
-    badgeClassName: "bg-blue-100 text-blue-700 border-blue-200",
+    badgeClassName: "bg-primary/10 text-primary border-primary/20",
   },
 }
 
@@ -54,7 +54,7 @@ function SiteReference({ entry }: { entry: EnrichedStockHistoryEntry }) {
   return (
     <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
       <MapPin className="h-4 w-4" />
-      <Link to={`/sites/${entry.site_id}`} className="text-blue-600 hover:underline">
+        <Link to={`/sites/${entry.site_id}`} className="text-primary hover:underline">
         {entry.site_name}
       </Link>
     </div>
@@ -65,7 +65,7 @@ function MaterialHistoryItem({ entry }: { entry: EnrichedStockHistoryEntry }) {
   const config = entryTypeConfig[entry.entry_type]
 
   return (
-    <div className="rounded-lg border p-4">
+    <div className="rounded-lg border border-border/60 p-4 hover:bg-accent/20 transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">

@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useParams } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
   Package,
   MapPin,
@@ -11,6 +12,8 @@ import {
   Plus,
   AlertTriangle,
   ShoppingCart,
+  TrendingDown,
+  Archive,
 } from "lucide-react"
 import {
   PageHeader,
@@ -124,47 +127,53 @@ export default function InventoryDetailPage() {
         title={material.name}
         description={material.description || undefined}
         backTo="/inventory"
+        action={
+          <Button
+            onClick={() => setShowStockInDialog(true)}
+            className="gap-2 h-10 shadow-sm"
+            disabled={stockInMutation.isPending}
+          >
+            <Plus className="h-4 w-4" />
+            Einlagern
+          </Button>
+        }
       />
 
-      {/* Status Card */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="rounded-xl bg-muted p-4">
-                <Package className="h-8 w-8 text-muted-foreground" />
+      <Card className="overflow-hidden">
+        <CardContent className="p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Package className="h-4 w-4" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-3xl font-bold">
-                    {material.quantity}
-                  </span>
-                  <span className="text-xl text-muted-foreground">
-                    {material.unit}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Mindestbestand: {material.min_quantity} {material.unit}
-                </p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold font-mono">
+                  {material.quantity}
+                </span>
+                <span className="text-lg text-muted-foreground">
+                  {material.unit}
+                </span>
               </div>
+              {material.is_low_stock && (
+                <StatusBadge status="low_stock" />
+              )}
             </div>
-            {material.is_low_stock && (
-              <StatusBadge status="low_stock" />
-            )}
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <TrendingDown className="h-4 w-4 flex-shrink-0" />
+              <span>Min: {material.min_quantity} {material.unit}</span>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Details Grid */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader className="flex flex-row items-start justify-between space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Details
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-base font-semibold">Details</CardTitle>
             <Button
               variant="ghost"
               size="icon"
+              className="h-9 w-9"
               onClick={() => setShowEditDialog(true)}
               aria-label="Material bearbeiten"
             >
@@ -172,32 +181,51 @@ export default function InventoryDetailPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {material.location && (
-              <div className="flex items-center gap-3">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span>{material.location}</span>
+            <div className="grid grid-cols-2 gap-4">
+              {material.location && (
+                <div className="flex items-start gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent flex-shrink-0">
+                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Lagerort</p>
+                    <p className="text-sm font-medium">{material.location}</p>
+                  </div>
+                </div>
+              )}
+              {material.qr_code && (
+                <div className="flex items-start gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent flex-shrink-0">
+                    <QrCode className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">QR-Code</p>
+                    <p className="text-sm font-mono">{material.qr_code}</p>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent flex-shrink-0">
+                  <Archive className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Mindestbestand</p>
+                  <p className="text-sm font-medium">{material.min_quantity} {material.unit}</p>
+                </div>
               </div>
-            )}
-            {material.qr_code && (
-              <div className="flex items-center gap-3">
-                <QrCode className="h-4 w-4 text-muted-foreground" />
-                <span className="font-mono text-sm">{material.qr_code}</span>
-              </div>
-            )}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Aktionen
-            </CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold">Aktionen</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <Button
               onClick={() => setShowWithdrawDialog(true)}
               disabled={material.quantity <= 0 || withdrawMutation.isPending}
-              className="w-full justify-start gap-2"
+              className="w-full justify-start gap-2 h-10 shadow-sm active:scale-[0.97] transition-transform"
             >
               <Minus className="h-4 w-4" />
               Material entnehmen
@@ -206,7 +234,7 @@ export default function InventoryDetailPage() {
               variant="outline"
               onClick={() => setShowStockInDialog(true)}
               disabled={stockInMutation.isPending}
-              className="w-full justify-start gap-2"
+              className="w-full justify-start gap-2 h-10 active:scale-[0.97] transition-transform"
             >
               <Plus className="h-4 w-4" />
               Material einlagern
@@ -214,7 +242,7 @@ export default function InventoryDetailPage() {
             {material.is_low_stock && (
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2"
+                className="w-full justify-start gap-2 h-10 active:scale-[0.97] transition-transform"
                 onClick={handleOrderRequest}
                 disabled={orderMutation.isPending}
               >
@@ -226,14 +254,15 @@ export default function InventoryDetailPage() {
         </Card>
       </div>
 
-      {/* Low Stock Warning */}
       {material.is_low_stock && (
-        <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950">
+        <Card className="border-warning/30 bg-warning/5">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/15 flex-shrink-0">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+              </div>
               <div>
-                <h3 className="font-semibold">Niedriger Bestand</h3>
+                <h3 className="text-sm font-semibold">Niedriger Bestand</h3>
                 <p className="text-sm text-muted-foreground">
                   Der Bestand liegt unter dem Mindestbestand von{" "}
                   {material.min_quantity} {material.unit}. Erwägen Sie eine
@@ -246,12 +275,14 @@ export default function InventoryDetailPage() {
       )}
 
       {material.expired_quantity > 0 && (
-        <Card className="border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950">
+        <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/15 flex-shrink-0">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+              </div>
               <div>
-                <h3 className="font-semibold">Abgelaufener Bestand</h3>
+                <h3 className="text-sm font-semibold">Abgelaufener Bestand</h3>
                 <p className="text-sm text-muted-foreground">
                   Es sind {material.expired_quantity} {material.unit} abgelaufen.
                 </p>
@@ -262,12 +293,14 @@ export default function InventoryDetailPage() {
       )}
 
       {material.expiring_soon_quantity > 0 && (
-        <Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
+        <Card className="border-warning/30 bg-warning/5">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/15 flex-shrink-0">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+              </div>
               <div>
-                <h3 className="font-semibold">Bald ablaufender Bestand</h3>
+                <h3 className="text-sm font-semibold">Bald ablaufender Bestand</h3>
                 <p className="text-sm text-muted-foreground">
                   {material.expiring_soon_quantity} {material.unit} laufen innerhalb der nächsten 10 Tage ab.
                 </p>
@@ -279,15 +312,22 @@ export default function InventoryDetailPage() {
 
       {material.can_expire && material.legacy_quantity > 0 && (
         <Card>
-          <CardContent className="p-4 text-sm text-muted-foreground">
-            Ohne MHD erfasster Bestand: {material.legacy_quantity} {material.unit}
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent flex-shrink-0">
+                <Archive className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Ohne MHD erfasster Bestand: <span className="font-medium text-foreground">{material.legacy_quantity} {material.unit}</span>
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Historie</CardTitle>
+          <CardTitle className="text-base font-semibold">Historie</CardTitle>
         </CardHeader>
         <CardContent>
           {historyError ? (
@@ -298,9 +338,11 @@ export default function InventoryDetailPage() {
               }}
             />
           ) : isHistoryLoading ? (
-            <p className="text-sm text-muted-foreground">
-              Historie wird geladen...
-            </p>
+            <div className="flex items-center justify-center py-8">
+              <div className="rounded-2xl bg-accent/60 p-3">
+                <Package className="h-6 w-6 text-muted-foreground animate-pulse" />
+              </div>
+            </div>
           ) : (
             <MaterialHistoryFeed entries={history} />
           )}

@@ -129,7 +129,7 @@ export function MaterialEditDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Abbrechen
           </Button>
-          <Button onClick={handleSubmit} disabled={isSaving}>
+          <Button onClick={handleSubmit} disabled={isSaving} className="shadow-sm active:scale-[0.97] transition-transform">
             {isSaving ? "Speichert..." : "Änderungen speichern"}
           </Button>
         </DialogFooter>

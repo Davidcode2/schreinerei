@@ -2,12 +2,13 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Package, QrCode, AlertTriangle, Trash2 } from "lucide-react"
+import { Package, QrCode, MapPin, Trash2 } from "lucide-react"
 import { Link } from "react-router-dom"
 import { StatusBadge } from "@/components/shared"
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
 import { useDeleteMaterial } from "@/lib/api/hooks"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 import type { Material } from "@/types/inventory"
 
 interface MaterialCardProps {
@@ -33,43 +34,62 @@ export function MaterialCard({ material, categoryName }: MaterialCardProps) {
 
   return (
     <>
-      <Card className="hover:border-primary/50 transition-colors">
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between gap-4">
-            <Link to={`/inventory/${material.id}`} className="flex items-start gap-3 min-w-0 flex-1">
-              <div className="rounded-lg bg-muted p-2 flex-shrink-0">
-                <Package className="h-5 w-5 text-muted-foreground" />
+      <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-primary/30">
+        {material.is_low_stock && (
+          <div className="absolute top-0 left-0 right-0 h-1 bg-warning" />
+        )}
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <Link to={`/inventory/${material.id}`} className="flex-1 min-w-0">
+              <div className="flex items-center gap-2.5 mb-1">
+                <div className={cn(
+                  "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg",
+                  material.is_low_stock
+                    ? "bg-warning/15 text-warning"
+                    : "bg-accent text-muted-foreground"
+                )}>
+                  <Package className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-[15px] leading-tight line-clamp-1">{material.name}</h3>
+                  {categoryName && (
+                    <p className="text-sm text-muted-foreground line-clamp-1">
+                      {categoryName}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="min-w-0">
-                <h3 className="font-semibold line-clamp-1">{material.name}</h3>
-                {categoryName && (
-                  <p className="mt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    {categoryName}
-                  </p>
-                )}
-                {material.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-1">
-                    {material.description}
-                  </p>
-                )}
-                {material.location && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    📍 {material.location}
-                  </p>
-                )}
+              {material.description && (
+                <p className="text-sm text-muted-foreground line-clamp-1 mb-2 ml-[46px]">
+                  {material.description}
+                </p>
+              )}
+              {material.location && (
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2 ml-[46px]">
+                  <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="line-clamp-1">{material.location}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between pt-3 border-t border-border/60 ml-[46px]">
+                <Badge variant="outline" className="font-mono text-xs">
+                  {material.quantity} {material.unit}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Min: {material.min_quantity} {material.unit}
+                </span>
               </div>
             </Link>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {material.qr_code && (
-                <QrCode className="h-4 w-4 text-muted-foreground" />
-              )}
+            <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
               {material.is_low_stock && (
-                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                <StatusBadge status="low_stock" />
+              )}
+              {!material.is_low_stock && material.qr_code && (
+                <QrCode className="h-4 w-4 text-muted-foreground" />
               )}
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                className="h-9 w-9 text-muted-foreground hover:text-destructive"
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
@@ -80,21 +100,6 @@ export function MaterialCard({ material, categoryName }: MaterialCardProps) {
               </Button>
             </div>
           </div>
-          <Link to={`/inventory/${material.id}`}>
-            <div className="flex items-center justify-between mt-3 pt-3 border-t">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="font-mono">
-                  {material.quantity} {material.unit}
-                </Badge>
-                {material.is_low_stock && (
-                  <StatusBadge status="low_stock" />
-                )}
-              </div>
-              <span className="text-xs text-muted-foreground">
-                Min: {material.min_quantity} {material.unit}
-              </span>
-            </div>
-          </Link>
         </CardContent>
       </Card>
 
@@ -118,18 +123,17 @@ export function MaterialCardSkeleton({ count = 1 }: MaterialCardSkeletonProps) {
     <>
       {Array.from({ length: count }).map((_, i) => (
         <Card key={i}>
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="rounded-lg bg-muted p-2">
-                <Package className="h-5 w-5 text-muted-foreground animate-pulse" />
+          <CardContent className="p-5">
+            <div className="flex items-start gap-2.5 mb-3">
+              <div className="h-9 w-9 rounded-lg bg-muted animate-pulse" />
+              <div className="space-y-2 flex-1">
+                <div className="h-5 bg-muted rounded w-3/4 animate-pulse" />
+                <div className="h-4 bg-muted rounded w-1/2 animate-pulse" />
               </div>
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
-                <div className="h-3 bg-muted rounded w-1/2 animate-pulse" />
-              </div>
+              <div className="h-5 bg-muted rounded-full w-16 animate-pulse" />
             </div>
-            <div className="flex items-center justify-between mt-3 pt-3 border-t">
-              <div className="h-5 bg-muted rounded w-16 animate-pulse" />
+            <div className="flex items-center justify-between pt-3 border-t border-border/60">
+              <div className="h-5 bg-muted rounded-full w-16 animate-pulse" />
               <div className="h-3 bg-muted rounded w-20 animate-pulse" />
             </div>
           </CardContent>

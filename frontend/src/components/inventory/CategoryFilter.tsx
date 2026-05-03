@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { Category } from "@/types/inventory"
 
@@ -18,29 +17,35 @@ export function CategoryFilter({
   return (
     <div
       className={cn(
-        "w-full overflow-x-auto pb-2",
+        "w-full overflow-x-auto pb-1 -mb-1 scrollbar-none",
         className
       )}
     >
       <div className="flex gap-2 whitespace-nowrap">
-        <Button
-          variant={selectedId === undefined ? "default" : "outline"}
-          size="sm"
+        <button
           onClick={() => onSelect(undefined)}
-          className="rounded-full"
+          className={cn(
+            "flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-all",
+            selectedId === undefined
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "bg-card border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
+          )}
         >
           Alle
-        </Button>
+        </button>
         {categories.map((category) => (
-          <Button
+          <button
             key={category.id}
-            variant={selectedId === category.id ? "default" : "outline"}
-            size="sm"
             onClick={() => onSelect(category.id)}
-            className="rounded-full"
+            className={cn(
+              "flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-all",
+              selectedId === category.id
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-card border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
+            )}
           >
             {category.name}
-          </Button>
+          </button>
         ))}
       </div>
     </div>

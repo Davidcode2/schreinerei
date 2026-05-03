@@ -107,7 +107,7 @@ describe("InventoryDetailPage history", () => {
 
     expect(await screen.findByText("Historie")).toBeInTheDocument()
     const withdrawnBadge = await screen.findByText("Entnommen")
-    expect(withdrawnBadge).toHaveClass("bg-red-100", "text-red-700", "border-red-200")
+    expect(withdrawnBadge).toHaveClass("bg-destructive/10", "text-destructive", "border-destructive/20")
     expect(screen.getByText("von Max Mustermann")).toBeInTheDocument()
     const siteLink = screen.getByRole("link", { name: "Baustelle Müller" })
     expect(siteLink).toHaveAttribute("href", "/sites/site-1")

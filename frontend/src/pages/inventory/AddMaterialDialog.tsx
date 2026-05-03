@@ -249,7 +249,7 @@ export function AddMaterialDialog({
             <Button variant="outline" onClick={() => handleOpenChange(false)}>
               Abbrechen
             </Button>
-            <Button onClick={handleSubmit} disabled={!isFormValid || createMaterial.isPending}>
+            <Button onClick={handleSubmit} disabled={!isFormValid || createMaterial.isPending} className="shadow-sm active:scale-[0.97] transition-transform">
               {createMaterial.isPending ? "Wird erstellt..." : "Erstellen"}
             </Button>
           </DialogFooter>

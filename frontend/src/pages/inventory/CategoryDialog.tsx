@@ -88,7 +88,7 @@ export function CategoryDialog({
             />
           </div>
 
-          <label className="flex items-center gap-3 rounded-lg border border-border/60 p-3">
+          <label className="flex items-center gap-3 rounded-lg bg-accent/50 p-3">
             <input
               id="category-can-expire"
               type="checkbox"
@@ -115,6 +115,7 @@ export function CategoryDialog({
               })
             }
             disabled={isSubmitDisabled}
+            className="shadow-sm active:scale-[0.97] transition-transform"
           >
             {isSubmitting ? "Speichert..." : submitLabel}
           </Button>

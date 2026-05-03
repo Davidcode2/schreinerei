@@ -53,12 +53,14 @@ export function StockInDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="flex items-center justify-between rounded-lg bg-muted p-3">
-            <div className="flex items-center gap-2 text-sm">
-              <Package className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center justify-between rounded-lg bg-accent/50 p-3">
+            <div className="flex items-center gap-2.5 text-sm">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent">
+                <Package className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
               <span>Aktueller Bestand</span>
             </div>
-            <Badge variant="outline" className="font-mono">
+            <Badge variant="outline" className="font-mono text-xs">
               {material.quantity} {material.unit}
             </Badge>
           </div>
@@ -107,6 +109,7 @@ export function StockInDialog({
           <Button
             onClick={() => onConfirm(parsedQuantity, notes || undefined, expiresOn || undefined)}
             disabled={isSubmitDisabled}
+            className="gap-2 shadow-sm active:scale-[0.97] transition-transform"
           >
             <Plus className="h-4 w-4" />
             {isLoading ? "Wird eingelagert..." : `${parsedQuantity} ${material.unit} einlagern`}

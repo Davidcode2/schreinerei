@@ -89,12 +89,14 @@ export function WithdrawDialog({
 
         <div className="space-y-4 py-4">
           {/* Current Stock */}
-          <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center justify-between p-3 bg-accent/50 rounded-lg">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent">
+                <Package className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
               <span className="text-sm">Verfügbar</span>
             </div>
-            <Badge variant="outline" className="font-mono">
+            <Badge variant="outline" className="font-mono text-xs">
               {material.quantity} {material.unit}
             </Badge>
           </div>
@@ -107,10 +109,10 @@ export function WithdrawDialog({
                 </p>
               )}
               {material.expired_quantity > 0 && (
-                <p className="text-red-600">{material.expired_quantity} Stück abgelaufen</p>
+                <p className="text-destructive">{material.expired_quantity} Stück abgelaufen</p>
               )}
               {material.expiring_soon_quantity > 0 && (
-                <p className="text-amber-600">
+                <p className="text-warning-foreground">
                   {material.expiring_soon_quantity} Stück laufen in den nächsten 10 Tagen ab
                 </p>
               )}
@@ -136,15 +138,15 @@ export function WithdrawDialog({
           )}
 
           {canDispose && (
-            <label className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm">
-              <input
-                type="checkbox"
-                checked={disposal}
-                onChange={(event) => setDisposal(event.target.checked)}
-                className="h-4 w-4 rounded border-input"
-              />
-              <span>Entsorgung</span>
-            </label>
+          <label className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
+            <input
+              type="checkbox"
+              checked={disposal}
+              onChange={(event) => setDisposal(event.target.checked)}
+              className="h-4 w-4 rounded border-input"
+            />
+            <span>Entsorgung</span>
+          </label>
           )}
 
           {/* Quantity Selector */}
@@ -230,7 +232,7 @@ export function WithdrawDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Abbrechen
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
+          <Button onClick={handleSubmit} disabled={isLoading} className="gap-2 shadow-sm active:scale-[0.97] transition-transform">
             {isLoading
               ? disposal
                 ? "Wird entsorgt..."

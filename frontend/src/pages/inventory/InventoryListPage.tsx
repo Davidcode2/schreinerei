@@ -53,9 +53,10 @@ export default function InventoryListPage() {
             >
               <Settings className="h-4 w-4" />
             </Button>
-            <Button className="gap-2" onClick={() => setAddMaterialOpen(true)}>
+            <Button className="gap-2 h-10 shadow-sm" onClick={() => setAddMaterialOpen(true)}>
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Material hinzufügen</span>
+              <span className="sm:hidden">Hinzufügen</span>
             </Button>
           </div>
         }
@@ -67,24 +68,23 @@ export default function InventoryListPage() {
             categories={categories}
             selectedId={selectedCategory}
             onSelect={setSelectedCategory}
-            className="pt-1"
           />
         )}
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Material suchen..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 h-10 bg-card border-border"
             />
           </div>
           <Button
             variant="outline"
             size="icon"
-            className="flex-shrink-0"
+            className="flex-shrink-0 h-10 w-10"
             onClick={() => navigate("/scan")}
           >
             <QrCode className="h-4 w-4" />
@@ -113,7 +113,7 @@ export default function InventoryListPage() {
           }
           action={
             !searchQuery && (
-              <Button className="gap-2" onClick={() => setAddMaterialOpen(true)}>
+              <Button className="gap-2 h-10 shadow-sm" onClick={() => setAddMaterialOpen(true)}>
                 <Plus className="h-4 w-4" />
                 Material hinzufügen
               </Button>
@@ -122,7 +122,7 @@ export default function InventoryListPage() {
         />
       ) : (
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-0">
             {filteredMaterials.length} Material{filteredMaterials.length !== 1 ? "ien" : ""} gefunden
           </p>
           {filteredMaterials.map((material: Material) => {
