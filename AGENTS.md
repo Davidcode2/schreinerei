@@ -93,6 +93,7 @@ Every query MUST be scoped to TenantId. Use request context to extract TenantId 
 
 Local development must NOT use a shared PostgreSQL database.
 
+- Create git worktrees in the repository root under `.worktrees/`.
 - Every developer and every agent must use a dedicated local Postgres container and a dedicated database.
 - Never point `DATABASE_URL` at a teammate's or another agent's database.
 - Never run migrations against a shared local database instance.
