@@ -1,4 +1,5 @@
 export { default as FleetPage } from "./FleetPage"
+export { default as ToolsPage } from "./ToolsPage"
 export { VehiclesList } from "./VehiclesList"
 export { ToolsList } from "./ToolsList"
 export { ReservationsList } from "./ReservationsList"

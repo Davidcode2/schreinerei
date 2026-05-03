@@ -13,7 +13,7 @@ import InstallPrompt from "@/components/pwa/InstallPrompt"
 import DashboardPage from "@/pages/DashboardPage"
 import { InventoryListPage, InventoryDetailPage } from "@/pages/inventory"
 import { SitesListPage, SiteDetailPage } from "@/pages/sites"
-import { FleetPage } from "@/pages/fleet"
+import { FleetPage, ToolsPage } from "@/pages/fleet"
 import { InventorySettingsPage, SettingsPage } from "@/pages/settings"
 import ScanPage from "@/pages/qr/ScanPage"
 import NotFoundPage from "@/pages/NotFoundPage"
@@ -72,6 +72,7 @@ function AppRoutes() {
 
                 {/* Fleet */}
                 <Route path="/fleet" element={<FleetPage />} />
+                <Route path="/tools" element={<ToolsPage />} />
 
                 {/* QR Scanner */}
                 <Route path="/scan" element={<ScanPage />} />
