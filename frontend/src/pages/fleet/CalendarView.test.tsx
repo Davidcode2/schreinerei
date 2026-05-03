@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import userEvent from "@testing-library/user-event"
 import { fireEvent, render, screen, waitFor } from "@/test/utils"
 import CalendarView from "./CalendarView"
+import { startOfLocalWeek } from "@/lib/utils"
 
 vi.mock("@/lib/api/hooks", () => ({
   useCalendar: vi.fn(),
@@ -24,8 +25,7 @@ function weekDateIso(offsetDays: number, hour: number) {
   const now = new Date()
   now.setHours(12, 0, 0, 0)
 
-  const weekStart = new Date(now)
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1)
+  const weekStart = startOfLocalWeek(now)
   weekStart.setDate(weekStart.getDate() + offsetDays)
   weekStart.setHours(hour, 0, 0, 0)
 

@@ -22,6 +22,7 @@ import {
   useVehicles,
 } from "@/lib/api/hooks"
 import { StatusTransitionButtons, statusLabels } from "@/components/fleet/StatusTransitionButtons"
+import { formatDateTimeLocalInput } from "@/lib/utils"
 import { toast } from "sonner"
 import type { ResourceType, Vehicle, Tool, Reservation, ReservationStatus, ConflictDetail } from "@/types/fleet"
 
@@ -32,8 +33,7 @@ const formatDateToRfc3339 = (datetimeLocal: string): string => {
 
 const formatDateTimeLocal = (rfc3339?: string): string => {
   if (!rfc3339) return ""
-  const date = new Date(rfc3339)
-  return date.toISOString().slice(0, 16)
+  return formatDateTimeLocalInput(rfc3339)
 }
 
 const formatTimeRange = (start: string, end: string): string => {
