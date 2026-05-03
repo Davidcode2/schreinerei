@@ -16,7 +16,7 @@ export default function VehicleDetailPage() {
   const { data: vehicle, isLoading, error, refetch } = useVehicle(id!)
   const { data: reservations = [] } = useReservations({
     resource_type: "vehicle",
-    resource_id: id,
+    ...(id ? { resource_id: id } : {}),
   })
 
   if (isLoading) {
