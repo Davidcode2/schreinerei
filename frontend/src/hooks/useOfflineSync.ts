@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { isOnline, fullSync, getLastSyncTime, getIsSyncing } from '@/lib/offline/sync'
+import { isOnline, fullSync, getLastSyncTime } from '@/lib/offline/sync'
 import { getPendingCount, subscribeToPendingCount } from '@/lib/offline/queue'
 
 export function useOfflineSync() {
   const [online, setOnline] = useState(isOnline())
   const [pendingCount, setPendingCount] = useState(0)
   const [lastSync, setLastSync] = useState(getLastSyncTime())
-  const [syncing, setSyncing] = useState(getIsSyncing())
+  const [syncing, setSyncing] = useState(false)
 
   useEffect(() => {
     const handleOnline = () => setOnline(true)

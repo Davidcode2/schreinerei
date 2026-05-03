@@ -9,10 +9,12 @@ import PendingActionsBadge from "@/components/offline/PendingActionsBadge"
 import SyncButton from "@/components/offline/SyncButton"
 import { useAuthStore } from "@/lib/auth/authStore"
 import { getLogoutUrl } from "@/lib/auth/keycloak"
+import { getDisplayName, getRoleLabel } from "./userDisplay"
 
 export function DesktopSidebar() {
   const navigate = useNavigate()
   const logout = useAuthStore((state) => state.logout)
+  const user = useAuthStore((state) => state.user)
 
   const handleLogout = () => {
     logout()
@@ -48,17 +50,21 @@ export function DesktopSidebar() {
       </div>
 
       <div className="border-t p-4">
-        <div className="flex items-center gap-3">
+        <button
+          type="button"
+          className="flex w-full items-center gap-3 rounded-lg p-2 -m-2 text-left transition-colors hover:bg-accent/40"
+          onClick={() => navigate('/settings')}
+        >
           <Avatar className="h-9 w-9 border border-border">
             <AvatarFallback className="bg-accent text-accent-foreground">
               <User className="h-4 w-4" />
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 overflow-hidden">
-            <p className="truncate text-sm font-medium">Max Mustermann</p>
-            <p className="truncate text-xs text-muted-foreground">Admin</p>
+            <p className="truncate text-sm font-medium">{getDisplayName(user?.name ?? null, user?.email)}</p>
+            <p className="truncate text-xs text-muted-foreground">{getRoleLabel(user?.role)}</p>
           </div>
-        </div>
+        </button>
         <Separator className="my-3" />
         <Button
           variant="ghost"
