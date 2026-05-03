@@ -2,20 +2,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/shared"
+import { User, Building2 } from "lucide-react"
 
 export default function SettingsPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Einstellungen</h1>
-        <p className="text-muted-foreground">App-Einstellungen</p>
-      </div>
+      <PageHeader
+        title="Einstellungen"
+        description="App-Einstellungen"
+      />
 
-      <div className="grid gap-6">
-        {/* Profile section */}
+      <div className="grid gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Profil</CardTitle>
+            <CardTitle className="flex items-center gap-3 font-display text-lg">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
+                <User className="h-4 w-4" />
+              </span>
+              Profil
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -35,10 +41,14 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Company section */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Firma</CardTitle>
+            <CardTitle className="flex items-center gap-3 font-display text-lg">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
+                <Building2 className="h-4 w-4" />
+              </span>
+              Firma
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -58,9 +68,9 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end gap-4">
-          <Button variant="outline">Abbrechen</Button>
-          <Button>Speichern</Button>
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" className="active:scale-[0.97] transition-transform">Abbrechen</Button>
+          <Button className="active:scale-[0.97] transition-transform">Speichern</Button>
         </div>
       </div>
     </div>

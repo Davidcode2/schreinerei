@@ -67,23 +67,28 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-3 font-display text-lg">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
+                <Users className="h-4 w-4" />
+              </span>
               Benutzerverwaltung
             </CardTitle>
-            <CardDescription>Verwalten Sie die Benutzer Ihrer Organisation</CardDescription>
+            <CardDescription className="mt-1.5">Verwalten Sie die Benutzer Ihrer Organisation</CardDescription>
           </div>
-          <Button size="sm" className="gap-2" onClick={() => setShowInviteDialog(true)}>
+          <Button
+            size="sm"
+            className="gap-2 shadow-sm active:scale-[0.97] transition-transform"
+            onClick={() => setShowInviteDialog(true)}
+          >
             <UserPlus className="h-4 w-4" />
             Einladen
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        {/* Organization invite link section */}
-        <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+      <CardContent className="space-y-4">
+        <div className="rounded-xl bg-accent/50 p-4">
           <div className="flex items-center gap-2 mb-2">
             <Link2 className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Organisation beitreten</span>
@@ -97,15 +102,19 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
               readOnly
               className="text-sm bg-background"
             />
-            <Button size="sm" variant="outline" onClick={copyInviteUrl}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={copyInviteUrl}
+              className="shadow-sm active:scale-[0.97] transition-transform"
+            >
               <Copy className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        <Separator className="mb-4" />
+        <Separator />
 
-        {/* User list */}
         {isLoading && isAuthenticated && (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -125,23 +134,25 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
         )}
 
         {users && users.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-1">
             {users.map((apiUser, index) => (
               <div key={apiUser.id}>
-                {index > 0 && <Separator className="mb-4" />}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback>{getInitials(apiUser.name)}</AvatarFallback>
+                {index > 0 && <Separator className="my-3" />}
+                <div className="flex items-center justify-between gap-3 rounded-lg p-2 -mx-2 transition-colors hover:bg-accent/30">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Avatar className="h-10 w-10 flex-shrink-0">
+                      <AvatarFallback className="bg-accent text-foreground text-xs font-medium">
+                        {getInitials(apiUser.name)}
+                      </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="font-medium">{getDisplayName(apiUser)}</p>
-                      <p className="text-sm text-muted-foreground">{apiUser.email}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{getDisplayName(apiUser)}</p>
+                      <p className="text-sm text-muted-foreground truncate">{apiUser.email}</p>
                     </div>
                   </div>
                   <Badge
                     variant={apiUser.role === "admin" ? "default" : "outline"}
-                    className="gap-1"
+                    className="gap-1 flex-shrink-0"
                   >
                     {apiUser.role === "admin" && <Shield className="h-3 w-3" />}
                     {getRoleLabel(apiUser.role)}

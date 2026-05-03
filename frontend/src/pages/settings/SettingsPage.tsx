@@ -30,24 +30,25 @@ export default function SettingsPage() {
 
       <UserManagementSection isAdmin={isAdmin} />
 
-      {/* About Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Info className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-3 font-display text-lg">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
+              <Info className="h-4 w-4" />
+            </span>
             Über
           </CardTitle>
           <CardDescription>Informationen zur Anwendung</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
+            <div className="rounded-lg bg-accent/50 p-3">
               <p className="text-muted-foreground">Version</p>
-              <p className="font-medium">{APP_VERSION}</p>
+              <p className="font-medium mt-0.5">{APP_VERSION}</p>
             </div>
-            <div>
+            <div className="rounded-lg bg-accent/50 p-3">
               <p className="text-muted-foreground">Umgebung</p>
-              <p className="font-medium capitalize">
+              <p className="font-medium mt-0.5 capitalize">
                 {import.meta.env.MODE || "development"}
               </p>
             </div>
@@ -55,20 +56,24 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Logout */}
-      <Card className="border-destructive/50">
+      <Card className="border-destructive/30 overflow-hidden">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Abmelden</p>
-              <p className="text-sm text-muted-foreground">
-                Von Ihrem Konto abmelden
-              </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-destructive/10">
+                <LogOut className="h-4 w-4 text-destructive" />
+              </span>
+              <div>
+                <p className="font-medium">Abmelden</p>
+                <p className="text-sm text-muted-foreground">
+                  Von Ihrem Konto abmelden
+                </p>
+              </div>
             </div>
             <Button
               variant="outline"
               onClick={handleLogout}
-              className="gap-2 text-destructive hover:text-destructive"
+              className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 active:scale-[0.97] transition-transform"
             >
               <LogOut className="h-4 w-4" />
               Abmelden

@@ -63,8 +63,10 @@ export function InviteUserDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
+          <DialogTitle className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
+              <Mail className="h-4 w-4" />
+            </span>
             Benutzer einladen
           </DialogTitle>
           <DialogDescription>
@@ -81,10 +83,11 @@ export function InviteUserDialog({
               placeholder="name@beispiel.de"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="h-10"
             />
           </div>
 
-          <div className="pt-4 border-t">
+          <div className="rounded-xl bg-accent/50 p-4">
             <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
               <Link2 className="h-4 w-4" />
               <span>Oder teilen Sie diesen Link:</span>
@@ -93,22 +96,32 @@ export function InviteUserDialog({
               <Input
                 value={inviteUrl}
                 readOnly
-                className="text-sm bg-muted"
+                className="text-sm bg-background"
               />
-              <Button size="sm" variant="outline" onClick={handleCopyLink}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCopyLink}
+                className="shadow-sm active:scale-[0.97] transition-transform"
+              >
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="active:scale-[0.97] transition-transform"
+          >
             Abbrechen
           </Button>
           <Button
             onClick={handleSendInvite}
             disabled={!email || !isValidEmail(email) || isSubmitting}
+            className="shadow-sm active:scale-[0.97] transition-transform"
           >
             {isSubmitting ? "Wird gesendet..." : "Einladung senden"}
           </Button>
