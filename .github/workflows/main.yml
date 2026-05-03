@@ -170,8 +170,10 @@ jobs:
       - name: Bump patch version
         id: bump
         run: |
+          set -o pipefail
           python3 scripts/bump_version.py patch | tee /tmp/bump-version.log
           VERSION=$(tail -n1 /tmp/bump-version.log)
+          test -n "$VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Commit version bump
@@ -180,6 +182,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add Cargo.toml frontend/package.json frontend/package-lock.json
+          git diff --cached --exit-code && echo "No version changes to commit" && exit 1
           git commit -m "chore: bump version to ${{ steps.bump.outputs.version }} [skip ci]"
           git push
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
