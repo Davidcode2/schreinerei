@@ -1,4 +1,7 @@
 export { default as FleetPage } from "./FleetPage"
+export { default as VehicleDetailPage } from "./VehicleDetailPage"
+export { default as ToolsPage } from "./ToolsPage"
+export { default as ToolDetailPage } from "./ToolDetailPage"
 export { VehiclesList } from "./VehiclesList"
 export { ToolsList } from "./ToolsList"
 export { ReservationsList } from "./ReservationsList"

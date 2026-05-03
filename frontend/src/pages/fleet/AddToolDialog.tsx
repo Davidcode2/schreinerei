@@ -10,32 +10,66 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Wrench } from "lucide-react"
 import { toast } from "sonner"
-import { useCreateTool } from "@/lib/api/hooks"
+import { useCreateTool, useUpdateTool } from "@/lib/api/hooks"
+import type { ResourceStatus, Tool } from "@/types/fleet"
 
 interface AddToolDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  mode?: "create" | "edit"
+  initialData?: Tool
 }
+
+const RESOURCE_STATUS_OPTIONS: { value: ResourceStatus; label: string }[] = [
+  { value: "available", label: "Verfügbar" },
+  { value: "in_use", label: "In Benutzung" },
+  { value: "maintenance", label: "Wartung" },
+  { value: "reserved", label: "Reserviert" },
+]
 
 export function AddToolDialog({
   open,
   onOpenChange,
+  mode = "create",
+  initialData,
 }: AddToolDialogProps) {
-  const [name, setName] = useState("")
-  const [category, setCategory] = useState("")
-  const [location, setLocation] = useState("")
-  const [description, setDescription] = useState("")
+  const [name, setName] = useState(initialData?.name ?? "")
+  const [category, setCategory] = useState(initialData?.category ?? "")
+  const [location, setLocation] = useState(initialData?.location ?? "")
+  const [description, setDescription] = useState(initialData?.description ?? "")
+  const [status, setStatus] = useState<ResourceStatus>(initialData?.status ?? "available")
+  const [qrCode, setQrCode] = useState(initialData?.qr_code ?? "")
 
   const createTool = useCreateTool()
+  const updateTool = useUpdateTool()
 
   const resetForm = () => {
+    if (mode === "edit" && initialData) {
+      setName(initialData.name)
+      setCategory(initialData.category ?? "")
+      setLocation(initialData.location ?? "")
+      setDescription(initialData.description ?? "")
+      setStatus(initialData.status)
+      setQrCode(initialData.qr_code ?? "")
+      return
+    }
+
     setName("")
     setCategory("")
     setLocation("")
     setDescription("")
+    setStatus("available")
+    setQrCode("")
   }
 
   const handleOpenChange = (open: boolean) => {
@@ -55,6 +89,7 @@ export function AddToolDialog({
       category?: string
       location?: string
       description?: string
+      qr_code?: string
     } = {
       name,
     }
@@ -67,6 +102,30 @@ export function AddToolDialog({
     }
     if (description) {
       payload.description = description
+    }
+    if (qrCode) {
+      payload.qr_code = qrCode
+    }
+
+    if (mode === "edit" && initialData) {
+      updateTool.mutate(
+        {
+          id: initialData.id,
+          ...payload,
+          status,
+        },
+        {
+          onSuccess: () => {
+            toast.success("Werkzeug aktualisiert")
+            handleOpenChange(false)
+          },
+          onError: (error) => {
+            toast.error("Werkzeug konnte nicht aktualisiert werden")
+            console.error("Update tool error:", error)
+          },
+        }
+      )
+      return
     }
 
     createTool.mutate(payload, {
@@ -81,6 +140,8 @@ export function AddToolDialog({
     })
   }
 
+  const isPending = createTool.isPending || updateTool.isPending
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -89,10 +150,12 @@ export function AddToolDialog({
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
               <Wrench className="h-4 w-4" />
             </div>
-            Werkzeug hinzufügen
+            {mode === "edit" ? "Werkzeug bearbeiten" : "Werkzeug hinzufügen"}
           </DialogTitle>
           <DialogDescription>
-            Neues Werkzeug zum Inventar hinzufügen
+            {mode === "edit"
+              ? "Werkzeugdaten anpassen"
+              : "Neues Werkzeug zum Inventar hinzufügen"}
           </DialogDescription>
         </DialogHeader>
 
@@ -131,6 +194,38 @@ export function AddToolDialog({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="qrCode">QR-Code</Label>
+            <Input
+              id="qrCode"
+              placeholder="z.B. tool-drill-01"
+              value={qrCode}
+              onChange={(e) => setQrCode(e.target.value)}
+              className="h-10"
+            />
+          </div>
+
+          {mode === "edit" && (
+            <div className="space-y-2">
+              <Label htmlFor="toolStatus">Status</Label>
+              <Select
+                value={status}
+                onValueChange={(value) => setStatus(value as ResourceStatus)}
+              >
+                <SelectTrigger id="toolStatus" className="h-10">
+                  <SelectValue placeholder="Status wählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {RESOURCE_STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="space-y-2">
             <Label htmlFor="description">Beschreibung</Label>
             <Textarea
               id="description"
@@ -148,10 +243,16 @@ export function AddToolDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!isFormValid || createTool.isPending}
+            disabled={!isFormValid || isPending}
             className="shadow-sm"
           >
-            {createTool.isPending ? "Wird erstellt..." : "Erstellen"}
+            {isPending
+              ? mode === "edit"
+                ? "Wird gespeichert..."
+                : "Wird erstellt..."
+              : mode === "edit"
+                ? "Speichern"
+                : "Erstellen"}
           </Button>
         </DialogFooter>
       </DialogContent>
