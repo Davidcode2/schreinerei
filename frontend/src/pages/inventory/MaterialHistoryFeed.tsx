@@ -20,6 +20,10 @@ const entryTypeConfig: Record<
     label: "Entnommen",
     badgeClassName: "bg-red-100 text-red-700 border-red-200",
   },
+  disposed: {
+    label: "Entsorgt",
+    badgeClassName: "bg-red-100 text-red-700 border-red-200",
+  },
   adjusted: {
     label: "Bestand korrigiert",
     badgeClassName: "bg-blue-100 text-blue-700 border-blue-200",

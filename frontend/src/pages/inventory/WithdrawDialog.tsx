@@ -14,11 +14,21 @@ import { Badge } from "@/components/ui/badge"
 import { Package, Minus, Plus } from "lucide-react"
 import type { Material } from "@/types/inventory"
 
+function formatExpiryDate(date: string) {
+  const [year, month, day] = date.split("-")
+  return `${day}.${month}.${year}`
+}
+
 interface WithdrawDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   material: Material
-  onConfirm: (quantity: number, notes?: string, siteId?: string | null) => void
+  onConfirm: (
+    quantity: number,
+    notes?: string,
+    siteId?: string | null,
+    disposal?: boolean
+  ) => void
   isLoading: boolean
   sites: Array<{ id: string; name: string }>
   initialSiteId?: string | null
@@ -36,26 +46,37 @@ export function WithdrawDialog({
   const [quantity, setQuantity] = useState(1)
   const [notes, setNotes] = useState("")
   const [siteId, setSiteId] = useState(initialSiteId ?? "")
+  const [disposal, setDisposal] = useState(false)
+
+  const maxQuantity = disposal ? Math.max(1, material.expired_quantity) : material.quantity
 
   const handleQuantityChange = (value: number) => {
-    const newQuantity = Math.max(1, Math.min(value, material.quantity))
+    const newQuantity = Math.max(1, Math.min(value, maxQuantity))
     setQuantity(newQuantity)
   }
 
   const handleSubmit = () => {
-    onConfirm(quantity, notes || undefined, siteId || null)
+    onConfirm(quantity, notes || undefined, disposal ? null : siteId || null, disposal)
     setQuantity(1)
     setNotes("")
+    setDisposal(false)
   }
 
-  const quickAmounts = [1, 2, 5, 10].filter((n) => n <= material.quantity)
+  const quickAmounts = [1, 2, 5, 10].filter((n) => n <= maxQuantity)
 
   useEffect(() => {
     if (open) {
       setSiteId(initialSiteId ?? "")
+      setDisposal(false)
     }
   }, [open, initialSiteId])
 
+  useEffect(() => {
+    setQuantity((current) => Math.max(1, Math.min(current, maxQuantity)))
+  }, [maxQuantity])
+
+  const canDispose = material.expired_quantity > 0
+  const oldestExpiryLabel = material.next_expiry_on ? formatExpiryDate(material.next_expiry_on) : null
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -78,6 +99,54 @@ export function WithdrawDialog({
             </Badge>
           </div>
 
+          {material.can_expire && (
+            <div className="space-y-3 rounded-lg border border-border/60 p-3 text-sm">
+              {oldestExpiryLabel && (
+                <p>
+                  Ältestes MHD: <span className="font-medium">{oldestExpiryLabel}</span>
+                </p>
+              )}
+              {material.expired_quantity > 0 && (
+                <p className="text-red-600">{material.expired_quantity} Stück abgelaufen</p>
+              )}
+              {material.expiring_soon_quantity > 0 && (
+                <p className="text-amber-600">
+                  {material.expiring_soon_quantity} Stück laufen in den nächsten 10 Tagen ab
+                </p>
+              )}
+              {material.legacy_quantity > 0 && (
+                <p className="text-muted-foreground">
+                  Ohne MHD erfasster Bestand: {material.legacy_quantity} {material.unit}
+                </p>
+              )}
+              {material.expiry_batches.length > 0 && (
+                <div className="space-y-2">
+                  <p className="font-medium">Erfasste MHD-Chargen</p>
+                  <div className="space-y-1">
+                    {material.expiry_batches.map((batch) => (
+                      <div key={`${batch.expires_on}-${batch.quantity}`} className="flex justify-between">
+                        <span>{formatExpiryDate(batch.expires_on)}</span>
+                        <span className="text-muted-foreground">{batch.quantity} {material.unit}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {canDispose && (
+            <label className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm">
+              <input
+                type="checkbox"
+                checked={disposal}
+                onChange={(event) => setDisposal(event.target.checked)}
+                className="h-4 w-4 rounded border-input"
+              />
+              <span>Entsorgung</span>
+            </label>
+          )}
+
           {/* Quantity Selector */}
           <div className="space-y-2">
             <Label>Menge</Label>
@@ -96,13 +165,13 @@ export function WithdrawDialog({
                 onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
                 className="text-center font-mono"
                 min={1}
-                max={material.quantity}
+                max={maxQuantity}
               />
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => handleQuantityChange(quantity + 1)}
-                disabled={quantity >= material.quantity}
+                disabled={quantity >= maxQuantity}
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -126,22 +195,24 @@ export function WithdrawDialog({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="site">Baustelle (optional)</Label>
-            <select
-              id="site"
-              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={siteId}
-              onChange={(event) => setSiteId(event.target.value)}
-            >
-              <option value="">Keine Zuordnung</option>
-              {sites.map((site) => (
-                <option key={site.id} value={site.id}>
-                  {site.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {!disposal && (
+            <div className="space-y-2">
+              <Label htmlFor="site">Baustelle (optional)</Label>
+              <select
+                id="site"
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={siteId}
+                onChange={(event) => setSiteId(event.target.value)}
+              >
+                <option value="">Keine Zuordnung</option>
+                {sites.map((site) => (
+                  <option key={site.id} value={site.id}>
+                    {site.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Notes */}
           <div className="space-y-2">
@@ -160,7 +231,13 @@ export function WithdrawDialog({
             Abbrechen
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? "Wird entnommen..." : `${quantity} ${material.unit} entnehmen`}
+            {isLoading
+              ? disposal
+                ? "Wird entsorgt..."
+                : "Wird entnommen..."
+              : disposal
+                ? `${quantity} ${material.unit} entsorgen`
+                : `${quantity} ${material.unit} entnehmen`}
           </Button>
         </DialogFooter>
       </DialogContent>

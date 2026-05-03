@@ -24,6 +24,12 @@ const materialResponse = {
   unit: "Stück",
   quantity: 48,
   min_quantity: 10,
+  can_expire: false,
+  legacy_quantity: 48,
+  expired_quantity: 0,
+  expiring_soon_quantity: 0,
+  next_expiry_on: null,
+  expiry_batches: [],
   location: "Regal A",
   qr_code: null,
   is_low_stock: false,
@@ -209,7 +215,7 @@ describe("InventoryDetailPage interactions", () => {
     await user.click(screen.getByRole("button", { name: /einlagern$/i }))
 
     await waitFor(() => {
-      expect(stockInPayload).toEqual({ quantity: 3, notes: "Lieferung HolzLand" })
+      expect(stockInPayload).toEqual({ quantity: 3, notes: "Lieferung HolzLand", expires_on: null })
     })
 
     expect(await screen.findByText("3 Stück eingelagert")).toBeInTheDocument()

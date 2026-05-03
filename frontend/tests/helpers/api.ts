@@ -32,6 +32,7 @@ interface MaterialData {
   quantity: number;
   min_quantity: number;
   location?: string | null;
+   expires_on?: string | null;
 }
 
 interface MaterialResponse {
@@ -42,6 +43,12 @@ interface MaterialResponse {
   unit: string;
   quantity: number;
   min_quantity: number;
+  can_expire: boolean;
+  legacy_quantity: number;
+  expired_quantity: number;
+  expiring_soon_quantity: number;
+  next_expiry_on: string | null;
+  expiry_batches: Array<{ expires_on: string; quantity: number; is_expired: boolean; is_expiring_soon: boolean }>;
   location?: string;
   qr_code?: string;
   is_low_stock: boolean;
@@ -117,12 +124,14 @@ interface CategoryResponse {
   id: string;
   name: string;
   description?: string | null;
+  can_expire: boolean;
   created_at: string;
 }
 
 interface UpdateCategoryData {
   name?: string;
   description?: string;
+  can_expire?: boolean;
 }
 
 interface UpdateMaterialData {
@@ -134,12 +143,14 @@ interface UpdateMaterialData {
 interface StockInData {
   quantity: number;
   notes?: string | null;
+  expires_on?: string | null;
 }
 
 interface WithdrawMaterialData {
   quantity: number;
   notes?: string | null;
   site_id?: string | null;
+  disposal?: boolean | null;
 }
 
 interface EnrichedHistoryEntry {
@@ -281,6 +292,7 @@ export async function listCategories(page: Page): Promise<CategoryResponse[]> {
 interface CategoryData {
   name: string;
   description?: string | null;
+  can_expire?: boolean;
 }
 
 export async function createCategory(

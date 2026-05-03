@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::common::types::{CategoryId, MaterialId, SiteId, TenantId, Unit};
@@ -14,10 +14,24 @@ pub struct Material {
     pub unit: Unit,
     pub quantity: i32,
     pub min_quantity: i32,
+    pub legacy_quantity: i32,
+    pub can_expire: bool,
+    pub expired_quantity: i32,
+    pub expiring_soon_quantity: i32,
+    pub next_expiry_on: Option<NaiveDate>,
+    pub expiry_batches: Vec<MaterialBatchSummary>,
     pub location: Option<String>,
     pub qr_code: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MaterialBatchSummary {
+    pub expires_on: NaiveDate,
+    pub quantity: i32,
+    pub is_expired: bool,
+    pub is_expiring_soon: bool,
 }
 
 impl Material {
@@ -47,6 +61,7 @@ pub struct CreateMaterial {
     pub quantity: i32,
     pub min_quantity: i32,
     pub location: Option<String>,
+    pub expires_on: Option<NaiveDate>,
 }
 
 impl CreateMaterial {
@@ -72,6 +87,7 @@ pub struct WithdrawMaterial {
     pub quantity: i32,
     pub notes: Option<String>,
     pub site_id: Option<SiteId>, // Optional link to Baustelle
+    pub disposal: bool,
 }
 
 impl WithdrawMaterial {
@@ -134,6 +150,7 @@ pub struct StockIn {
     pub material_id: MaterialId,
     pub quantity: i32,
     pub notes: Option<String>,
+    pub expires_on: Option<NaiveDate>,
 }
 
 impl StockIn {
@@ -161,6 +178,12 @@ mod tests {
             unit: Unit::Piece,
             quantity,
             min_quantity,
+            legacy_quantity: quantity,
+            can_expire: false,
+            expired_quantity: 0,
+            expiring_soon_quantity: 0,
+            next_expiry_on: None,
+            expiry_batches: Vec::new(),
             location: None,
             qr_code: None,
             created_at: Utc::now(),
@@ -220,6 +243,7 @@ mod tests {
             quantity: 10,
             min_quantity: 5,
             location: None,
+            expires_on: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -234,6 +258,7 @@ mod tests {
             quantity: 10,
             min_quantity: 5,
             location: None,
+            expires_on: None,
         };
         assert_eq!(cmd.validate(), Err("Material name is required".to_string()));
     }
@@ -248,6 +273,7 @@ mod tests {
             quantity: -1,
             min_quantity: 5,
             location: None,
+            expires_on: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -265,6 +291,7 @@ mod tests {
             quantity: 10,
             min_quantity: -1,
             location: None,
+            expires_on: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -279,6 +306,7 @@ mod tests {
             quantity: 1,
             notes: None,
             site_id: None,
+            disposal: false,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -290,6 +318,7 @@ mod tests {
             quantity: 0,
             notes: None,
             site_id: None,
+            disposal: false,
         };
         assert_eq!(
             cmd.validate(),
@@ -304,6 +333,7 @@ mod tests {
             quantity: -1,
             notes: None,
             site_id: None,
+            disposal: false,
         };
         assert_eq!(
             cmd.validate(),
@@ -410,6 +440,7 @@ mod tests {
             material_id: MaterialId::new(),
             quantity: 10,
             notes: Some("Delivery arrived".to_string()),
+            expires_on: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -420,6 +451,7 @@ mod tests {
             material_id: MaterialId::new(),
             quantity: 5,
             notes: None,
+            expires_on: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -430,6 +462,7 @@ mod tests {
             material_id: MaterialId::new(),
             quantity: 0,
             notes: None,
+            expires_on: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -443,6 +476,7 @@ mod tests {
             material_id: MaterialId::new(),
             quantity: -5,
             notes: None,
+            expires_on: None,
         };
         assert_eq!(
             cmd.validate(),

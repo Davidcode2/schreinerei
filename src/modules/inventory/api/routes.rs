@@ -5,6 +5,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use uuid::Uuid;
@@ -102,6 +103,7 @@ pub struct CategoryResponse {
     pub id: String,
     pub name: String,
     pub description: Option<String>,
+    pub can_expire: bool,
     pub created_at: String,
 }
 
@@ -111,6 +113,7 @@ impl From<crate::modules::inventory::domain::Category> for CategoryResponse {
             id: cat.id.to_string(),
             name: cat.name,
             description: cat.description,
+            can_expire: cat.can_expire,
             created_at: cat.created_at.to_rfc3339(),
         }
     }
@@ -121,6 +124,7 @@ impl From<crate::modules::inventory::domain::Category> for CategoryResponse {
 pub struct CreateCategoryRequest {
     pub name: String,
     pub description: Option<String>,
+    pub can_expire: bool,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -130,6 +134,17 @@ pub struct UpdateCategoryRequest {
     pub name: Option<String>,
     #[ts(optional)]
     pub description: Option<String>,
+    #[ts(optional)]
+    pub can_expire: Option<bool>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct ExpiryBatchResponse {
+    pub expires_on: String,
+    pub quantity: i32,
+    pub is_expired: bool,
+    pub is_expiring_soon: bool,
 }
 
 #[derive(Debug, Serialize, TS)]
@@ -142,6 +157,12 @@ pub struct MaterialResponse {
     pub unit: String,
     pub quantity: i32,
     pub min_quantity: i32,
+    pub can_expire: bool,
+    pub legacy_quantity: i32,
+    pub expired_quantity: i32,
+    pub expiring_soon_quantity: i32,
+    pub next_expiry_on: Option<String>,
+    pub expiry_batches: Vec<ExpiryBatchResponse>,
     pub location: Option<String>,
     pub qr_code: Option<String>,
     pub is_low_stock: bool,
@@ -158,6 +179,16 @@ impl From<crate::modules::inventory::domain::Material> for MaterialResponse {
             unit: mat.unit.to_string(),
             quantity: mat.quantity,
             min_quantity: mat.min_quantity,
+            can_expire: mat.can_expire,
+            legacy_quantity: mat.legacy_quantity,
+            expired_quantity: mat.expired_quantity,
+            expiring_soon_quantity: mat.expiring_soon_quantity,
+            next_expiry_on: mat.next_expiry_on.map(|date| date.to_string()),
+            expiry_batches: mat
+                .expiry_batches
+                .into_iter()
+                .map(ExpiryBatchResponse::from)
+                .collect(),
             location: mat.location,
             qr_code: mat.qr_code,
             is_low_stock: mat.quantity <= mat.min_quantity,
@@ -176,6 +207,7 @@ pub struct CreateMaterialRequest {
     pub quantity: i32,
     pub min_quantity: i32,
     pub location: Option<String>,
+    pub expires_on: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -195,6 +227,7 @@ pub struct WithdrawRequest {
     pub quantity: i32,
     pub notes: Option<String>,
     pub site_id: Option<String>, // Optional Baustelle ID
+    pub disposal: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -209,6 +242,18 @@ pub struct AdjustStockRequest {
 pub struct StockInRequest {
     pub quantity: i32,
     pub notes: Option<String>,
+    pub expires_on: Option<String>,
+}
+
+impl From<crate::modules::inventory::domain::MaterialBatchSummary> for ExpiryBatchResponse {
+    fn from(batch: crate::modules::inventory::domain::MaterialBatchSummary) -> Self {
+        Self {
+            expires_on: batch.expires_on.to_string(),
+            quantity: batch.quantity,
+            is_expired: batch.is_expired,
+            is_expiring_soon: batch.is_expiring_soon,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -400,6 +445,7 @@ impl From<UpdateCategoryRequest> for UpdateCategory {
         Self {
             name: request.name,
             description: request.description,
+            can_expire: request.can_expire,
         }
     }
 }
@@ -412,6 +458,19 @@ impl From<UpdateMaterialRequest> for UpdateMaterial {
             clear_location: request.clear_location,
         }
     }
+}
+
+fn parse_optional_date(
+    value: Option<String>,
+    field_name: &str,
+) -> Result<Option<NaiveDate>, AppError> {
+    value
+        .filter(|date| !date.trim().is_empty())
+        .map(|date| {
+            NaiveDate::parse_from_str(&date, "%Y-%m-%d")
+                .map_err(|_| AppError::Validation(format!("Invalid {}", field_name)))
+        })
+        .transpose()
 }
 
 // === Handlers ===
@@ -445,6 +504,7 @@ pub async fn create_category(
     let create = CreateCategory {
         name: request.name,
         description: request.description,
+        can_expire: request.can_expire,
     };
 
     let category = service.create_category(create, &ctx).await?;
@@ -562,6 +622,7 @@ pub async fn create_material(
         quantity: request.quantity,
         min_quantity: request.min_quantity,
         location: request.location,
+        expires_on: parse_optional_date(request.expires_on, "MHD")?,
     };
 
     let material = service.create_material(create, &ctx).await?;
@@ -739,6 +800,7 @@ pub async fn withdraw_material(
         quantity: request.quantity,
         notes: request.notes,
         site_id, // Pass parsed site_id
+        disposal: request.disposal.unwrap_or(false),
     };
 
     let material = service.withdraw_material(withdraw, &ctx).await?;
@@ -793,6 +855,7 @@ pub async fn stock_in_material(
                 material_id,
                 quantity: request.quantity,
                 notes: request.notes,
+                expires_on: parse_optional_date(request.expires_on, "MHD")?,
             },
             &ctx,
         )
@@ -1003,25 +1066,29 @@ mod tests {
     use crate::modules::inventory::domain::{
         EnrichedStockEntry, EntryType, StockIn, UpdateCategory, UpdateMaterial,
     };
-    use chrono::Utc;
+    use chrono::{NaiveDate, Utc};
 
     #[test]
     fn update_category_request_preserves_patch_semantics() {
         let unchanged: UpdateCategory = UpdateCategoryRequest {
             name: None,
             description: None,
+            can_expire: None,
         }
         .into();
         assert_eq!(unchanged.name, None);
         assert_eq!(unchanged.description, None);
+        assert_eq!(unchanged.can_expire, None);
 
         let clear_description: UpdateCategory = UpdateCategoryRequest {
             name: None,
             description: Some(String::new()),
+            can_expire: Some(true),
         }
         .into();
         assert_eq!(clear_description.name, None);
         assert_eq!(clear_description.description, Some(String::new()));
+        assert_eq!(clear_description.can_expire, Some(true));
     }
 
     #[test]
@@ -1043,20 +1110,27 @@ mod tests {
         let request = StockInRequest {
             quantity: 4,
             notes: Some("Lieferschein 1234".to_string()),
+            expires_on: Some("2026-05-20".to_string()),
         };
         let stock_in = StockIn {
             material_id: MaterialId::new(),
             quantity: request.quantity,
             notes: request.notes.clone(),
+            expires_on: Some(NaiveDate::from_ymd_opt(2026, 5, 20).unwrap()),
         };
 
         assert_eq!(stock_in.notes, Some("Lieferschein 1234".to_string()));
+        assert_eq!(
+            stock_in.expires_on,
+            Some(NaiveDate::from_ymd_opt(2026, 5, 20).unwrap())
+        );
         assert!(stock_in.validate().is_ok());
 
         let invalid = StockIn {
             material_id: MaterialId::new(),
             quantity: 0,
             notes: None,
+            expires_on: None,
         };
         assert_eq!(
             invalid.validate(),

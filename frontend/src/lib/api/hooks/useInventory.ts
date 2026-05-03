@@ -189,6 +189,7 @@ export function useWithdrawMaterial() {
         quantity: data.quantity,
         notes: data.notes,
         site_id: data.site_id ?? null,
+        disposal: data.disposal ?? false,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["materials"] })

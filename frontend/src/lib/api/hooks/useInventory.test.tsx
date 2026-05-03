@@ -12,6 +12,7 @@ import {
   useStockInMaterial,
   useUpdateCategory,
   useUpdateMaterial,
+  useWithdrawMaterial,
 } from "./useInventory"
 import { apiClient } from "../client"
 import type {
@@ -163,12 +164,12 @@ describe("inventory mutations", () => {
 
     await result.current.mutateAsync({
       id: "cat-123",
-      data: { name: "Massivholz", description: "Lager A" },
+      data: { name: "Massivholz", description: "Lager A", can_expire: true },
     })
 
     expect(apiClient.patch).toHaveBeenCalledWith(
       "/api/v1/inventory/categories/cat-123",
-      { name: "Massivholz", description: "Lager A" }
+      { name: "Massivholz", description: "Lager A", can_expire: true }
     )
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["categories"] })
   })
@@ -254,15 +255,38 @@ describe("inventory mutations", () => {
       id: "mat-123",
       quantity: 10,
       notes: "Lieferung 1234",
+      expires_on: "2026-05-20",
     })
 
     expect(apiClient.post).toHaveBeenCalledWith(
       "/api/v1/inventory/materials/mat-123/stock-in",
-      { quantity: 10, notes: "Lieferung 1234" }
+      { quantity: 10, notes: "Lieferung 1234", expires_on: "2026-05-20" }
     )
     expect(invalidateQueries).toHaveBeenNthCalledWith(1, { queryKey: ["materials"] })
     expect(invalidateQueries).toHaveBeenNthCalledWith(2, { queryKey: ["material"] })
     expect(invalidateQueries).toHaveBeenNthCalledWith(3, { queryKey: ["low-stock"] })
+  })
+
+  it("forwards disposal through the withdraw endpoint", async () => {
+    vi.mocked(apiClient.post).mockResolvedValueOnce({ id: "mat-123" })
+    const queryClient = createQueryClient()
+
+    const { result } = renderHook(() => useWithdrawMaterial(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    await result.current.mutateAsync({
+      id: "mat-123",
+      quantity: 2,
+      notes: "Abgelaufen",
+      site_id: null,
+      disposal: true,
+    })
+
+    expect(apiClient.post).toHaveBeenCalledWith(
+      "/api/v1/inventory/materials/mat-123/withdraw",
+      { quantity: 2, notes: "Abgelaufen", site_id: null, disposal: true }
+    )
   })
 
   it("keeps generated inventory order types compatible", () => {

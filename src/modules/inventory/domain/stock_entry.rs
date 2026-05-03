@@ -13,6 +13,7 @@ use crate::common::types::{MaterialId, SiteId, TenantId, UserId};
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub enum EntryType {
     Withdrawn,
+    Disposed,
     Adjusted,
     MaterialAdded,
     LocationChanged,
@@ -23,6 +24,7 @@ impl fmt::Display for EntryType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             EntryType::Withdrawn => write!(f, "withdrawn"),
+            EntryType::Disposed => write!(f, "disposed"),
             EntryType::Adjusted => write!(f, "adjusted"),
             EntryType::MaterialAdded => write!(f, "material_added"),
             EntryType::LocationChanged => write!(f, "location_changed"),
@@ -37,6 +39,7 @@ impl FromStr for EntryType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "withdrawn" => Ok(EntryType::Withdrawn),
+            "disposed" => Ok(EntryType::Disposed),
             "adjusted" => Ok(EntryType::Adjusted),
             "material_added" => Ok(EntryType::MaterialAdded),
             "location_changed" => Ok(EntryType::LocationChanged),
@@ -204,6 +207,16 @@ mod tests {
         assert_eq!(
             EntryType::from_str("adjusted").unwrap(),
             EntryType::Adjusted
+        );
+    }
+
+    #[test]
+    fn entry_type_display_roundtrip_disposed() {
+        let et = EntryType::Disposed;
+        assert_eq!(et.to_string(), "disposed");
+        assert_eq!(
+            EntryType::from_str("disposed").unwrap(),
+            EntryType::Disposed
         );
     }
 

@@ -115,15 +115,21 @@ impl InventoryService {
         }
         create.validate()?;
 
-        // Verify category exists
-        self.material_repo
+        let category = self
+            .material_repo
             .find_category_by_id(create.category_id, ctx.tenant_id)
             .await?
             .ok_or_else(|| AppError::Validation("Category not found".to_string()))?;
 
+        if category.can_expire && create.quantity > 0 && create.expires_on.is_none() {
+            return Err(AppError::Validation(
+                "MHD is required for expiring categories".to_string(),
+            ));
+        }
+
         let material = self
             .material_repo
-            .create_material(&create, ctx.tenant_id)
+            .create_material(&create, ctx.tenant_id, category.can_expire)
             .await?;
 
         // Emit MaterialCreated event
@@ -192,6 +198,7 @@ impl InventoryService {
                 local_user_id,
                 withdraw.notes.clone(),
                 withdraw.site_id, // Pass site_id from command
+                withdraw.disposal,
                 ctx.tenant_id,
             )
             .await?;
@@ -345,6 +352,18 @@ impl InventoryService {
 
         let local_user_id = self.resolve_local_user_id(ctx).await?;
 
+        let existing_material = self
+            .material_repo
+            .find_material_by_id(stock_in.material_id, ctx.tenant_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
+
+        if existing_material.can_expire && stock_in.expires_on.is_none() {
+            return Err(AppError::Validation(
+                "MHD is required for expiring categories".to_string(),
+            ));
+        }
+
         let material = self
             .material_repo
             .stock_in(
@@ -352,6 +371,7 @@ impl InventoryService {
                 stock_in.quantity,
                 stock_in.notes.clone(),
                 local_user_id,
+                stock_in.expires_on,
                 ctx.tenant_id,
             )
             .await?;

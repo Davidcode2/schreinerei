@@ -30,7 +30,7 @@ describe('AddMaterialDialog', () => {
   const mockOnOpenChange = vi.fn();
   const categories = [
     createCategory({ id: 'cat-1', name: 'Schrauben' }),
-    createCategory({ id: 'cat-2', name: 'Werkzeug' }),
+    createCategory({ id: 'cat-2', name: 'Lacke', can_expire: true }),
   ];
 
   beforeEach(() => {
@@ -137,8 +137,34 @@ describe('AddMaterialDialog', () => {
         unit: 'Stück',
         min_quantity: 10,
         location: 'Regal A1',
+        expires_on: null,
       });
     });
+  });
+
+  it('requires MHD when the selected category can expire', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <AddMaterialDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        categories={categories}
+      />
+    );
+
+    await selectOption(user, /kategorie/i, 'Lacke');
+    await user.type(screen.getByLabelText(/name/i), 'Lack rot');
+    await user.type(screen.getByLabelText(/menge/i), '10');
+    await selectOption(user, /einheit/i, 'Liter');
+    await user.type(screen.getByLabelText(/mindestbestand/i), '2');
+
+    expect(screen.getByLabelText(/mhd/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /erstellen/i })).toBeDisabled();
+
+    await user.type(screen.getByLabelText(/mhd/i), '2026-05-20');
+
+    expect(screen.getByRole('button', { name: /erstellen/i })).toBeEnabled();
   });
 
   it('shows success toast after submission', async () => {

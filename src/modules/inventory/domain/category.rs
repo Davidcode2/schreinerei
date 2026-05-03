@@ -10,6 +10,7 @@ pub struct Category {
     pub tenant_id: TenantId,
     pub name: String,
     pub description: Option<String>,
+    pub can_expire: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -19,6 +20,7 @@ pub struct Category {
 pub struct CreateCategory {
     pub name: String,
     pub description: Option<String>,
+    pub can_expire: bool,
 }
 
 impl CreateCategory {
@@ -39,6 +41,7 @@ impl CreateCategory {
 pub struct UpdateCategory {
     pub name: Option<String>,
     pub description: Option<String>,
+    pub can_expire: Option<bool>,
 }
 
 impl UpdateCategory {
@@ -66,6 +69,7 @@ mod tests {
         let cmd = CreateCategory {
             name: "Platten".to_string(),
             description: None,
+            can_expire: false,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -75,6 +79,7 @@ mod tests {
         let cmd = CreateCategory {
             name: "".to_string(),
             description: None,
+            can_expire: false,
         };
         assert_eq!(cmd.validate(), Err("Category name is required".to_string()));
     }
@@ -84,6 +89,7 @@ mod tests {
         let cmd = CreateCategory {
             name: "   ".to_string(),
             description: None,
+            can_expire: false,
         };
         assert_eq!(cmd.validate(), Err("Category name is required".to_string()));
     }
@@ -93,6 +99,7 @@ mod tests {
         let cmd = CreateCategory {
             name: "a".repeat(101),
             description: None,
+            can_expire: false,
         };
         assert_eq!(
             cmd.validate(),
@@ -105,6 +112,7 @@ mod tests {
         let cmd = CreateCategory {
             name: "Beschläge".to_string(),
             description: Some("Schubladenauszüge".to_string()),
+            can_expire: true,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -116,6 +124,7 @@ mod tests {
         let cmd = UpdateCategory {
             name: Some("New Name".to_string()),
             description: None,
+            can_expire: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -125,6 +134,7 @@ mod tests {
         let cmd = UpdateCategory {
             name: None,
             description: Some("New description".to_string()),
+            can_expire: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -134,6 +144,7 @@ mod tests {
         let cmd = UpdateCategory {
             name: None,
             description: Some("".to_string()),
+            can_expire: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -143,6 +154,7 @@ mod tests {
         let cmd = UpdateCategory {
             name: Some("Plattenwerkstoffe".to_string()),
             description: Some("Lager Nord".to_string()),
+            can_expire: Some(true),
         };
         assert!(cmd.validate().is_ok());
     }
@@ -152,6 +164,7 @@ mod tests {
         let cmd = UpdateCategory {
             name: Some("".to_string()),
             description: None,
+            can_expire: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -164,6 +177,7 @@ mod tests {
         let cmd = UpdateCategory {
             name: Some("   ".to_string()),
             description: None,
+            can_expire: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -176,6 +190,7 @@ mod tests {
         let cmd = UpdateCategory {
             name: Some("a".repeat(101)),
             description: None,
+            can_expire: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -188,6 +203,7 @@ mod tests {
         let cmd = UpdateCategory {
             name: None,
             description: None,
+            can_expire: None,
         };
         assert!(cmd.validate().is_ok());
     }

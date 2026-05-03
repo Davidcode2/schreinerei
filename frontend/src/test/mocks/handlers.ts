@@ -28,6 +28,12 @@ export const handlers = [
       id: crypto.randomUUID(),
       created_at: new Date().toISOString(),
       is_low_stock: false,
+      can_expire: false,
+      legacy_quantity: body.quantity ?? 0,
+      expired_quantity: 0,
+      expiring_soon_quantity: 0,
+      next_expiry_on: null,
+      expiry_batches: [],
       qr_code: null,
       description: null,
       ...body,
@@ -48,6 +54,7 @@ export const handlers = [
       id: crypto.randomUUID(),
       name: body.name,
       description: body.description || null,
+      can_expire: Boolean(body.can_expire),
       created_at: new Date().toISOString(),
     };
     mockData.categories.push(newCategory);
