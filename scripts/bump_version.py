@@ -22,7 +22,7 @@ def bump_patch(version: str) -> str:
 def update_cargo_toml(path: Path, new_version: str) -> None:
     content = path.read_text()
     pattern = re.compile(
-        r"(?ms)(^\[package\]\n(?:.*?\n)*?^version\s*=\s*")([0-9]+\.[0-9]+\.[0-9]+)(")"
+        r'(?ms)(^\[package\]\n(?:.*?\n)*?^version\s*=\s*")([0-9]+\.[0-9]+\.[0-9]+)(")'
     )
     updated, count = pattern.subn(rf'\g<1>{new_version}\g<3>', content, count=1)
     if count != 1:
