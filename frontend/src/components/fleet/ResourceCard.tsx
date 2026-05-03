@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, QrCode, Trash2 } from "lucide-react"
+import { MapPin, QrCode, Trash2, Car, Wrench } from "lucide-react"
 import { StatusBadge } from "@/components/shared"
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
 import { useDeleteVehicle, useDeleteTool } from "@/lib/api/hooks"
@@ -28,6 +28,7 @@ export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
   const isAvailable = resource.status === "available"
   const deleteMutation = type === "vehicle" ? deleteVehicleMutation : deleteToolMutation
   const resourceColor = getResourceCalendarColor(type, resource.id)
+  const IconComponent = type === "vehicle" ? Car : Wrench
 
   const handleDelete = () => {
     deleteMutation.mutate(resource.id, {
@@ -43,21 +44,20 @@ export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
 
   return (
     <>
-      <Card className={cn("overflow-hidden transition-colors hover:border-primary/50 hover:shadow-sm", resourceColor.borderClassName)}>
+      <Card className={cn("overflow-hidden transition-colors hover:border-primary/30 hover:shadow-sm", resourceColor.borderClassName)}>
         <div className={cn("h-1.5 w-full", resourceColor.markerClassName)} />
-        <CardContent className="p-4">
+        <CardContent className="p-5">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
-              <span
-                aria-hidden="true"
-                className={cn("mt-1 h-3 w-3 flex-shrink-0 rounded-full ring-4 ring-background", resourceColor.markerClassName)}
-              />
-              <div className="min-w-0 space-y-1">
-                <h3 className="truncate font-semibold">{resource.name}</h3>
+              <div className={cn("flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl", resourceColor.tintClassName)}>
+                <IconComponent className={cn("h-5 w-5", resourceColor.labelClassName)} />
+              </div>
+              <div className="min-w-0 space-y-0.5">
+                <h3 className="font-display font-normal truncate">{resource.name}</h3>
                 {isVehicle(resource) ? (
                   <p className="truncate text-sm text-muted-foreground capitalize">
                     {resource.vehicle_type}
-                    {resource.license_plate && ` • ${resource.license_plate}`}
+                    {resource.license_plate && ` · ${resource.license_plate}`}
                   </p>
                 ) : (
                   <p className="truncate text-sm text-muted-foreground">
@@ -71,15 +71,17 @@ export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
 
           {resource.location && (
             <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-3 w-3" />
+              <div className="flex h-5 w-5 items-center justify-center">
+                <MapPin className="h-3 w-3" />
+              </div>
               <span>{resource.location}</span>
             </div>
           )}
 
-          <div className={cn("flex items-center justify-between border-t pt-3", resourceColor.borderClassName)}>
+          <div className="flex items-center justify-between border-t border-border/60 pt-3">
             <div className="flex items-center gap-2">
               {resource.qr_code && (
-                <div className={cn("flex items-center gap-1 rounded-full border px-2 py-1 text-xs", resourceColor.borderClassName, resourceColor.tintClassName)}>
+                <div className={cn("flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs", resourceColor.borderClassName, resourceColor.tintClassName)}>
                   <QrCode className="h-3 w-3" />
                   <span className="font-mono">{resource.qr_code}</span>
                 </div>
@@ -87,7 +89,7 @@ export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
@@ -102,6 +104,7 @@ export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
               variant={isAvailable ? "default" : "outline"}
               disabled={!isAvailable}
               onClick={() => onReserve(resource.id, type)}
+              className={cn("h-9 shadow-sm", isAvailable && "shadow-sm")}
             >
               {isAvailable ? "Reservieren" : "Nicht verfügbar"}
             </Button>
@@ -129,18 +132,22 @@ export function ResourceCardSkeleton({ count = 1 }: ResourceCardSkeletonProps) {
     <>
       {Array.from({ length: count }).map((_, i) => (
         <Card key={i}>
-          <CardContent className="p-4">
+          <div className="h-1.5 w-full bg-muted animate-pulse" />
+          <CardContent className="p-5">
             <div className="flex items-start justify-between mb-3">
-              <div className="space-y-2 flex-1">
-                <div className="h-5 bg-muted rounded w-3/4 animate-pulse" />
-                <div className="h-4 bg-muted rounded w-1/2 animate-pulse" />
+              <div className="flex items-start gap-3 flex-1">
+                <div className="h-10 w-10 rounded-2xl bg-muted animate-pulse" />
+                <div className="space-y-2 flex-1">
+                  <div className="h-5 bg-muted rounded w-3/4 animate-pulse" />
+                  <div className="h-4 bg-muted rounded w-1/2 animate-pulse" />
+                </div>
               </div>
-              <div className="h-5 bg-muted rounded w-16 animate-pulse" />
+              <div className="h-5 bg-muted rounded-full w-16 animate-pulse" />
             </div>
-            <div className="h-3 bg-muted rounded w-1/3 animate-pulse mb-3" />
-            <div className="flex items-center justify-between pt-3 border-t">
-              <div className="h-3 bg-muted rounded w-20 animate-pulse" />
-              <div className="h-8 bg-muted rounded w-24 animate-pulse" />
+            <div className="h-4 bg-muted rounded w-1/3 animate-pulse mb-3" />
+            <div className="flex items-center justify-between pt-3 border-t border-border/60">
+              <div className="h-8 bg-muted rounded w-20 animate-pulse" />
+              <div className="h-9 bg-muted rounded-lg w-24 animate-pulse" />
             </div>
           </CardContent>
         </Card>

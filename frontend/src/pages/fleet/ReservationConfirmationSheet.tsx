@@ -3,6 +3,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Calendar } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -148,15 +149,20 @@ export function ReservationConfirmationSheet({
         data-testid="reservation-confirmation-sheet"
       >
         <SheetHeader>
-          <SheetTitle>Reservierung bestaetigen</SheetTitle>
+          <SheetTitle className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
+              <Calendar className="h-4 w-4" />
+            </div>
+            Reservierung bestaetigen
+          </SheetTitle>
           <SheetDescription>
             {resourceName} fuer {formatDateRange(startDate, endDate)} reservieren.
           </SheetDescription>
         </SheetHeader>
 
         <div className="space-y-4 py-4">
-          <div className="rounded-lg border bg-muted/30 p-4 text-sm">
-            <p className="font-medium">Ausgewaehlter Zeitraum</p>
+          <div className="rounded-xl border bg-accent/40 p-4 text-sm">
+            <p className="font-display font-normal">{resourceName}</p>
             <p className="text-muted-foreground">{formatDateRange(startDate, endDate)}</p>
           </div>
 
@@ -164,7 +170,7 @@ export function ReservationConfirmationSheet({
             <Label htmlFor="reservation-site">Baustelle (optional)</Label>
             <select
               id="reservation-site"
-              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:ring-offset-2"
               value={siteId}
               onChange={(event) => setSiteId(event.target.value)}
             >
@@ -177,16 +183,17 @@ export function ReservationConfirmationSheet({
             </select>
           </div>
 
-          <div className="space-y-3 rounded-lg border p-4">
-            <div className="flex items-center gap-3">
+          <div className="space-y-3 rounded-xl border p-4">
+            <label className="flex items-center gap-3 cursor-pointer">
               <input
                 id="custom-times"
                 type="checkbox"
                 checked={useCustomTimes}
                 onChange={(event) => setUseCustomTimes(event.target.checked)}
+                className="h-4 w-4 rounded border-input"
               />
-              <Label htmlFor="custom-times">Zeitangaben anpassen</Label>
-            </div>
+              <Label htmlFor="custom-times" className="cursor-pointer">Zeitangaben anpassen</Label>
+            </label>
 
             {useCustomTimes && (
               <div className="grid gap-4 sm:grid-cols-2">
@@ -197,6 +204,7 @@ export function ReservationConfirmationSheet({
                     type="datetime-local"
                     value={startTime}
                     onChange={(event) => setStartTime(event.target.value)}
+                    className="h-10"
                   />
                 </div>
                 <div className="space-y-2">
@@ -206,6 +214,7 @@ export function ReservationConfirmationSheet({
                     type="datetime-local"
                     value={endTime}
                     onChange={(event) => setEndTime(event.target.value)}
+                    className="h-10"
                   />
                 </div>
               </div>
@@ -214,10 +223,10 @@ export function ReservationConfirmationSheet({
         </div>
 
         <SheetFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="shadow-sm">
             Abbrechen
           </Button>
-          <Button onClick={handleConfirm} disabled={createReservation.isPending}>
+          <Button onClick={handleConfirm} disabled={createReservation.isPending} className="shadow-sm">
             Reservierung bestaetigen
           </Button>
         </SheetFooter>

@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
 
 type TabType = "vehicles" | "tools" | "reservations"
 
@@ -49,54 +50,59 @@ export default function FleetPage() {
         title="Fuhrpark & Werkzeuge"
         description="Fahrzeuge und Werkzeuge verwalten"
         action={
-          <div className="flex gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">Neu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setDialogType("vehicle")}>
-                  <Car className="h-4 w-4 mr-2" />
-                  Fahrzeug
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setDialogType("tool")}>
-                  <Wrench className="h-4 w-4 mr-2" />
-                  Werkzeug
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="gap-2 h-10 shadow-sm">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Neu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setDialogType("vehicle")}>
+                <Car className="h-4 w-4 mr-2" />
+                Fahrzeug
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDialogType("tool")}>
+                <Wrench className="h-4 w-4 mr-2" />
+                Werkzeug
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         }
       />
 
       <section className="space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold">Kalender</h2>
-          <p className="text-sm text-muted-foreground">
-            Aktuelle Reservierungen direkt im Fuhrpark sehen.
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
+            <Car className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div>
+            <h2 className="font-display text-lg">Kalender</h2>
+            <p className="text-sm text-muted-foreground">
+              Aktuelle Reservierungen direkt im Fuhrpark sehen.
+            </p>
+          </div>
         </div>
         <CalendarView embedded />
       </section>
 
-      {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {tabs.map((tab) => (
-          <Button
+          <button
             key={tab.value}
-            variant={activeTab === tab.value ? "default" : "outline"}
             onClick={() => setActiveTab(tab.value)}
-            className="rounded-full whitespace-nowrap"
+            className={cn(
+              "rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
+              activeTab === tab.value
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+            )}
           >
             {tab.label}
-          </Button>
+          </button>
         ))}
       </div>
 
-      {/* Tab Content */}
       {activeTab === "vehicles" && <VehiclesList onReserve={handleReserve} />}
       {activeTab === "tools" && <ToolsList onReserve={handleReserve} />}
       {activeTab === "reservations" && <ReservationsList showOnlyMine />}

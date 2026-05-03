@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { LoadingSpinner, EmptyState } from "@/components/shared"
+import { LoadingSpinner, EmptyState, PageHeader } from "@/components/shared"
 import { useCalendar } from "@/lib/api/hooks"
 import { cn, formatLocalDateKey, startOfLocalWeek } from "@/lib/utils"
 import type { CalendarEntry, ReservationSummary, ResourceType } from "@/types/fleet"
@@ -21,7 +21,7 @@ interface CalendarViewProps {
 function getWeekDates(date: Date): { start: string; end: string } {
   const start = startOfLocalWeek(date)
   const end = new Date(start)
-  end.setDate(end.getDate() + 6) // Sunday
+  end.setDate(end.getDate() + 6)
   end.setHours(23, 59, 59, 999)
 
   return {
@@ -49,23 +49,23 @@ const calendarGridColumns = "minmax(220px, 1.25fr) repeat(7, minmax(96px, 1fr))"
 
 const reservationStatusStyles = {
   confirmed: {
-    badgeClassName: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
+    badgeClassName: "bg-success/15 text-success border-success/20",
     label: "Bestätigt",
   },
   in_use: {
-    badgeClassName: "bg-blue-100 text-blue-800 dark:bg-blue-500/15 dark:text-blue-200",
+    badgeClassName: "bg-primary/10 text-primary border-primary/20",
     label: "Im Einsatz",
   },
   pending: {
-    badgeClassName: "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200",
+    badgeClassName: "bg-warning/15 text-warning-foreground border-warning/25",
     label: "Anfrage",
   },
   completed: {
-    badgeClassName: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
+    badgeClassName: "bg-muted text-muted-foreground border-border",
     label: "Erledigt",
   },
   cancelled: {
-    badgeClassName: "bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-200",
+    badgeClassName: "bg-destructive/10 text-destructive border-destructive/20",
     label: "Storniert",
   },
 } as const
@@ -141,27 +141,26 @@ export default function CalendarView({ embedded = false }: CalendarViewProps) {
   return (
     <div className="space-y-6">
       {!embedded && (
-        <div>
-          <h1 className="text-2xl font-bold">Kalender</h1>
-          <p className="text-muted-foreground">Ressourcenbelegung</p>
-        </div>
+        <PageHeader
+          title="Kalender"
+          description="Ressourcenbelegung"
+        />
       )}
 
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={prevWeek}>
+        <div className="flex items-center gap-1.5">
+          <Button variant="outline" size="icon" onClick={prevWeek} className="h-9 w-9 shadow-sm">
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={nextWeek}>
+          <Button variant="outline" size="icon" onClick={nextWeek} className="h-9 w-9 shadow-sm">
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        <span className="min-w-[180px] text-right font-medium sm:text-center">
+        <span className="min-w-[180px] text-right font-display font-normal tracking-tight sm:text-center">
           {formatWeekHeader(weekStart)}
         </span>
       </div>
 
-      {/* Resources Grid */}
       {isLoading ? (
         <LoadingSpinner className="py-8" />
       ) : error ? (
@@ -326,7 +325,7 @@ export default function CalendarView({ embedded = false }: CalendarViewProps) {
                                     <div className="mt-2 flex items-center gap-2 text-[11px]">
                                       <span
                                         className={cn(
-                                          "inline-flex rounded-full px-2 py-0.5 font-medium",
+                                          "inline-flex rounded-full px-2 py-0.5 font-medium border",
                                           reservationStatus.badgeClassName
                                         )}
                                       >
@@ -357,7 +356,7 @@ export default function CalendarView({ embedded = false }: CalendarViewProps) {
       {!embedded && (
         <div className="flex justify-center">
           <Link to="/fleet">
-            <Button variant="outline">Zurück zum Fuhrpark</Button>
+            <Button variant="outline" className="shadow-sm">Zurück zum Fuhrpark</Button>
           </Link>
         </div>
       )}

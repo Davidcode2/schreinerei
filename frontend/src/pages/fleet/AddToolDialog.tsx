@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Wrench } from "lucide-react"
 import { toast } from "sonner"
 import { useCreateTool } from "@/lib/api/hooks"
 
@@ -84,14 +85,18 @@ export function AddToolDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Werkzeug hinzufügen</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
+              <Wrench className="h-4 w-4" />
+            </div>
+            Werkzeug hinzufügen
+          </DialogTitle>
           <DialogDescription>
             Neues Werkzeug zum Inventar hinzufügen
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Name *</Label>
             <Input
@@ -99,10 +104,10 @@ export function AddToolDialog({
               placeholder="z.B. Bohrhammer"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              className="h-10"
             />
           </div>
 
-          {/* Category */}
           <div className="space-y-2">
             <Label htmlFor="category">Kategorie</Label>
             <Input
@@ -110,10 +115,10 @@ export function AddToolDialog({
               placeholder="z.B. Elektrowerkzeug"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
+              className="h-10"
             />
           </div>
 
-          {/* Location */}
           <div className="space-y-2">
             <Label htmlFor="location">Standort</Label>
             <Input
@@ -121,10 +126,10 @@ export function AddToolDialog({
               placeholder="z.B. Werkstatt"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              className="h-10"
             />
           </div>
 
-          {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="description">Beschreibung</Label>
             <Textarea
@@ -138,12 +143,13 @@ export function AddToolDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)} className="shadow-sm">
             Abbrechen
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={!isFormValid || createTool.isPending}
+            className="shadow-sm"
           >
             {createTool.isPending ? "Wird erstellt..." : "Erstellen"}
           </Button>

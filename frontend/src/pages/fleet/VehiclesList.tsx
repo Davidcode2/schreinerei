@@ -7,6 +7,7 @@ import { ResourceCard, ResourceCardSkeleton } from "@/components/fleet/ResourceC
 import { useCalendar, useVehicles } from "@/lib/api/hooks"
 import { AddVehicleDialog } from "./AddVehicleDialog"
 import { buildEffectiveStatusMap, getEffectiveResourceStatus } from "./effectiveResourceStatus"
+import { cn } from "@/lib/utils"
 import type { Vehicle, ResourceStatus } from "@/types/fleet"
 
 const statusFilters: { value: ResourceStatus | undefined; label: string }[] = [
@@ -62,33 +63,34 @@ export function VehiclesList({ onReserve }: VehiclesListProps) {
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
       <div className="space-y-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Fahrzeug suchen..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-10 bg-card border-border"
           />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 pt-1">
+        <div className="flex gap-2 overflow-x-auto pb-1">
           {statusFilters.map((filter) => (
-            <Button
+            <button
               key={filter.label}
-              variant={selectedStatus === filter.value ? "default" : "outline"}
-              size="sm"
               onClick={() => setSelectedStatus(filter.value)}
-              className="rounded-full whitespace-nowrap"
+              className={cn(
+                "rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
+                selectedStatus === filter.value
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+              )}
             >
               {filter.label}
-            </Button>
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Vehicles Grid */}
       {isLoading ? (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
           <ResourceCardSkeleton count={4} />
@@ -109,7 +111,7 @@ export function VehiclesList({ onReserve }: VehiclesListProps) {
           }
           action={
             !searchQuery && (
-              <Button className="gap-2" onClick={() => setAddVehicleOpen(true)}>
+              <Button className="gap-2 h-10 shadow-sm" onClick={() => setAddVehicleOpen(true)}>
                 <Plus className="h-4 w-4" />
                 Fahrzeug hinzufügen
               </Button>

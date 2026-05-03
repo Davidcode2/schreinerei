@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
 import { Calendar, AlertCircle } from "lucide-react"
 import {
   useAvailability,
@@ -24,6 +23,7 @@ import {
 import { StatusTransitionButtons, statusLabels } from "@/components/fleet/StatusTransitionButtons"
 import { formatDateTimeLocalInput } from "@/lib/utils"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 import type { ResourceType, Vehicle, Tool, Reservation, ReservationStatus, ConflictDetail } from "@/types/fleet"
 
 const formatDateToRfc3339 = (datetimeLocal: string): string => {
@@ -40,21 +40,6 @@ const formatTimeRange = (start: string, end: string): string => {
   const startDate = new Date(start)
   const endDate = new Date(end)
   return `${startDate.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })} ${startDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} - ${endDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`
-}
-
-const getStatusVariant = (status: ReservationStatus): "default" | "secondary" | "destructive" | "outline" => {
-  switch (status) {
-    case "pending":
-      return "outline"
-    case "confirmed":
-      return "default"
-    case "in_use":
-      return "default"
-    case "completed":
-      return "secondary"
-    case "cancelled":
-      return "destructive"
-  }
 }
 
 interface ReservationDialogProps {
@@ -101,7 +86,6 @@ export function ReservationDialog({
   const createMutation = useCreateReservation()
   const updateMutation = useUpdateReservation()
 
-  // Reset state when dialog opens with new data
   useEffect(() => {
     if (open) {
       if (mode === "edit" && initialData) {
@@ -131,7 +115,6 @@ export function ReservationDialog({
     preferences?.active_site_id,
   ])
 
-  // Check availability when both times are set
   const { data: availability } = useAvailability(
     startTime && endTime && selectedResourceId
       ? {
@@ -196,7 +179,9 @@ export function ReservationDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
+              <Calendar className="h-4 w-4" />
+            </div>
             {mode === "edit" ? "Reservierung bearbeiten" : "Reservierung erstellen"}
           </DialogTitle>
           <DialogDescription>
@@ -205,14 +190,21 @@ export function ReservationDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Status Display (edit mode only) */}
           {isEditing && (
             <div className="space-y-2">
               <Label>Status</Label>
               <div className="flex items-center gap-2">
-                <Badge variant={getStatusVariant(initialData.status)}>
+                <span className={cn(
+                  "inline-flex rounded-full px-3 py-1 text-xs font-medium border",
+                  initialData.status === "confirmed" ? "bg-success/15 text-success border-success/20" :
+                  initialData.status === "in_use" ? "bg-destructive/10 text-destructive border-destructive/20" :
+                  initialData.status === "pending" ? "bg-warning/15 text-warning-foreground border-warning/25" :
+                  initialData.status === "completed" ? "bg-success/15 text-success border-success/20" :
+                  initialData.status === "cancelled" ? "bg-destructive/10 text-destructive border-destructive/20" :
+                  "bg-secondary text-secondary-foreground"
+                )}>
                   {statusLabels[initialData.status]}
-                </Badge>
+                </span>
               </div>
             </div>
           )}
@@ -220,7 +212,7 @@ export function ReservationDialog({
           <div className="space-y-2">
             <Label>Baustelle (optional)</Label>
             <select
-              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:ring-offset-2"
               value={siteId}
               onChange={(event) => setSiteId(event.target.value)}
             >
@@ -233,7 +225,6 @@ export function ReservationDialog({
             </select>
           </div>
 
-          {/* Status Transition Buttons (edit mode only, for active statuses) */}
           {canTransition && (
             <div className="space-y-2">
               <Label>Aktionen</Label>
@@ -248,36 +239,42 @@ export function ReservationDialog({
             </div>
           )}
 
-          {/* Resource Type (create mode only) */}
           {mode === "create" && (
             <div className="space-y-2">
               <Label>Ressourcentyp</Label>
               <div className="flex gap-2">
-                <Button
-                  variant={selectedResourceType === "vehicle" ? "default" : "outline"}
-                  size="sm"
+                <button
                   onClick={() => {
                     setSelectedResourceType("vehicle")
                     setSelectedResourceId("")
                   }}
+                  className={cn(
+                    "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                    selectedResourceType === "vehicle"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                  )}
                 >
                   Fahrzeug
-                </Button>
-                <Button
-                  variant={selectedResourceType === "tool" ? "default" : "outline"}
-                  size="sm"
+                </button>
+                <button
                   onClick={() => {
                     setSelectedResourceType("tool")
                     setSelectedResourceId("")
                   }}
+                  className={cn(
+                    "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                    selectedResourceType === "tool"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                  )}
                 >
                   Werkzeug
-                </Button>
+                </button>
               </div>
             </div>
           )}
 
-          {/* Resource Selection (create mode only) / Display (edit mode) */}
           {isEditing ? (
             <div className="space-y-2">
               <Label>Ressource</Label>
@@ -288,7 +285,7 @@ export function ReservationDialog({
               <div className="space-y-2">
                 <Label>Ressource</Label>
                 <select
-                  className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   value={selectedResourceId}
                   onChange={(e) => setSelectedResourceId(e.target.value)}
                 >
@@ -303,7 +300,6 @@ export function ReservationDialog({
             )
           )}
 
-          {/* Time Range */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Von</Label>
@@ -311,6 +307,7 @@ export function ReservationDialog({
                 type="datetime-local"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
+                className="h-10"
               />
             </div>
             <div className="space-y-2">
@@ -319,16 +316,16 @@ export function ReservationDialog({
                 type="datetime-local"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
+                className="h-10"
               />
             </div>
           </div>
 
-          {/* Availability Warning (create mode only) */}
           {mode === "create" && startTime && endTime && !isAvailable && (
             <div className="space-y-2">
-              <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg text-sm">
-                <AlertCircle className="h-4 w-4 text-yellow-600" />
-                <span className="text-yellow-800 dark:text-yellow-200">
+              <div className="flex items-center gap-2 p-3 bg-warning/10 border border-warning/20 rounded-lg text-sm">
+                <AlertCircle className="h-4 w-4 text-warning" />
+                <span className="text-warning-foreground">
                   Nicht verfügbar zu diesem Zeitpunkt
                 </span>
               </div>
@@ -336,14 +333,20 @@ export function ReservationDialog({
                 <div className="space-y-1 text-sm">
                   <p className="font-medium text-muted-foreground">Bestehende Reservierungen:</p>
                   {availability.conflicts.map((conflict: ConflictDetail) => (
-                    <div key={conflict.id} className="flex items-center gap-2 p-2 bg-muted rounded">
+                    <div key={conflict.id} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
                       <span className="font-medium">{conflict.user_name || "Unbekannt"}</span>
                       <span className="text-muted-foreground">
                         {formatTimeRange(conflict.start_time, conflict.end_time)}
                       </span>
-                      <Badge variant="outline" className="text-xs">
+                      <span className={cn(
+                        "inline-flex rounded-full px-2 py-0.5 text-xs font-medium border",
+                        conflict.status === "confirmed" ? "bg-success/15 text-success border-success/20" :
+                        conflict.status === "pending" ? "bg-warning/15 text-warning-foreground border-warning/25" :
+                        conflict.status === "cancelled" ? "bg-destructive/10 text-destructive border-destructive/20" :
+                        "bg-secondary text-secondary-foreground"
+                      )}>
                         {statusLabels[conflict.status as ReservationStatus] || conflict.status}
-                      </Badge>
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -351,19 +354,19 @@ export function ReservationDialog({
             </div>
           )}
 
-          {/* Notes */}
           <div className="space-y-2">
             <Label>Notiz (optional)</Label>
             <Input
               placeholder="z.B. Für Baustelle Müller"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              className="h-10"
             />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="shadow-sm">
             Abbrechen
           </Button>
           <Button
@@ -373,6 +376,7 @@ export function ReservationDialog({
                 ? createMutation.isPending || !isAvailable
                 : updateMutation.isPending
             }
+            className="shadow-sm"
           >
             {mode === "edit"
               ? updateMutation.isPending

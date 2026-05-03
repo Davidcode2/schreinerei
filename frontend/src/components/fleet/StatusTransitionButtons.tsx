@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { useUpdateReservation } from "@/lib/api/hooks"
+import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import type { ReservationStatus } from "@/types/fleet"
 
@@ -64,16 +65,18 @@ export function StatusTransitionButtons({
       {transitions.map((targetStatus) => {
         const isDestructive = targetStatus === "cancelled"
         const isSuccess = targetStatus === "completed"
-        const isPrimary = targetStatus === "confirmed" || targetStatus === "in_use"
 
         return (
           <Button
             key={targetStatus}
-            variant={isDestructive ? "destructive" : isSuccess ? "default" : isPrimary ? "default" : "outline"}
+            variant={isDestructive ? "destructive" : isSuccess ? "default" : "default"}
             size="sm"
             onClick={() => handleTransition(targetStatus)}
             disabled={updateMutation.isPending}
-            className={isSuccess ? "bg-green-600 hover:bg-green-700" : ""}
+            className={cn(
+              "h-9 shadow-sm",
+              isSuccess && "bg-success hover:bg-success/90 text-success-foreground"
+            )}
           >
             {transitionLabels[targetStatus]}
           </Button>

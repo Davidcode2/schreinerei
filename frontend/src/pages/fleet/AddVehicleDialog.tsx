@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Car } from "lucide-react"
 import { toast } from "sonner"
 import { useCreateVehicle } from "@/lib/api/hooks"
 import type { VehicleType } from "@/types/fleet"
@@ -104,14 +105,18 @@ export function AddVehicleDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Fahrzeug hinzufügen</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
+              <Car className="h-4 w-4" />
+            </div>
+            Fahrzeug hinzufügen
+          </DialogTitle>
           <DialogDescription>
             Neues Fahrzeug zum Fuhrpark hinzufügen
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Name *</Label>
             <Input
@@ -119,10 +124,10 @@ export function AddVehicleDialog({
               placeholder="z.B. VW Transporter"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              className="h-10"
             />
           </div>
 
-          {/* License Plate */}
           <div className="space-y-2">
             <Label htmlFor="licensePlate">Kennzeichen</Label>
             <Input
@@ -130,17 +135,17 @@ export function AddVehicleDialog({
               placeholder="z.B. B-AB 1234"
               value={licensePlate}
               onChange={(e) => setLicensePlate(e.target.value)}
+              className="h-10"
             />
           </div>
 
-          {/* Vehicle Type */}
           <div className="space-y-2">
             <Label htmlFor="vehicleType">Fahrzeugtyp *</Label>
             <Select
               value={vehicleType}
               onValueChange={(value) => setVehicleType(value as VehicleType)}
             >
-              <SelectTrigger id="vehicleType">
+              <SelectTrigger id="vehicleType" className="h-10">
                 <SelectValue placeholder="Fahrzeugtyp wählen" />
               </SelectTrigger>
               <SelectContent>
@@ -153,7 +158,6 @@ export function AddVehicleDialog({
             </Select>
           </div>
 
-          {/* Location */}
           <div className="space-y-2">
             <Label htmlFor="location">Standort</Label>
             <Input
@@ -161,10 +165,10 @@ export function AddVehicleDialog({
               placeholder="z.B. Hof 1"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              className="h-10"
             />
           </div>
 
-          {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="description">Beschreibung</Label>
             <Textarea
@@ -178,12 +182,13 @@ export function AddVehicleDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)} className="shadow-sm">
             Abbrechen
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={!isFormValid || createVehicle.isPending}
+            className="shadow-sm"
           >
             {createVehicle.isPending ? "Wird erstellt..." : "Erstellen"}
           </Button>
