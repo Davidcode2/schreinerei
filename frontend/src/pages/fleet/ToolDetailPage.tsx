@@ -15,7 +15,7 @@ export default function ToolDetailPage() {
   const { data: tool, isLoading, error, refetch } = useTool(id!)
   const { data: reservations = [] } = useReservations({
     resource_type: "tool",
-    resource_id: id,
+    ...(id ? { resource_id: id } : {}),
   })
 
   if (isLoading) {
