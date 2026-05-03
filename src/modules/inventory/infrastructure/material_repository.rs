@@ -409,6 +409,7 @@ impl MaterialRepository {
 
     // === Stock operations ===
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn withdraw_stock(
         &self,
         material_id: MaterialId,
