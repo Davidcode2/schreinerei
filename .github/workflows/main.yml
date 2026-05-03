@@ -16,7 +16,7 @@ env:
   DOMAIN: schreinerei.jakob-lingel.dev
   KEYCLOAK_URL: https://auth.jakob-lingel.dev
   KEYCLOAK_REALM: schreinerei
-  KEYCLOAK_CLIENT_ID: schreinerei_pwa
+  KEYCLOAK_CLIENT_ID: schreinerei_pwa_prod
 
 jobs:
   check-for-changes:
@@ -118,7 +118,7 @@ jobs:
     env:
       VITE_KEYCLOAK_URL: https://auth.jakob-lingel.dev
       VITE_KEYCLOAK_REALM: schreinerei
-      VITE_KEYCLOAK_CLIENT_ID: schreinerei_pwa
+      VITE_KEYCLOAK_CLIENT_ID: schreinerei_pwa_prod
       VITE_API_URL: https://schreinerei.jakob-lingel.dev
     steps:
       - name: Checkout repository
@@ -216,7 +216,7 @@ jobs:
       build_args: |
         VITE_KEYCLOAK_URL=https://auth.jakob-lingel.dev
         VITE_KEYCLOAK_REALM=schreinerei
-        VITE_KEYCLOAK_CLIENT_ID=schreinerei_pwa
+        VITE_KEYCLOAK_CLIENT_ID=schreinerei_pwa_prod
         VITE_API_URL=https://schreinerei.jakob-lingel.dev
     secrets: inherit
 

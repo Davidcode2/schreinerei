@@ -8,8 +8,12 @@ This guide explains how to configure Keycloak for the Schreinerei SaaS applicati
 ┌─────────────────────────────────────────────────────────────┐
 │  Keycloak Realm: schreinerei                                │
 │                                                             │
-│  Client: schreinerei_pwa (Public)                           │
-│  └── Used by: Frontend PWA                                  │
+│  Client: schreinerei_pwa_dev (Public)                       │
+│  └── Used by: Local frontend development                    │
+│  └── Flow: OAuth2 Authorization Code + PKCE                 │
+│                                                             │
+│  Client: schreinerei_pwa_prod (Public)                      │
+│  └── Used by: Deployed frontend                             │
 │  └── Flow: OAuth2 Authorization Code + PKCE                 │
 │                                                             │
 │  Organizations:                                              │
@@ -49,14 +53,18 @@ This guide explains how to configure Keycloak for the Schreinerei SaaS applicati
 2. Enable **Organizations** flag
 3. Save
 
-### 2. Create the PWA Client
+### 2. Create the PWA Clients
+
+Create one client for local development and one for production deployment.
+
+#### Development client
 
 1. Go to **Clients** → **Create client**
 
 | Field | Value |
 |-------|-------|
 | Client type | OpenID Connect |
-| Client ID | `schreinerei_pwa` |
+| Client ID | `schreinerei_pwa_dev` |
 | Client authentication | **Off** (public client) |
 | Authorization | Off |
 | Authentication flow | Standard flow |
@@ -68,9 +76,28 @@ This guide explains how to configure Keycloak for the Schreinerei SaaS applicati
 | Valid post logout redirect URIs | `/*` |
 | Web origins | `+` |
 
+#### Production client
+
+Create a second client with the same scopes and mappers:
+
+| Field | Value |
+|-------|-------|
+| Client type | OpenID Connect |
+| Client ID | `schreinerei_pwa_prod` |
+| Client authentication | **Off** (public client) |
+| Authorization | Off |
+| Authentication flow | Standard flow |
+
+| Field | Value |
+|-------|-------|
+| Root URL | `https://schreinerei.jakob-lingel.dev` |
+| Valid redirect URIs | `https://schreinerei.jakob-lingel.dev/*` |
+| Valid post logout redirect URIs | `https://schreinerei.jakob-lingel.dev/*` |
+| Web origins | `https://schreinerei.jakob-lingel.dev` |
+
 ### 3. Add Required Scopes
 
-Go to **Clients** → `schreinerei_pwa` → **Client Scopes** → **Add client scope**:
+Go to **Clients** → both PWA clients → **Client Scopes** → **Add client scope**:
 
 - `openid` (built-in)
 - `profile` (built-in)
@@ -79,7 +106,7 @@ Go to **Clients** → `schreinerei_pwa` → **Client Scopes** → **Add client s
 
 ### 4. Add Realm Role Mapper
 
-1. Go to **Clients** → `schreinerei_pwa` → **Mappers**
+1. Go to **Clients** → both PWA clients → **Mappers**
 2. **Add mapper**:
 
 | Field | Value |
@@ -132,7 +159,7 @@ psql -c "UPDATE tenants SET keycloak_organization_alias = 'org-alias-here' WHERE
 # Get token
 TOKEN=$(curl -s -X POST \
   "https://auth.jakob-lingel.dev/realms/schreinerei/protocol/openid-connect/token" \
-  -d "client_id=schreinerei_pwa" \
+  -d "client_id=schreinerei_pwa_dev" \
   -d "username=test@example.com" \
   -d "password=your-password" \
   -d "grant_type=password" \
@@ -162,13 +189,22 @@ HOST=0.0.0.0
 PORT=3000
 ```
 
-### Frontend (.env)
+### Frontend (.env) for local development
 
 ```env
 VITE_KEYCLOAK_URL=https://auth.jakob-lingel.dev
 VITE_KEYCLOAK_REALM=schreinerei
-VITE_KEYCLOAK_CLIENT_ID=schreinerei_pwa
+VITE_KEYCLOAK_CLIENT_ID=schreinerei_pwa_dev
 VITE_API_URL=http://localhost:3000
+```
+
+### Production frontend build configuration
+
+```env
+VITE_KEYCLOAK_URL=https://auth.jakob-lingel.dev
+VITE_KEYCLOAK_REALM=schreinerei
+VITE_KEYCLOAK_CLIENT_ID=schreinerei_pwa_prod
+VITE_API_URL=https://schreinerei.jakob-lingel.dev
 ```
 
 ## Troubleshooting
@@ -183,6 +219,7 @@ VITE_API_URL=http://localhost:3000
 
 - Match redirect URI exactly (no trailing slashes)
 - Check protocol (http vs https)
+- Make sure local development uses `schreinerei_pwa_dev` and production uses `schreinerei_pwa_prod`
 
 ### CORS errors
 

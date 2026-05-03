@@ -35,7 +35,7 @@ paragraph "Invalid parameter: redirect_uri"
 ```
 
 **Root Cause:**
-The Keycloak client `schreinerei_pwa` does not have `http://localhost:5174/auth/callback` registered as a valid redirect URI. The app is running on port 5174 (due to port 5173 being occupied), but Keycloak only accepts the configured redirect URIs.
+The Keycloak client `schreinerei_pwa_dev` does not have `http://localhost:5174/auth/callback` registered as a valid redirect URI. The app is running on port 5174 (due to port 5173 being occupied), but Keycloak only accepts the configured redirect URIs.
 
 **Fix Required:**
 1. Register `http://localhost:5174/auth/callback` in Keycloak client settings
@@ -43,7 +43,7 @@ The Keycloak client `schreinerei_pwa` does not have `http://localhost:5174/auth/
 3. OR use wildcard redirect URIs in Keycloak (less secure)
 
 **Keycloak Admin Action:**
-Go to Keycloak Admin Console → Clients → schreinerei_pwa → Valid Redirect URIs → Add `http://localhost:*/auth/callback`
+Go to Keycloak Admin Console → Clients → `schreinerei_pwa_dev` → Valid Redirect URIs → Add `http://localhost:*/auth/callback`
 
 ---
 
