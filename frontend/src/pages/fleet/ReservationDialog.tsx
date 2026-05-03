@@ -63,11 +63,9 @@ export function ReservationDialog({
   initialStartTime,
   initialEndTime,
 }: ReservationDialogProps) {
+  const fixedResourceType = initialData?.resource_type ?? resourceType ?? "vehicle"
   const [selectedResourceId, setSelectedResourceId] = useState(
     initialData?.resource_id ?? resourceId ?? ""
-  )
-  const [selectedResourceType, setSelectedResourceType] = useState<ResourceType>(
-    initialData?.resource_type ?? resourceType ?? "vehicle"
   )
   const [siteId, setSiteId] = useState(initialData?.site_id ?? "")
   const [startTime, setStartTime] = useState(
@@ -88,19 +86,17 @@ export function ReservationDialog({
 
   useEffect(() => {
     if (open) {
-      if (mode === "edit" && initialData) {
-        setSelectedResourceId(initialData.resource_id)
-        setSelectedResourceType(initialData.resource_type)
-        setSiteId(initialData.site_id ?? "")
-        setStartTime(formatDateTimeLocal(initialData.start_time))
-        setEndTime(formatDateTimeLocal(initialData.end_time))
-        setNotes(initialData.notes ?? "")
-      } else if (mode === "create") {
-        setSelectedResourceId(resourceId ?? "")
-        setSelectedResourceType(resourceType ?? "vehicle")
-        setSiteId(preferences?.active_site_id ?? "")
-        setStartTime(initialStartTime ?? "")
-        setEndTime(initialEndTime ?? "")
+        if (mode === "edit" && initialData) {
+          setSelectedResourceId(initialData.resource_id)
+          setSiteId(initialData.site_id ?? "")
+          setStartTime(formatDateTimeLocal(initialData.start_time))
+          setEndTime(formatDateTimeLocal(initialData.end_time))
+          setNotes(initialData.notes ?? "")
+        } else if (mode === "create") {
+          setSelectedResourceId(resourceId ?? "")
+          setSiteId(preferences?.active_site_id ?? "")
+          setStartTime(initialStartTime ?? "")
+          setEndTime(initialEndTime ?? "")
         setNotes("")
       }
     }
@@ -109,7 +105,6 @@ export function ReservationDialog({
     mode,
     initialData,
     resourceId,
-    resourceType,
     initialStartTime,
     initialEndTime,
     preferences?.active_site_id,
@@ -118,7 +113,7 @@ export function ReservationDialog({
   const { data: availability } = useAvailability(
     startTime && endTime && selectedResourceId
       ? {
-          resource_type: selectedResourceType,
+          resource_type: fixedResourceType,
           resource_id: selectedResourceId,
           start_time: formatDateToRfc3339(startTime),
           end_time: formatDateToRfc3339(endTime),
@@ -151,7 +146,7 @@ export function ReservationDialog({
         toast.success("Reservierung aktualisiert")
       } else {
         await createMutation.mutateAsync({
-          resource_type: selectedResourceType,
+          resource_type: fixedResourceType,
           resource_id: selectedResourceId,
           site_id: siteId || null,
           start_time: formatDateToRfc3339(startTime),
@@ -168,7 +163,7 @@ export function ReservationDialog({
     }
   }
 
-  const resources = selectedResourceType === "vehicle" ? vehicles : tools
+  const resources = fixedResourceType === "vehicle" ? vehicles : tools
   const isEditing = mode === "edit" && initialData
   const canTransition = isEditing &&
     initialData.status !== "cancelled" &&
@@ -236,42 +231,6 @@ export function ReservationDialog({
                   onOpenChange(false)
                 }}
               />
-            </div>
-          )}
-
-          {mode === "create" && (
-            <div className="space-y-2">
-              <Label>Ressourcentyp</Label>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setSelectedResourceType("vehicle")
-                    setSelectedResourceId("")
-                  }}
-                  className={cn(
-                    "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-                    selectedResourceType === "vehicle"
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
-                  )}
-                >
-                  Fahrzeug
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedResourceType("tool")
-                    setSelectedResourceId("")
-                  }}
-                  className={cn(
-                    "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-                    selectedResourceType === "tool"
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
-                  )}
-                >
-                  Werkzeug
-                </button>
-              </div>
             </div>
           )}
 
