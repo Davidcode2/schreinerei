@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { useParams } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { useParams, useSearchParams } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -38,6 +38,7 @@ import { toast } from "sonner"
 
 export default function InventoryDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showStockInDialog, setShowStockInDialog] = useState(false)
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false)
@@ -54,6 +55,26 @@ export default function InventoryDetailPage() {
   const stockInMutation = useStockInMaterial()
   const withdrawMutation = useWithdrawMaterial()
   const orderMutation = useCreateOrderRequest()
+
+  const withdrawSiteIdFromQuery = searchParams.get("siteId")
+  const shouldOpenWithdrawDialog = searchParams.get("action") === "withdraw"
+
+  useEffect(() => {
+    if (shouldOpenWithdrawDialog) {
+      setShowWithdrawDialog(true)
+    }
+  }, [shouldOpenWithdrawDialog])
+
+  const closeWithdrawDialog = () => {
+    setShowWithdrawDialog(false)
+
+    if (shouldOpenWithdrawDialog) {
+      const nextParams = new URLSearchParams(searchParams)
+      nextParams.delete("action")
+      nextParams.delete("siteId")
+      setSearchParams(nextParams, { replace: true })
+    }
+  }
 
   if (isLoading) {
     return <LoadingSpinner className="min-h-[400px]" size="lg" />
@@ -87,7 +108,7 @@ export default function InventoryDetailPage() {
           ? `${quantity} ${material.unit} entsorgt`
           : `${quantity} ${material.unit} entnommen`
       )
-      setShowWithdrawDialog(false)
+      closeWithdrawDialog()
     } catch {
       toast.error("Entnahme fehlgeschlagen")
     }
@@ -351,12 +372,19 @@ export default function InventoryDetailPage() {
 
       <WithdrawDialog
         open={showWithdrawDialog}
-        onOpenChange={setShowWithdrawDialog}
+        onOpenChange={(open) => {
+          if (open) {
+            setShowWithdrawDialog(true)
+            return
+          }
+
+          closeWithdrawDialog()
+        }}
         material={material}
         onConfirm={handleWithdraw}
         isLoading={withdrawMutation.isPending}
         sites={(sites ?? []).map((site) => ({ id: site.id, name: site.name }))}
-        initialSiteId={preferences?.active_site_id ?? null}
+        initialSiteId={withdrawSiteIdFromQuery ?? preferences?.active_site_id ?? null}
       />
 
       <StockInDialog

@@ -1,4 +1,4 @@
-import { ArrowRight, Camera, FileText, Trash2 } from "lucide-react";
+import { ArrowRight, Camera, FileText, Package, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -426,6 +426,14 @@ export function ActivityFeed({
 				</TabsContent>
 
 				<TabsContent value="materials" className="mt-0">
+					<div className="mt-4">
+						<Button asChild className="h-10 gap-2 shadow-sm w-full sm:w-auto">
+							<Link to="/inventory">
+								<Package className="h-4 w-4" />
+								Material buchen
+							</Link>
+						</Button>
+					</div>
 					{isMaterialHistoryLoading ? (
 						<p className="py-8 text-center text-sm text-muted-foreground">
 							Material-Historie wird geladen...
@@ -435,38 +443,59 @@ export function ActivityFeed({
 							{materialHistory.map((entry) => (
 								<Card
 									key={entry.id}
-									className="p-4 transition-all duration-200 hover:shadow-sm"
+									className="overflow-hidden transition-all duration-200 hover:shadow-sm"
 								>
-									<div className="flex items-start justify-between gap-3">
-										<div>
-											<p className="text-sm font-medium">
-												{entry.material_name}
-											</p>
-											<p className="text-xs text-muted-foreground">
-												Kategorie: {entry.category_name}
-											</p>
-											<p className="text-xs text-muted-foreground">
-												Entnommen von: {entry.extracted_by}
-											</p>
-											{entry.site_id && entry.site_name ? (
+									<div className="p-4">
+										<div className="flex items-start justify-between gap-3">
+											<div>
 												<Link
-													to={`/sites/${entry.site_id}`}
-													className="text-xs text-primary hover:underline"
+													to={`/inventory/${entry.material_id}`}
+													className="text-sm font-medium text-foreground transition-colors hover:text-primary hover:underline"
 												>
-													{entry.site_name}
+													{entry.material_name}
 												</Link>
-											) : null}
+												<p className="text-xs text-muted-foreground">
+													Kategorie: {entry.category_name}
+												</p>
+												<p className="text-xs text-muted-foreground">
+													Entnommen von: {entry.extracted_by}
+												</p>
+												{entry.site_id && entry.site_name ? (
+													<Link
+														to={`/sites/${entry.site_id}`}
+														className="text-xs text-primary hover:underline"
+													>
+														{entry.site_name}
+													</Link>
+												) : null}
+											</div>
+											<div className="text-right shrink-0">
+												<p className="text-sm font-medium">
+													{entry.quantity_change < 0
+														? `Entnahme ${Math.abs(entry.quantity_change)}`
+														: `+${entry.quantity_change}`}
+												</p>
+												<p className="text-xs text-muted-foreground">
+													{formatRelativeTime(entry.created_at)}
+												</p>
+											</div>
 										</div>
-										<div className="text-right">
-											<p className="text-sm font-medium">
-												{entry.quantity_change < 0
-													? `Entnahme ${Math.abs(entry.quantity_change)}`
-													: `+${entry.quantity_change}`}
-											</p>
-											<p className="text-xs text-muted-foreground">
-												{formatRelativeTime(entry.created_at)}
-											</p>
-										</div>
+									</div>
+									<div className="flex justify-end border-t border-border/60 px-4 py-2.5 bg-accent/30">
+										<Button
+											asChild
+											variant="ghost"
+											size="sm"
+											className="gap-1.5 text-xs text-muted-foreground hover:text-primary h-8"
+											aria-label={`Mehr von ${entry.material_name} entnehmen`}
+										>
+											<Link
+												to={`/inventory/${entry.material_id}?action=withdraw&siteId=${siteId}`}
+											>
+												<Plus className="h-3.5 w-3.5" />
+												Entnehmen
+											</Link>
+										</Button>
 									</div>
 								</Card>
 							))}

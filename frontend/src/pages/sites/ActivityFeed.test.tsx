@@ -94,9 +94,20 @@ describe("ActivityFeed material tab", () => {
     render(<ActivityFeed activities={[]} siteId="site-1" />)
     await userEvent.click(screen.getByRole("tab", { name: "Material" }))
 
+    expect(screen.getByRole("link", { name: /material buchen/i })).toHaveAttribute(
+      "href",
+      "/inventory"
+    )
     expect(await screen.findByText("Betonschraube")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Betonschraube" })).toHaveAttribute(
+      "href",
+      "/inventory/mat-1"
+    )
     expect(screen.getByText("Kategorie: Befestigung")).toBeInTheDocument()
     expect(screen.getByText("Entnommen von: Max Mustermann")).toBeInTheDocument()
+    expect(
+      screen.getByRole("link", { name: "Mehr von Betonschraube entnehmen" })
+    ).toHaveAttribute("href", "/inventory/mat-1?action=withdraw&siteId=site-1")
     expect(screen.getByRole("link", { name: "Baustelle Nord" })).toHaveAttribute(
       "href",
       "/sites/site-1"
