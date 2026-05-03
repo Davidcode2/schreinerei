@@ -947,7 +947,7 @@ impl FleetRepository {
               AND res.start_time <= $3 
               AND res.end_time >= $3
             LIMIT 1
-            "#
+            "#,
         )
         .bind(tenant_id.0)
         .bind(resource_id)
@@ -972,7 +972,7 @@ impl FleetRepository {
               AND res.start_time > $3
             ORDER BY res.start_time
             LIMIT 3
-            "#
+            "#,
         )
         .bind(tenant_id.0)
         .bind(resource_id)
