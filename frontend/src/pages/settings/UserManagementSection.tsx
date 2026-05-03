@@ -15,7 +15,7 @@ interface UserManagementSectionProps {
   isAdmin: boolean
 }
 
-const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080'
+const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL || 'https://auth.jakob-lingel.dev'
 const REALM = import.meta.env.VITE_KEYCLOAK_REALM || 'schreinerei'
 
 function getInitials(name: string | null): string {

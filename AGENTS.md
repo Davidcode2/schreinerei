@@ -133,7 +133,14 @@ until docker exec "schreinerei-db-<owner>" pg_isready -U "schreinerei_<owner>" -
 3. Create a workspace-local `.env` in this worktree:
 ```bash
 DATABASE_URL=postgres://schreinerei_<owner>:schreinerei_<owner>_pw@localhost:<port>/schreinerei_<owner>
+KEYCLOAK_URL=https://auth.jakob-lingel.dev
+KEYCLOAK_REALM=schreinerei
+JWT_ISSUER=https://auth.jakob-lingel.dev/realms/schreinerei
 ```
+
+Use `https://auth.jakob-lingel.dev` for Keycloak in local development and new worktrees. Do not default frontend or backend auth config to `localhost` unless you are intentionally running a local Keycloak instance.
+
+Create a separate workspace-local `frontend/.env` in each worktree as well. Set `VITE_API_URL` to the backend port used by that specific worktree, for example `http://localhost:3009`. Do not assume a shared default backend port across worktrees.
 
 4. Copy baseline data from the main local database into the isolated database.
 

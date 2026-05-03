@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, MapPin, X } from "lucide-react"
 import { EmptyState, ErrorState, StatusBadge } from "@/components/shared"
-import { useReservations, useCancelReservation } from "@/lib/api/hooks"
+import { useReservations, useMyReservations, useCancelReservation } from "@/lib/api/hooks"
 import { toast } from "sonner"
 import type { Reservation } from "@/types/fleet"
 
@@ -20,12 +20,16 @@ function formatDateTime(dateString: string): string {
 }
 
 export function ReservationsList({ showOnlyMine = false }: ReservationsListProps) {
+  const reservationsQuery = showOnlyMine
+    ? useMyReservations()
+    : useReservations()
+
   const {
     data: reservations,
     isLoading,
     error,
     refetch,
-  } = useReservations(showOnlyMine ? { user_id: "me" } : undefined)
+  } = reservationsQuery
 
   const cancelMutation = useCancelReservation()
 

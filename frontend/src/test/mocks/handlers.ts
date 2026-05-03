@@ -129,6 +129,11 @@ export const handlers = [
     return HttpResponse.json(mockData.reservations);
   }),
 
+  http.get(apiRoute('/fleet/reservations/my'), async () => {
+    await delay(10);
+    return HttpResponse.json(mockData.reservations);
+  }),
+
   http.post(apiRoute('/fleet/reservations'), async ({ request }) => {
     const body = await request.json() as Record<string, unknown>;
     const newReservation = {

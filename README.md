@@ -31,8 +31,9 @@ Create `.env` file:
 
 ```env
 DATABASE_URL=postgres://user:password@localhost:5432/schreinerei
-KEYCLOAK_URL=https://your-keycloak.example.com
-KEYCLOAK_REALM=your-realm
+KEYCLOAK_URL=https://auth.jakob-lingel.dev
+KEYCLOAK_REALM=schreinerei
+JWT_ISSUER=https://auth.jakob-lingel.dev/realms/schreinerei
 APP_HOST=0.0.0.0
 APP_PORT=3000
 RUST_LOG=debug
