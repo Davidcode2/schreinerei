@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Search, Plus } from "lucide-react"
 import { EmptyState, ErrorState } from "@/components/shared"
 import { ResourceCard, ResourceCardSkeleton } from "@/components/fleet/ResourceCard"
-import { useVehicles } from "@/lib/api/hooks"
+import { useCalendar, useVehicles } from "@/lib/api/hooks"
 import { AddVehicleDialog } from "./AddVehicleDialog"
+import { buildEffectiveStatusMap, getEffectiveResourceStatus } from "./effectiveResourceStatus"
 import type { Vehicle, ResourceStatus } from "@/types/fleet"
 
 const statusFilters: { value: ResourceStatus | undefined; label: string }[] = [
@@ -29,13 +30,35 @@ export function VehiclesList({ onReserve }: VehiclesListProps) {
     isLoading,
     error,
     refetch,
-  } = useVehicles(selectedStatus ? { status: selectedStatus } : undefined)
+  } = useVehicles()
 
-  const filteredVehicles = vehicles?.filter((v: Vehicle) =>
-    v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    v.license_plate?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    v.location?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const todayEnd = new Date(todayStart)
+  todayEnd.setHours(23, 59, 59, 999)
+
+  const { data: todayCalendar } = useCalendar({
+    start_date: todayStart.toISOString(),
+    end_date: todayEnd.toISOString(),
+    resource_type: "vehicle",
+  })
+
+  const effectiveStatusMap = buildEffectiveStatusMap(todayCalendar?.resources, new Date())
+
+  const vehiclesWithEffectiveStatus = vehicles?.map((vehicle: Vehicle) => ({
+    ...vehicle,
+    status: getEffectiveResourceStatus(vehicle.status, effectiveStatusMap, "vehicle", vehicle.id),
+  }))
+
+  const filteredVehicles = vehiclesWithEffectiveStatus?.filter((v: Vehicle) => {
+    const matchesStatus = !selectedStatus || v.status === selectedStatus
+
+    return matchesStatus && (
+      v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.license_plate?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.location?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  })
 
   return (
     <div className="space-y-4">
