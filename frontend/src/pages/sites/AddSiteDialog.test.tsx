@@ -7,6 +7,8 @@ import { server } from '@/test/mocks/server';
 import { mockData } from '@/test/mocks/handlers';
 import { AddSiteDialog } from './AddSiteDialog';
 
+const apiRoute = (path: string) => `*/api/v1${path}`;
+
 describe('AddSiteDialog', () => {
   const mockOnOpenChange = vi.fn();
 
@@ -51,7 +53,7 @@ describe('AddSiteDialog', () => {
     let submittedPayload: Record<string, unknown> | null = null;
 
     server.use(
-      http.post('/api/v1/sites', async ({ request }) => {
+      http.post(apiRoute('/sites'), async ({ request }) => {
         const body = await request.json() as Record<string, unknown>;
         submittedPayload = body;
         return HttpResponse.json({ id: 'new-site', ...body }, { status: 201 });

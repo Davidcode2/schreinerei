@@ -8,6 +8,8 @@ import { mockData } from '@/test/mocks/handlers';
 import { createCategory } from '@/test/factories';
 import { AddMaterialDialog } from './AddMaterialDialog';
 
+const apiRoute = (path: string) => `*/api/v1${path}`;
+
 // Helper to select an option from a Radix UI Select
 async function selectOption(
   user: ReturnType<typeof userEvent.setup>,
@@ -101,7 +103,7 @@ describe('AddMaterialDialog', () => {
     let submittedPayload: Record<string, unknown> | null = null;
 
     server.use(
-      http.post('/api/v1/inventory/materials', async ({ request }) => {
+      http.post(apiRoute('/inventory/materials'), async ({ request }) => {
         const body = await request.json() as Record<string, unknown>;
         submittedPayload = body;
         return HttpResponse.json({ id: 'new-material', ...body }, { status: 201 });
