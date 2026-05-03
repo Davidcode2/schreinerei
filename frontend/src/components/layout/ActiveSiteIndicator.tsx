@@ -19,20 +19,20 @@ export function ActiveSiteIndicator({ compact = false, className }: ActiveSiteIn
     return (
       <div
         className={cn(
-          "min-w-0 rounded-xl border border-border/70 bg-background/90 px-3 py-2 shadow-sm backdrop-blur",
+          "min-w-0 rounded-lg border border-border/60 bg-background px-3 py-1.5 shadow-sm",
           className
         )}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <span
             className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${getSiteColorClass(activeSiteId)}`}
           />
           <div className="min-w-0">
-            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Aktive Baustelle
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Baustelle
             </p>
             <p className="truncate text-sm font-semibold leading-tight">
-              {activeSite?.name ?? "Keine aktive Baustelle"}
+              {activeSite?.name ?? "Keine ausgewählt"}
             </p>
           </div>
         </div>
@@ -41,12 +41,12 @@ export function ActiveSiteIndicator({ compact = false, className }: ActiveSiteIn
   }
 
   return (
-    <div className={cn("mx-2 mb-3 rounded-lg border bg-background/80 px-3 py-2", className)}>
+    <div className={cn("mx-3 mb-3 rounded-lg border border-border/60 bg-accent/40 px-3 py-2.5", className)}>
       <div className="flex items-center gap-2">
         <span
           className={`h-2.5 w-2.5 rounded-full ${getSiteColorClass(activeSiteId)}`}
         />
-        <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           Aktive Baustelle
         </span>
       </div>

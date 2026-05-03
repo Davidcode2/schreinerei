@@ -13,28 +13,31 @@ export function MobileNav() {
   const navigate = useNavigate()
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center gap-2 border-b bg-card px-3 md:hidden">
+    <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center gap-3 border-b bg-card/95 backdrop-blur-md px-4 md:hidden safe-area-top">
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="flex-shrink-0">
+          <Button variant="ghost" size="icon" className="flex-shrink-0 h-10 w-10">
             <Menu className="h-5 w-5" />
             <span className="sr-only">Menü öffnen</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-60 p-0 flex flex-col">
+        <SheetContent side="left" className="w-72 p-0 flex flex-col">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <div className="flex h-16 items-center border-b px-4">
-            <h1 className="text-lg font-semibold text-primary">Schreinerei</h1>
+          <div className="flex h-16 items-center border-b px-5 gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+              <span className="text-primary-foreground font-display text-sm font-bold">S</span>
+            </div>
+            <h1 className="text-lg font-display text-foreground">Schreinerei</h1>
           </div>
-          <div className="py-4 flex-1">
+          <div className="py-4 flex-1 overflow-auto">
             <ActiveSiteIndicator />
             <SidebarContent />
           </div>
           <div className="border-t p-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="w-full justify-start gap-2"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-3 h-11 text-muted-foreground hover:text-destructive"
               onClick={() => {
                 useAuthStore.getState().logout()
                 window.location.href = getLogoutUrl()
@@ -47,7 +50,7 @@ export function MobileNav() {
         </SheetContent>
       </Sheet>
 
-      <ActiveSiteIndicator compact className="flex-1" />
+      <ActiveSiteIndicator compact className="flex-1 min-w-0" />
 
       <div className="flex flex-shrink-0 items-center gap-1">
         <PendingActionsBadge />
@@ -55,6 +58,7 @@ export function MobileNav() {
         <Button
           variant="ghost"
           size="icon"
+          className="h-10 w-10"
           onClick={() => navigate('/scan')}
           title="QR-Code scannen"
         >
