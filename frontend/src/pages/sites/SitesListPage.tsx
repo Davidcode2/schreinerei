@@ -12,6 +12,7 @@ import { usePreferences, useSites, useUpdatePreferences } from "@/lib/api/hooks"
 import { AddSiteDialog } from "./AddSiteDialog"
 import type { Site, SiteStatus } from "@/types/sites"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 const statusTabs: { value: SiteStatus | undefined; label: string }[] = [
   { value: undefined, label: "Alle" },
@@ -54,49 +55,50 @@ export default function SitesListPage() {
   )
 
   return (
-    <div className="space-y-6">
+    <div>
       <PageHeader
         title="Baustellen"
-        description="Baustellenverwaltung"
+        description="Alle Baustellen im Überblick"
         action={
-          <Button className="gap-2" onClick={() => setAddSiteOpen(true)}>
+          <Button className="gap-2 h-10 shadow-sm" onClick={() => setAddSiteOpen(true)}>
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Baustelle anlegen</span>
+            <span className="sm:hidden">Anlegen</span>
           </Button>
         }
       />
 
-      <div className="space-y-4">
-        {/* Status Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 -mb-2">
+      <div className="space-y-4 mb-6">
+        <div className="flex gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-none">
           {statusTabs.map((tab) => (
-            <Button
+            <button
               key={tab.label}
-              variant={selectedStatus === tab.value ? "default" : "outline"}
-              size="sm"
               onClick={() => setSelectedStatus(tab.value)}
-              className="rounded-full whitespace-nowrap"
+              className={cn(
+                "flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-all",
+                selectedStatus === tab.value
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-card border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
+              )}
             >
               {tab.label}
-            </Button>
+            </button>
           ))}
         </div>
 
-        {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Baustelle suchen..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-10 bg-card border-border"
           />
         </div>
       </div>
 
-      {/* Sites Grid */}
       {isLoading ? (
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <SiteCardSkeleton count={6} />
         </div>
       ) : error ? (
@@ -115,7 +117,7 @@ export default function SitesListPage() {
           }
           action={
             !searchQuery && (
-              <Button className="gap-2" onClick={() => setAddSiteOpen(true)}>
+              <Button className="gap-2 h-10" onClick={() => setAddSiteOpen(true)}>
                 <Plus className="h-4 w-4" />
                 Baustelle anlegen
               </Button>
@@ -124,10 +126,10 @@ export default function SitesListPage() {
         />
       ) : (
         <>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-4">
             {filteredSites.length} Baustell{filteredSites.length !== 1 ? "en" : "e"} gefunden
           </p>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {filteredSites.map((site: Site) => (
               <SiteCard
                 key={site.id}
@@ -141,7 +143,6 @@ export default function SitesListPage() {
         </>
       )}
 
-      {/* Add Site Dialog */}
       <AddSiteDialog open={addSiteOpen} onOpenChange={setAddSiteOpen} />
     </div>
   )
