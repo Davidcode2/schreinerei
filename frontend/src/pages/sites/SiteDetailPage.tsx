@@ -21,6 +21,7 @@ import {
   StatusBadge,
 } from "@/components/shared"
 import { useSite, useActivities, useTimeEntries, useSiteAssignments } from "@/lib/api/hooks"
+import type { WorkType } from "@/types/sites"
 import { TimeEntryDialog } from "./TimeEntryDialog"
 import { ActivityFeed } from "./ActivityFeed"
 import { StatusChangeModal } from "./StatusChangeModal"
@@ -40,6 +41,17 @@ function formatDate(date: string | null): string {
     month: "2-digit",
     year: "numeric",
   })
+}
+
+function getWorkTypeLabel(workType: WorkType): string {
+  const labels: Record<WorkType, string> = {
+    site: "Baustelle",
+    workshop: "Werkstatt",
+    travel: "Fahrt",
+    other: "Sonstiges",
+  }
+
+  return labels[workType]
 }
 
 export default function SiteDetailPage() {
@@ -210,7 +222,7 @@ export default function SiteDetailPage() {
                   >
                     <div>
                       <p className="text-sm font-medium capitalize">
-                        {entry.work_type}
+                        {getWorkTypeLabel(entry.work_type)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(entry.work_date).toLocaleDateString("de-DE")}
