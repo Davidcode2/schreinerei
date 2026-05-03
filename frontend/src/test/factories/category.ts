@@ -8,6 +8,7 @@ export function createCategory(overrides: Partial<Category> = {}): Category {
     id: crypto.randomUUID(),
     name: `Category ${categoryCounter}`,
     description: null,
+    can_expire: false,
     created_at: new Date().toISOString(),
     ...overrides,
   };

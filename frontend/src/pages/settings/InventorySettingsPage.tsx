@@ -1,20 +1,9 @@
-import { useEffect, useMemo, useState } from "react"
-import { Pencil, Trash2 } from "lucide-react"
+import { useMemo, useState } from "react"
+import { Pencil, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,8 +14,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useCategories, useDeleteCategory, useUpdateCategory } from "@/lib/api/hooks"
+import {
+  useCategories,
+  useCreateCategory,
+  useDeleteCategory,
+  useUpdateCategory,
+} from "@/lib/api/hooks"
 import type { Category } from "@/types/inventory"
+import { CategoryDialog } from "@/pages/inventory/CategoryDialog"
 
 const EMPTY_STATE_TITLE = "Noch keine Kategorien"
 const EMPTY_STATE_BODY =
@@ -53,12 +48,12 @@ function getDeleteConflictMessage(error: Error) {
 
 export default function InventorySettingsPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null)
-  const [name, setName] = useState("")
-  const [description, setDescription] = useState("")
   const [conflictMessages, setConflictMessages] = useState<Record<string, string>>({})
 
   const { data: categories, isLoading } = useCategories()
+  const createCategory = useCreateCategory()
   const updateCategory = useUpdateCategory()
   const deleteCategory = useDeleteCategory()
 
@@ -67,19 +62,15 @@ export default function InventorySettingsPage() {
     [categories]
   )
 
-  useEffect(() => {
-    if (!editingCategory) {
-      setName("")
-      setDescription("")
-      return
-    }
-
-    setName(editingCategory.name)
-    setDescription(editingCategory.description ?? "")
-  }, [editingCategory])
-
   const selectedDeleteCategory = deleteCategoryId
     ? categoriesById.get(deleteCategoryId) ?? null
+    : null
+  const editingInitialValues = editingCategory
+    ? {
+        name: editingCategory.name,
+        description: editingCategory.description ?? "",
+        canExpire: editingCategory.can_expire,
+      }
     : null
 
   const handleEditOpen = (category: Category) => {
@@ -91,7 +82,31 @@ export default function InventorySettingsPage() {
     setEditingCategory(category)
   }
 
-  const handleSave = () => {
+  const handleCreate = (values: {
+    name: string
+    description: string
+    canExpire: boolean
+  }) => {
+    createCategory.mutate(
+      {
+        name: values.name,
+        description: values.description || null,
+        can_expire: values.canExpire,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Kategorie erstellt")
+          setIsCreateOpen(false)
+        },
+      }
+    )
+  }
+
+  const handleSave = (values: {
+    name: string
+    description: string
+    canExpire: boolean
+  }) => {
     if (!editingCategory) {
       return
     }
@@ -100,8 +115,9 @@ export default function InventorySettingsPage() {
       {
         id: editingCategory.id,
         data: {
-          name: name.trim(),
-          description: description.trim(),
+          name: values.name,
+          description: values.description,
+          can_expire: values.canExpire,
         },
       },
       {
@@ -133,13 +149,17 @@ export default function InventorySettingsPage() {
     })
   }
 
-  const isSaveDisabled = name.trim().length === 0 || updateCategory.isPending
-
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <PageHeader
         title="Inventar-Einstellungen"
         description="Kategorien und Materialpflege zentral verwalten"
+        action={
+          <Button className="gap-2" onClick={() => setIsCreateOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Kategorie anlegen
+          </Button>
+        }
       />
 
       <Card>
@@ -161,6 +181,14 @@ export default function InventorySettingsPage() {
                     <p className="text-sm text-muted-foreground">
                       {category.description || "Keine Beschreibung hinterlegt."}
                     </p>
+                    {category.can_expire && (
+                      <p
+                        className="text-xs font-medium text-amber-700"
+                        title="Mindesthaltbarkeitsdatum"
+                      >
+                        MHD aktiviert
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -203,53 +231,30 @@ export default function InventorySettingsPage() {
         </CardContent>
       </Card>
 
-      <Dialog
+      <CategoryDialog
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        title="Kategorie anlegen"
+        description="Legen Sie eine neue Materialkategorie an."
+        submitLabel="Kategorie erstellen"
+        isSubmitting={createCategory.isPending}
+        onSubmit={handleCreate}
+      />
+
+      <CategoryDialog
         open={editingCategory !== null}
         onOpenChange={(open) => {
           if (!open) {
             setEditingCategory(null)
           }
         }}
-      >
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Kategorie bearbeiten</DialogTitle>
-            <DialogDescription>
-              Aktualisieren Sie Name und Beschreibung der Kategorie.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="category-name">Name</Label>
-              <Input
-                id="category-name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category-description">Beschreibung</Label>
-              <Textarea
-                id="category-description"
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                rows={4}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingCategory(null)}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleSave} disabled={isSaveDisabled}>
-              {updateCategory.isPending ? "Speichert..." : "Änderungen speichern"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        title="Kategorie bearbeiten"
+        description="Aktualisieren Sie Name, Beschreibung und MHD-Verhalten der Kategorie."
+        submitLabel="Änderungen speichern"
+        isSubmitting={updateCategory.isPending}
+        {...(editingInitialValues ? { initialValues: editingInitialValues } : {})}
+        onSubmit={handleSave}
+      />
 
       <AlertDialog
         open={deleteCategoryId !== null}

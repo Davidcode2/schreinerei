@@ -68,7 +68,8 @@ export default function InventoryDetailPage() {
   const handleWithdraw = async (
     quantity: number,
     notes?: string,
-    siteId?: string | null
+    siteId?: string | null,
+    disposal?: boolean
   ) => {
     try {
       await withdrawMutation.mutateAsync({
@@ -76,20 +77,26 @@ export default function InventoryDetailPage() {
         quantity,
         notes: notes ?? null,
         site_id: siteId ?? null,
+        disposal: disposal ?? false,
       })
-      toast.success(`${quantity} ${material.unit} entnommen`)
+      toast.success(
+        disposal
+          ? `${quantity} ${material.unit} entsorgt`
+          : `${quantity} ${material.unit} entnommen`
+      )
       setShowWithdrawDialog(false)
     } catch {
       toast.error("Entnahme fehlgeschlagen")
     }
   }
 
-  const handleStockIn = async (quantity: number, notes?: string) => {
+  const handleStockIn = async (quantity: number, notes?: string, expiresOn?: string) => {
     try {
       await stockInMutation.mutateAsync({
         id: material.id,
         quantity,
         notes: notes ?? null,
+        expires_on: expiresOn ?? null,
       })
       toast.success(`${quantity} ${material.unit} eingelagert`)
       setShowStockInDialog(false)
@@ -234,6 +241,46 @@ export default function InventoryDetailPage() {
                 </p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {material.expired_quantity > 0 && (
+        <Card className="border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+              <div>
+                <h3 className="font-semibold">Abgelaufener Bestand</h3>
+                <p className="text-sm text-muted-foreground">
+                  Es sind {material.expired_quantity} {material.unit} abgelaufen.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {material.expiring_soon_quantity > 0 && (
+        <Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div>
+                <h3 className="font-semibold">Bald ablaufender Bestand</h3>
+                <p className="text-sm text-muted-foreground">
+                  {material.expiring_soon_quantity} {material.unit} laufen innerhalb der nächsten 10 Tage ab.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {material.can_expire && material.legacy_quantity > 0 && (
+        <Card>
+          <CardContent className="p-4 text-sm text-muted-foreground">
+            Ohne MHD erfasster Bestand: {material.legacy_quantity} {material.unit}
           </CardContent>
         </Card>
       )}

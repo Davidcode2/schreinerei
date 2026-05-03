@@ -22,15 +22,15 @@ export type CalendarQuery = { start_date: string, end_date: string, resource_typ
 
 export type CalendarResponse = { resources: Array<CalendarEntryResponse>, };
 
-export type CategoryResponse = { id: string, name: string, description: string | null, created_at: string, };
+export type CategoryResponse = { id: string, name: string, description: string | null, can_expire: boolean, created_at: string, };
 
 export type ConflictDetail = { id: string, user_name: string | null, start_time: string, end_time: string, status: string, };
 
 export type CreateActivityRequest = { activity_type: string, content: string | null, photo_url: string | null, attachment_ids: Array<string>, };
 
-export type CreateCategoryRequest = { name: string, description: string | null, };
+export type CreateCategoryRequest = { name: string, description: string | null, can_expire: boolean, };
 
-export type CreateMaterialRequest = { category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, location: string | null, };
+export type CreateMaterialRequest = { category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, location: string | null, expires_on: string | null, };
 
 export type CreateOrderRequestDto = { material_id: string, quantity: number, reason: string | null, };
 
@@ -51,7 +51,9 @@ export type EnrichedStockHistoryResponse = { id: string, material_id: string, us
 /**
  * Entry type for stock history entries
  */
-export type EntryType = "withdrawn" | "adjusted" | "material_added" | "location_changed" | "min_quantity_changed";
+export type EntryType = "withdrawn" | "disposed" | "adjusted" | "material_added" | "location_changed" | "min_quantity_changed";
+
+export type ExpiryBatchResponse = { expires_on: string, quantity: number, is_expired: boolean, is_expiring_soon: boolean, };
 
 export type FulfillOrderRequestDto = { actual_quantity: number, notes: string | null, };
 
@@ -70,7 +72,7 @@ export type ListToolsQuery = { status: string | null, category: string | null, }
 
 export type ListVehiclesQuery = { status: string | null, };
 
-export type MaterialResponse = { id: string, category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, location: string | null, qr_code: string | null, is_low_stock: boolean, created_at: string, };
+export type MaterialResponse = { id: string, category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, can_expire: boolean, legacy_quantity: number, expired_quantity: number, expiring_soon_quantity: number, next_expiry_on: string | null, expiry_batches: Array<ExpiryBatchResponse>, location: string | null, qr_code: string | null, is_low_stock: boolean, created_at: string, };
 
 export type OrderRequestResponse = { id: string, material_id: string, material_name: string, quantity: number, requested_by: string, status: string, reason: string | null, approved_by: string | null, approved_at: string | null, fulfilled_at: string | null, notes: string | null, created_at: string, };
 
@@ -102,13 +104,13 @@ export type SiteStockHistoryResponse = { id: string, material_id: string, materi
  */
 export type StockEntryResponse = { id: string, quantity_change: number, quantity_after: number, notes: string | null, site_id: string | null, site_name: string | null, created_at: string, };
 
-export type StockInRequest = { quantity: number, notes: string | null, };
+export type StockInRequest = { quantity: number, notes: string | null, expires_on: string | null, };
 
 export type TimeEntryResponse = { id: string, site_id: string | null, user_id: string, work_type: string, hours: number, work_date: string, notes: string | null, created_at: string, };
 
 export type ToolResponse = { id: string, name: string, category: string | null, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
 
-export type UpdateCategoryRequest = { name?: string, description?: string, };
+export type UpdateCategoryRequest = { name?: string, description?: string, can_expire?: boolean, };
 
 export type UpdateMaterialRequest = { location?: string, min_quantity?: number, clear_location?: boolean, };
 
@@ -152,4 +154,4 @@ export type UserResponse = { id: string, email: string, name: string | null, rol
 
 export type VehicleResponse = { id: string, name: string, license_plate: string | null, vehicle_type: string, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
 
-export type WithdrawRequest = { quantity: number, notes: string | null, site_id: string | null, };
+export type WithdrawRequest = { quantity: number, notes: string | null, site_id: string | null, disposal: boolean | null, };

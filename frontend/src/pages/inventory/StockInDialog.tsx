@@ -18,7 +18,7 @@ interface StockInDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   material: Material
-  onConfirm: (quantity: number, notes?: string) => void
+  onConfirm: (quantity: number, notes?: string, expiresOn?: string) => void
   isLoading: boolean
 }
 
@@ -31,15 +31,18 @@ export function StockInDialog({
 }: StockInDialogProps) {
   const [quantity, setQuantity] = useState("1")
   const [notes, setNotes] = useState("")
+  const [expiresOn, setExpiresOn] = useState("")
 
   useEffect(() => {
     if (open) {
       setQuantity("1")
       setNotes("")
+      setExpiresOn("")
     }
   }, [open])
 
   const parsedQuantity = Math.max(1, Number(quantity) || 1)
+  const isSubmitDisabled = isLoading || (material.can_expire && !expiresOn)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -81,13 +84,30 @@ export function StockInDialog({
               onChange={(event) => setNotes(event.target.value)}
             />
           </div>
+
+          {material.can_expire && (
+            <div className="space-y-2">
+              <Label htmlFor="stock-in-expires-on" title="Mindesthaltbarkeitsdatum">
+                MHD
+              </Label>
+              <Input
+                id="stock-in-expires-on"
+                type="date"
+                value={expiresOn}
+                onChange={(event) => setExpiresOn(event.target.value)}
+              />
+            </div>
+          )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Abbrechen
           </Button>
-          <Button onClick={() => onConfirm(parsedQuantity, notes || undefined)} disabled={isLoading}>
+          <Button
+            onClick={() => onConfirm(parsedQuantity, notes || undefined, expiresOn || undefined)}
+            disabled={isSubmitDisabled}
+          >
             <Plus className="h-4 w-4" />
             {isLoading ? "Wird eingelagert..." : `${parsedQuantity} ${material.unit} einlagern`}
           </Button>

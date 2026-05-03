@@ -4,7 +4,7 @@ use std::fmt;
 use std::str::FromStr;
 use ts_rs::TS;
 
-use crate::common::types::{TenantId, MaterialId, UserId, SiteId};
+use crate::common::types::{MaterialId, SiteId, TenantId, UserId};
 
 /// Entry type for stock history entries
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS, sqlx::Type)]
@@ -13,6 +13,7 @@ use crate::common::types::{TenantId, MaterialId, UserId, SiteId};
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub enum EntryType {
     Withdrawn,
+    Disposed,
     Adjusted,
     MaterialAdded,
     LocationChanged,
@@ -23,6 +24,7 @@ impl fmt::Display for EntryType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             EntryType::Withdrawn => write!(f, "withdrawn"),
+            EntryType::Disposed => write!(f, "disposed"),
             EntryType::Adjusted => write!(f, "adjusted"),
             EntryType::MaterialAdded => write!(f, "material_added"),
             EntryType::LocationChanged => write!(f, "location_changed"),
@@ -37,6 +39,7 @@ impl FromStr for EntryType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "withdrawn" => Ok(EntryType::Withdrawn),
+            "disposed" => Ok(EntryType::Disposed),
             "adjusted" => Ok(EntryType::Adjusted),
             "material_added" => Ok(EntryType::MaterialAdded),
             "location_changed" => Ok(EntryType::LocationChanged),
@@ -72,7 +75,7 @@ pub struct StockEntryWithSite {
     pub quantity_after: i32,
     pub notes: Option<String>,
     pub site_id: Option<SiteId>,
-    pub site_name: Option<String>,  // Resolved site name
+    pub site_name: Option<String>, // Resolved site name
     pub created_at: DateTime<Utc>,
 }
 
@@ -135,7 +138,11 @@ mod tests {
             tenant_id: TenantId::new(),
             material_id: MaterialId::new(),
             user_id: UserId::new(),
-            entry_type: if quantity_change < 0 { EntryType::Withdrawn } else { EntryType::Adjusted },
+            entry_type: if quantity_change < 0 {
+                EntryType::Withdrawn
+            } else {
+                EntryType::Adjusted
+            },
             quantity_change,
             quantity_after: 10,
             notes: None,
@@ -187,35 +194,60 @@ mod tests {
     fn entry_type_display_roundtrip_withdrawn() {
         let et = EntryType::Withdrawn;
         assert_eq!(et.to_string(), "withdrawn");
-        assert_eq!(EntryType::from_str("withdrawn").unwrap(), EntryType::Withdrawn);
+        assert_eq!(
+            EntryType::from_str("withdrawn").unwrap(),
+            EntryType::Withdrawn
+        );
     }
 
     #[test]
     fn entry_type_display_roundtrip_adjusted() {
         let et = EntryType::Adjusted;
         assert_eq!(et.to_string(), "adjusted");
-        assert_eq!(EntryType::from_str("adjusted").unwrap(), EntryType::Adjusted);
+        assert_eq!(
+            EntryType::from_str("adjusted").unwrap(),
+            EntryType::Adjusted
+        );
+    }
+
+    #[test]
+    fn entry_type_display_roundtrip_disposed() {
+        let et = EntryType::Disposed;
+        assert_eq!(et.to_string(), "disposed");
+        assert_eq!(
+            EntryType::from_str("disposed").unwrap(),
+            EntryType::Disposed
+        );
     }
 
     #[test]
     fn entry_type_display_roundtrip_material_added() {
         let et = EntryType::MaterialAdded;
         assert_eq!(et.to_string(), "material_added");
-        assert_eq!(EntryType::from_str("material_added").unwrap(), EntryType::MaterialAdded);
+        assert_eq!(
+            EntryType::from_str("material_added").unwrap(),
+            EntryType::MaterialAdded
+        );
     }
 
     #[test]
     fn entry_type_display_roundtrip_location_changed() {
         let et = EntryType::LocationChanged;
         assert_eq!(et.to_string(), "location_changed");
-        assert_eq!(EntryType::from_str("location_changed").unwrap(), EntryType::LocationChanged);
+        assert_eq!(
+            EntryType::from_str("location_changed").unwrap(),
+            EntryType::LocationChanged
+        );
     }
 
     #[test]
     fn entry_type_display_roundtrip_min_quantity_changed() {
         let et = EntryType::MinQuantityChanged;
         assert_eq!(et.to_string(), "min_quantity_changed");
-        assert_eq!(EntryType::from_str("min_quantity_changed").unwrap(), EntryType::MinQuantityChanged);
+        assert_eq!(
+            EntryType::from_str("min_quantity_changed").unwrap(),
+            EntryType::MinQuantityChanged
+        );
     }
 
     #[test]
