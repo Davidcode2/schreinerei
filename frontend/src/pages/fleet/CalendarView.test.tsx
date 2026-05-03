@@ -20,6 +20,18 @@ import { getResourceCalendarColor } from "./resourceCalendarColor"
 
 const mutateAsyncMock = vi.fn()
 
+function weekDateIso(offsetDays: number, hour: number) {
+  const now = new Date()
+  now.setHours(12, 0, 0, 0)
+
+  const weekStart = new Date(now)
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1)
+  weekStart.setDate(weekStart.getDate() + offsetDays)
+  weekStart.setHours(hour, 0, 0, 0)
+
+  return weekStart.toISOString()
+}
+
 function getCalendarButtons() {
   return screen
     .getAllByRole("button")
@@ -86,8 +98,8 @@ describe("CalendarView", () => {
         reservations: [
           {
             id: "existing-1",
-            start_time: "2026-04-30T08:00:00.000Z",
-            end_time: "2026-04-30T17:00:00.000Z",
+            start_time: weekDateIso(0, 8),
+            end_time: weekDateIso(0, 17),
             user_name: "Alex",
             site_name: null,
             status: "confirmed",
@@ -116,8 +128,8 @@ describe("CalendarView", () => {
         reservations: [
           {
             id: "existing-1",
-            start_time: "2026-04-30T08:00:00.000Z",
-            end_time: "2026-04-30T17:00:00.000Z",
+            start_time: weekDateIso(0, 8),
+            end_time: weekDateIso(0, 17),
             user_name: "Alex",
             site_name: null,
             status: "confirmed",
@@ -155,8 +167,8 @@ describe("CalendarView", () => {
         reservations: [
           {
             id: "existing-1",
-            start_time: "2026-04-30T08:00:00.000Z",
-            end_time: "2026-04-30T17:00:00.000Z",
+            start_time: weekDateIso(0, 8),
+            end_time: weekDateIso(0, 17),
             user_name: "Alex",
             site_name: null,
             status: "confirmed",
