@@ -801,7 +801,7 @@ impl FleetRepository {
                 r.id, 
                 r.start_time, 
                 r.end_time, 
-                u.name as user_name,
+                COALESCE(NULLIF(u.name, ''), u.email, r.user_id::text) as user_name,
                 s.name as site_name,
                 r.status
             FROM reservations r
@@ -857,7 +857,7 @@ impl FleetRepository {
                             'id', res.id,
                             'start_time', res.start_time,
                             'end_time', res.end_time,
-                            'user_name', u.name,
+                            'user_name', COALESCE(NULLIF(u.name, ''), u.email, res.user_id::text),
                             'site_name', s.name,
                             'status', res.status
                         )
@@ -935,7 +935,9 @@ impl FleetRepository {
         // Get current reservation (if any)
         let current: Option<ReservationSummary> = sqlx::query_as::<_, ReservationSummaryRow>(
             r#"
-            SELECT res.id, res.start_time, res.end_time, u.name as user_name, s.name as site_name, res.status
+            SELECT res.id, res.start_time, res.end_time,
+                   COALESCE(NULLIF(u.name, ''), u.email, res.user_id::text) as user_name,
+                   s.name as site_name, res.status
             FROM reservations res
             LEFT JOIN users u ON u.id = res.user_id
             LEFT JOIN sites s ON s.id = res.site_id
@@ -958,7 +960,9 @@ impl FleetRepository {
         // Get upcoming reservations (next 3)
         let upcoming: Vec<ReservationSummary> = sqlx::query_as::<_, ReservationSummaryRow>(
             r#"
-            SELECT res.id, res.start_time, res.end_time, u.name as user_name, s.name as site_name, res.status
+            SELECT res.id, res.start_time, res.end_time,
+                   COALESCE(NULLIF(u.name, ''), u.email, res.user_id::text) as user_name,
+                   s.name as site_name, res.status
             FROM reservations res
             LEFT JOIN users u ON u.id = res.user_id
             LEFT JOIN sites s ON s.id = res.site_id
@@ -1003,7 +1007,7 @@ impl FleetRepository {
                 res.user_id, res.site_id, res.start_time, res.end_time, 
                 res.status, res.notes, res.created_at, res.updated_at,
                 COALESCE(v.name, t.name) as resource_name,
-                u.name as user_name,
+                COALESCE(NULLIF(u.name, ''), u.email, res.user_id::text) as user_name,
                 s.name as site_name
             FROM reservations res
             LEFT JOIN vehicles v ON v.id = res.resource_id AND res.resource_type = 'vehicle'

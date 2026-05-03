@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { useCreateReservation, usePreferences, useSites } from "@/lib/api/hooks"
+import { formatDateTimeLocalInput, formatLocalDateKey } from "@/lib/utils"
 import type { ResourceType } from "@/types/fleet"
 
 interface ReservationConfirmationSheetProps {
@@ -33,16 +34,53 @@ function formatDateRange(startDate: string, endDate: string): string {
     : `${formattedStart} bis ${formattedEnd}`
 }
 
-function toDefaultStartTime(date: string): string {
-  return `${date}T08:00`
-}
-
-function toDefaultEndTime(date: string): string {
-  return `${date}T17:00`
-}
-
 function toRfc3339(datetimeLocal: string): string {
   return new Date(datetimeLocal).toISOString()
+}
+
+function roundUpToNextHalfHour(date: Date): Date {
+  const rounded = new Date(date)
+
+  if (rounded.getSeconds() > 0 || rounded.getMilliseconds() > 0) {
+    rounded.setMinutes(rounded.getMinutes() + 1)
+  }
+
+  rounded.setSeconds(0, 0)
+
+  const minutes = rounded.getMinutes()
+  const remainder = minutes % 30
+
+  if (remainder !== 0) {
+    rounded.setMinutes(minutes + (30 - remainder))
+  }
+
+  return rounded
+}
+
+export function buildDefaultTimes(startDate: string, endDate: string, now: Date): {
+  start: string
+  end: string
+} {
+  const defaultStart = new Date(`${startDate}T08:00`)
+  const defaultEnd = new Date(`${endDate}T17:00`)
+  const start = formatLocalDateKey(now) === startDate
+    ? new Date(Math.max(defaultStart.getTime(), roundUpToNextHalfHour(now).getTime()))
+    : defaultStart
+
+  if (defaultEnd > start) {
+    return {
+      start: formatDateTimeLocalInput(start),
+      end: formatDateTimeLocalInput(defaultEnd),
+    }
+  }
+
+  const fallbackEnd = new Date(start)
+  fallbackEnd.setHours(fallbackEnd.getHours() + 1)
+
+  return {
+    start: formatDateTimeLocalInput(start),
+    end: formatDateTimeLocalInput(fallbackEnd),
+  }
 }
 
 export function ReservationConfirmationSheet({
@@ -57,15 +95,30 @@ export function ReservationConfirmationSheet({
   const { data: preferences } = usePreferences()
   const { data: sites } = useSites()
   const createReservation = useCreateReservation()
+  const defaultTimes = useMemo(
+    () => buildDefaultTimes(startDate, endDate, new Date()),
+    [startDate, endDate]
+  )
 
   const [siteId, setSiteId] = useState(preferences?.active_site_id ?? "")
   const [useCustomTimes, setUseCustomTimes] = useState(false)
-  const [startTime, setStartTime] = useState(() => toDefaultStartTime(startDate))
-  const [endTime, setEndTime] = useState(() => toDefaultEndTime(endDate))
+  const [startTime, setStartTime] = useState(defaultTimes.start)
+  const [endTime, setEndTime] = useState(defaultTimes.end)
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    setSiteId(preferences?.active_site_id ?? "")
+    setUseCustomTimes(false)
+    setStartTime(defaultTimes.start)
+    setEndTime(defaultTimes.end)
+  }, [open, preferences?.active_site_id, defaultTimes])
 
   const handleConfirm = async () => {
-    const resolvedStartTime = useCustomTimes ? startTime : toDefaultStartTime(startDate)
-    const resolvedEndTime = useCustomTimes ? endTime : toDefaultEndTime(endDate)
+    const resolvedStartTime = useCustomTimes ? startTime : defaultTimes.start
+    const resolvedEndTime = useCustomTimes ? endTime : defaultTimes.end
 
     if (!resolvedStartTime || !resolvedEndTime) {
       toast.error("Bitte Start- und Endzeit angeben")

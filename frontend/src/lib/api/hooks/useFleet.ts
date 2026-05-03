@@ -164,7 +164,11 @@ export function useReservations(query?: ListReservationsQuery) {
 }
 
 export function useMyReservations() {
-  return useReservations({ user_id: "me" })
+  return useQuery({
+    queryKey: ["reservations", "my"],
+    queryFn: () => apiClient.get<Reservation[]>("/api/v1/fleet/reservations/my"),
+    staleTime: 30000,
+  })
 }
 
 export function useCreateReservation() {

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { LoadingSpinner, EmptyState } from "@/components/shared"
 import { useCalendar } from "@/lib/api/hooks"
-import { cn } from "@/lib/utils"
+import { cn, formatLocalDateKey, startOfLocalWeek } from "@/lib/utils"
 import type { CalendarEntry, ReservationSummary, ResourceType } from "@/types/fleet"
 import { ReservationConfirmationSheet } from "./ReservationConfirmationSheet"
 import {
@@ -19,14 +19,14 @@ interface CalendarViewProps {
 }
 
 function getWeekDates(date: Date): { start: string; end: string } {
-  const start = new Date(date)
-  start.setDate(start.getDate() - start.getDay() + 1) // Monday
+  const start = startOfLocalWeek(date)
   const end = new Date(start)
   end.setDate(end.getDate() + 6) // Sunday
+  end.setHours(23, 59, 59, 999)
 
   return {
-    start: start.toISOString().split("T")[0] ?? "",
-    end: end.toISOString().split("T")[0] ?? "",
+    start: start.toISOString(),
+    end: end.toISOString(),
   }
 }
 
@@ -97,8 +97,7 @@ export default function CalendarView({ embedded = false }: CalendarViewProps) {
   const { start, end } = getWeekDates(currentWeek)
   const { data: calendarData, isLoading, error } = useCalendar({ start_date: start, end_date: end })
 
-  const weekStart = new Date(currentWeek)
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1)
+  const weekStart = startOfLocalWeek(currentWeek)
 
   const prevWeek = () => {
     const newWeek = new Date(currentWeek)
@@ -112,7 +111,7 @@ export default function CalendarView({ embedded = false }: CalendarViewProps) {
     setCurrentWeek(newWeek)
   }
 
-  const today = new Date().toISOString().split("T")[0] ?? ""
+  const today = formatLocalDateKey(new Date())
 
   const clearSelection = () => {
     setPendingSelection(null)
@@ -190,7 +189,7 @@ export default function CalendarView({ embedded = false }: CalendarViewProps) {
               {Array.from({ length: 7 }).map((_, i) => {
                 const date = new Date(weekStart)
                 date.setDate(date.getDate() + i)
-                const isToday = (date.toISOString().split("T")[0] ?? "") === today
+                const isToday = formatLocalDateKey(date) === today
 
                 return (
                   <div
@@ -252,11 +251,11 @@ export default function CalendarView({ embedded = false }: CalendarViewProps) {
                   {Array.from({ length: 7 }).map((_, i) => {
                     const date = new Date(weekStart)
                     date.setDate(date.getDate() + i)
-                    const dateStr = date.toISOString().split("T")[0] ?? ""
+                    const dateStr = formatLocalDateKey(date)
 
                     const dayReservations = entry.reservations.filter((r: ReservationSummary) => {
-                      const startDate = r.start_time.split("T")[0] ?? ""
-                      const endDate = r.end_time.split("T")[0] ?? ""
+                      const startDate = formatLocalDateKey(new Date(r.start_time))
+                      const endDate = formatLocalDateKey(new Date(r.end_time))
                       return dateStr >= startDate && dateStr <= endDate
                     })
 

@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Search, Plus } from "lucide-react"
 import { EmptyState, ErrorState } from "@/components/shared"
 import { ResourceCard, ResourceCardSkeleton } from "@/components/fleet/ResourceCard"
-import { useTools } from "@/lib/api/hooks"
+import { useCalendar, useTools } from "@/lib/api/hooks"
 import { AddToolDialog } from "./AddToolDialog"
+import { buildEffectiveStatusMap, getEffectiveResourceStatus } from "./effectiveResourceStatus"
 import type { Tool, ResourceStatus } from "@/types/fleet"
 
 const statusFilters: { value: ResourceStatus | undefined; label: string }[] = [
@@ -29,13 +30,35 @@ export function ToolsList({ onReserve }: ToolsListProps) {
     isLoading,
     error,
     refetch,
-  } = useTools(selectedStatus ? { status: selectedStatus } : undefined)
+  } = useTools()
 
-  const filteredTools = tools?.filter((t: Tool) =>
-    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.location?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const todayEnd = new Date(todayStart)
+  todayEnd.setHours(23, 59, 59, 999)
+
+  const { data: todayCalendar } = useCalendar({
+    start_date: todayStart.toISOString(),
+    end_date: todayEnd.toISOString(),
+    resource_type: "tool",
+  })
+
+  const effectiveStatusMap = buildEffectiveStatusMap(todayCalendar?.resources, new Date())
+
+  const toolsWithEffectiveStatus = tools?.map((tool: Tool) => ({
+    ...tool,
+    status: getEffectiveResourceStatus(tool.status, effectiveStatusMap, "tool", tool.id),
+  }))
+
+  const filteredTools = toolsWithEffectiveStatus?.filter((t: Tool) => {
+    const matchesStatus = !selectedStatus || t.status === selectedStatus
+
+    return matchesStatus && (
+      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.location?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  })
 
   return (
     <div className="space-y-4">
