@@ -46,15 +46,15 @@ VALUES
     ('00000000-0000-0000-0000-000000001102', :'tenant_id'::uuid, '00000000-0000-0000-0000-000000000102', '{"homePage":"sites"}', NOW() - INTERVAL '90 days', NOW() - INTERVAL '2 days'),
     ('00000000-0000-0000-0000-000000001103', :'tenant_id'::uuid, '00000000-0000-0000-0000-000000000103', '{"homePage":"inventory"}', NOW() - INTERVAL '90 days', NOW() - INTERVAL '3 days');
 
-INSERT INTO categories (id, tenant_id, name, description, created_at, updated_at)
+INSERT INTO categories (id, tenant_id, name, description, can_expire, created_at, updated_at)
 VALUES
-    ('00000000-0000-0000-0000-000000000201', :'tenant_id'::uuid, 'Plattenwerkstoffe', 'Dekorplatten, MDF und Multiplex für Korpus- und Möbelbau.', NOW() - INTERVAL '120 days', NOW() - INTERVAL '10 days'),
-    ('00000000-0000-0000-0000-000000000202', :'tenant_id'::uuid, 'Massivholz', 'Leimholz, Friesen und Stäbe für Treppen, Fensterbänke und Sonderteile.', NOW() - INTERVAL '120 days', NOW() - INTERVAL '12 days'),
-    ('00000000-0000-0000-0000-000000000203', :'tenant_id'::uuid, 'Kanten', 'ABS- und Echtholzkanten für Sichtseiten und Fronten.', NOW() - INTERVAL '120 days', NOW() - INTERVAL '8 days'),
-    ('00000000-0000-0000-0000-000000000204', :'tenant_id'::uuid, 'Verbindungsmittel', 'Schrauben, Confirmats und Montagekleinteile.', NOW() - INTERVAL '120 days', NOW() - INTERVAL '6 days'),
-    ('00000000-0000-0000-0000-000000000205', :'tenant_id'::uuid, 'Beschläge', 'Scharniere, Auszüge und Klappenbeschläge für Möbelmontage.', NOW() - INTERVAL '120 days', NOW() - INTERVAL '5 days'),
-    ('00000000-0000-0000-0000-000000000206', :'tenant_id'::uuid, 'Leim und Chemie', 'Leime, Reiniger und Verbrauchsmaterial für die Montage.', NOW() - INTERVAL '120 days', NOW() - INTERVAL '4 days'),
-    ('00000000-0000-0000-0000-000000000207', :'tenant_id'::uuid, 'Oberflächen', 'Öle, Lacke und Pflegemittel für Holzoberflächen.', NOW() - INTERVAL '120 days', NOW() - INTERVAL '3 days');
+    ('00000000-0000-0000-0000-000000000201', :'tenant_id'::uuid, 'Plattenwerkstoffe', 'Dekorplatten, MDF und Multiplex für Korpus- und Möbelbau.', FALSE, NOW() - INTERVAL '120 days', NOW() - INTERVAL '10 days'),
+    ('00000000-0000-0000-0000-000000000202', :'tenant_id'::uuid, 'Massivholz', 'Leimholz, Friesen und Stäbe für Treppen, Fensterbänke und Sonderteile.', FALSE, NOW() - INTERVAL '120 days', NOW() - INTERVAL '12 days'),
+    ('00000000-0000-0000-0000-000000000203', :'tenant_id'::uuid, 'Kanten', 'ABS- und Echtholzkanten für Sichtseiten und Fronten.', FALSE, NOW() - INTERVAL '120 days', NOW() - INTERVAL '8 days'),
+    ('00000000-0000-0000-0000-000000000204', :'tenant_id'::uuid, 'Verbindungsmittel', 'Schrauben, Confirmats und Montagekleinteile.', FALSE, NOW() - INTERVAL '120 days', NOW() - INTERVAL '6 days'),
+    ('00000000-0000-0000-0000-000000000205', :'tenant_id'::uuid, 'Beschläge', 'Scharniere, Auszüge und Klappenbeschläge für Möbelmontage.', FALSE, NOW() - INTERVAL '120 days', NOW() - INTERVAL '5 days'),
+    ('00000000-0000-0000-0000-000000000206', :'tenant_id'::uuid, 'Leim und Chemie', 'Leime, Reiniger und Verbrauchsmaterial für die Montage.', TRUE, NOW() - INTERVAL '120 days', NOW() - INTERVAL '4 days'),
+    ('00000000-0000-0000-0000-000000000207', :'tenant_id'::uuid, 'Oberflächen', 'Öle, Lacke und Pflegemittel für Holzoberflächen.', TRUE, NOW() - INTERVAL '120 days', NOW() - INTERVAL '3 days');
 
 INSERT INTO materials (id, tenant_id, category_id, name, description, unit, quantity, min_quantity, location, qr_code, created_at, updated_at)
 VALUES
@@ -154,5 +154,14 @@ VALUES
     ('00000000-0000-0000-0000-000000000919', :'tenant_id'::uuid, '00000000-0000-0000-0000-000000000313', '00000000-0000-0000-0000-000000000103', -2, 18, 'Lackierung Garderobenfronten abgeschlossen', '00000000-0000-0000-0000-000000000403', 'withdrawn', NOW() - INTERVAL '20 days'),
     ('00000000-0000-0000-0000-000000000920', :'tenant_id'::uuid, '00000000-0000-0000-0000-000000000303', '00000000-0000-0000-0000-000000000101', 0, 22, 'Von Plattenlager C nach Plattenlager B umgeraeumt', NULL, 'location_changed', NOW() - INTERVAL '2 days'),
     ('00000000-0000-0000-0000-000000000921', :'tenant_id'::uuid, '00000000-0000-0000-0000-000000000304', '00000000-0000-0000-0000-000000000101', 0, 18, 'Mindestbestand wegen Praxisausbau auf sechs Quadratmeter gesetzt', NULL, 'min_quantity_changed', NOW() - INTERVAL '3 days');
+
+INSERT INTO material_batches (id, tenant_id, material_id, expires_on, initial_quantity, remaining_quantity, created_at)
+VALUES
+    ('00000000-0000-0000-0000-000000000951', :'tenant_id'::uuid, '00000000-0000-0000-0000-000000000311', CURRENT_DATE - 2, 10, 10, NOW() - INTERVAL '21 days'),
+    ('00000000-0000-0000-0000-000000000952', :'tenant_id'::uuid, '00000000-0000-0000-0000-000000000311', CURRENT_DATE + 5, 8, 8, NOW() - INTERVAL '12 days'),
+    ('00000000-0000-0000-0000-000000000953', :'tenant_id'::uuid, '00000000-0000-0000-0000-000000000311', CURRENT_DATE + 45, 6, 6, NOW() - INTERVAL '5 days'),
+    ('00000000-0000-0000-0000-000000000954', :'tenant_id'::uuid, '00000000-0000-0000-0000-000000000312', CURRENT_DATE + 8, 11, 11, NOW() - INTERVAL '14 days'),
+    ('00000000-0000-0000-0000-000000000955', :'tenant_id'::uuid, '00000000-0000-0000-0000-000000000313', CURRENT_DATE - 1, 6, 6, NOW() - INTERVAL '24 days'),
+    ('00000000-0000-0000-0000-000000000956', :'tenant_id'::uuid, '00000000-0000-0000-0000-000000000313', CURRENT_DATE + 18, 12, 12, NOW() - INTERVAL '10 days');
 
 COMMIT;
