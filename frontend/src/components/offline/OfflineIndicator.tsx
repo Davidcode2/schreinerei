@@ -1,6 +1,5 @@
-import { WifiOff } from 'lucide-react'
+import { WifiOff, RefreshCw } from 'lucide-react'
 import { useOfflineSync } from '@/hooks/useOfflineSync'
-import { Badge } from '@/components/ui/badge'
 
 export default function OfflineIndicator() {
   const { online, syncing } = useOfflineSync()
@@ -9,13 +8,16 @@ export default function OfflineIndicator() {
 
   return (
     <div className="fixed bottom-16 md:bottom-4 left-4 z-50">
-      <Badge
-        variant={online ? 'default' : 'destructive'}
-        className="flex items-center gap-2 px-3 py-2"
+      <div
+        className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl shadow-sm text-sm font-medium ${
+          online
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-destructive text-destructive-foreground'
+        }`}
       >
         {syncing ? (
           <>
-            <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            <RefreshCw className="h-4 w-4 animate-spin" />
             <span>Synchronisiere...</span>
           </>
         ) : (
@@ -24,7 +26,7 @@ export default function OfflineIndicator() {
             <span>Offline</span>
           </>
         )}
-      </Badge>
+      </div>
     </div>
   )
 }

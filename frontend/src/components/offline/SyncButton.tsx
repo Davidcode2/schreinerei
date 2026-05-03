@@ -12,6 +12,7 @@ export default function SyncButton() {
       onClick={sync}
       disabled={!online || syncing}
       title={online ? 'Synchronisieren' : 'Offline'}
+      className="h-10 w-10 rounded-lg active:scale-[0.97] transition-transform"
     >
       <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
     </Button>

@@ -60,11 +60,17 @@ export default function QrScanner({ onScan, onClose }: QrScannerProps) {
 
   return (
     <div className="fixed inset-0 bg-black z-50">
-      <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
-        <h2 className="text-white text-lg font-medium">QR-Code scannen</h2>
-        <Button variant="ghost" onClick={onClose} className="text-white">
-          Abbrechen
-        </Button>
+      <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 to-transparent p-4 pb-8 z-10">
+        <div className="flex justify-between items-center">
+          <h2 className="text-white font-display text-xl">QR-Code scannen</h2>
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            className="text-white h-10 rounded-lg active:scale-[0.97] transition-transform"
+          >
+            Abbrechen
+          </Button>
+        </div>
       </div>
 
       <div
@@ -73,21 +79,23 @@ export default function QrScanner({ onScan, onClose }: QrScannerProps) {
       />
 
       {error && (
-        <div className="absolute bottom-20 left-4 right-4 space-y-3">
-          <div className="bg-destructive text-white p-4 rounded-lg flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <p>{error}</p>
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-6 pt-12 space-y-3">
+          <div className="bg-destructive/90 backdrop-blur-sm text-white p-4 rounded-xl flex items-center gap-3 shadow-sm">
+            <div className="rounded-lg bg-white/20 p-1.5 flex-shrink-0">
+              <AlertCircle className="h-4 w-4" />
+            </div>
+            <p className="text-sm leading-relaxed">{error}</p>
           </div>
           <Button
             onClick={handleRetry}
-            className="w-full"
+            className="w-full h-12 rounded-lg text-base active:scale-[0.97] transition-transform"
           >
             Erneut versuchen
           </Button>
           <Button
             variant="outline"
             onClick={() => setShowManualEntry(true)}
-            className="w-full bg-white text-black"
+            className="w-full h-12 rounded-lg text-base bg-white text-black active:scale-[0.97] transition-transform"
           >
             Code manuell eingeben
           </Button>
@@ -95,23 +103,29 @@ export default function QrScanner({ onScan, onClose }: QrScannerProps) {
       )}
 
       {showManualEntry && !error && (
-        <div className="absolute bottom-20 left-4 right-4 space-y-3 bg-white p-4 rounded-lg">
-          <p className="text-sm text-muted-foreground">Geben Sie den QR-Code manuell ein:</p>
-          <Input
-            value={manualCode}
-            onChange={(e) => setManualCode(e.target.value)}
-            placeholder="QR-Code eingeben..."
-            className="w-full"
-          />
-          <Button onClick={handleManualSubmit} className="w-full">
-            Bestätigen
-          </Button>
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-6 pt-12 space-y-3">
+          <div className="bg-card backdrop-blur-sm p-5 rounded-xl space-y-3 shadow-sm">
+            <p className="text-sm text-muted-foreground">Geben Sie den QR-Code manuell ein:</p>
+            <Input
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value)}
+              placeholder="QR-Code eingeben..."
+              className="w-full h-12 rounded-lg text-base"
+              onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
+            />
+            <Button
+              onClick={handleManualSubmit}
+              className="w-full h-12 rounded-lg text-base active:scale-[0.97] transition-transform"
+            >
+              Bestätigen
+            </Button>
+          </div>
         </div>
       )}
 
       {!error && !showManualEntry && (
-        <div className="absolute bottom-4 left-0 right-0 text-center text-white/60 text-sm">
-          Halten Sie die Kamera auf einen QR-Code
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent pb-6 pt-12 text-center">
+          <p className="text-white/60 text-sm">Halten Sie die Kamera auf einen QR-Code</p>
         </div>
       )}
     </div>
