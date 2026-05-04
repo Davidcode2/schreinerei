@@ -272,7 +272,7 @@ Commit frequently with descriptive messages. Reference requirements when applica
 Before creating a commit, always run the necessary verification for the changed area and confirm it passes.
 
 - Frontend changes: run at minimum the relevant `vitest` tests and `npx tsc --noEmit` or `npm run build` when appropriate.
-- Backend changes: run the relevant `cargo test`, `cargo clippy`, and any required integration or migration checks.
+- Backend changes: run `cargo fmt --check` (and `cargo fmt` if needed), the relevant `cargo test`, `cargo clippy`, and any required integration or migration checks.
 - Full-stack or shared contract changes: run both backend and frontend checks, including ts-rs type generation when DTOs change.
 - If a relevant check cannot be run, explicitly note that before committing and explain why.
 
