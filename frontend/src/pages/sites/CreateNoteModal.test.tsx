@@ -64,6 +64,21 @@ describe("CreateNoteModal", () => {
     expect(screen.getByText(/Nicht unterstützte Dateien:/i)).toBeInTheDocument()
   })
 
+  it("rejects files larger than 10 MB before upload", async () => {
+    renderModal()
+    const user = userEvent.setup({ applyAccept: false })
+
+    const picker = document.querySelector('input[type="file"]') as HTMLInputElement
+    const oversizedPdf = new File([new Uint8Array(10 * 1024 * 1024 + 1)], "gross.pdf", {
+      type: "application/pdf",
+    })
+
+    await user.upload(picker, oversizedPdf)
+
+    expect(screen.getByText(/Zu groß \(max\. 10 MB\): gross\.pdf/i)).toBeInTheDocument()
+    expect(screen.queryByText("gross.pdf")).not.toBeInTheDocument()
+  })
+
   it("allows removing a selected file before submit", async () => {
     renderModal()
     const user = userEvent.setup()

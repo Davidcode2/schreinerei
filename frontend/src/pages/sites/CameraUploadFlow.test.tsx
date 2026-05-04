@@ -81,6 +81,29 @@ describe("CameraUploadFlow", () => {
     expect(screen.getByPlaceholderText("Notiz hinzufügen (optional)...")).toBeInTheDocument()
   })
 
+  it("rejects photos larger than 10 MB before upload", async () => {
+    vi.mocked(isOnline).mockReturnValue(true)
+
+    render(
+      <CameraUploadFlow
+        open
+        onOpenChange={vi.fn()}
+        siteId="site-1"
+        onSuccess={vi.fn()}
+      />
+    )
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+    const oversizedFile = new File([new Uint8Array(10 * 1024 * 1024 + 1)], "large.jpg", {
+      type: "image/jpeg",
+    })
+    await userEvent.upload(fileInput, oversizedFile)
+
+    expect(screen.queryByAltText("Vorschau")).not.toBeInTheDocument()
+    expect(uploadPhotoMutate).not.toHaveBeenCalled()
+    expect(createActivityMutate).not.toHaveBeenCalled()
+  })
+
   it("calls upload then createActivity when submitting online", async () => {
     vi.mocked(isOnline).mockReturnValue(true)
     uploadPhotoMutate.mockResolvedValue({ photo_url: "https://example.com/photo.jpg" })

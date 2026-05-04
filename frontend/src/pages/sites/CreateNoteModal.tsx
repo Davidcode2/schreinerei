@@ -19,6 +19,7 @@ const ACCEPTED_MIME_TYPES = [
 	"image/webp",
 	"application/pdf",
 ] as const;
+const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
 
 type ComposerFile = {
 	id: string;
@@ -38,6 +39,10 @@ function isAcceptedFile(file: File) {
 	return ACCEPTED_MIME_TYPES.includes(
 		file.type as (typeof ACCEPTED_MIME_TYPES)[number],
 	);
+}
+
+function isWithinUploadLimit(file: File) {
+	return file.size <= MAX_UPLOAD_SIZE_BYTES;
 }
 
 function buildComposerFile(file: File): ComposerFile {
@@ -110,8 +115,10 @@ export function CreateNoteModal({
 			return;
 		}
 
-		const validFiles = files.filter(isAcceptedFile);
+		const acceptedFiles = files.filter(isAcceptedFile);
 		const invalidFiles = files.filter((file) => !isAcceptedFile(file));
+		const oversizedFiles = acceptedFiles.filter((file) => !isWithinUploadLimit(file));
+		const validFiles = acceptedFiles.filter(isWithinUploadLimit);
 
 		if (validFiles.length > 0) {
 			setSelectedFiles((currentFiles) => [
@@ -121,10 +128,19 @@ export function CreateNoteModal({
 		}
 
 		setSelectionError(
-			invalidFiles.length > 0
-				? `Nicht unterstützte Dateien: ${invalidFiles
-						.map((file) => `${file.name} (${file.type || "unbekannt"})`)
-						.join(", ")}`
+			invalidFiles.length > 0 || oversizedFiles.length > 0
+				? [
+						invalidFiles.length > 0
+							? `Nicht unterstützte Dateien: ${invalidFiles
+									.map((file) => `${file.name} (${file.type || "unbekannt"})`)
+									.join(", ")}`
+							: null,
+						oversizedFiles.length > 0
+							? `Zu groß (max. 10 MB): ${oversizedFiles.map((file) => file.name).join(", ")}`
+							: null,
+					]
+					.filter(Boolean)
+					.join(" ")
 				: null,
 		);
 

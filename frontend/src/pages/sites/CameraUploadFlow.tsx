@@ -15,6 +15,8 @@ import { useCreateActivity, useUploadSitePhoto } from "@/lib/api/hooks";
 import { queuePhotoUploadAction } from "@/lib/offline/queue";
 import { isOnline } from "@/lib/offline/sync";
 
+const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
+
 interface CameraUploadFlowProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -63,6 +65,12 @@ export function CameraUploadFlow({
 
 		if (!file.type.startsWith("image/")) {
 			toast.error("Bitte wählen Sie eine Bilddatei aus");
+			onOpenChange(false);
+			return;
+		}
+
+		if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+			toast.error("Das Foto ist zu groß. Maximal 10 MB sind erlaubt.");
 			onOpenChange(false);
 			return;
 		}
