@@ -15,6 +15,16 @@
 - ✅ **v1.10 Baustelle Activity Stream Features** — Phases 34-37 (shipped 2026-05-01) — [Archive](milestones/v1.10-ROADMAP.md)
 - ✅ **v1.11 Fleet Calendar on Fleet Page** — Phases 38-40 (shipped 2026-05-01) — [Archive](milestones/v1.11-ROADMAP.md)
 
+### v1.12 Mobile Modal Improvements (In Progress)
+
+**Milestone Goal:** Improve mobile UX by making tall modals usable on small screens through step-based navigation.
+
+- [ ] **Phase 41: Mobile Modal Improvements** — Split tall modals into steps with swipe navigation, larger close button, and dot indicators
+
+Plans:
+- [ ] 41-01-PLAN.md — Infrastructure: close button fix, StepIndicator, StepContainer, useSwipeGesture
+- [ ] 41-02-PLAN.md — Apply step-based layout to AddMaterialDialog
+
 ## Phases
 
 <details>
@@ -65,7 +75,7 @@
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40
+Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40 → 41
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -80,8 +90,9 @@ Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 �
 | 38. Fleet Page Calendar Integration | v1.11 | 1/1 | Complete | 2026-05-01 |
 | 39. Range Selection & Confirmation Flow | v1.11 | 2/2 | Complete | 2026-05-01 |
 | 40. Calendar Visibility, Colors & Cleanup | v1.11 | 2/2 | Complete | 2026-05-01 |
+| 41. Mobile Modal Improvements | v1.12 | 0/2 | Planning | — |
 
 ---
 
-*Roadmap last updated: 2026-05-01*
-*Next: `/gsd-new-milestone`*
+*Roadmap last updated: 2026-05-04*
+*Next: `/gsd-plan-phase 41`*
