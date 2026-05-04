@@ -65,7 +65,8 @@ pub fn create_router() -> Router<AppState> {
         )
         .route(
             "/api/v1/sites/{id}/attachments",
-            post(upload_site_attachment).layer(DefaultBodyLimit::max(MAX_UPLOAD_REQUEST_SIZE_BYTES)),
+            post(upload_site_attachment)
+                .layer(DefaultBodyLimit::max(MAX_UPLOAD_REQUEST_SIZE_BYTES)),
         )
         .route(
             "/api/v1/sites/{id}/attachments/photo",
