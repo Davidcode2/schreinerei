@@ -43,3 +43,34 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+/* Step transition animations for modal wizard */
+@keyframes step-enter-left {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes step-enter-right {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-step-enter-left {
+  animation: step-enter-left 200ms ease-out;
+}
+
+.animate-step-enter-right {
+  animation: step-enter-right 200ms ease-out;
+}
