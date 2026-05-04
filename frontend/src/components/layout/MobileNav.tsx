@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Menu, QrCode, LogOut, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -14,10 +15,18 @@ import { getDisplayName, getRoleLabel } from "./userDisplay"
 export function MobileNav() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
+  const [isOpen, setIsOpen] = useState(false)
+
+  const closeMenu = () => setIsOpen(false)
+
+  const navigateAndClose = (href: string) => {
+    navigate(href)
+    closeMenu()
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center gap-3 border-b bg-card/95 backdrop-blur-md px-4 md:hidden safe-area-top">
-      <Sheet>
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="flex-shrink-0 h-10 w-10">
             <Menu className="h-5 w-5" />
@@ -34,13 +43,13 @@ export function MobileNav() {
           </div>
           <div className="py-4 flex-1 overflow-auto">
             <ActiveSiteIndicator />
-            <SidebarContent />
+            <SidebarContent onNavigate={closeMenu} />
           </div>
           <div className="border-t p-4">
             <button
               type="button"
               className="mb-3 flex w-full items-center gap-3 rounded-lg p-2 -m-2 text-left transition-colors hover:bg-accent/40"
-              onClick={() => navigate('/settings')}
+              onClick={() => navigateAndClose('/settings')}
             >
               <Avatar className="h-9 w-9 border border-border">
                 <AvatarFallback className="bg-accent text-accent-foreground">
@@ -57,6 +66,7 @@ export function MobileNav() {
               size="sm"
               className="w-full justify-start gap-3 h-11 text-muted-foreground hover:text-destructive"
               onClick={() => {
+                closeMenu()
                 useAuthStore.getState().logout()
                 window.location.href = getLogoutUrl()
               }}

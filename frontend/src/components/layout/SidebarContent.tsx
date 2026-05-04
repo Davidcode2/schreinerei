@@ -2,13 +2,18 @@ import { NavLink } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { mainNavItems } from "@/lib/navigation"
 
-export function SidebarContent() {
+interface SidebarContentProps {
+  onNavigate?: () => void
+}
+
+export function SidebarContent({ onNavigate }: SidebarContentProps) {
   return (
     <nav className="flex flex-col gap-1 px-3">
       {mainNavItems.map((item) => (
         <NavLink
           key={item.href}
           to={item.href}
+          onClick={onNavigate}
           className={({ isActive }) =>
             cn(
               "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
