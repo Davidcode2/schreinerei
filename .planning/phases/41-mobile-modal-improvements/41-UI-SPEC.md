@@ -1,10 +1,11 @@
 ---
 phase: 41
 slug: mobile-modal-improvements
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-04
+approved: 2026-05-04
 ---
 
 # Phase 41 — UI Design Contract
@@ -70,6 +71,17 @@ Accent reserved for:
 - Step progress bar
 - Focused step indicator
 
+### Visual Hierarchy
+
+**Primary visual anchor:** Step indicator draws the eye first (top center, shows progress and context).
+
+**Secondary anchors (in order):**
+1. Active form inputs and required field indicators
+2. Primary CTA button (bottom of modal)
+3. Navigation buttons (Back/Continue)
+
+This hierarchy guides the user through the step wizard flow: orient → input → action.
+
 ---
 
 ## Copywriting Contract
@@ -79,7 +91,7 @@ Accent reserved for:
 | Primary CTA | **Erstellen** (Create) — on final step |
 | Navigation (next) | **Weiter** (Continue) |
 | Navigation (back) | **Zurück** (Back) |
-| Cancel | **Abbrechen** (Cancel) |
+| Cancel | **Schließen** (Close) — dismisses modal without saving |
 | Step indicator | Dot indicators with `aria-label="Schritt {n} von {total}"` |
 | Empty state | N/A — modals always have content |
 | Error state | Toast notification: "Material konnte nicht erstellt werden" |
@@ -207,11 +219,11 @@ Accent reserved for:
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-05-04
