@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Multipart, Path, Query, State},
+    extract::{DefaultBodyLimit, Multipart, Path, Query, State},
     http::header,
     http::StatusCode,
     response::IntoResponse,
@@ -22,6 +22,8 @@ use crate::modules::sites::domain::{
 };
 use crate::modules::sites::infrastructure::site_repository::DashboardSite;
 use crate::AppState;
+
+const MAX_UPLOAD_REQUEST_SIZE_BYTES: usize = 12 * 1024 * 1024;
 
 /// Create the sites API router
 pub fn create_router() -> Router<AppState> {
@@ -63,11 +65,13 @@ pub fn create_router() -> Router<AppState> {
         )
         .route(
             "/api/v1/sites/{id}/attachments",
-            post(upload_site_attachment),
+            post(upload_site_attachment)
+                .layer(DefaultBodyLimit::max(MAX_UPLOAD_REQUEST_SIZE_BYTES)),
         )
         .route(
             "/api/v1/sites/{id}/attachments/photo",
-            post(upload_site_photo_attachment),
+            post(upload_site_photo_attachment)
+                .layer(DefaultBodyLimit::max(MAX_UPLOAD_REQUEST_SIZE_BYTES)),
         )
         .route(
             "/api/v1/attachments/{attachment_id}",
