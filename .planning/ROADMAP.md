@@ -22,8 +22,8 @@
 - [ ] **Phase 41: Mobile Modal Improvements** — Split tall modals into steps with swipe navigation, larger close button, and dot indicators
 
 Plans:
-- [ ] 41-01-PLAN.md — Infrastructure: close button fix, StepIndicator, StepContainer, useSwipeGesture
-- [ ] 41-02-PLAN.md — Apply step-based layout to AddMaterialDialog
+- [x] 41-01-PLAN.md — Infrastructure: close button fix, StepIndicator, StepContainer, useSwipeGesture
+- [x] 41-02-PLAN.md — Apply step-based layout to AddMaterialDialog
 
 ## Phases
 
@@ -90,7 +90,7 @@ Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 �
 | 38. Fleet Page Calendar Integration | v1.11 | 1/1 | Complete | 2026-05-01 |
 | 39. Range Selection & Confirmation Flow | v1.11 | 2/2 | Complete | 2026-05-01 |
 | 40. Calendar Visibility, Colors & Cleanup | v1.11 | 2/2 | Complete | 2026-05-01 |
-| 41. Mobile Modal Improvements | v1.12 | 0/2 | Planning | — |
+| 41. Mobile Modal Improvements | v1.12 | 2/2 | Complete    | 2026-05-04 |
 
 ---
 
