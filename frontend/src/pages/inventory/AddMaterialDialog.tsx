@@ -21,6 +21,8 @@ import { toast } from "sonner"
 import { useCreateMaterial, useCreateCategory } from "@/lib/api/hooks"
 import type { Category } from "@/types/inventory"
 import { CategoryDialog } from "./CategoryDialog"
+import { StepIndicator } from "@/components/ui/step-indicator"
+import { StepContainer } from "@/components/ui/step-container"
 
 interface AddMaterialDialogProps {
   open: boolean
@@ -49,6 +51,7 @@ export function AddMaterialDialog({
   const [location, setLocation] = useState("")
   const [expiresOn, setExpiresOn] = useState("")
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
+  const [currentStep, setCurrentStep] = useState(1)
 
   const createMaterial = useCreateMaterial()
   const createCategory = useCreateCategory()
@@ -61,6 +64,9 @@ export function AddMaterialDialog({
   const quantityValue = Number(quantity) || 0
   const requiresExpiryDate = selectedCategory?.can_expire === true && quantityValue > 0
 
+  const isStep1Valid = Boolean(categoryId && name && quantity && unit)
+  const isStep2Valid = Boolean(minQuantity && (!requiresExpiryDate || expiresOn))
+
   const resetForm = () => {
     setCategoryId("")
     setName("")
@@ -70,6 +76,7 @@ export function AddMaterialDialog({
     setLocation("")
     setExpiresOn("")
     setIsCategoryDialogOpen(false)
+    setCurrentStep(1)
   }
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -79,8 +86,7 @@ export function AddMaterialDialog({
     onOpenChange(nextOpen)
   }
 
-  const isFormValid =
-    categoryId && name && quantity && unit && minQuantity && (!requiresExpiryDate || expiresOn)
+  const isFormValid = isStep1Valid && isStep2Valid
 
   const handleSubmit = () => {
     if (!isFormValid) {
@@ -135,123 +141,165 @@ export function AddMaterialDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Material hinzufügen</DialogTitle>
             <DialogDescription>Neues Material zum Inventar hinzufügen</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="category">Kategorie *</Label>
-              <div className="flex gap-2">
-                <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger id="category" className="flex-1">
-                    <SelectValue placeholder="Kategorie wählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsCategoryDialogOpen(true)}
-                >
-                  + Neu
-                </Button>
-              </div>
-            </div>
+          <StepIndicator
+            currentStep={currentStep}
+            totalSteps={2}
+            onStepClick={(step) => {
+              if (step === 1 || isStep1Valid) {
+                setCurrentStep(step)
+              }
+            }}
+          />
 
-            <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input
-                id="name"
-                placeholder="z.B. Schrauben M8"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </div>
+          <StepContainer
+            currentStep={currentStep}
+            onStepChange={setCurrentStep}
+            totalSteps={2}
+          >
+            <div className="space-y-4 py-4 overflow-y-auto flex-1">
+              {currentStep === 1 ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Kategorie *</Label>
+                    <div className="flex gap-2">
+                      <Select value={categoryId} onValueChange={setCategoryId}>
+                        <SelectTrigger id="category" className="flex-1">
+                          <SelectValue placeholder="Kategorie wählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsCategoryDialogOpen(true)}
+                      >
+                        + Neu
+                      </Button>
+                    </div>
+                  </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Menge *</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min={0}
-                step="1"
-                placeholder="0"
-                value={quantity}
-                onChange={(event) => setQuantity(event.target.value)}
-              />
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name *</Label>
+                    <Input
+                      id="name"
+                      placeholder="z.B. Schrauben M8"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                    />
+                  </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="unit">Einheit *</Label>
-              <Select value={unit} onValueChange={setUnit}>
-                <SelectTrigger id="unit">
-                  <SelectValue placeholder="Einheit wählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {UNIT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quantity">Menge *</Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      min={0}
+                      step="1"
+                      placeholder="0"
+                      value={quantity}
+                      onChange={(event) => setQuantity(event.target.value)}
+                    />
+                  </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="minQuantity">Mindestbestand *</Label>
-              <Input
-                id="minQuantity"
-                type="number"
-                min={0}
-                step="1"
-                placeholder="0"
-                value={minQuantity}
-                onChange={(event) => setMinQuantity(event.target.value)}
-              />
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="unit">Einheit *</Label>
+                    <Select value={unit} onValueChange={setUnit}>
+                      <SelectTrigger id="unit">
+                        <SelectValue placeholder="Einheit wählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {UNIT_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="minQuantity">Mindestbestand *</Label>
+                    <Input
+                      id="minQuantity"
+                      type="number"
+                      min={0}
+                      step="1"
+                      placeholder="0"
+                      value={minQuantity}
+                      onChange={(event) => setMinQuantity(event.target.value)}
+                    />
+                  </div>
 
-            {selectedCategory?.can_expire && (
-              <div className="space-y-2">
-                <Label htmlFor="expiresOn" title="Mindesthaltbarkeitsdatum">
-                  MHD *
-                </Label>
-                <Input
-                  id="expiresOn"
-                  type="date"
-                  value={expiresOn}
-                  onChange={(event) => setExpiresOn(event.target.value)}
-                />
-              </div>
-            )}
+                  {selectedCategory?.can_expire && (
+                    <div className="space-y-2">
+                      <Label htmlFor="expiresOn" title="Mindesthaltbarkeitsdatum">
+                        MHD *
+                      </Label>
+                      <Input
+                        id="expiresOn"
+                        type="date"
+                        value={expiresOn}
+                        onChange={(event) => setExpiresOn(event.target.value)}
+                      />
+                    </div>
+                  )}
 
-            <div className="space-y-2">
-              <Label htmlFor="location">Lagerort</Label>
-              <Input
-                id="location"
-                placeholder="z.B. Regal A3"
-                value={location}
-                onChange={(event) => setLocation(event.target.value)}
-              />
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Lagerort</Label>
+                    <Input
+                      id="location"
+                      placeholder="z.B. Regal A3"
+                      value={location}
+                      onChange={(event) => setLocation(event.target.value)}
+                    />
+                  </div>
+                </>
+              )}
             </div>
-          </div>
+          </StepContainer>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => handleOpenChange(false)}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleSubmit} disabled={!isFormValid || createMaterial.isPending} className="shadow-sm active:scale-[0.97] transition-transform">
-              {createMaterial.isPending ? "Wird erstellt..." : "Erstellen"}
-            </Button>
+            {currentStep === 1 ? (
+              <>
+                <Button variant="outline" onClick={() => handleOpenChange(false)}>
+                  Abbrechen
+                </Button>
+                <Button
+                  onClick={() => setCurrentStep(2)}
+                  disabled={!isStep1Valid}
+                >
+                  Weiter
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setCurrentStep(1)}>
+                  Zurück
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!isStep2Valid || createMaterial.isPending}
+                  className="shadow-sm active:scale-[0.97] transition-transform"
+                >
+                  {createMaterial.isPending ? "Wird erstellt..." : "Erstellen"}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
