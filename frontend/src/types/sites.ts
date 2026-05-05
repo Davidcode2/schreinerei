@@ -5,9 +5,11 @@
 // === Site ===
 
 export type SiteStatus = 'planned' | 'active' | 'completed' | 'archived'
+export type ProjectType = 'external_site' | 'internal_workshop'
 
 export interface Site {
   id: string
+  project_type: ProjectType
   name: string
   customer_name: string
   location: string | null
@@ -20,6 +22,7 @@ export interface Site {
 }
 
 export interface CreateSiteRequest {
+  project_type: ProjectType
   name: string
   customer_name: string
   location?: string
@@ -30,6 +33,7 @@ export interface CreateSiteRequest {
 }
 
 export interface UpdateSiteRequest {
+  project_type?: ProjectType
   name?: string
   customer_name?: string
   location?: string
@@ -46,7 +50,7 @@ export interface ListSitesQuery {
 
 // === Assignment ===
 
-export type AssignmentRole = 'manager' | 'worker'
+export type AssignmentRole = 'lead' | 'worker'
 
 export interface SiteAssignment {
   id: string
@@ -140,6 +144,7 @@ export interface ActivityQuery {
 
 export interface DashboardSite {
   id: string
+  project_type: ProjectType
   name: string
   customer_name: string
   location: string | null

@@ -114,6 +114,27 @@ export function useAssignUser() {
   })
 }
 
+export function useRemoveAssignment() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      siteId,
+      userId,
+    }: {
+      siteId: string
+      userId: string
+    }) => apiClient.delete(`/api/v1/sites/${siteId}/assign/${userId}`),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["site-assignments", variables.siteId],
+      })
+      queryClient.invalidateQueries({ queryKey: ["site", variables.siteId] })
+      queryClient.invalidateQueries({ queryKey: ["dashboard-sites"] })
+    },
+  })
+}
+
 // === Time Entries ===
 
 export function useTimeEntries(siteId?: string) {

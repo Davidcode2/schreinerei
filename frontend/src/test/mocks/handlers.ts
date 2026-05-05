@@ -9,6 +9,7 @@ export const mockData = {
   materials: [] as MockRecord[],
   categories: [] as MockRecord[],
   sites: [] as MockRecord[],
+  users: [] as MockRecord[],
   vehicles: [] as MockRecord[],
   tools: [] as MockRecord[],
   reservations: [] as MockRecord[],
@@ -67,10 +68,19 @@ export const handlers = [
     return HttpResponse.json(mockData.sites);
   }),
 
+  http.get(apiRoute('/sites/:id'), async ({ params }) => {
+    await delay(10);
+    const site = mockData.sites.find((entry) => entry.id === params.id);
+    return site
+      ? HttpResponse.json(site)
+      : HttpResponse.json({ error: 'Not found' }, { status: 404 });
+  }),
+
   http.post(apiRoute('/sites'), async ({ request }) => {
     const body = await request.json() as Record<string, unknown>;
     const newSite = {
       id: crypto.randomUUID(),
+      project_type: 'external_site',
       status: 'planned',
       description: null,
       location: null,
@@ -82,6 +92,53 @@ export const handlers = [
     };
     mockData.sites.push(newSite);
     return HttpResponse.json(newSite, { status: 201 });
+  }),
+
+  http.get(apiRoute('/users'), async () => {
+    await delay(10);
+    return HttpResponse.json(mockData.users);
+  }),
+
+  http.patch(apiRoute('/sites/:id'), async ({ params, request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    const index = mockData.sites.findIndex((entry) => entry.id === params.id);
+    if (index === -1) {
+      return HttpResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    mockData.sites[index] = { ...mockData.sites[index], ...body };
+    return HttpResponse.json(mockData.sites[index]);
+  }),
+
+  http.get(apiRoute('/sites/:id/assignments'), async () => {
+    await delay(10);
+    return HttpResponse.json([]);
+  }),
+
+  http.post(apiRoute('/sites/:id/assign'), async ({ params, request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    return HttpResponse.json(
+      {
+        id: crypto.randomUUID(),
+        site_id: params.id,
+        created_at: new Date().toISOString(),
+        ...body,
+      },
+      { status: 200 }
+    );
+  }),
+
+  http.delete(apiRoute('/sites/:id/assign/:userId'), async () => {
+    return HttpResponse.json({ success: true }, { status: 200 });
+  }),
+
+  http.get(apiRoute('/sites/:id/time-entries'), async () => {
+    await delay(10);
+    return HttpResponse.json(mockData.timeEntries);
+  }),
+
+  http.get(apiRoute('/sites/:id/activities'), async () => {
+    await delay(10);
+    return HttpResponse.json([]);
   }),
 
   // Vehicles (fleet module)

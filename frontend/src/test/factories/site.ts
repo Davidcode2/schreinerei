@@ -1,4 +1,4 @@
-import type { Site, SiteStatus } from '@/types/sites';
+import type { ProjectType, Site, SiteStatus } from '@/types/sites';
 
 let siteCounter = 0;
 
@@ -6,6 +6,7 @@ export function createSite(overrides: Partial<Site> = {}): Site {
   siteCounter++;
   return {
     id: crypto.randomUUID(),
+    project_type: 'external_site' as ProjectType,
     name: `Baustelle ${siteCounter}`,
     customer_name: `Kunde ${siteCounter}`,
     location: `Musterstraße ${siteCounter}, 12345 Berlin`,

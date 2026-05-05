@@ -21,7 +21,7 @@ describe('AddSiteDialog', () => {
     render(<AddSiteDialog open={true} onOpenChange={mockOnOpenChange} />);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText('Baustelle anlegen')).toBeInTheDocument();
+    expect(screen.getByText('Projekt anlegen')).toBeInTheDocument();
   });
 
   it('does not render when closed', () => {
@@ -37,15 +37,26 @@ describe('AddSiteDialog', () => {
     expect(submitButton).toBeDisabled();
   });
 
-  it('enables submit button when name and customer are filled', async () => {
+  it('enables submit button when external project name and customer are filled', async () => {
     const user = userEvent.setup();
     render(<AddSiteDialog open={true} onOpenChange={mockOnOpenChange} />);
 
-    await user.type(screen.getByLabelText(/baustellenname/i), 'Villa Müller');
+    await user.type(screen.getByLabelText(/projektname/i), 'Villa Müller');
     await user.type(screen.getByLabelText(/kunde/i), 'Familie Müller');
 
     const submitButton = screen.getByRole('button', { name: /erstellen/i });
     expect(submitButton).toBeEnabled();
+  });
+
+  it('allows internal workshop project without customer name', async () => {
+    const user = userEvent.setup();
+    render(<AddSiteDialog open={true} onOpenChange={mockOnOpenChange} />);
+
+    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: /werkstatt intern/i }));
+    await user.type(screen.getByLabelText(/projektname/i), 'CNC Vorbereitung');
+
+    expect(screen.getByRole('button', { name: /projekt erstellen/i })).toBeEnabled();
   });
 
   it('submits form with correct payload', async () => {
@@ -62,15 +73,16 @@ describe('AddSiteDialog', () => {
 
     render(<AddSiteDialog open={true} onOpenChange={mockOnOpenChange} />);
 
-    await user.type(screen.getByLabelText(/baustellenname/i), 'Villa Müller');
+    await user.type(screen.getByLabelText(/projektname/i), 'Villa Müller');
     await user.type(screen.getByLabelText(/kunde/i), 'Familie Müller');
     await user.type(screen.getByLabelText(/standort/i), 'Musterstraße 1, Berlin');
-    await user.type(screen.getByLabelText(/beschreibung/i), 'Küchenumbau');
+    await user.type(screen.getByLabelText(/planungsnotiz/i), 'Küchenumbau');
 
     await user.click(screen.getByRole('button', { name: /erstellen/i }));
 
     await waitFor(() => {
       expect(submittedPayload).toEqual({
+        project_type: 'external_site',
         name: 'Villa Müller',
         customer_name: 'Familie Müller',
         location: 'Musterstraße 1, Berlin',
@@ -83,7 +95,7 @@ describe('AddSiteDialog', () => {
     const user = userEvent.setup();
     render(<AddSiteDialog open={true} onOpenChange={mockOnOpenChange} />);
 
-    await user.type(screen.getByLabelText(/baustellenname/i), 'Villa Müller');
+    await user.type(screen.getByLabelText(/projektname/i), 'Villa Müller');
     await user.type(screen.getByLabelText(/kunde/i), 'Familie Müller');
     await user.click(screen.getByRole('button', { name: /erstellen/i }));
 
@@ -96,7 +108,7 @@ describe('AddSiteDialog', () => {
     const user = userEvent.setup();
     render(<AddSiteDialog open={true} onOpenChange={mockOnOpenChange} />);
 
-    await user.type(screen.getByLabelText(/baustellenname/i), 'Villa Müller');
+    await user.type(screen.getByLabelText(/projektname/i), 'Villa Müller');
     await user.type(screen.getByLabelText(/kunde/i), 'Familie Müller');
     await user.click(screen.getByRole('button', { name: /erstellen/i }));
 

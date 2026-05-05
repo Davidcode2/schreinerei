@@ -12,6 +12,7 @@ import {
   Building2,
   Users,
   Timer,
+  PencilRuler,
 } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
 import {
@@ -28,6 +29,8 @@ import { StatusChangeModal } from "./StatusChangeModal"
 import { CreateNoteModal } from "./CreateNoteModal"
 import { CameraUploadFlow } from "./CameraUploadFlow"
 import { MediaViewer } from "./MediaViewer"
+import { ProjectAssignmentsSection } from "./ProjectAssignmentsSection"
+import { ProjectPlanningSheet } from "./ProjectPlanningSheet"
 import {
   buildMediaViewerPath,
   buildSiteDetailPath,
@@ -66,6 +69,7 @@ export default function SiteDetailPage() {
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [showNoteModal, setShowNoteModal] = useState(false)
   const [showCameraFlow, setShowCameraFlow] = useState(false)
+  const [showPlanningSheet, setShowPlanningSheet] = useState(false)
 
   const { data: site, isLoading, error, refetch } = useSite(id!)
   const { data: activities, refetch: refetchActivities } = useActivities(id!)
@@ -103,13 +107,23 @@ export default function SiteDetailPage() {
         description={site.customer_name}
         backTo="/sites"
         action={
-          <Button
-            onClick={() => setShowTimeDialog(true)}
-            className="gap-2 h-10 shadow-sm"
-          >
-            <Clock className="h-4 w-4" />
-            Zeit buchen
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowPlanningSheet(true)}
+              className="gap-2 h-10"
+            >
+              <PencilRuler className="h-4 w-4" />
+              Planen
+            </Button>
+            <Button
+              onClick={() => setShowTimeDialog(true)}
+              className="gap-2 h-10 shadow-sm"
+            >
+              <Clock className="h-4 w-4" />
+              Zeit buchen
+            </Button>
+          </div>
         }
       />
 
@@ -123,6 +137,9 @@ export default function SiteDetailPage() {
               >
                 <StatusBadge status={site.status} />
               </div>
+              <Badge variant="outline" className="text-xs font-normal">
+                {site.project_type === "internal_workshop" ? "Werkstattprojekt" : "Baustelle"}
+              </Badge>
               {site.location && (
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4 flex-shrink-0" />
@@ -145,7 +162,7 @@ export default function SiteDetailPage() {
       <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold">Details</CardTitle>
+            <CardTitle className="text-base font-semibold">Projektdetails</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {site.description && (
@@ -163,8 +180,8 @@ export default function SiteDetailPage() {
                   <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Kunde</p>
-                  <p className="text-sm font-medium">{site.customer_name}</p>
+                  <p className="text-xs text-muted-foreground">{site.project_type === "internal_workshop" ? "Bezug" : "Kunde"}</p>
+                  <p className="text-sm font-medium">{site.customer_name || "-"}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2.5">
@@ -241,6 +258,15 @@ export default function SiteDetailPage() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold">Projektplanung</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ProjectAssignmentsSection siteId={site.id} assignments={assignments || []} />
+          </CardContent>
+        </Card>
+
         <Card className="md:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-base font-semibold">Aktivitäten</CardTitle>
@@ -299,6 +325,12 @@ export default function SiteDetailPage() {
         onOpenChange={setShowCameraFlow}
         siteId={site.id}
         onSuccess={() => refetchActivities()}
+      />
+
+      <ProjectPlanningSheet
+        open={showPlanningSheet}
+        onOpenChange={setShowPlanningSheet}
+        site={site}
       />
 
       <MediaViewer

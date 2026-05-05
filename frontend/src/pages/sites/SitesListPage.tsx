@@ -57,12 +57,12 @@ export default function SitesListPage() {
   return (
     <div>
       <PageHeader
-        title="Baustellen"
-        description="Alle Baustellen im Überblick"
+        title="Projekte"
+        description="Externe Baustellen und interne Werkstattprojekte im Überblick"
         action={
           <Button className="gap-2 h-10 shadow-sm" onClick={() => setAddSiteOpen(true)}>
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Baustelle anlegen</span>
+            <span className="hidden sm:inline">Projekt anlegen</span>
             <span className="sm:hidden">Anlegen</span>
           </Button>
         }
@@ -88,8 +88,8 @@ export default function SitesListPage() {
 
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Baustelle suchen..."
+            <Input
+              placeholder="Projekt suchen..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 h-10 bg-card border-border"
@@ -109,17 +109,17 @@ export default function SitesListPage() {
       ) : !filteredSites || filteredSites.length === 0 ? (
         <EmptyState
           icon={Search}
-          title={searchQuery ? "Keine Ergebnisse" : "Keine Baustellen"}
+          title={searchQuery ? "Keine Ergebnisse" : "Keine Projekte"}
           description={
             searchQuery
-              ? "Keine Baustellen entsprechen Ihrer Suche."
-              : "Legen Sie Ihre erste Baustelle an."
+              ? "Keine Projekte entsprechen Ihrer Suche."
+              : "Legen Sie Ihr erstes Projekt an."
           }
           action={
             !searchQuery && (
               <Button className="gap-2 h-10" onClick={() => setAddSiteOpen(true)}>
                 <Plus className="h-4 w-4" />
-                Baustelle anlegen
+                Projekt anlegen
               </Button>
             )
           }
@@ -127,7 +127,7 @@ export default function SitesListPage() {
       ) : (
         <>
           <p className="text-sm text-muted-foreground mb-4">
-            {filteredSites.length} Baustell{filteredSites.length !== 1 ? "en" : "e"} gefunden
+            {filteredSites.length} Projekt{filteredSites.length !== 1 ? "e" : ""} gefunden
           </p>
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {filteredSites.map((site: Site) => (

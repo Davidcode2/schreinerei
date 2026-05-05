@@ -74,12 +74,17 @@ export function SiteCard({
                 <div className="min-w-0">
                   <h3 className="font-semibold text-[15px] leading-tight line-clamp-1">{site.name}</h3>
                   <p className="text-sm text-muted-foreground line-clamp-1">
-                    {site.customer_name}
+                    {site.customer_name || (site.project_type === "internal_workshop" ? "Internes Werkstattprojekt" : "-")}
                   </p>
                 </div>
               </div>
             </Link>
-            <StatusBadge status={site.status} />
+            <div className="flex flex-col items-end gap-2">
+              <StatusBadge status={site.status} />
+              <Badge variant="outline" className="text-[11px] font-normal">
+                {site.project_type === "internal_workshop" ? "Werkstatt" : "Extern"}
+              </Badge>
+            </div>
           </div>
 
           <Link to={`/sites/${site.id}`} className="block">
