@@ -181,7 +181,7 @@ export function ReservationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
@@ -194,7 +194,7 @@ export function ReservationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="min-h-0 space-y-4 overflow-y-auto py-4 pr-1">
           {isEditing && (
             <div className="space-y-4 rounded-xl border bg-muted/30 p-4">
               <div className="flex items-center justify-between gap-3">
@@ -237,69 +237,79 @@ export function ReservationDialog({
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label>Baustelle (optional)</Label>
-            <select
-              className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              value={siteId}
-              onChange={(event) => setSiteId(event.target.value)}
-            >
-              <option value="">Keine Zuordnung</option>
-              {sites?.map((site) => (
-                <option key={site.id} value={site.id}>
-                  {site.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {canTransition && (
+          <div className="space-y-4 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
             <div className="space-y-2">
-              <Label>Aktionen</Label>
-              <StatusTransitionButtons
-                reservationId={initialData.id}
-                currentStatus={initialData.status}
-                onTransition={() => {
-                  toast.success("Status aktualisiert")
-                  onOpenChange(false)
-                }}
-              />
+              <Label>Baustelle (optional)</Label>
+              <select
+                className="h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                value={siteId}
+                onChange={(event) => setSiteId(event.target.value)}
+              >
+                <option value="">Keine Zuordnung</option>
+                {sites?.map((site) => (
+                  <option key={site.id} value={site.id}>
+                    {site.name}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
 
-          {isEditing ? (
-            <div className="space-y-2">
-              <Label>Ressource</Label>
-              <p className="text-sm font-medium">{initialData.resource_name}</p>
-            </div>
-          ) : (
-            !resourceId && (
+            {canTransition && (
+              <div className="space-y-2">
+                <Label>Aktionen</Label>
+                <StatusTransitionButtons
+                  reservationId={initialData.id}
+                  currentStatus={initialData.status}
+                  onTransition={() => {
+                    toast.success("Status aktualisiert")
+                    onOpenChange(false)
+                  }}
+                />
+              </div>
+            )}
+
+            {isEditing ? (
               <div className="space-y-2">
                 <Label>Ressource</Label>
-                <select
-                  className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  value={selectedResourceId}
-                  onChange={(e) => setSelectedResourceId(e.target.value)}
-                >
-                  <option value="">Bitte wählen...</option>
-                  {resources?.map((r: Vehicle | Tool) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
+                <p className="text-sm font-medium">{initialData.resource_name}</p>
               </div>
-            )
-          )}
+            ) : (
+              !resourceId && (
+                <div className="space-y-2">
+                  <Label>Ressource</Label>
+                  <select
+                    className="h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    value={selectedResourceId}
+                    onChange={(e) => setSelectedResourceId(e.target.value)}
+                  >
+                    <option value="">Bitte wählen...</option>
+                    {resources?.map((r: Vehicle | Tool) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )
+            )}
+          </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-3 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Zeitraum</p>
+              <p className="text-sm text-muted-foreground">
+                Wählen Sie Start und Ende der Reservierung.
+              </p>
+            </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Von</Label>
               <Input
                 type="datetime-local"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="h-10"
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
@@ -308,15 +318,16 @@ export function ReservationDialog({
                 type="datetime-local"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="h-10"
+                className="h-11"
               />
             </div>
           </div>
+          </div>
 
           {mode === "create" && startTime && endTime && !isAvailable && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 p-3 bg-warning/10 border border-warning/20 rounded-lg text-sm">
-                <AlertCircle className="h-4 w-4 text-warning" />
+            <div className="space-y-3 rounded-xl border border-warning/20 bg-warning/10 p-4">
+              <div className="flex items-center gap-2 text-sm">
+                <AlertCircle className="h-4 w-4 text-warning shrink-0" />
                 <span className="text-warning-foreground">
                   Nicht verfügbar zu diesem Zeitpunkt
                 </span>
@@ -324,40 +335,44 @@ export function ReservationDialog({
               {availability?.conflicts && availability.conflicts.length > 0 && (
                 <div className="space-y-1 text-sm">
                   <p className="font-medium text-muted-foreground">Bestehende Reservierungen:</p>
-                  {availability.conflicts.map((conflict: ConflictDetail) => (
-                    <div key={conflict.id} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-                      <span className="font-medium">{conflict.user_name || "Unbekannt"}</span>
-                      <span className="text-muted-foreground">
-                        {formatTimeRange(conflict.start_time, conflict.end_time)}
-                      </span>
-                      <span className={cn(
-                        "inline-flex rounded-full px-2 py-0.5 text-xs font-medium border",
-                        conflict.status === "confirmed" ? "bg-success/15 text-success border-success/20" :
-                        conflict.status === "pending" ? "bg-warning/15 text-warning-foreground border-warning/25" :
-                        conflict.status === "cancelled" ? "bg-destructive/10 text-destructive border-destructive/20" :
-                        "bg-secondary text-secondary-foreground"
-                      )}>
-                        {statusLabels[conflict.status as ReservationStatus] || conflict.status}
-                      </span>
-                    </div>
-                  ))}
+                  <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
+                    {availability.conflicts.map((conflict: ConflictDetail) => (
+                      <div key={conflict.id} className="flex flex-col gap-2 rounded-lg bg-muted p-3 sm:flex-row sm:items-center">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium">{conflict.user_name || "Unbekannt"}</p>
+                          <p className="text-muted-foreground">
+                            {formatTimeRange(conflict.start_time, conflict.end_time)}
+                          </p>
+                        </div>
+                        <span className={cn(
+                          "inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium border",
+                          conflict.status === "confirmed" ? "bg-success/15 text-success border-success/20" :
+                          conflict.status === "pending" ? "bg-warning/15 text-warning-foreground border-warning/25" :
+                          conflict.status === "cancelled" ? "bg-destructive/10 text-destructive border-destructive/20" :
+                          "bg-secondary text-secondary-foreground"
+                        )}>
+                          {statusLabels[conflict.status as ReservationStatus] || conflict.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-2 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
             <Label>Notiz (optional)</Label>
             <Input
               placeholder="z.B. Für Baustelle Müller"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="h-10"
+              className="h-11"
             />
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="border-t border-border/70 pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="shadow-sm">
             Abbrechen
           </Button>

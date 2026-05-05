@@ -45,19 +45,34 @@ describe('AddVehicleDialog', () => {
   it('has submit button disabled when required fields are empty', () => {
     render(<AddVehicleDialog open={true} onOpenChange={mockOnOpenChange} />);
 
-    const submitButton = screen.getByRole('button', { name: /erstellen/i });
-    expect(submitButton).toBeDisabled();
+    const weiterButton = screen.getByRole('button', { name: /weiter/i });
+    expect(weiterButton).toBeDisabled();
   });
 
-  it('enables submit button when name and vehicle type are filled', async () => {
+  it('enables Weiter when name and vehicle type are filled', async () => {
     const user = userEvent.setup();
     render(<AddVehicleDialog open={true} onOpenChange={mockOnOpenChange} />);
 
     await user.type(screen.getByLabelText(/name/i), 'VW Transporter');
     await selectOption(user, /fahrzeugtyp/i, 'Transporter');
 
-    const submitButton = screen.getByRole('button', { name: /erstellen/i });
-    expect(submitButton).toBeEnabled();
+    const weiterButton = screen.getByRole('button', { name: /weiter/i });
+    expect(weiterButton).toBeEnabled();
+  });
+
+  it('shows step indicator and moves to details step', async () => {
+    const user = userEvent.setup();
+    render(<AddVehicleDialog open={true} onOpenChange={mockOnOpenChange} />);
+
+    expect(screen.getByRole('tab', { name: /schritt 1 von 2/i })).toHaveAttribute('aria-selected', 'true');
+
+    await user.type(screen.getByLabelText(/name/i), 'VW Transporter');
+    await selectOption(user, /fahrzeugtyp/i, 'Transporter');
+    await user.click(screen.getByRole('button', { name: /weiter/i }));
+
+    expect(screen.getByRole('tab', { name: /schritt 2 von 2/i })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('button', { name: /zurück/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/standort/i)).toBeInTheDocument();
   });
 
   it('submits form with correct payload', async () => {
@@ -77,6 +92,7 @@ describe('AddVehicleDialog', () => {
     await user.type(screen.getByLabelText(/name/i), 'VW Transporter');
     await user.type(screen.getByLabelText(/kennzeichen/i), 'B-AB 1234');
     await selectOption(user, /fahrzeugtyp/i, 'Transporter');
+    await user.click(screen.getByRole('button', { name: /weiter/i }));
     await user.type(screen.getByLabelText(/standort/i), 'Hof 1');
 
     await user.click(screen.getByRole('button', { name: /erstellen/i }));
@@ -97,6 +113,7 @@ describe('AddVehicleDialog', () => {
 
     await user.type(screen.getByLabelText(/name/i), 'VW Transporter');
     await selectOption(user, /fahrzeugtyp/i, 'Transporter');
+    await user.click(screen.getByRole('button', { name: /weiter/i }));
     await user.click(screen.getByRole('button', { name: /erstellen/i }));
 
     await waitFor(() => {

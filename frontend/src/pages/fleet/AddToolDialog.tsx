@@ -17,6 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { StepContainer } from "@/components/ui/step-container"
+import { StepIndicator } from "@/components/ui/step-indicator"
 import { Textarea } from "@/components/ui/textarea"
 import { Wrench } from "lucide-react"
 import { toast } from "sonner"
@@ -49,6 +51,7 @@ export function AddToolDialog({
   const [description, setDescription] = useState(initialData?.description ?? "")
   const [status, setStatus] = useState<ResourceStatus>(initialData?.status ?? "available")
   const [qrCode, setQrCode] = useState(initialData?.qr_code ?? "")
+  const [currentStep, setCurrentStep] = useState(1)
 
   const createTool = useCreateTool()
   const updateTool = useUpdateTool()
@@ -61,6 +64,7 @@ export function AddToolDialog({
       setDescription(initialData.description ?? "")
       setStatus(initialData.status)
       setQrCode(initialData.qr_code ?? "")
+      setCurrentStep(1)
       return
     }
 
@@ -70,6 +74,7 @@ export function AddToolDialog({
     setDescription("")
     setStatus("available")
     setQrCode("")
+    setCurrentStep(1)
   }
 
   const handleOpenChange = (open: boolean) => {
@@ -80,6 +85,7 @@ export function AddToolDialog({
   }
 
   const isFormValid = name
+  const isStep1Valid = Boolean(name)
 
   const handleSubmit = () => {
     if (!isFormValid) return
@@ -144,7 +150,7 @@ export function AddToolDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
@@ -159,101 +165,155 @@ export function AddToolDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
-              placeholder="z.B. Bohrhammer"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="h-10"
-            />
-          </div>
+        <StepIndicator
+          currentStep={currentStep}
+          totalSteps={2}
+          onStepClick={(step) => {
+            if (step === 1 || isStep1Valid) {
+              setCurrentStep(step)
+            }
+          }}
+        />
 
-          <div className="space-y-2">
-            <Label htmlFor="category">Kategorie</Label>
-            <Input
-              id="category"
-              placeholder="z.B. Elektrowerkzeug"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="h-10"
-            />
-          </div>
+        <StepContainer
+          currentStep={currentStep}
+          onStepChange={(step) => {
+            if (step === 1 || isStep1Valid) {
+              setCurrentStep(step)
+            }
+          }}
+          totalSteps={2}
+          className="min-h-0 flex-1"
+        >
+          <div className="flex h-full flex-col overflow-y-auto py-4 pr-1">
+            {currentStep === 1 ? (
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Basisdaten</p>
+                  <p className="text-sm text-muted-foreground">
+                    Starten Sie mit Name und Kategorie des Werkzeugs.
+                  </p>
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="location">Standort</Label>
-            <Input
-              id="location"
-              placeholder="z.B. Werkstatt"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="h-10"
-            />
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
+                    placeholder="z.B. Bohrhammer"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="qrCode">QR-Code</Label>
-            <Input
-              id="qrCode"
-              placeholder="z.B. tool-drill-01"
-              value={qrCode}
-              onChange={(e) => setQrCode(e.target.value)}
-              className="h-10"
-            />
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category">Kategorie</Label>
+                  <Input
+                    id="category"
+                    placeholder="z.B. Elektrowerkzeug"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Details</p>
+                  <p className="text-sm text-muted-foreground">
+                    Ergänzen Sie Standort, Kennung und Beschreibung.
+                  </p>
+                </div>
 
-          {mode === "edit" && (
-            <div className="space-y-2">
-              <Label htmlFor="toolStatus">Status</Label>
-              <Select
-                value={status}
-                onValueChange={(value) => setStatus(value as ResourceStatus)}
-              >
-                <SelectTrigger id="toolStatus" className="h-10">
-                  <SelectValue placeholder="Status wählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {RESOURCE_STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+                <div className="space-y-2">
+                  <Label htmlFor="location">Standort</Label>
+                  <Input
+                    id="location"
+                    placeholder="z.B. Werkstatt"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Beschreibung</Label>
-            <Textarea
-              id="description"
-              placeholder="z.B. Bosch GBH 2-21, inkl. Meißel"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-            />
+                <div className="space-y-2">
+                  <Label htmlFor="qrCode">QR-Code</Label>
+                  <Input
+                    id="qrCode"
+                    placeholder="z.B. tool-drill-01"
+                    value={qrCode}
+                    onChange={(e) => setQrCode(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
+
+                {mode === "edit" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="toolStatus">Status</Label>
+                    <Select
+                      value={status}
+                      onValueChange={(value) => setStatus(value as ResourceStatus)}
+                    >
+                      <SelectTrigger id="toolStatus" className="h-10">
+                        <SelectValue placeholder="Status wählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {RESOURCE_STATUS_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Beschreibung</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="z.B. Bosch GBH 2-21, inkl. Meißel"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        </StepContainer>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)} className="shadow-sm">
-            Abbrechen
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!isFormValid || isPending}
-            className="shadow-sm"
-          >
-            {isPending
-              ? mode === "edit"
-                ? "Wird gespeichert..."
-                : "Wird erstellt..."
-              : mode === "edit"
-                ? "Speichern"
-                : "Erstellen"}
-          </Button>
+          {currentStep === 1 ? (
+            <>
+              <Button variant="outline" onClick={() => handleOpenChange(false)} className="shadow-sm">
+                Abbrechen
+              </Button>
+              <Button onClick={() => setCurrentStep(2)} disabled={!isStep1Valid} className="shadow-sm">
+                Weiter
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setCurrentStep(1)} className="shadow-sm">
+                Zurück
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={!isFormValid || isPending}
+                className="shadow-sm"
+              >
+                {isPending
+                  ? mode === "edit"
+                    ? "Wird gespeichert..."
+                    : "Wird erstellt..."
+                  : mode === "edit"
+                    ? "Speichern"
+                    : "Erstellen"}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
