@@ -42,8 +42,8 @@ Scoped requirements for milestone `v1.13 Project Workflow Foundation`.
 
 ### Project Model
 
-- [ ] **PROJ-10**: User works with one unified project model that can represent both external Baustellen and internal workshop work without needing a separate parallel entity.
-- [ ] **PROJ-11**: User can create and edit project planning context including location, date range, estimated duration, assignments context, and operational notes.
+- [x] **PROJ-10**: User works with one unified project model that can represent both external Baustellen and internal workshop work without needing a separate parallel entity.
+- [x] **PROJ-11**: User can create and edit project planning context including location, date range, estimated duration, assignments context, and operational notes.
 - [ ] **PROJ-12**: Manager sees relevant projects on the dashboard regardless of status unless they explicitly apply a filter.
 
 ### Project-Linked Execution
@@ -218,8 +218,8 @@ Recommended near-term sequence based on current shipped state and dependency wei
 | HIST-02 | Phase 32 | Complete |
 | HIST-03 | Phase 32 | Complete |
 | VIEW-01 | Phase 31 | Complete |
-| PROJ-10 | Phase 44 | Pending |
-| PROJ-11 | Phase 44 | Pending |
+| PROJ-10 | Phase 44 | Complete |
+| PROJ-11 | Phase 44 | Complete |
 | PROJ-18 | Phase 45 | Pending |
 | PROJ-19 | Phase 45 | Pending |
 | PROJ-20 | Phase 45 | Pending |

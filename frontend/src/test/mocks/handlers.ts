@@ -10,6 +10,7 @@ export const mockData = {
   categories: [] as MockRecord[],
   sites: [] as MockRecord[],
   users: [] as MockRecord[],
+  preferences: { active_site_id: null as string | null },
   vehicles: [] as MockRecord[],
   tools: [] as MockRecord[],
   reservations: [] as MockRecord[],
@@ -99,6 +100,20 @@ export const handlers = [
     return HttpResponse.json(mockData.users);
   }),
 
+  http.get(apiRoute('/preferences'), async () => {
+    await delay(10);
+    return HttpResponse.json(mockData.preferences);
+  }),
+
+  http.patch(apiRoute('/preferences'), async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    mockData.preferences = {
+      ...mockData.preferences,
+      active_site_id: (body.active_site_id as string | null | undefined) ?? null,
+    };
+    return HttpResponse.json(mockData.preferences);
+  }),
+
   http.patch(apiRoute('/sites/:id'), async ({ params, request }) => {
     const body = await request.json() as Record<string, unknown>;
     const index = mockData.sites.findIndex((entry) => entry.id === params.id);
@@ -137,6 +152,20 @@ export const handlers = [
   }),
 
   http.get(apiRoute('/sites/:id/activities'), async () => {
+    await delay(10);
+    return HttpResponse.json([]);
+  }),
+
+  http.get(apiRoute('/dashboard/sites'), async () => {
+    await delay(10);
+    return HttpResponse.json(mockData.sites.map((site) => ({
+      assigned_users: 0,
+      total_hours: 0,
+      ...site,
+    })));
+  }),
+
+  http.get(apiRoute('/inventory/low-stock'), async () => {
     await delay(10);
     return HttpResponse.json([]);
   }),
