@@ -12,7 +12,9 @@ use ts_rs::TS;
 use uuid::Uuid;
 
 use crate::common::error::AppError;
-use crate::common::types::{AssignmentRole, SiteId, SiteStatus, TimeEntryId, UserId, WorkType};
+use crate::common::types::{
+    AssignmentRole, ProjectType, SiteId, SiteStatus, TimeEntryId, UserId, WorkType,
+};
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::sites::application::site_service::SiteService;
 use crate::modules::sites::domain::{
@@ -90,6 +92,7 @@ pub fn create_router() -> Router<AppState> {
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct SiteResponse {
     pub id: String,
+    pub project_type: String,
     pub name: String,
     pub customer_name: String,
     pub location: Option<String>,
@@ -105,6 +108,7 @@ impl From<crate::modules::sites::domain::Site> for SiteResponse {
     fn from(site: crate::modules::sites::domain::Site) -> Self {
         Self {
             id: site.id.to_string(),
+            project_type: site.project_type.to_string(),
             name: site.name,
             customer_name: site.customer_name,
             location: site.location,
@@ -121,6 +125,7 @@ impl From<crate::modules::sites::domain::Site> for SiteResponse {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct CreateSiteRequest {
+    pub project_type: String,
     pub name: String,
     pub customer_name: String,
     pub location: Option<String>,
@@ -133,6 +138,7 @@ pub struct CreateSiteRequest {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct UpdateSiteRequest {
+    pub project_type: Option<String>,
     pub name: Option<String>,
     pub customer_name: Option<String>,
     pub location: Option<String>,
@@ -279,6 +285,10 @@ pub async fn create_site(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
     let create = CreateSite {
+        project_type: request
+            .project_type
+            .parse::<ProjectType>()
+            .map_err(|e: String| AppError::Validation(e))?,
         name: request.name,
         customer_name: request.customer_name,
         location: request.location,
@@ -334,6 +344,11 @@ pub async fn update_site(
         .map_err(|e: String| AppError::Validation(e))?;
 
     let update = UpdateSite {
+        project_type: request
+            .project_type
+            .map(|s| s.parse::<ProjectType>())
+            .transpose()
+            .map_err(|e: String| AppError::Validation(e))?,
         name: request.name,
         customer_name: request.customer_name,
         location: request.location,
@@ -672,6 +687,7 @@ pub struct ActivityQuery {
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct DashboardSiteResponse {
     pub id: String,
+    pub project_type: String,
     pub name: String,
     pub customer_name: String,
     pub location: Option<String>,
@@ -687,6 +703,7 @@ impl From<DashboardSite> for DashboardSiteResponse {
     fn from(site: DashboardSite) -> Self {
         Self {
             id: site.id.to_string(),
+            project_type: site.project_type.to_string(),
             name: site.name,
             customer_name: site.customer_name,
             location: site.location,
@@ -996,11 +1013,12 @@ pub async fn get_attachment_thumbnail_bytes(
 #[cfg(test)]
 mod tests {
     use super::{
-        ActivityResponse, SiteActivityAttachmentResponse, UploadPhotoAttachmentResponse,
-        UploadSiteAttachmentResponse,
+        ActivityResponse, DashboardSiteResponse, SiteActivityAttachmentResponse, SiteResponse,
+        UploadPhotoAttachmentResponse, UploadSiteAttachmentResponse,
     };
-    use crate::common::types::{ActivityId, SiteId, TenantId, UserId};
+    use crate::common::types::{ActivityId, ProjectType, SiteId, SiteStatus, TenantId, UserId};
     use crate::modules::sites::domain::{Activity, ActivityType};
+    use crate::modules::sites::infrastructure::site_repository::DashboardSite;
     use chrono::Utc;
 
     #[test]
@@ -1063,5 +1081,46 @@ mod tests {
 
         assert_eq!(dto.filename, "plan.pdf");
         assert_eq!(dto.mime_type, "application/pdf");
+    }
+
+    #[test]
+    fn site_response_includes_project_type() {
+        let response = SiteResponse::from(crate::modules::sites::domain::Site {
+            id: SiteId::new(),
+            tenant_id: TenantId::new(),
+            project_type: ProjectType::InternalWorkshop,
+            name: "Werkstattprojekt".to_string(),
+            customer_name: "".to_string(),
+            location: None,
+            description: Some("Test".to_string()),
+            status: SiteStatus::Planned,
+            start_date: None,
+            end_date: None,
+            estimated_days: Some(1),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        });
+
+        assert_eq!(response.project_type, "internal_workshop");
+    }
+
+    #[test]
+    fn dashboard_site_includes_project_type() {
+        let response = DashboardSiteResponse::from(DashboardSite {
+            id: SiteId::new(),
+            tenant_id: TenantId::new(),
+            project_type: ProjectType::ExternalSite,
+            name: "Kueche".to_string(),
+            customer_name: "Mustermann".to_string(),
+            location: Some("Leipzig".to_string()),
+            status: "planned".to_string(),
+            start_date: None,
+            end_date: None,
+            estimated_days: Some(3),
+            assigned_users: 2,
+            total_hours: 8.0,
+        });
+
+        assert_eq!(response.project_type, "external_site");
     }
 }

@@ -1,13 +1,14 @@
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::common::types::{AssignmentRole, SiteId, SiteStatus, TenantId, UserId};
+use crate::common::types::{AssignmentRole, ProjectType, SiteId, SiteStatus, TenantId, UserId};
 
 /// Site aggregate representing a construction site (Baustelle)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Site {
     pub id: SiteId,
     pub tenant_id: TenantId,
+    pub project_type: ProjectType,
     pub name: String,
     pub customer_name: String,
     pub location: Option<String>,
@@ -51,6 +52,7 @@ pub struct SiteAssignment {
 /// Command to create a new site
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateSite {
+    pub project_type: ProjectType,
     pub name: String,
     pub customer_name: String,
     pub location: Option<String>,
@@ -66,7 +68,7 @@ impl CreateSite {
         if self.name.trim().is_empty() {
             return Err("Site name is required".to_string());
         }
-        if self.customer_name.trim().is_empty() {
+        if self.project_type == ProjectType::ExternalSite && self.customer_name.trim().is_empty() {
             return Err("Customer name is required".to_string());
         }
         // Validate date range if both dates are provided
@@ -87,6 +89,7 @@ impl CreateSite {
 /// Command to update a site
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateSite {
+    pub project_type: Option<ProjectType>,
     pub name: Option<String>,
     pub customer_name: Option<String>,
     pub location: Option<String>,
@@ -112,6 +115,7 @@ mod tests {
         Site {
             id: SiteId::new(),
             tenant_id: TenantId::new(),
+            project_type: ProjectType::ExternalSite,
             name: "Test Site".to_string(),
             customer_name: "Test Customer".to_string(),
             location: None,
@@ -178,6 +182,7 @@ mod tests {
     #[test]
     fn create_site_validate_succeeds_with_valid_data() {
         let cmd = CreateSite {
+            project_type: ProjectType::ExternalSite,
             name: "New Site".to_string(),
             customer_name: "Customer".to_string(),
             location: None,
@@ -192,6 +197,7 @@ mod tests {
     #[test]
     fn create_site_validate_fails_with_empty_name() {
         let cmd = CreateSite {
+            project_type: ProjectType::ExternalSite,
             name: "".to_string(),
             customer_name: "Customer".to_string(),
             location: None,
@@ -206,6 +212,7 @@ mod tests {
     #[test]
     fn create_site_validate_fails_with_empty_customer_name() {
         let cmd = CreateSite {
+            project_type: ProjectType::ExternalSite,
             name: "Site".to_string(),
             customer_name: "".to_string(),
             location: None,
@@ -220,6 +227,7 @@ mod tests {
     #[test]
     fn create_site_validate_fails_with_end_date_before_start_date() {
         let cmd = CreateSite {
+            project_type: ProjectType::ExternalSite,
             name: "Site".to_string(),
             customer_name: "Customer".to_string(),
             location: None,
@@ -237,6 +245,7 @@ mod tests {
     #[test]
     fn create_site_validate_fails_with_negative_estimated_days() {
         let cmd = CreateSite {
+            project_type: ProjectType::ExternalSite,
             name: "Site".to_string(),
             customer_name: "Customer".to_string(),
             location: None,
@@ -249,5 +258,29 @@ mod tests {
             cmd.validate(),
             Err("Estimated days cannot be negative".to_string())
         );
+    }
+
+    #[test]
+    fn create_site_validate_allows_internal_workshop_without_location() {
+        let cmd = CreateSite {
+            project_type: ProjectType::InternalWorkshop,
+            name: "Werkstattauftrag".to_string(),
+            customer_name: "".to_string(),
+            location: None,
+            description: Some("Vorbereitung".to_string()),
+            start_date: None,
+            end_date: None,
+            estimated_days: Some(1),
+        };
+
+        assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn project_type_roundtrips() {
+        let parsed = "internal_workshop".parse::<ProjectType>().unwrap();
+        assert_eq!(parsed, ProjectType::InternalWorkshop);
+        assert_eq!(parsed.to_string(), "internal_workshop");
+        assert!("invalid".parse::<ProjectType>().is_err());
     }
 }

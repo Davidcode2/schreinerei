@@ -325,6 +325,42 @@ impl SiteStatus {
     }
 }
 
+/// Project type stored on the existing site/project aggregate.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum ProjectType {
+    #[default]
+    ExternalSite,
+    InternalWorkshop,
+}
+
+impl ProjectType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ProjectType::ExternalSite => "external_site",
+            ProjectType::InternalWorkshop => "internal_workshop",
+        }
+    }
+}
+
+impl fmt::Display for ProjectType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl FromStr for ProjectType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "external_site" => Ok(ProjectType::ExternalSite),
+            "internal_workshop" => Ok(ProjectType::InternalWorkshop),
+            _ => Err(format!("Invalid project type: {}", s)),
+        }
+    }
+}
+
 impl fmt::Display for SiteStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_str())

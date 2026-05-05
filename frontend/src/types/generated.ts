@@ -36,7 +36,7 @@ export type CreateOrderRequestDto = { material_id: string, quantity: number, rea
 
 export type CreateReservationRequest = { resource_type: string, resource_id: string, site_id: string | null, start_time: string, end_time: string, notes: string | null, };
 
-export type CreateSiteRequest = { name: string, customer_name: string, location: string | null, description: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, };
+export type CreateSiteRequest = { project_type: string, name: string, customer_name: string, location: string | null, description: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, };
 
 export type CreateTimeEntryRequest = { site_id: string | null, work_type: string, hours: number, work_date: string, notes: string | null, };
 
@@ -44,7 +44,7 @@ export type CreateToolRequest = { name: string, category: string | null, descrip
 
 export type CreateVehicleRequest = { name: string, license_plate: string | null, vehicle_type: string, description: string | null, location: string | null, qr_code: string | null, };
 
-export type DashboardSiteResponse = { id: string, name: string, customer_name: string, location: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, assigned_users: bigint, total_hours: number, };
+export type DashboardSiteResponse = { id: string, project_type: string, name: string, customer_name: string, location: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, assigned_users: bigint, total_hours: number, };
 
 export type EnrichedStockHistoryResponse = { id: string, material_id: string, user_id: string, user_name: string, entry_type: EntryType, quantity_change: number, quantity_after: number, notes: string | null, site_id: string | null, site_name: string | null, category_name: string, created_at: string, };
 
@@ -95,7 +95,7 @@ export type ReservationSummaryResponse = { id: string, start_time: string, end_t
 
 export type SiteActivityAttachmentResponse = { attachment_id: string, filename: string, mime_type: string, url: string, thumbnail_url: string | null, };
 
-export type SiteResponse = { id: string, name: string, customer_name: string, location: string | null, description: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, created_at: string, };
+export type SiteResponse = { id: string, project_type: string, name: string, customer_name: string, location: string | null, description: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, created_at: string, };
 
 export type SiteStockHistoryResponse = { id: string, material_id: string, material_name: string, category_name: string, quantity_change: number, quantity_after: number, notes: string | null, site_id: string | null, site_name: string | null, extracted_by: string, created_at: string, };
 
@@ -133,7 +133,7 @@ export type UpdateReservationRequest = { start_time: string | null, end_time: st
  */
 export type UpdateRoleRequest = { role: string, };
 
-export type UpdateSiteRequest = { name: string | null, customer_name: string | null, location: string | null, description: string | null, status: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, };
+export type UpdateSiteRequest = { project_type: string | null, name: string | null, customer_name: string | null, location: string | null, description: string | null, status: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, };
 
 export type UpdateTimeEntryRequest = { site_id: string | null, work_type: string | null, hours: number | null, work_date: string | null, notes: string | null, };
 

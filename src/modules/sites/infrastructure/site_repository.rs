@@ -7,7 +7,8 @@ use uuid::Uuid;
 use crate::common::error::AppError;
 use crate::common::events::{DomainEvent, EventBus};
 use crate::common::types::{
-    ActivityId, AssignmentRole, SiteId, SiteStatus, TenantId, TimeEntryId, UserId, WorkType,
+    ActivityId, AssignmentRole, ProjectType, SiteId, SiteStatus, TenantId, TimeEntryId, UserId,
+    WorkType,
 };
 use crate::modules::sites::domain::{
     Activity, CreateActivity, CreateSite, CreateTimeEntry, Site, SiteActivityAttachment,
@@ -44,13 +45,14 @@ impl SiteRepository {
 
         let site = sqlx::query_as::<_, SiteRow>(
             r#"
-            INSERT INTO sites (id, tenant_id, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-            RETURNING id, tenant_id, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+            INSERT INTO sites (id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            RETURNING id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
             "#
         )
         .bind(id)
         .bind(tenant_id.0)
+        .bind(create.project_type.as_str())
         .bind(&create.name)
         .bind(&create.customer_name)
         .bind(&create.location)
@@ -81,7 +83,7 @@ impl SiteRepository {
     ) -> Result<Option<Site>, AppError> {
         let site = sqlx::query_as::<_, SiteRow>(
             r#"
-            SELECT id, tenant_id, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+            SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
             FROM sites
             WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#
@@ -104,7 +106,7 @@ impl SiteRepository {
             Some(s) => {
                 sqlx::query_as::<_, SiteRow>(
                     r#"
-                    SELECT id, tenant_id, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+                    SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
                     FROM sites
                     WHERE tenant_id = $1 AND status = $2 AND deleted_at IS NULL
                     ORDER BY created_at DESC
@@ -118,7 +120,7 @@ impl SiteRepository {
             None => {
                 sqlx::query_as::<_, SiteRow>(
                     r#"
-                    SELECT id, tenant_id, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+                    SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
                     FROM sites
                     WHERE tenant_id = $1 AND deleted_at IS NULL
                     ORDER BY created_at DESC
@@ -160,19 +162,21 @@ impl SiteRepository {
             r#"
             UPDATE sites
             SET 
-                name = COALESCE($1, name),
-                customer_name = COALESCE($2, customer_name),
-                location = COALESCE($3, location),
-                description = COALESCE($4, description),
-                status = COALESCE($5, status),
-                start_date = COALESCE($6, start_date),
-                end_date = COALESCE($7, end_date),
-                estimated_days = COALESCE($8, estimated_days),
+                project_type = COALESCE($1, project_type),
+                name = COALESCE($2, name),
+                customer_name = COALESCE($3, customer_name),
+                location = COALESCE($4, location),
+                description = COALESCE($5, description),
+                status = COALESCE($6, status),
+                start_date = COALESCE($7, start_date),
+                end_date = COALESCE($8, end_date),
+                estimated_days = COALESCE($9, estimated_days),
                 updated_at = NOW()
-            WHERE id = $9 AND tenant_id = $10
-            RETURNING id, tenant_id, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+            WHERE id = $10 AND tenant_id = $11
+            RETURNING id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
             "#
         )
+        .bind(update.project_type.as_ref().map(|p| p.as_str()))
         .bind(&update.name)
         .bind(&update.customer_name)
         .bind(&update.location)
@@ -865,7 +869,7 @@ impl SiteRepository {
         let sites = sqlx::query_as::<_, DashboardSiteRow>(
             r#"
             SELECT 
-                s.id, s.tenant_id, s.name, s.customer_name, s.location, 
+                s.id, s.tenant_id, s.project_type, s.name, s.customer_name, s.location, 
                 s.status, s.start_date, s.end_date, s.estimated_days,
                 COUNT(DISTINCT sa.user_id) as assigned_users,
                 COALESCE(SUM(te.hours), 0)::FLOAT as total_hours
@@ -903,6 +907,7 @@ impl SiteRepository {
 struct SiteRow {
     id: Uuid,
     tenant_id: Uuid,
+    project_type: String,
     name: String,
     customer_name: String,
     location: Option<String>,
@@ -920,6 +925,10 @@ impl SiteRow {
         Site {
             id: SiteId(self.id),
             tenant_id: TenantId(self.tenant_id),
+            project_type: self
+                .project_type
+                .parse()
+                .unwrap_or(ProjectType::ExternalSite),
             name: self.name,
             customer_name: self.customer_name,
             location: self.location,
@@ -1058,6 +1067,7 @@ impl AttachmentRow {
 pub struct DashboardSite {
     pub id: SiteId,
     pub tenant_id: TenantId,
+    pub project_type: ProjectType,
     pub name: String,
     pub customer_name: String,
     pub location: Option<String>,
@@ -1073,6 +1083,7 @@ pub struct DashboardSite {
 struct DashboardSiteRow {
     id: Uuid,
     tenant_id: Uuid,
+    project_type: String,
     name: String,
     customer_name: String,
     location: Option<String>,
@@ -1089,6 +1100,10 @@ impl DashboardSiteRow {
         DashboardSite {
             id: SiteId(self.id),
             tenant_id: TenantId(self.tenant_id),
+            project_type: self
+                .project_type
+                .parse()
+                .unwrap_or(ProjectType::ExternalSite),
             name: self.name,
             customer_name: self.customer_name,
             location: self.location,
