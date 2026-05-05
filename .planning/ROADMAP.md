@@ -15,6 +15,7 @@
 - ✅ **v1.10 Baustelle Activity Stream Features** — Phases 34-37 (shipped 2026-05-01) — [Archive](milestones/v1.10-ROADMAP.md)
 - ✅ **v1.11 Fleet Calendar on Fleet Page** — Phases 38-40 (shipped 2026-05-01) — [Archive](milestones/v1.11-ROADMAP.md)
 - ✅ **v1.12 Architecture Guardrails** — Phases 41-43 (shipped 2026-05-04) — [Archive](milestones/v1.12-ROADMAP.md)
+- **v1.13 Project Workflow Foundation** — Phases 44-47 (planned)
 
 ## Phases
 
@@ -71,10 +72,19 @@
 - [x] **Phase 42: Request Context Extractor** — Make `TenantContext` extractable and remove manual auth-to-context rebuilding from API routes
 - [x] **Phase 43: Mobile-First Guardrails** — Codify the existing mobile-first baseline as an explicit checklist for future work
 
+### v1.13 Project Workflow Foundation (Planned)
+
+**Milestone Goal:** Turn the current Baustelle surface into a clearer project workflow so workers capture context once, book productive work/material against the right project with less friction, and managers see all relevant projects without hidden defaults.
+
+- [ ] **Phase 44: Project Model Foundation** — Broaden the current site model into a project execution surface that supports both external Baustellen and internal workshop projects
+- [ ] **Phase 45: Unified Project Timeline** — Make the project timeline the canonical context channel and unify note/photo/document entry creation
+- [ ] **Phase 46: Project-Linked Execution Capture** — Require and default project linkage for real material and productive time capture where that reduces manual input
+- [ ] **Phase 47: Project Dashboard Visibility** — Show relevant projects regardless of status and make filtering explicit in the dashboard experience
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40 → 41 → 42 → 43
+Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40 → 41 → 42 → 43 → 44 → 45 → 46 → 47
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -92,22 +102,65 @@ Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 �
 | 41. Projects Boundary Alias | v1.12 | 1/1 | Complete | 2026-05-04 |
 | 42. Request Context Extractor | v1.12 | 1/1 | Complete | 2026-05-04 |
 | 43. Mobile-First Guardrails | v1.12 | 1/1 | Complete | 2026-05-04 |
+| 44. Project Model Foundation | v1.13 | 0/1 | Planned | — |
+| 45. Unified Project Timeline | v1.13 | 0/1 | Planned | — |
+| 46. Project-Linked Execution Capture | v1.13 | 0/1 | Planned | — |
+| 47. Project Dashboard Visibility | v1.13 | 0/1 | Planned | — |
 
 ## Next Planning Inputs
 
-The next milestone is not defined yet. Use these planning inputs before starting the next GSD cycle:
+The current milestone is defined and ready for phase planning. Use these planning inputs before starting execution:
 
 - `.planning/FEATURES.md` for the current-vs-desired feature comparison
 - `.planning/REQUIREMENTS.md` section `Product Backlog from 2026-05 Note` for requirement slicing
 
-Strong next-milestone candidates:
+Current milestone phase summary:
 
-1. Project feed completion and dashboard behavior
-2. Expiry-aware inventory and replenishment alerts
-3. Asset maintenance intervals and reminders
-4. Project-linked analytics, budget, and invoice foundation
+| # | Phase | Goal | Requirements | Success Criteria |
+|---|-------|------|--------------|------------------|
+| 44 | Project Model Foundation | Broaden `sites` into a practical project execution model | PROJ-10, PROJ-11 | 4 |
+| 45 | Unified Project Timeline | Make one project timeline the canonical context channel | PROJ-18, PROJ-19, PROJ-20 | 4 |
+| 46 | Project-Linked Execution Capture | Tie real material/time capture to projects with low-friction defaults | PROJ-13, PROJ-14 | 4 |
+| 47 | Project Dashboard Visibility | Remove hidden status filtering from manager-facing project overview | PROJ-12 | 3 |
+
+### Phase Details
+
+**Phase 44: Project Model Foundation**
+Goal: Broaden the current site model into a project execution surface that supports external Baustellen and internal workshop work without creating a second competing entity.
+Requirements: `PROJ-10`, `PROJ-11`
+Success criteria:
+1. User-facing project terminology is available without breaking current runtime behavior.
+2. Project records can represent external and internal work contexts.
+3. Project planning fields remain editable from the main project surface.
+4. Existing data can continue to flow through the same aggregate without parallel entity creation.
+
+**Phase 45: Unified Project Timeline**
+Goal: Make the project timeline the canonical context channel and unify note/photo/document creation into one flow.
+Requirements: `PROJ-18`, `PROJ-19`, `PROJ-20`
+Success criteria:
+1. Users create one timeline entry that can include note text and attachments from a unified composer.
+2. Project detail clearly presents the timeline as the main execution context surface.
+3. Timeline entries render timestamps and attachment previews consistently.
+4. Existing camera/document capabilities remain usable while converging on the unified flow.
+
+**Phase 46: Project-Linked Execution Capture**
+Goal: Reduce office follow-up by ensuring real productive material/time capture is attributable to a project with minimal extra input.
+Requirements: `PROJ-13`, `PROJ-14`
+Success criteria:
+1. Real material consumption is linked to a project unless it is disposal or correction.
+2. Productive time booking can be linked to external or internal projects.
+3. Active project context pre-fills the most common capture flows.
+4. Users are not forced through extra manual steps when the active project is already known.
+
+**Phase 47: Project Dashboard Visibility**
+Goal: Let managers see relevant projects regardless of status and apply filters explicitly instead of relying on hidden defaults.
+Requirements: `PROJ-12`
+Success criteria:
+1. Dashboard includes relevant planned, active, and completed projects by default.
+2. Status filtering is explicit and user-controlled.
+3. The new behavior does not regress the current dashboard’s speed or readability.
 
 ---
 
-*Roadmap last updated: 2026-05-04*
-*Next: `/gsd-new-milestone`*
+*Roadmap last updated: 2026-05-05*
+*Next: `/gsd-plan-phase 44`*

@@ -218,10 +218,19 @@ Recommended near-term sequence based on current shipped state and dependency wei
 | HIST-02 | Phase 32 | Complete |
 | HIST-03 | Phase 32 | Complete |
 | VIEW-01 | Phase 31 | Complete |
+| PROJ-10 | Phase 44 | Pending |
+| PROJ-11 | Phase 44 | Pending |
+| PROJ-18 | Phase 45 | Pending |
+| PROJ-19 | Phase 45 | Pending |
+| PROJ-20 | Phase 45 | Pending |
+| PROJ-13 | Phase 46 | Pending |
+| PROJ-14 | Phase 46 | Pending |
+| PROJ-12 | Phase 47 | Pending |
 
 **Coverage:**
 - v1.9 requirements: 12 total
-- Mapped to phases: 12/12 ✓
+- v1.13 requirements: 8 total
+- Mapped to phases: 20/20 ✓
 - Unmapped: 0
 
 **Mapping rationale:**
@@ -232,4 +241,4 @@ Recommended near-term sequence based on current shipped state and dependency wei
 
 ---
 *Requirements defined: 2026-05-01*
-*Last updated: 2026-05-04 — note-derived backlog and delivery guidance added*
+*Last updated: 2026-05-05 — milestone v1.13 requirements and roadmap traceability added*
