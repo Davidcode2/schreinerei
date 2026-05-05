@@ -102,7 +102,7 @@ Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 �
 | 41. Projects Boundary Alias | v1.12 | 1/1 | Complete | 2026-05-04 |
 | 42. Request Context Extractor | v1.12 | 1/1 | Complete | 2026-05-04 |
 | 43. Mobile-First Guardrails | v1.12 | 1/1 | Complete | 2026-05-04 |
-| 44. Project Model Foundation | v1.13 | 0/1 | Planned | — |
+| 44. Project Model Foundation | v1.13 | 0/3 | Planned | — |
 | 45. Unified Project Timeline | v1.13 | 0/1 | Planned | — |
 | 46. Project-Linked Execution Capture | v1.13 | 0/1 | Planned | — |
 | 47. Project Dashboard Visibility | v1.13 | 0/1 | Planned | — |
@@ -125,7 +125,7 @@ Current milestone phase summary:
 
 ### Phase Details
 
-**Phase 44: Project Model Foundation**
+### Phase 44: Project Model Foundation
 Goal: Broaden the current site model into a project execution surface that supports external Baustellen and internal workshop work without creating a second competing entity.
 Requirements: `PROJ-10`, `PROJ-11`
 Success criteria:
@@ -134,7 +134,14 @@ Success criteria:
 3. Project planning fields remain editable from the main project surface.
 4. Existing data can continue to flow through the same aggregate without parallel entity creation.
 
-**Phase 45: Unified Project Timeline**
+**Plans:** 3 plans
+
+Plans:
+- [ ] 44-01-PLAN.md — Extend the existing `sites` aggregate and API contracts with a project-type-capable backend model.
+- [ ] 44-02-PLAN.md — Turn the existing `/sites` create/detail flow into the main project planning and assignment surface.
+- [ ] 44-03-PLAN.md — Propagate project-aware terminology and selectors into active-context, time-booking, fleet, and dashboard surfaces.
+
+### Phase 45: Unified Project Timeline
 Goal: Make the project timeline the canonical context channel and unify note/photo/document creation into one flow.
 Requirements: `PROJ-18`, `PROJ-19`, `PROJ-20`
 Success criteria:
@@ -143,7 +150,7 @@ Success criteria:
 3. Timeline entries render timestamps and attachment previews consistently.
 4. Existing camera/document capabilities remain usable while converging on the unified flow.
 
-**Phase 46: Project-Linked Execution Capture**
+### Phase 46: Project-Linked Execution Capture
 Goal: Reduce office follow-up by ensuring real productive material/time capture is attributable to a project with minimal extra input.
 Requirements: `PROJ-13`, `PROJ-14`
 Success criteria:
@@ -152,7 +159,7 @@ Success criteria:
 3. Active project context pre-fills the most common capture flows.
 4. Users are not forced through extra manual steps when the active project is already known.
 
-**Phase 47: Project Dashboard Visibility**
+### Phase 47: Project Dashboard Visibility
 Goal: Let managers see relevant projects regardless of status and apply filters explicitly instead of relying on hidden defaults.
 Requirements: `PROJ-12`
 Success criteria:
