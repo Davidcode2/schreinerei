@@ -16,14 +16,23 @@ export function useSwipeGesture(options: SwipeGestureOptions): SwipeGestureHandl
   const [touchStart, setTouchStart] = useState<number | null>(null)
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientX)
+    const touch = e.touches[0]
+    if (!touch) return
+
+    setTouchStart(touch.clientX)
   }, [])
 
   const onTouchEnd = useCallback(
     (e: React.TouchEvent) => {
       if (touchStart === null) return
 
-      const touchEnd = e.changedTouches[0].clientX
+      const touch = e.changedTouches[0]
+      if (!touch) {
+        setTouchStart(null)
+        return
+      }
+
+      const touchEnd = touch.clientX
       const diff = touchStart - touchEnd
 
       if (Math.abs(diff) > threshold) {
