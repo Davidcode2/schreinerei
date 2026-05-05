@@ -91,6 +91,9 @@ export function ReservationDialog({
   const { data: preferences } = usePreferences()
   const { data: sites } = useSites()
 
+  const formatSiteOption = (site: { name: string; project_type: "external_site" | "internal_workshop" }) =>
+    site.project_type === "internal_workshop" ? `${site.name} (Werkstatt)` : `${site.name} (Extern)`
+
   const createMutation = useCreateReservation()
   const updateMutation = useUpdateReservation()
 
@@ -222,7 +225,7 @@ export function ReservationDialog({
                   <p className="font-medium">{initialData.user_name || "Unbekannt"}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Baustelle</p>
+                  <p className="text-muted-foreground">Projekt</p>
                   <p className="font-medium">{initialData.site_name || "Keine Zuordnung"}</p>
                 </div>
                 <div>
@@ -238,7 +241,7 @@ export function ReservationDialog({
           )}
 
           <div className="space-y-2">
-            <Label>Baustelle (optional)</Label>
+            <Label>Projekt (optional)</Label>
             <select
               className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:ring-offset-2"
               value={siteId}
@@ -247,7 +250,7 @@ export function ReservationDialog({
               <option value="">Keine Zuordnung</option>
               {sites?.map((site) => (
                 <option key={site.id} value={site.id}>
-                  {site.name}
+                  {formatSiteOption(site)}
                 </option>
               ))}
             </select>
@@ -349,8 +352,8 @@ export function ReservationDialog({
           <div className="space-y-2">
             <Label>Notiz (optional)</Label>
             <Input
-              placeholder="z.B. Für Baustelle Müller"
-              value={notes}
+                placeholder="z.B. Für Projekt Müller"
+                value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="h-10"
             />

@@ -42,8 +42,8 @@ interface TimeEntryDialogProps {
 }
 
 const workTypes: { value: WorkType; label: string }[] = [
-	{ value: "site", label: "Baustelle" },
-	{ value: "workshop", label: "Werkstatt" },
+	{ value: "site", label: "Projekt vor Ort" },
+	{ value: "workshop", label: "Werkstattprojekt" },
 	{ value: "travel", label: "Fahrt" },
 	{ value: "other", label: "Sonstiges" },
 ];
@@ -78,6 +78,9 @@ export function TimeEntryDialog({
 	const deleteMutation = useDeleteTimeEntry();
 	const { data: preferences } = usePreferences();
 	const { data: sites } = useSites();
+
+	const formatSiteOption = (site: { name: string; project_type: "external_site" | "internal_workshop" }) =>
+		site.project_type === "internal_workshop" ? `${site.name} (Werkstatt)` : `${site.name} (Extern)`;
 
 	// Reset state when dialog opens with new data
 	useEffect(() => {
@@ -180,7 +183,7 @@ export function TimeEntryDialog({
 						<DialogDescription>
 							{mode === "edit"
 								? "Zeiteintrag anpassen"
-								: siteName || "Neuen Zeiteintrag erstellen"}
+								: siteName || "Neuen Projekteintrag erstellen"}
 						</DialogDescription>
 					</DialogHeader>
 
@@ -217,18 +220,18 @@ export function TimeEntryDialog({
 
 						{workType === "site" && (
 							<div className="space-y-2">
-								<Label>Baustelle</Label>
-								<select
+							<Label>Projekt (optional)</Label>
+							<select
 									className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 									value={selectedSiteId}
 									onChange={(event) => setSelectedSiteId(event.target.value)}
 								>
-									<option value="">Keine Zuordnung</option>
-									{sites?.map((site) => (
-										<option key={site.id} value={site.id}>
-											{site.name}
-										</option>
-									))}
+								<option value="">Keine Zuordnung</option>
+								{sites?.map((site) => (
+									<option key={site.id} value={site.id}>
+										{formatSiteOption(site)}
+									</option>
+								))}
 								</select>
 							</div>
 						)}

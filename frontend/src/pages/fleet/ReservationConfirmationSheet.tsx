@@ -167,7 +167,7 @@ export function ReservationConfirmationSheet({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="reservation-site">Baustelle (optional)</Label>
+            <Label htmlFor="reservation-site">Projekt (optional)</Label>
             <select
               id="reservation-site"
               className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:ring-offset-2"
@@ -177,7 +177,7 @@ export function ReservationConfirmationSheet({
               <option value="">Keine Zuordnung</option>
               {sites?.map((site) => (
                 <option key={site.id} value={site.id}>
-                  {site.name}
+                  {formatSiteOption(site)}
                 </option>
               ))}
             </select>
@@ -234,3 +234,5 @@ export function ReservationConfirmationSheet({
     </Sheet>
   )
 }
+  const formatSiteOption = (site: { name: string; project_type: "external_site" | "internal_workshop" }) =>
+    site.project_type === "internal_workshop" ? `${site.name} (Werkstatt)` : `${site.name} (Extern)`

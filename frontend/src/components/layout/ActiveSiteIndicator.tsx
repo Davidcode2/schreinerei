@@ -14,6 +14,7 @@ export function ActiveSiteIndicator({ compact = false, className }: ActiveSiteIn
 
   const activeSiteId = preferences?.active_site_id ?? null
   const activeSite = sites?.find((site) => site.id === activeSiteId)
+  const activeTypeLabel = activeSite?.project_type === "internal_workshop" ? "Werkstatt" : "Extern"
 
   if (compact) {
     return (
@@ -29,11 +30,12 @@ export function ActiveSiteIndicator({ compact = false, className }: ActiveSiteIn
           />
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Baustelle
+              Projekt
             </p>
             <p className="truncate text-sm font-semibold leading-tight">
               {activeSite?.name ?? "Keine ausgewählt"}
             </p>
+            {activeSite && <p className="text-[11px] text-muted-foreground">{activeTypeLabel}</p>}
           </div>
         </div>
       </div>
@@ -47,13 +49,14 @@ export function ActiveSiteIndicator({ compact = false, className }: ActiveSiteIn
           className={`h-2.5 w-2.5 rounded-full ${getSiteColorClass(activeSiteId)}`}
         />
         <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Aktive Baustelle
+          Aktives Projekt
         </span>
       </div>
       <p className="mt-1 flex items-center gap-2 text-sm font-medium">
         <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-        {activeSite?.name ?? "Keine aktive Baustelle"}
+        {activeSite?.name ?? "Kein aktives Projekt"}
       </p>
+      {activeSite && <p className="mt-1 text-xs text-muted-foreground">{activeTypeLabel}</p>}
     </div>
   )
 }

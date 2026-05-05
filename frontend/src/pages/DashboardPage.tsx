@@ -52,7 +52,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <StatsCard
-          title="Aktive Baustellen"
+          title="Aktive Projekte"
           value={activeSites.length}
           icon={Building2}
         />
@@ -76,7 +76,7 @@ export default function DashboardPage() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="font-display text-lg">Aktive Baustellen</CardTitle>
+          <CardTitle className="font-display text-lg">Aktive Projekte</CardTitle>
           <Link to="/sites">
             <Button variant="ghost" size="sm" className="gap-2 h-9">
               Alle anzeigen
@@ -88,15 +88,15 @@ export default function DashboardPage() {
           {sitesLoading ? (
             <LoadingSpinner className="py-8" />
           ) : sitesError ? (
-            <ErrorState message="Baustellen konnten nicht geladen werden" onRetry={() => refetchSites()} />
+            <ErrorState message="Projekte konnten nicht geladen werden" onRetry={() => refetchSites()} />
           ) : activeSites.length === 0 ? (
             <EmptyState
               icon={Building2}
-              title="Keine aktiven Baustellen"
-              description="Es gibt derzeit keine aktiven Baustellen."
+              title="Keine aktiven Projekte"
+              description="Es gibt derzeit keine aktiven Projekte."
               action={
                 <Link to="/sites">
-                  <Button size="sm" className="h-10">Baustellen anzeigen</Button>
+                  <Button size="sm" className="h-10">Projekte anzeigen</Button>
                 </Link>
               }
             />
