@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use uuid::Uuid;
 
-use crate::auth::extractor::AuthenticatedUser;
 use crate::common::error::AppError;
 use crate::common::types::{SiteId, UserId};
 use crate::modules::iam::application::user_preferences_service::UserPreferencesService;
@@ -108,14 +107,12 @@ pub struct UpdatePreferencesRequest {
 /// GET /api/v1/auth/me - Get current user profile
 pub async fn get_current_user(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
 ) -> Result<impl IntoResponse, AppError> {
     let service = UserService::new(
         crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
     );
-    let _ctx = TenantContext::from_auth(&auth);
-
-    let user = service.get_or_create_from_auth(&auth).await?;
+    let user = service.get_or_create_from_ctx(&ctx).await?;
 
     Ok(Json(UserResponse::from(user)))
 }
@@ -123,12 +120,11 @@ pub async fn get_current_user(
 /// GET /api/v1/users - List all users in tenant (admin only)
 pub async fn list_users(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
 ) -> Result<impl IntoResponse, AppError> {
     let service = UserService::new(
         crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
 
     let users = service.list_users(&ctx).await?;
     let response: Vec<UserResponse> = users.into_iter().map(UserResponse::from).collect();
@@ -139,13 +135,12 @@ pub async fn list_users(
 /// GET /api/v1/users/{id} - Get user by ID
 pub async fn get_user(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = UserService::new(
         crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
 
     let user_id = Uuid::parse_str(&id)
         .map(UserId)
@@ -159,13 +154,12 @@ pub async fn get_user(
 /// POST /api/v1/users/invite - Invite a new user (admin only)
 pub async fn invite_user(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Json(request): Json<InviteUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = UserService::new(
         crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
 
     let role = request
         .role
@@ -186,14 +180,13 @@ pub async fn invite_user(
 /// PATCH /api/v1/users/{id}/role - Update user role (admin only)
 pub async fn update_user_role(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<UpdateRoleRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = UserService::new(
         crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
 
     let user_id = Uuid::parse_str(&id)
         .map(UserId)
@@ -212,13 +205,12 @@ pub async fn update_user_role(
 /// PATCH /api/v1/users/me - Update own profile
 pub async fn update_own_profile(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Json(request): Json<UpdateProfileRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = UserService::new(
         crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
 
     let update = UpdateProfile { name: request.name };
 
@@ -230,13 +222,12 @@ pub async fn update_own_profile(
 /// GET /api/v1/preferences - Get current user's preferences
 pub async fn get_preferences(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
 ) -> Result<impl IntoResponse, AppError> {
     let service = UserPreferencesService::new(state.pool.clone());
     let user_service = UserService::new(UserRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
-    let user_id = user_service.get_or_create_user_id_from_auth(&auth).await?;
+    let user_id = user_service.get_or_create_user_id_from_ctx(&ctx).await?;
     let preferences = service
         .get_validated_preferences(user_id, ctx.tenant_id)
         .await?;
@@ -247,14 +238,13 @@ pub async fn get_preferences(
 /// PATCH /api/v1/preferences - Update user's active site
 pub async fn update_preferences(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Json(request): Json<UpdatePreferencesRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = UserPreferencesService::new(state.pool.clone());
     let user_service = UserService::new(UserRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
-    let user_id = user_service.get_or_create_user_id_from_auth(&auth).await?;
+    let user_id = user_service.get_or_create_user_id_from_ctx(&ctx).await?;
 
     let preferences = match request.active_site_id {
         Some(site_id_str) => {

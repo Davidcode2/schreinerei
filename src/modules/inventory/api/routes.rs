@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use uuid::Uuid;
 
-use crate::auth::extractor::AuthenticatedUser;
 use crate::common::error::AppError;
 use crate::common::types::{CategoryId, MaterialId, OrderRequestId, SiteId};
 use crate::modules::iam::application::user_service::TenantContext;
@@ -477,13 +476,11 @@ fn parse_optional_date(
 
 pub async fn list_categories(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let categories = service.list_categories(&ctx).await?;
     let response: Vec<CategoryResponse> =
         categories.into_iter().map(CategoryResponse::from).collect();
@@ -493,14 +490,12 @@ pub async fn list_categories(
 
 pub async fn create_category(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Json(request): Json<CreateCategoryRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let create = CreateCategory {
         name: request.name,
         description: request.description,
@@ -514,14 +509,12 @@ pub async fn create_category(
 
 pub async fn get_category(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let category_id = Uuid::parse_str(&id)
         .map(CategoryId)
         .map_err(|_| AppError::Validation("Invalid category ID".to_string()))?;
@@ -533,15 +526,13 @@ pub async fn get_category(
 
 pub async fn update_category(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<UpdateCategoryRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let category_id = Uuid::parse_str(&id)
         .map(CategoryId)
         .map_err(|_| AppError::Validation("Invalid category ID".to_string()))?;
@@ -555,14 +546,12 @@ pub async fn update_category(
 
 pub async fn delete_category(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let category_id = Uuid::parse_str(&id)
         .map(CategoryId)
         .map_err(|_| AppError::Validation("Invalid category ID".to_string()))?;
@@ -574,14 +563,12 @@ pub async fn delete_category(
 
 pub async fn list_materials(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Query(query): Query<ListMaterialsQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let category_id = query
         .category_id
         .map(|s| Uuid::parse_str(&s).map(CategoryId))
@@ -597,14 +584,12 @@ pub async fn list_materials(
 
 pub async fn create_material(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Json(request): Json<CreateMaterialRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let category_id = Uuid::parse_str(&request.category_id)
         .map(CategoryId)
         .map_err(|_| AppError::Validation("Invalid category ID".to_string()))?;
@@ -632,14 +617,12 @@ pub async fn create_material(
 
 pub async fn get_material(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let material_id = Uuid::parse_str(&id)
         .map(MaterialId)
         .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
@@ -651,15 +634,13 @@ pub async fn get_material(
 
 pub async fn update_material(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<UpdateMaterialRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let material_id = Uuid::parse_str(&id)
         .map(MaterialId)
         .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
@@ -674,11 +655,10 @@ pub async fn update_material(
 /// GET /api/v1/inventory/materials/{id}/history - Get stock change history for a material
 pub async fn get_material_history(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let repo = crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool);
-    let ctx = TenantContext::from_auth(&auth);
 
     let material_id = Uuid::parse_str(&id)
         .map(MaterialId)
@@ -701,14 +681,12 @@ pub async fn get_material_history(
 
 pub async fn get_enriched_material_history(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let material_id = Uuid::parse_str(&id)
         .map(MaterialId)
         .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
@@ -725,15 +703,13 @@ pub async fn get_enriched_material_history(
 /// GET /api/v1/inventory/sites/{site_id}/history - Site-scoped stock history with enrichments
 pub async fn get_site_material_history(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(site_id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let repo =
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool.clone());
     let site_repo =
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool);
-    let ctx = TenantContext::from_auth(&auth);
-
     let parsed_site_id = Uuid::parse_str(&site_id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
@@ -756,14 +732,12 @@ pub async fn get_site_material_history(
 
 pub async fn delete_material(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let material_id = Uuid::parse_str(&id)
         .map(MaterialId)
         .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
@@ -775,15 +749,13 @@ pub async fn delete_material(
 
 pub async fn withdraw_material(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<WithdrawRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let material_id = Uuid::parse_str(&id)
         .map(MaterialId)
         .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
@@ -810,15 +782,13 @@ pub async fn withdraw_material(
 
 pub async fn adjust_stock(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<AdjustStockRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let material_id = Uuid::parse_str(&id)
         .map(MaterialId)
         .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
@@ -836,15 +806,13 @@ pub async fn adjust_stock(
 
 pub async fn stock_in_material(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<StockInRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let material_id = Uuid::parse_str(&id)
         .map(MaterialId)
         .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
@@ -866,13 +834,11 @@ pub async fn stock_in_material(
 
 pub async fn list_low_stock(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let materials = service.list_low_stock(&ctx).await?;
     let response: Vec<MaterialResponse> =
         materials.into_iter().map(MaterialResponse::from).collect();
@@ -882,14 +848,12 @@ pub async fn list_low_stock(
 
 pub async fn get_by_qr_code(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(code): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let material = service.get_material_by_qr(&code, &ctx).await?;
 
     Ok(Json(MaterialResponse::from(material)))
@@ -897,14 +861,12 @@ pub async fn get_by_qr_code(
 
 pub async fn generate_qr_code(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let material_id = Uuid::parse_str(&id)
         .map(MaterialId)
         .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
@@ -921,14 +883,12 @@ pub async fn generate_qr_code(
 
 pub async fn get_qr_svg(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let material_id = Uuid::parse_str(&id)
         .map(MaterialId)
         .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
@@ -944,14 +904,12 @@ pub async fn get_qr_svg(
 
 pub async fn create_order_request(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Json(request): Json<CreateOrderRequestDto>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let material_id = Uuid::parse_str(&request.material_id)
         .map(MaterialId)
         .map_err(|_| AppError::Validation("Invalid material ID".to_string()))?;
@@ -975,14 +933,12 @@ pub async fn create_order_request(
 
 pub async fn list_order_requests(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Query(query): Query<OrderStatusQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let status = query
         .status
         .map(|s| s.parse())
@@ -1004,15 +960,13 @@ pub async fn list_order_requests(
 
 pub async fn approve_order_request(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<ApproveOrderRequestDto>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let order_id = Uuid::parse_str(&id)
         .map(OrderRequestId)
         .map_err(|_| AppError::Validation("Invalid order ID".to_string()))?;
@@ -1031,15 +985,13 @@ pub async fn approve_order_request(
 
 pub async fn fulfill_order_request(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<FulfillOrderRequestDto>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = InventoryService::new(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let order_id = Uuid::parse_str(&id)
         .map(OrderRequestId)
         .map_err(|_| AppError::Validation("Invalid order ID".to_string()))?;

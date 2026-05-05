@@ -3,6 +3,7 @@ use crate::common::error::AppError;
 use crate::common::types::{Role, TenantId, UserId};
 use crate::modules::iam::domain::user::{CreateUser, InviteUser, UpdateProfile, User};
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
+use axum::{extract::FromRequestParts, http::request::Parts};
 
 /// Context for tenant-scoped operations
 #[derive(Debug, Clone)]
@@ -28,6 +29,33 @@ impl TenantContext {
     pub fn is_admin(&self) -> bool {
         self.roles.iter().any(|r| r.is_admin())
     }
+
+    /// Reconstruct authenticated user data from request-scoped context.
+    pub fn to_auth(&self) -> AuthenticatedUser {
+        AuthenticatedUser {
+            user_id: self.user_id,
+            tenant_id: self.tenant_id,
+            email: self.email.clone(),
+            roles: self.roles.clone(),
+        }
+    }
+}
+
+impl<S> FromRequestParts<S> for TenantContext
+where
+    S: Send + Sync,
+{
+    type Rejection = AppError;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        let auth = parts
+            .extensions
+            .get::<AuthenticatedUser>()
+            .cloned()
+            .ok_or(AppError::Unauthorized("Not authenticated".to_string()))?;
+
+        Ok(Self::from_auth(&auth))
+    }
 }
 
 /// Service for user management operations
@@ -46,12 +74,18 @@ impl UserService {
         &self,
         auth: &AuthenticatedUser,
     ) -> Result<User, AppError> {
-        let tenant_id = auth.tenant_id;
+        self.get_or_create_from_ctx(&TenantContext::from_auth(auth))
+            .await
+    }
+
+    /// Get or create user from request-scoped tenant context.
+    pub async fn get_or_create_from_ctx(&self, ctx: &TenantContext) -> Result<User, AppError> {
+        let tenant_id = ctx.tenant_id;
 
         // Check if user exists
         if let Some(user) = self
             .user_repo
-            .find_by_keycloak_id(&auth.user_id.to_string(), tenant_id)
+            .find_by_keycloak_id(&ctx.user_id.to_string(), tenant_id)
             .await?
         {
             return Ok(user);
@@ -59,10 +93,10 @@ impl UserService {
 
         // Create new user from auth
         let create_user = CreateUser {
-            keycloak_user_id: auth.user_id.to_string(),
-            email: auth.email.clone(),
+            keycloak_user_id: ctx.user_id.to_string(),
+            email: ctx.email.clone(),
             name: None,
-            role: if auth.is_admin() {
+            role: if ctx.is_admin() {
                 Role::Admin
             } else {
                 Role::Employee
@@ -77,7 +111,18 @@ impl UserService {
         &self,
         auth: &AuthenticatedUser,
     ) -> Result<UserId, AppError> {
-        let user = self.get_or_create_from_auth(auth).await?;
+        let user = self
+            .get_or_create_from_ctx(&TenantContext::from_auth(auth))
+            .await?;
+        Ok(user.id)
+    }
+
+    /// Resolve tenant-local user id from request-scoped context.
+    pub async fn get_or_create_user_id_from_ctx(
+        &self,
+        ctx: &TenantContext,
+    ) -> Result<UserId, AppError> {
+        let user = self.get_or_create_from_ctx(ctx).await?;
         Ok(user.id)
     }
 

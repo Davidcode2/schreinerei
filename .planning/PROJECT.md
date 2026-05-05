@@ -10,20 +10,23 @@ Mobile-first PWA fur Tablet und Smartphone, mit Offline-Unterstutzung fur Bauste
 
 Mitarbeiter finden alles schnell, Chefs haben den Uberblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
 
-## Latest Shipped Milestone: v1.11 Fleet Calendar on Fleet Page
+## Latest Shipped Milestone: v1.12 Architecture Guardrails
 
-**Outcome:** This merge branch brings together the shipped `v1.9`, `v1.10`, and `v1.11` work as one sequential phase set (`30-40`).
+**Outcome:** This branch now includes shipped architecture guardrails on top of the merged `v1.9` to `v1.11` work, extending the shipped phase set through `41-43`.
 
 ## Next Milestone
 
-Not planned yet. Next logical workflow is `/gsd-new-milestone`.
+Not planned yet. The next planning cycle should use `.planning/FEATURES.md` and `.planning/REQUIREMENTS.md` as the source of truth for backlog shaping. Next logical workflow is `/gsd-new-milestone`.
 
 ## Current State
 
-**v1.11 shipped on 2026-05-01.**
+**v1.12 shipped on 2026-05-04.**
 
 Latest shipped additions:
 
+- ✅ `projects` now exists as a transition-safe architectural boundary over the current `sites` module
+- ✅ API routes now receive tenant/user request context directly instead of rebuilding it manually from auth
+- ✅ Mobile-first delivery is now codified in `.planning/MOBILE-FIRST-CHECKLIST.md`
 - ✅ `/fleet` is now the primary reservation surface with an embedded calendar
 - ✅ Reservation creation uses explicit two-tap date-range selection with a bottom confirmation sheet
 - ✅ Baustelle activity stream supports separate camera/document flows and mixed attachment entries
@@ -64,6 +67,11 @@ All v1.x requirements validated.
 - ✓ FSEL-01 to FSEL-04 — Two-tap date-range selection with same-day and sorted reverse-order handling
 - ✓ FCONF-01 to FCONF-06 — Bottom-sheet confirmation, cancel/reset, optional times, visible reservations, and stable resource colors
 
+**v1.12 Architecture Guardrails (3 requirements):**
+- ✓ ARCH-01 — `projects` architectural boundary introduced without breaking runtime routes
+- ✓ ARCH-02 — Request-scoped tenant context extraction replaced manual route-level conversion
+- ✓ ARCH-04 — Mobile-first engineering checklist codified from existing runtime baseline
+
 **v1.10 Baustelle Activity Stream Features (20 requirements):**
 - ✓ CAM-01 to CAM-03 — Separate camera upload flow with optional note
 - ✓ DOC-01 to DOC-05 — Mixed note + attachment document entries with PDF/image support
@@ -88,6 +96,11 @@ All v1.x requirements validated.
 No active milestone requirements yet.
 
 Use `/gsd-new-milestone` to define the next milestone scope.
+
+### Product Backlog Captured
+
+- A structured comparison of shipped functionality vs the broader product note now lives in `.planning/FEATURES.md`.
+- The note-derived backlog, including architecture and approach guidance, now lives in `.planning/REQUIREMENTS.md` under `Product Backlog from 2026-05 Note`.
 
 ### Deferred
 

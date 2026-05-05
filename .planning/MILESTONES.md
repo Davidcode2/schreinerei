@@ -2,6 +2,41 @@
 
 ---
 
+## v1.12 Architecture Guardrails
+
+**Shipped:** 2026-05-04
+**Phases:** 3 | **Plans:** 3
+
+### Summary
+
+Hardened the architecture with a transition-safe `projects` boundary, direct request-scoped tenant context extraction in the API layer, and a codified mobile-first engineering checklist.
+
+### Accomplishments
+
+1. Added a `projects` architectural alias over the current `sites` bounded context
+2. Refactored IAM, Inventory, Fleet, and Sites API routes to receive `TenantContext` directly from extraction
+3. Extended IAM bootstrap helpers to work from request context
+4. Captured the mobile-first standard in `.planning/MOBILE-FIRST-CHECKLIST.md`
+
+### Stats
+
+- **Timeline:** 1 day (2026-05-04)
+- **Requirements:** 3/3 verified
+- **Verification:** `cargo test` PASS (242 unit tests + integration/doc targets)
+
+### Key Decisions
+
+- Introduce `projects` as an alias first instead of a risky runtime rename
+- Treat request-scoped tenant context as an API-edge extractor concern
+- Enforce mobile-first via a lightweight checklist because the runtime baseline already exists
+
+### Archives
+
+- `.planning/milestones/v1.12-ROADMAP.md`
+- `.planning/milestones/v1.12-REQUIREMENTS.md`
+
+---
+
 ## v1.11 Fleet Calendar on Fleet Page
 
 **Shipped:** 2026-05-01

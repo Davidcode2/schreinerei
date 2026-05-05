@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use uuid::Uuid;
 
-use crate::auth::extractor::AuthenticatedUser;
 use crate::common::error::AppError;
 use crate::common::types::{
     ReservationId, ReservationStatus, ResourceStatus, ResourceType, ToolId, VehicleId, VehicleType,
@@ -386,11 +385,10 @@ impl From<crate::modules::fleet::infrastructure::fleet_repository::ResourceStatu
 
 pub async fn list_vehicles(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Query(query): Query<ListVehiclesQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let vehicles = service.list_vehicles(query.status, &ctx).await?;
     let response: Vec<VehicleResponse> = vehicles.into_iter().map(VehicleResponse::from).collect();
@@ -400,11 +398,10 @@ pub async fn list_vehicles(
 
 pub async fn create_vehicle(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Json(request): Json<CreateVehicleRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let vehicle_type = request
         .vehicle_type
@@ -427,11 +424,10 @@ pub async fn create_vehicle(
 
 pub async fn get_vehicle(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let vehicle_id = Uuid::parse_str(&id)
         .map(VehicleId)
@@ -444,12 +440,11 @@ pub async fn get_vehicle(
 
 pub async fn update_vehicle(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<UpdateVehicleRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let vehicle_id = Uuid::parse_str(&id)
         .map(VehicleId)
@@ -484,11 +479,10 @@ pub async fn update_vehicle(
 
 pub async fn delete_vehicle(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let vehicle_id = Uuid::parse_str(&id)
         .map(VehicleId)
@@ -503,11 +497,10 @@ pub async fn delete_vehicle(
 
 pub async fn list_tools(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Query(query): Query<ListToolsQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let tools = service
         .list_tools(query.status, query.category, &ctx)
@@ -519,11 +512,10 @@ pub async fn list_tools(
 
 pub async fn create_tool(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Json(request): Json<CreateToolRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let create = CreateTool {
         name: request.name,
@@ -540,11 +532,10 @@ pub async fn create_tool(
 
 pub async fn get_tool(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let tool_id = Uuid::parse_str(&id)
         .map(ToolId)
@@ -557,12 +548,11 @@ pub async fn get_tool(
 
 pub async fn update_tool(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<UpdateToolRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let tool_id = Uuid::parse_str(&id)
         .map(ToolId)
@@ -590,11 +580,10 @@ pub async fn update_tool(
 
 pub async fn delete_tool(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let tool_id = Uuid::parse_str(&id)
         .map(ToolId)
@@ -609,11 +598,10 @@ pub async fn delete_tool(
 
 pub async fn list_reservations(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Query(query): Query<ListReservationsQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let user_id = query
         .user_id
@@ -647,10 +635,9 @@ pub async fn list_reservations(
 
 pub async fn list_my_reservations(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let reservations = service.list_my_reservations(&ctx).await?;
     let response: Vec<ReservationResponse> = reservations
@@ -663,11 +650,10 @@ pub async fn list_my_reservations(
 
 pub async fn create_reservation(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Json(request): Json<CreateReservationRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let resource_type = request
         .resource_type
@@ -714,11 +700,10 @@ pub async fn create_reservation(
 
 pub async fn get_reservation(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let reservation_id = Uuid::parse_str(&id)
         .map(ReservationId)
@@ -731,12 +716,11 @@ pub async fn get_reservation(
 
 pub async fn update_reservation(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<UpdateReservationRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let reservation_id = Uuid::parse_str(&id)
         .map(ReservationId)
@@ -789,11 +773,10 @@ pub async fn update_reservation(
 
 pub async fn cancel_reservation(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let reservation_id = Uuid::parse_str(&id)
         .map(ReservationId)
@@ -808,11 +791,10 @@ pub async fn cancel_reservation(
 
 pub async fn get_calendar(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Query(query): Query<CalendarQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let start_date = parse_date_time(&query.start_date, 0, 0, 0).map_err(|_| {
         AppError::Validation("Invalid start_date format. Use YYYY-MM-DD or RFC3339".to_string())
@@ -863,11 +845,10 @@ fn parse_date_time(
 
 pub async fn check_availability(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Query(query): Query<AvailabilityQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let resource_type = query
         .resource_type
@@ -916,11 +897,10 @@ pub async fn check_availability(
 
 pub async fn get_status_by_qr(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(code): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = FleetService::new(FleetRepository::new(state.pool));
-    let ctx = TenantContext::from_auth(&auth);
 
     let status_info = service.get_status_by_qr(&code, &ctx).await?;
 

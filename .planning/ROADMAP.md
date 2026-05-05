@@ -14,6 +14,7 @@
 - ✅ **v1.9 Inventory Features** — Phases 30-33 (shipped 2026-05-01) — [Archive](milestones/v1.9-ROADMAP.md)
 - ✅ **v1.10 Baustelle Activity Stream Features** — Phases 34-37 (shipped 2026-05-01) — [Archive](milestones/v1.10-ROADMAP.md)
 - ✅ **v1.11 Fleet Calendar on Fleet Page** — Phases 38-40 (shipped 2026-05-01) — [Archive](milestones/v1.11-ROADMAP.md)
+- ✅ **v1.12 Architecture Guardrails** — Phases 41-43 (shipped 2026-05-04) — [Archive](milestones/v1.12-ROADMAP.md)
 
 ## Phases
 
@@ -62,10 +63,18 @@
 - [x] **Phase 39: Range Selection & Confirmation Flow** — Two-tap date-range selection with bottom-sheet confirmation
 - [x] **Phase 40: Calendar Visibility, Colors & Cleanup** — Keep reservations visible during selection, add stable resource colors, and remove the standalone calendar entry path
 
+### ✅ v1.12 Architecture Guardrails (Shipped)
+
+**Milestone Goal:** Harden the architecture around project boundaries, request-scoped tenant context, and mobile-first delivery guardrails.
+
+- [x] **Phase 41: Projects Boundary Alias** — Expose a `projects` boundary over the current `sites` module without breaking runtime behavior
+- [x] **Phase 42: Request Context Extractor** — Make `TenantContext` extractable and remove manual auth-to-context rebuilding from API routes
+- [x] **Phase 43: Mobile-First Guardrails** — Codify the existing mobile-first baseline as an explicit checklist for future work
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40
+Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40 → 41 → 42 → 43
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -80,8 +89,25 @@ Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 �
 | 38. Fleet Page Calendar Integration | v1.11 | 1/1 | Complete | 2026-05-01 |
 | 39. Range Selection & Confirmation Flow | v1.11 | 2/2 | Complete | 2026-05-01 |
 | 40. Calendar Visibility, Colors & Cleanup | v1.11 | 2/2 | Complete | 2026-05-01 |
+| 41. Projects Boundary Alias | v1.12 | 1/1 | Complete | 2026-05-04 |
+| 42. Request Context Extractor | v1.12 | 1/1 | Complete | 2026-05-04 |
+| 43. Mobile-First Guardrails | v1.12 | 1/1 | Complete | 2026-05-04 |
+
+## Next Planning Inputs
+
+The next milestone is not defined yet. Use these planning inputs before starting the next GSD cycle:
+
+- `.planning/FEATURES.md` for the current-vs-desired feature comparison
+- `.planning/REQUIREMENTS.md` section `Product Backlog from 2026-05 Note` for requirement slicing
+
+Strong next-milestone candidates:
+
+1. Project feed completion and dashboard behavior
+2. Expiry-aware inventory and replenishment alerts
+3. Asset maintenance intervals and reminders
+4. Project-linked analytics, budget, and invoice foundation
 
 ---
 
-*Roadmap last updated: 2026-05-01*
+*Roadmap last updated: 2026-05-04*
 *Next: `/gsd-new-milestone`*

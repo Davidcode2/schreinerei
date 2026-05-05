@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.11
-milestone_name: Fleet Calendar on Fleet Page
+milestone: v1.12
+milestone_name: Architecture Guardrails
 status: complete
-stopped_at: v1.11 milestone complete
-last_updated: "2026-05-01T21:30:00Z"
-last_activity: 2026-05-01
+stopped_at: v1.12 milestone complete
+last_updated: "2026-05-04T15:00:00Z"
+last_activity: 2026-05-04
 progress:
-  total_phases: 11
-  completed_phases: 11
-  total_plans: 27
-  completed_plans: 27
+  total_phases: 14
+  completed_phases: 14
+  total_plans: 30
+  completed_plans: 30
   percent: 100
 ---
 
@@ -18,17 +18,17 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-05-01)
+See: `.planning/PROJECT.md` (updated 2026-05-04)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Uberblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
-**Current focus:** Ready for next milestone planning after merged v1.9-v1.11 archive state.
+**Current focus:** Ready for next milestone planning, with current-vs-desired feature inventory now captured from the 2026-05 product note.
 
 ## Current Position
 
-Milestones: v1.9, v1.10, v1.11 — COMPLETE
-Phase set: 30-40 shipped sequentially on this merge branch
+Milestones: v1.9, v1.10, v1.11, v1.12 — COMPLETE
+Phase set: 30-43 shipped sequentially on this branch
 Status: Branch prepared for the next planning cycle
-Last activity: 2026-05-01
+Last activity: 2026-05-04
 
 Progress: [██████████] 100%
 
@@ -36,8 +36,8 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed across merged milestones: 27
-- Milestones merged into this branch: 3
+- Total plans completed across merged milestones: 30
+- Milestones merged into this branch: 4
 
 **By Phase:**
 
@@ -54,6 +54,9 @@ Progress: [██████████] 100%
 | 38. Fleet Page Calendar Integration | 1/1 | Complete |
 | 39. Range Selection & Confirmation Flow | 2/2 | Complete |
 | 40. Calendar Visibility, Colors & Cleanup | 2/2 | Complete |
+| 41. Projects Boundary Alias | 1/1 | Complete |
+| 42. Request Context Extractor | 1/1 | Complete |
+| 43. Mobile-First Guardrails | 1/1 | Complete |
 
 ## Accumulated Context
 
@@ -69,16 +72,22 @@ Progress: [██████████] 100%
 - v1.11 embeds the calendar on `/fleet` and removes the standalone calendar entry path.
 - v1.11 reservation creation uses a two-tap date-range flow with a bottom confirmation sheet.
 - v1.11 resource colors are deterministic frontend-derived accents, not backend-managed state.
+- v1.12 introduces `projects` as a safe architectural alias over the current `sites` module.
+- v1.12 makes `TenantContext` an extractor so handlers stop rebuilding request context manually.
+- v1.12 codifies mobile-first delivery in `.planning/MOBILE-FIRST-CHECKLIST.md`.
 
 ### Pending Todos
 
 - Run `/gsd-new-milestone` to define the next milestone.
+- Use `.planning/FEATURES.md` as the comparison baseline for shipped vs desired product scope.
+- Use `.planning/REQUIREMENTS.md` `Product Backlog from 2026-05 Note` section to slice the next milestone.
 
 ### Blockers/Concerns
 
 - Metadata-only inventory audit model is still unresolved and intentionally deferred.
 - Real PostgreSQL integration coverage remains intentionally deferred to a future milestone.
 - Fleet calendar local-day derivation may still need timezone-safe cleanup later.
+- The newly captured product note is much broader than a single milestone; future work must stay sliced by bounded context and delivery risk.
 
 ## Deferred Items
 
@@ -92,6 +101,6 @@ Progress: [██████████] 100%
 
 ## Session Continuity
 
-Last session: 2026-05-01
-Stopped at: v1.11 merged after v1.9 and v1.10
+Last session: 2026-05-04
+Stopped at: v1.12 architecture guardrails shipped and verified
 Resume file: None

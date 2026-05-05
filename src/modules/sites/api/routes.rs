@@ -11,7 +11,6 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use uuid::Uuid;
 
-use crate::auth::extractor::AuthenticatedUser;
 use crate::common::error::AppError;
 use crate::common::types::{AssignmentRole, SiteId, SiteStatus, TimeEntryId, UserId, WorkType};
 use crate::modules::iam::application::user_service::TenantContext;
@@ -259,14 +258,12 @@ pub struct UpdateTimeEntryRequest {
 
 pub async fn list_sites(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Query(query): Query<ListSitesQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let sites = service.list_sites(query.status, &ctx).await?;
     let response: Vec<SiteResponse> = sites.into_iter().map(SiteResponse::from).collect();
 
@@ -275,14 +272,12 @@ pub async fn list_sites(
 
 pub async fn create_site(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Json(request): Json<CreateSiteRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let create = CreateSite {
         name: request.name,
         customer_name: request.customer_name,
@@ -304,14 +299,12 @@ pub async fn create_site(
 
 pub async fn get_site(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
@@ -323,15 +316,13 @@ pub async fn get_site(
 
 pub async fn update_site(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<UpdateSiteRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
@@ -364,14 +355,12 @@ pub async fn update_site(
 
 pub async fn delete_site(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
@@ -383,15 +372,13 @@ pub async fn delete_site(
 
 pub async fn assign_user(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<AssignUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
@@ -416,14 +403,12 @@ pub async fn assign_user(
 
 pub async fn remove_assignment(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path((id, user_id)): Path<(String, String)>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
@@ -439,14 +424,12 @@ pub async fn remove_assignment(
 
 pub async fn list_assignments(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
@@ -462,14 +445,12 @@ pub async fn list_assignments(
 
 pub async fn list_site_time_entries(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
@@ -483,14 +464,12 @@ pub async fn list_site_time_entries(
 
 pub async fn create_time_entry(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Json(request): Json<CreateTimeEntryRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let site_id = request
         .site_id
         .map(|s| Uuid::parse_str(&s).map(SiteId))
@@ -521,13 +500,11 @@ pub async fn create_time_entry(
 
 pub async fn list_my_time_entries(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let entries = service.list_my_time_entries(&ctx).await?;
     let response: Vec<TimeEntryResponse> =
         entries.into_iter().map(TimeEntryResponse::from).collect();
@@ -537,14 +514,12 @@ pub async fn list_my_time_entries(
 
 pub async fn get_time_entry(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let entry_id = Uuid::parse_str(&id)
         .map(TimeEntryId)
         .map_err(|_| AppError::Validation("Invalid time entry ID".to_string()))?;
@@ -556,15 +531,13 @@ pub async fn get_time_entry(
 
 pub async fn update_time_entry(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<UpdateTimeEntryRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let entry_id = Uuid::parse_str(&id)
         .map(TimeEntryId)
         .map_err(|_| AppError::Validation("Invalid time entry ID".to_string()))?;
@@ -610,14 +583,12 @@ pub async fn update_time_entry(
 
 pub async fn delete_time_entry(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let entry_id = Uuid::parse_str(&id)
         .map(TimeEntryId)
         .map_err(|_| AppError::Validation("Invalid time entry ID".to_string()))?;
@@ -733,15 +704,13 @@ impl From<DashboardSite> for DashboardSiteResponse {
 
 pub async fn list_activities(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Query(query): Query<ActivityQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
@@ -757,15 +726,13 @@ pub async fn list_activities(
 
 pub async fn create_activity(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     Json(request): Json<CreateActivityRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
@@ -802,14 +769,12 @@ pub async fn create_activity(
 
 pub async fn delete_activity(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path((site_id, activity_id)): Path<(String, String)>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let site_id = Uuid::parse_str(&site_id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
@@ -824,15 +789,13 @@ pub async fn delete_activity(
 
 pub async fn upload_site_attachment(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
@@ -893,15 +856,13 @@ pub async fn upload_site_attachment(
 
 pub async fn upload_site_photo_attachment(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(id): Path<String>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let site_id = Uuid::parse_str(&id)
         .map(SiteId)
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
@@ -960,13 +921,11 @@ pub async fn upload_site_photo_attachment(
 
 pub async fn get_dashboard(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SiteService::new(
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
     );
-    let ctx = TenantContext::from_auth(&auth);
-
     let sites = service.get_dashboard(&ctx).await?;
     let response: Vec<DashboardSiteResponse> =
         sites.into_iter().map(DashboardSiteResponse::from).collect();
@@ -976,10 +935,9 @@ pub async fn get_dashboard(
 
 pub async fn get_attachment_bytes(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(attachment_id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
-    let ctx = TenantContext::from_auth(&auth);
     let repo =
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool);
 
@@ -1007,10 +965,9 @@ pub async fn get_attachment_bytes(
 
 pub async fn get_attachment_thumbnail_bytes(
     State(state): State<AppState>,
-    auth: AuthenticatedUser,
+    ctx: TenantContext,
     Path(attachment_id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
-    let ctx = TenantContext::from_auth(&auth);
     let repo =
         crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool);
 
