@@ -14,9 +14,19 @@ Mitarbeiter finden alles schnell, Chefs haben den Uberblick. Weniger Suchzeit, w
 
 **Outcome:** This branch now includes shipped architecture guardrails on top of the merged `v1.9` to `v1.11` work, extending the shipped phase set through `41-43`.
 
+## Current Milestone: v1.13 Project Workflow Foundation
+
+**Goal:** Turn the current Baustelle surface into a clearer project execution workflow so workers can capture context once, book work and material against the right project with minimal friction, and managers can see all relevant projects without extra office work.
+
+**Target features:**
+- Broaden the current `sites` model into a clearer `project` execution surface, including internal workshop projects
+- Make the project timeline the canonical context channel for notes, photos, documents, and related execution history
+- Improve dashboard visibility so relevant projects appear regardless of status, with explicit filters instead of hidden defaults
+- Introduce project-linked defaults for productive time and material capture where that directly reduces manual input
+
 ## Next Milestone
 
-Not planned yet. The next planning cycle should use `.planning/FEATURES.md` and `.planning/REQUIREMENTS.md` as the source of truth for backlog shaping. Next logical workflow is `/gsd-new-milestone`.
+Milestone v1.13 is now defined. Next logical workflow is `/gsd-plan-phase 44`.
 
 ## Current State
 
@@ -93,9 +103,10 @@ All v1.x requirements validated.
 
 ### Active
 
-No active milestone requirements yet.
-
-Use `/gsd-new-milestone` to define the next milestone scope.
+- [ ] Users work inside a clearer project model that covers both external Baustellen and internal workshop work.
+- [ ] The project timeline becomes the canonical execution context for the job.
+- [ ] Dashboard visibility no longer hides relevant projects behind status defaults.
+- [ ] Productive material/time capture defaults from active project context where possible.
 
 ### Product Backlog Captured
 
@@ -152,3 +163,20 @@ Use `/gsd-new-milestone` to define the next milestone scope.
 - Offline photo queue replay still needs runtime verification
 - Fleet day-key derivation still relies on ISO date splitting
 - Resource color strategy is deterministic but not globally uniqueness-checked
+
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? -> Move to Out of Scope with reason
+2. Requirements validated? -> Move to Validated with phase reference
+3. New requirements emerged? -> Add to Active
+4. Decisions to log? -> Add to Key Decisions
+5. "What This Is" still accurate? -> Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check - still the right priority?
+3. Audit Out of Scope - reasons still valid?
+4. Update Context with current state

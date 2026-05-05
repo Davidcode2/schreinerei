@@ -1,36 +1,33 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.12
-milestone_name: Architecture Guardrails
-status: complete
-stopped_at: v1.12 milestone complete
-last_updated: "2026-05-04T15:00:00Z"
-last_activity: 2026-05-04
+milestone: v1.13
+milestone_name: Project Workflow Foundation
+status: planning
+last_updated: "2026-05-05T18:35:31.928Z"
+last_activity: 2026-05-05
 progress:
-  total_phases: 14
-  completed_phases: 14
-  total_plans: 30
-  completed_plans: 30
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-05-04)
+See: `.planning/PROJECT.md` (updated 2026-05-05)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Uberblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
-**Current focus:** Ready for next milestone planning, with current-vs-desired feature inventory now captured from the 2026-05 product note.
+**Current focus:** Defining milestone v1.13 around project workflow foundation, timeline completion, and low-friction project-linked execution context.
 
 ## Current Position
 
-Milestones: v1.9, v1.10, v1.11, v1.12 — COMPLETE
-Phase set: 30-43 shipped sequentially on this branch
-Status: Branch prepared for the next planning cycle
-Last activity: 2026-05-04
-
-Progress: [██████████] 100%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-05 — Milestone v1.13 started
 
 ## Performance Metrics
 
@@ -78,7 +75,7 @@ Progress: [██████████] 100%
 
 ### Pending Todos
 
-- Run `/gsd-new-milestone` to define the next milestone.
+- Define scoped requirements and roadmap for milestone v1.13.
 - Use `.planning/FEATURES.md` as the comparison baseline for shipped vs desired product scope.
 - Use `.planning/REQUIREMENTS.md` `Product Backlog from 2026-05 Note` section to slice the next milestone.
 
@@ -101,6 +98,6 @@ Progress: [██████████] 100%
 
 ## Session Continuity
 
-Last session: 2026-05-04
-Stopped at: v1.12 architecture guardrails shipped and verified
+Last session: 2026-05-05
+Stopped at: milestone v1.13 initialized and ready for scoped requirements
 Resume file: None

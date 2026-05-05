@@ -1,1 +1,0 @@
-- `frontend npm run build` currently fails on pre-existing TypeScript errors outside Plan 31-01 scope (for example `src/lib/offline/queue.ts`, `src/pages/sites/CreateNoteModal.tsx`, and several existing test files). Plan 31 execution should not attempt to fix these unrelated issues inline.
