@@ -36,6 +36,27 @@
 
 Deferred to future release.
 
+## v1.13 Requirements
+
+Scoped requirements for milestone `v1.13 Project Workflow Foundation`.
+
+### Project Model
+
+- [ ] **PROJ-10**: User works with one unified project model that can represent both external Baustellen and internal workshop work without needing a separate parallel entity.
+- [ ] **PROJ-11**: User can create and edit project planning context including location, date range, estimated duration, assignments context, and operational notes.
+- [ ] **PROJ-12**: Manager sees relevant projects on the dashboard regardless of status unless they explicitly apply a filter.
+
+### Project-Linked Execution
+
+- [ ] **PROJ-13**: User must link real material consumption to a project so the usage is attributable for later reporting and billing.
+- [ ] **PROJ-14**: User can book productive time against a project for both on-site work and workshop preparation.
+
+### Project Timeline
+
+- [ ] **PROJ-18**: User uses the project timeline as the canonical context channel for notes, images, documents, field observations, and related execution history.
+- [ ] **PROJ-19**: User can create one project timeline entry that combines note text with camera capture, uploaded photos, and uploaded documents from one unified flow.
+- [ ] **PROJ-20**: User sees consistent timestamps and attachment previews across all project timeline entries.
+
 ## Product Backlog from 2026-05 Note
 
 This section captures the expanded product vision from the long-form note and translates it into structured backlog requirements. These are not yet committed to a milestone and should be pulled into future milestone plans in coherent slices.
