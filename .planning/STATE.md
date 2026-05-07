@@ -4,14 +4,14 @@ milestone: v1.13
 milestone_name: Project Workflow Foundation
 status: completed
 stopped_at: Phase 44 complete and ready for Phase 45 planning
-last_updated: "2026-05-07T20:26:37.591Z"
-last_activity: 2026-05-07 -- Completed 45-01
+last_updated: "2026-05-07T20:34:17.524Z"
+last_activity: 2026-05-07 -- Completed 45-02
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
-  percent: 80
+  completed_plans: 5
+  percent: 100
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: `.planning/PROJECT.md` (updated 2026-05-05)
 ## Current Position
 
 Phase: 45. Unified Project Timeline
-Plan: 02
-Status: Phase 45 plan 01 complete, ready to execute plan 02
-Last activity: 2026-05-07 -- Completed 45-01
+Plan: —
+Status: Phase 45 complete, ready for next phase
+Last activity: 2026-05-07 -- Completed 45-02
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Last activity: 2026-05-07 -- Completed 45-01
 | 43. Mobile-First Guardrails | 1/1 | Complete |
 | 44. Project Model Foundation | 3/3 | Complete |
 | Phase 45 P01 | 126 | 2 tasks | 7 files |
+| Phase 45 P02 | 9 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,8 @@ Last activity: 2026-05-07 -- Completed 45-01
 - v1.12 codifies mobile-first delivery in `.planning/MOBILE-FIRST-CHECKLIST.md`.
 - [Phase 45]: Use one shared composer component for both note and camera entrypoints. — Mixed-media validation, preview cleanup, and upload ordering now live in one place.
 - [Phase 45]: Keep unified submissions on the existing attachment-backed note activity path. — This reuses the protected attachment model and avoids new photo-only timeline records.
+- [Phase 45]: Promote the timeline above secondary management cards on the detail page. — Workers now see the canonical project memory before planning and administrative panels.
+- [Phase 45]: Show both exact and relative timestamps on each timeline card. — The existing created_at field remains the single source of truth while adding more precise context.
 
 ### Pending Todos
 
@@ -103,6 +106,6 @@ Last activity: 2026-05-07 -- Completed 45-01
 
 ## Session Continuity
 
-Last session: 2026-05-07T20:25:28.320Z
+Last session: 2026-05-07T20:34:17.161Z
 Stopped at: Phase 44 complete and ready for Phase 45 planning
 Resume file: None

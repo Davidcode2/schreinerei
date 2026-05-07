@@ -53,9 +53,9 @@ Scoped requirements for milestone `v1.13 Project Workflow Foundation`.
 
 ### Project Timeline
 
-- [ ] **PROJ-18**: User uses the project timeline as the canonical context channel for notes, images, documents, field observations, and related execution history.
+- [x] **PROJ-18**: User uses the project timeline as the canonical context channel for notes, images, documents, field observations, and related execution history.
 - [x] **PROJ-19**: User can create one project timeline entry that combines note text with camera capture, uploaded photos, and uploaded documents from one unified flow.
-- [ ] **PROJ-20**: User sees consistent timestamps and attachment previews across all project timeline entries.
+- [x] **PROJ-20**: User sees consistent timestamps and attachment previews across all project timeline entries.
 
 ## Product Backlog from 2026-05 Note
 
@@ -220,9 +220,9 @@ Recommended near-term sequence based on current shipped state and dependency wei
 | VIEW-01 | Phase 31 | Complete |
 | PROJ-10 | Phase 44 | Complete |
 | PROJ-11 | Phase 44 | Complete |
-| PROJ-18 | Phase 45 | Pending |
+| PROJ-18 | Phase 45 | Complete |
 | PROJ-19 | Phase 45 | Complete |
-| PROJ-20 | Phase 45 | Pending |
+| PROJ-20 | Phase 45 | Complete |
 | PROJ-13 | Phase 46 | Pending |
 | PROJ-14 | Phase 46 | Pending |
 | PROJ-12 | Phase 47 | Pending |
