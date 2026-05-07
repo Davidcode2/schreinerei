@@ -177,3 +177,44 @@ cargo clippy -- -D warnings
 # Check compilation
 cargo check
 ```
+
+## Selective Checks And Hooks
+
+Use the selective runner to mirror CI without paying for unrelated checks:
+
+```bash
+# Fast staged checks, intended for pre-commit
+./scripts/ci-selective.sh --staged --fast
+
+# CI-equivalent checks for everything on your branch since it diverged from main
+./scripts/ci-selective.sh --branch
+
+# Force both backend and frontend checks
+./scripts/ci-selective.sh --all
+```
+
+The runner uses these scopes:
+
+- `frontend`: `frontend/**`, `dockerfile.frontend`, `nginx.conf`
+- `backend`: `src/**`, `migrations/**`, `Cargo.toml`, `Cargo.lock`, `dockerfile.backend`
+- `contract`: backend files that can change `frontend/src/types/generated.ts`
+- `shared`: workflow files and `.dockerignore`, which fan out to both backend and frontend checks
+
+That means frontend-only changes skip Rust checks locally and in GitHub Actions, while backend API or ts-rs changes still force the frontend build path.
+
+When Docker-related files change, the full runner also validates the affected image build locally:
+
+- `dockerfile.backend` -> backend image build
+- `dockerfile.frontend` or `nginx.conf` -> frontend image build
+- `.dockerignore` -> both image builds
+
+To install the versioned hooks for this worktree:
+
+```bash
+./scripts/install-git-hooks.sh
+```
+
+Installed hooks:
+
+- `pre-commit`: runs fast staged checks only
+- `pre-push`: runs CI-equivalent checks for the current branch range

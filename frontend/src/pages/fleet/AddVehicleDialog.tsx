@@ -18,6 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { StepContainer } from "@/components/ui/step-container"
+import { StepIndicator } from "@/components/ui/step-indicator"
 import { Car } from "lucide-react"
 import { toast } from "sonner"
 import { useCreateVehicle, useUpdateVehicle } from "@/lib/api/hooks"
@@ -58,6 +60,7 @@ export function AddVehicleDialog({
   const [description, setDescription] = useState(initialData?.description ?? "")
   const [status, setStatus] = useState<ResourceStatus>(initialData?.status ?? "available")
   const [qrCode, setQrCode] = useState(initialData?.qr_code ?? "")
+  const [currentStep, setCurrentStep] = useState(1)
 
   const createVehicle = useCreateVehicle()
   const updateVehicle = useUpdateVehicle()
@@ -71,6 +74,7 @@ export function AddVehicleDialog({
       setDescription(initialData.description ?? "")
       setStatus(initialData.status)
       setQrCode(initialData.qr_code ?? "")
+      setCurrentStep(1)
       return
     }
 
@@ -81,6 +85,7 @@ export function AddVehicleDialog({
     setDescription("")
     setStatus("available")
     setQrCode("")
+    setCurrentStep(1)
   }
 
   const handleOpenChange = (open: boolean) => {
@@ -91,6 +96,7 @@ export function AddVehicleDialog({
   }
 
   const isFormValid = name && vehicleType
+  const isStep1Valid = Boolean(name && vehicleType)
 
   const handleSubmit = () => {
     if (!isFormValid) return
@@ -157,7 +163,7 @@ export function AddVehicleDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
@@ -172,120 +178,174 @@ export function AddVehicleDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
-              placeholder="z.B. VW Transporter"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="h-10"
-            />
-          </div>
+        <StepIndicator
+          currentStep={currentStep}
+          totalSteps={2}
+          onStepClick={(step) => {
+            if (step === 1 || isStep1Valid) {
+              setCurrentStep(step)
+            }
+          }}
+        />
 
-          <div className="space-y-2">
-            <Label htmlFor="licensePlate">Kennzeichen</Label>
-            <Input
-              id="licensePlate"
-              placeholder="z.B. B-AB 1234"
-              value={licensePlate}
-              onChange={(e) => setLicensePlate(e.target.value)}
-              className="h-10"
-            />
-          </div>
+        <StepContainer
+          currentStep={currentStep}
+          onStepChange={(step) => {
+            if (step === 1 || isStep1Valid) {
+              setCurrentStep(step)
+            }
+          }}
+          totalSteps={2}
+          className="min-h-0 flex-1"
+        >
+          <div className="flex h-full flex-col overflow-y-auto py-4 pr-1">
+            {currentStep === 1 ? (
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Basisdaten</p>
+                  <p className="text-sm text-muted-foreground">
+                    Geben Sie die wichtigsten Fahrzeugdaten an.
+                  </p>
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="vehicleType">Fahrzeugtyp *</Label>
-            <Select
-              value={vehicleType}
-              onValueChange={(value) => setVehicleType(value as VehicleType)}
-            >
-              <SelectTrigger id="vehicleType" className="h-10">
-                <SelectValue placeholder="Fahrzeugtyp wählen" />
-              </SelectTrigger>
-              <SelectContent>
-                {VEHICLE_TYPE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
+                    placeholder="z.B. VW Transporter"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="location">Standort</Label>
-            <Input
-              id="location"
-              placeholder="z.B. Hof 1"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="h-10"
-            />
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="licensePlate">Kennzeichen</Label>
+                  <Input
+                    id="licensePlate"
+                    placeholder="z.B. B-AB 1234"
+                    value={licensePlate}
+                    onChange={(e) => setLicensePlate(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="qrCode">QR-Code</Label>
-            <Input
-              id="qrCode"
-              placeholder="z.B. fleet-van-01"
-              value={qrCode}
-              onChange={(e) => setQrCode(e.target.value)}
-              className="h-10"
-            />
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vehicleType">Fahrzeugtyp *</Label>
+                  <Select
+                    value={vehicleType}
+                    onValueChange={(value) => setVehicleType(value as VehicleType)}
+                  >
+                    <SelectTrigger id="vehicleType" className="h-10">
+                      <SelectValue placeholder="Fahrzeugtyp wählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VEHICLE_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Details</p>
+                  <p className="text-sm text-muted-foreground">
+                    Zusätzliche Angaben helfen bei Verwaltung und Zuordnung.
+                  </p>
+                </div>
 
-          {mode === "edit" && (
-            <div className="space-y-2">
-              <Label htmlFor="vehicleStatus">Status</Label>
-              <Select
-                value={status}
-                onValueChange={(value) => setStatus(value as ResourceStatus)}
-              >
-                <SelectTrigger id="vehicleStatus" className="h-10">
-                  <SelectValue placeholder="Status wählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {RESOURCE_STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+                <div className="space-y-2">
+                  <Label htmlFor="location">Standort</Label>
+                  <Input
+                    id="location"
+                    placeholder="z.B. Hof 1"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Beschreibung</Label>
-            <Textarea
-              id="description"
-              placeholder="z.B. Baujah 2020, 7 Sitze"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-            />
+                <div className="space-y-2">
+                  <Label htmlFor="qrCode">QR-Code</Label>
+                  <Input
+                    id="qrCode"
+                    placeholder="z.B. fleet-van-01"
+                    value={qrCode}
+                    onChange={(e) => setQrCode(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
+
+                {mode === "edit" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="vehicleStatus">Status</Label>
+                    <Select
+                      value={status}
+                      onValueChange={(value) => setStatus(value as ResourceStatus)}
+                    >
+                      <SelectTrigger id="vehicleStatus" className="h-10">
+                        <SelectValue placeholder="Status wählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {RESOURCE_STATUS_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Beschreibung</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="z.B. Baujahr 2020, 7 Sitze"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        </StepContainer>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)} className="shadow-sm">
-            Abbrechen
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!isFormValid || isPending}
-            className="shadow-sm"
-          >
-            {isPending
-              ? mode === "edit"
-                ? "Wird gespeichert..."
-                : "Wird erstellt..."
-              : mode === "edit"
-                ? "Speichern"
-                : "Erstellen"}
-          </Button>
+          {currentStep === 1 ? (
+            <>
+              <Button variant="outline" onClick={() => handleOpenChange(false)} className="shadow-sm">
+                Abbrechen
+              </Button>
+              <Button onClick={() => setCurrentStep(2)} disabled={!isStep1Valid} className="shadow-sm">
+                Weiter
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setCurrentStep(1)} className="shadow-sm">
+                Zurück
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={!isFormValid || isPending}
+                className="shadow-sm"
+              >
+                {isPending
+                  ? mode === "edit"
+                    ? "Wird gespeichert..."
+                    : "Wird erstellt..."
+                  : mode === "edit"
+                    ? "Speichern"
+                    : "Erstellen"}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

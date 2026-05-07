@@ -17,6 +17,16 @@
 - ✅ **v1.12 Architecture Guardrails** — Phases 41-43 (shipped 2026-05-04) — [Archive](milestones/v1.12-ROADMAP.md)
 - **v1.13 Project Workflow Foundation** — Phases 44-47 (planned)
 
+### v1.12 Mobile Modal Improvements (In Progress)
+
+**Milestone Goal:** Improve mobile UX by making tall modals usable on small screens through step-based navigation.
+
+- [ ] **Phase 41: Mobile Modal Improvements** — Split tall modals into steps with swipe navigation, larger close button, and dot indicators
+
+Plans:
+- [x] 41-01-PLAN.md — Infrastructure: close button fix, StepIndicator, StepContainer, useSwipeGesture
+- [x] 41-02-PLAN.md — Apply step-based layout to AddMaterialDialog
+
 ## Phases
 
 <details>

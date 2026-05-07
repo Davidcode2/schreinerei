@@ -79,7 +79,7 @@ export function WithdrawDialog({
   const oldestExpiryLabel = material.next_expiry_on ? formatExpiryDate(material.next_expiry_on) : null
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Material entnehmen</DialogTitle>
           <DialogDescription>
@@ -87,9 +87,9 @@ export function WithdrawDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="min-h-0 space-y-4 overflow-y-auto py-4 pr-1">
           {/* Current Stock */}
-          <div className="flex items-center justify-between p-3 bg-accent/50 rounded-lg">
+          <div className="flex items-center justify-between rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
             <div className="flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent">
                 <Package className="h-3.5 w-3.5 text-muted-foreground" />
@@ -102,7 +102,7 @@ export function WithdrawDialog({
           </div>
 
           {material.can_expire && (
-            <div className="space-y-3 rounded-lg border border-border/60 p-3 text-sm">
+            <div className="space-y-3 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm text-sm">
               {oldestExpiryLabel && (
                 <p>
                   Ältestes MHD: <span className="font-medium">{oldestExpiryLabel}</span>
@@ -124,7 +124,7 @@ export function WithdrawDialog({
               {material.expiry_batches.length > 0 && (
                 <div className="space-y-2">
                   <p className="font-medium">Erfasste MHD-Chargen</p>
-                  <div className="space-y-1">
+                  <div className="max-h-40 space-y-1 overflow-y-auto pr-1">
                     {material.expiry_batches.map((batch) => (
                       <div key={`${batch.expires_on}-${batch.quantity}`} className="flex justify-between">
                         <span>{formatExpiryDate(batch.expires_on)}</span>
@@ -138,7 +138,7 @@ export function WithdrawDialog({
           )}
 
           {canDispose && (
-          <label className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
+          <label className="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
             <input
               type="checkbox"
               checked={disposal}
@@ -150,7 +150,7 @@ export function WithdrawDialog({
           )}
 
           {/* Quantity Selector */}
-          <div className="space-y-2">
+          <div className="space-y-3 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
             <Label>Menge</Label>
             <div className="flex items-center gap-2">
               <Button
@@ -158,6 +158,7 @@ export function WithdrawDialog({
                 size="icon"
                 onClick={() => handleQuantityChange(quantity - 1)}
                 disabled={quantity <= 1}
+                className="h-11 w-11 shrink-0"
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -165,7 +166,7 @@ export function WithdrawDialog({
                 type="number"
                 value={quantity}
                 onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
-                className="text-center font-mono"
+                className="h-11 text-center font-mono tabular-nums"
                 min={1}
                 max={maxQuantity}
               />
@@ -174,6 +175,7 @@ export function WithdrawDialog({
                 size="icon"
                 onClick={() => handleQuantityChange(quantity + 1)}
                 disabled={quantity >= maxQuantity}
+                className="h-11 w-11 shrink-0"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -188,7 +190,7 @@ export function WithdrawDialog({
                     variant={quantity === amount ? "default" : "outline"}
                     size="sm"
                     onClick={() => setQuantity(amount)}
-                    className="min-w-[48px]"
+                    className="min-w-[48px] shadow-sm"
                   >
                     {amount}
                   </Button>
@@ -198,14 +200,14 @@ export function WithdrawDialog({
           </div>
 
           {!disposal && (
-            <div className="space-y-2">
-              <Label htmlFor="site">Baustelle (optional)</Label>
-              <select
-                id="site"
-                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={siteId}
-                onChange={(event) => setSiteId(event.target.value)}
-              >
+            <div className="space-y-2 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
+                <Label htmlFor="site">Baustelle (optional)</Label>
+                <select
+                  id="site"
+                  className="h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={siteId}
+                  onChange={(event) => setSiteId(event.target.value)}
+                >
                 <option value="">Keine Zuordnung</option>
                 {sites.map((site) => (
                   <option key={site.id} value={site.id}>
@@ -217,18 +219,19 @@ export function WithdrawDialog({
           )}
 
           {/* Notes */}
-          <div className="space-y-2">
+          <div className="space-y-2 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
             <Label htmlFor="notes">Notiz (optional)</Label>
             <Input
               id="notes"
               placeholder="z.B. Baustelle Müller, Auftrag #123"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              className="h-11"
             />
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="border-t border-border/70 pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Abbrechen
           </Button>

@@ -33,18 +33,32 @@ describe('AddToolDialog', () => {
   it('has submit button disabled when name is empty', () => {
     render(<AddToolDialog open={true} onOpenChange={mockOnOpenChange} />);
 
-    const submitButton = screen.getByRole('button', { name: /erstellen/i });
-    expect(submitButton).toBeDisabled();
+    const weiterButton = screen.getByRole('button', { name: /weiter/i });
+    expect(weiterButton).toBeDisabled();
   });
 
-  it('enables submit button when name is filled', async () => {
+  it('enables Weiter when name is filled', async () => {
     const user = userEvent.setup();
     render(<AddToolDialog open={true} onOpenChange={mockOnOpenChange} />);
 
     await user.type(screen.getByLabelText(/name/i), 'Bohrhammer');
 
-    const submitButton = screen.getByRole('button', { name: /erstellen/i });
-    expect(submitButton).toBeEnabled();
+    const weiterButton = screen.getByRole('button', { name: /weiter/i });
+    expect(weiterButton).toBeEnabled();
+  });
+
+  it('shows step navigation and opens detail step', async () => {
+    const user = userEvent.setup();
+    render(<AddToolDialog open={true} onOpenChange={mockOnOpenChange} />);
+
+    expect(screen.getByRole('tab', { name: /schritt 1 von 2/i })).toHaveAttribute('aria-selected', 'true');
+
+    await user.type(screen.getByLabelText(/name/i), 'Bohrhammer');
+    await user.click(screen.getByRole('button', { name: /weiter/i }));
+
+    expect(screen.getByRole('tab', { name: /schritt 2 von 2/i })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByLabelText(/standort/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /zurück/i })).toBeInTheDocument();
   });
 
   it('submits form with correct payload', async () => {
@@ -63,6 +77,7 @@ describe('AddToolDialog', () => {
 
     await user.type(screen.getByLabelText(/name/i), 'Bohrhammer');
     await user.type(screen.getByLabelText(/kategorie/i), 'Elektrowerkzeug');
+    await user.click(screen.getByRole('button', { name: /weiter/i }));
     await user.type(screen.getByLabelText(/standort/i), 'Werkstatt');
     await user.type(screen.getByLabelText(/beschreibung/i), 'Bosch GBH 2-21');
 
@@ -83,6 +98,7 @@ describe('AddToolDialog', () => {
     render(<AddToolDialog open={true} onOpenChange={mockOnOpenChange} />);
 
     await user.type(screen.getByLabelText(/name/i), 'Bohrhammer');
+    await user.click(screen.getByRole('button', { name: /weiter/i }));
     await user.click(screen.getByRole('button', { name: /erstellen/i }));
 
     await waitFor(() => {
@@ -95,6 +111,7 @@ describe('AddToolDialog', () => {
     render(<AddToolDialog open={true} onOpenChange={mockOnOpenChange} />);
 
     await user.type(screen.getByLabelText(/name/i), 'Bohrhammer');
+    await user.click(screen.getByRole('button', { name: /weiter/i }));
     await user.click(screen.getByRole('button', { name: /erstellen/i }));
 
     await waitFor(() => {
