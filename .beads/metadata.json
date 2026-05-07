@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "schreinerei",
+  "project_id": "886b8668-3828-4f2f-90d6-4d1da3a81bfe"
+}
