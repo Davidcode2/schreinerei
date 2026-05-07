@@ -159,6 +159,42 @@ export default function SiteDetailPage() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader className="space-y-3 pb-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1.5">
+              <CardTitle className="text-base font-semibold">Projekt-Timeline</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Der zentrale Ort für Notizen, Fotos und Dokumente rund um dieses Projekt.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 h-9"
+                onClick={() => setShowCameraFlow(true)}
+              >
+                <Camera className="h-4 w-4" />
+                <span>Kamera</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 h-9"
+                onClick={() => setShowNoteModal(true)}
+              >
+                <FileText className="h-4 w-4" />
+                <span>Eintrag</span>
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ActivityFeed activities={activities || []} siteId={site.id} />
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
         <Card>
           <CardHeader className="pb-3">
@@ -267,34 +303,6 @@ export default function SiteDetailPage() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base font-semibold">Aktivitäten</CardTitle>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 h-9"
-                onClick={() => setShowCameraFlow(true)}
-              >
-                <Camera className="h-4 w-4" />
-                <span className="hidden sm:inline">Foto</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 h-9"
-                onClick={() => setShowNoteModal(true)}
-              >
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Notiz</span>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ActivityFeed activities={activities || []} siteId={site.id} />
-          </CardContent>
-        </Card>
       </div>
 
       <TimeEntryDialog
