@@ -92,7 +92,7 @@ describe("ActivityFeed material tab", () => {
     } as never)
 
     render(<ActivityFeed activities={[]} siteId="site-1" />)
-    await userEvent.click(screen.getByRole("tab", { name: "Material" }))
+    await userEvent.click(screen.getByRole("tab", { name: "Materialverlauf" }))
 
     expect(screen.getByRole("link", { name: /material buchen/i })).toHaveAttribute(
       "href",
@@ -118,6 +118,50 @@ describe("ActivityFeed material tab", () => {
 describe("ActivityFeed document entries", () => {
   beforeEach(() => {
     vi.mocked(useSiteMaterialHistory).mockReturnValue(defaultMaterialHistoryMock)
+  })
+
+  it("shows the same absolute and relative timestamp treatment for note, photo, and status entries", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-05-01T12:00:00.000Z"))
+    getBlobMock.mockResolvedValue(new Blob(["image-bytes"], { type: "image/jpeg" }))
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:legacy-photo")
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined)
+
+    try {
+      render(
+        <ActivityFeed
+          siteId="site-1"
+          activities={[
+            {
+              ...baseActivity,
+              id: "activity-note",
+              content: "Montage abgeschlossen",
+            },
+            {
+              ...baseActivity,
+              id: "activity-photo",
+              activity_type: "photo",
+              photo_url: "/api/v1/attachments/legacy-photo-id",
+              content: null,
+            },
+            {
+              ...baseActivity,
+              id: "activity-status",
+              activity_type: "status_change",
+              content: '{"old_status":"active","new_status":"completed"}',
+            },
+          ]}
+        />
+      )
+
+      const absoluteTimestamps = screen.getAllByText("01.05.2026, 12:00")
+      const relativeTimestamps = screen.getAllByText("vor 2 Std.")
+
+      expect(absoluteTimestamps).toHaveLength(3)
+      expect(relativeTimestamps).toHaveLength(3)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it("renders image attachments as clickable viewer links", async () => {
@@ -390,5 +434,16 @@ describe("ActivityFeed document entries", () => {
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Löschen fehlgeschlagen")
     })
+  })
+
+  it("uses project timeline labels for the tab and empty state while keeping material history available", () => {
+    render(<ActivityFeed siteId="site-1" activities={[]} />)
+
+    expect(screen.getByRole("tab", { name: "Projekt-Timeline" })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Materialverlauf" })).toBeInTheDocument()
+    expect(screen.getByText(/Noch keine Einträge in der Projekt-Timeline/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Notizen, Fotos oder Dokumente hoch/i)
+    ).toBeInTheDocument()
   })
 })
