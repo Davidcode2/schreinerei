@@ -54,6 +54,16 @@ function formatRelativeTime(dateString: string): string {
 	});
 }
 
+function formatExactTimestamp(dateString: string): string {
+	return new Intl.DateTimeFormat("de-DE", {
+		day: "2-digit",
+		month: "2-digit",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	}).format(new Date(dateString));
+}
+
 function isProtectedAttachmentPath(url: string): boolean {
 	return url.startsWith("/api/v1/attachments/");
 }
@@ -217,6 +227,19 @@ function ViewerTileLink({
 	);
 }
 
+function ActivityTimestamp({ createdAt }: { createdAt: string }) {
+	return (
+		<div className="text-right">
+			<p className="whitespace-nowrap text-xs font-medium text-foreground/80">
+				{formatExactTimestamp(createdAt)}
+			</p>
+			<p className="whitespace-nowrap text-[11px] text-muted-foreground">
+				{formatRelativeTime(createdAt)}
+			</p>
+		</div>
+	);
+}
+
 function buildLegacyPhotoAttachment(
 	activity: Activity,
 ): ActivityAttachment | null {
@@ -287,9 +310,7 @@ function ActivityCard({
 							{getActivityHeading(activity)}
 						</p>
 						<div className="flex items-center gap-2">
-							<span className="whitespace-nowrap text-xs text-muted-foreground">
-								{formatRelativeTime(activity.created_at)}
-							</span>
+							<ActivityTimestamp createdAt={activity.created_at} />
 							{activity.can_delete ? (
 								<Button
 									aria-label={`Eintrag löschen: ${activity.id}`}
@@ -389,8 +410,8 @@ export function ActivityFeed({
 		<>
 			<Tabs value={activeTab} onValueChange={setActiveTab}>
 				<TabsList>
-					<TabsTrigger value="notes">Notizen/Dokumente</TabsTrigger>
-					<TabsTrigger value="materials">Material</TabsTrigger>
+					<TabsTrigger value="notes">Projekt-Timeline</TabsTrigger>
+					<TabsTrigger value="materials">Materialverlauf</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="notes" className="mt-4 space-y-4">
@@ -400,11 +421,11 @@ export function ActivityFeed({
 								<FileText className="h-6 w-6 text-muted-foreground" />
 							</div>
 							<p className="text-sm text-muted-foreground">
-								Noch keine Dokumente oder Notizen
+								Noch keine Einträge in der Projekt-Timeline
 							</p>
 							<p className="mt-1 text-xs text-muted-foreground">
-								Fügen Sie eine Notiz hinzu oder laden Sie Bilder/PDFs hoch, um
-								den Verlauf dieser Baustelle zu starten.
+								Laden Sie Notizen, Fotos oder Dokumente hoch, um die gemeinsame
+								Projekt-Erinnerung zu starten.
 							</p>
 						</div>
 					) : (
@@ -418,7 +439,7 @@ export function ActivityFeed({
 							))}
 							{noteActivities.length > (maxItems || 0) && maxItems ? (
 								<p className="text-center text-xs text-muted-foreground">
-									+{noteActivities.length - maxItems} weitere Aktivitäten
+									+{noteActivities.length - maxItems} weitere Timeline-Einträge
 								</p>
 							) : null}
 						</>
