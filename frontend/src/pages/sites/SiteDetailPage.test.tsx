@@ -41,7 +41,7 @@ describe('SiteDetailPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Werkstattprojekt')).toBeInTheDocument()
-      expect(screen.getByText('Projekt-Timeline')).toBeInTheDocument()
+      expect(screen.getAllByText('Projekt-Timeline').length).toBeGreaterThan(0)
       expect(
         screen.getByText(/Der zentrale Ort für Notizen, Fotos und Dokumente/i)
       ).toBeInTheDocument()
@@ -67,8 +67,9 @@ describe('SiteDetailPage', () => {
 
     const user = userEvent.setup()
 
-    const timelineCard = await screen.findByText('Projekt-Timeline')
-    const timelineSection = timelineCard.closest('[class*="rounded"]') ?? document.body
+    const helperText = await screen.findByText(/Der zentrale Ort für Notizen, Fotos und Dokumente/i)
+    const timelineSection =
+      (helperText.closest('[class*="rounded"]') as HTMLElement | null) ?? document.body
 
     expect(within(timelineSection).getByRole('button', { name: /kamera/i })).toBeInTheDocument()
 
