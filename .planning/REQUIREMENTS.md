@@ -100,9 +100,9 @@ This section captures the expanded product vision from the long-form note and tr
 - **PROJ-12**: Projects appear on dashboards regardless of `planned` or `active` state unless a view explicitly filters them.
 - **PROJ-13**: Every material consumption booking is linked to a project to support billing and analytics.
 - **PROJ-14**: Workers can book time to a project for both on-site work and workshop preparation / CNC work.
-- **PROJ-15**: Managers can assign workers and vehicles to projects and see the planning context in calendar form.
-- **PROJ-16**: Projects support estimated duration, budget, optional quote attachment, and budget-consumption tracking.
-- **PROJ-17**: Completed project data can be used to generate invoices and downstream finance artifacts.
+- [x] **PROJ-15**: Managers can assign workers and vehicles to projects and see the planning context in calendar form.
+- [x] **PROJ-16**: Projects support estimated duration, budget, optional quote attachment, and budget-consumption tracking.
+- [x] **PROJ-17**: Completed project data can be used to generate invoices and downstream finance artifacts.
 - **PROJ-18**: A project feed acts as the canonical context channel for notes, images, documents, field observations, and follow-up work.
 - **PROJ-19**: The document action on a project / Baustelle supports taking a photo, uploading one or more photos, uploading one or more documents, and attaching a text note in one entry flow.
 - **PROJ-20**: Feed entries show creation timestamp and previews for attached images and documents.
@@ -124,9 +124,9 @@ This section captures the expanded product vision from the long-form note and tr
 
 ### Reporting and Search
 
-- **RPT-10**: Managers can filter past projects by customer, period, type, worker, cost, and duration.
+- [x] **RPT-10**: Managers can filter past projects by customer, period, type, worker, cost, and duration.
 - **RPT-11**: The system provides dashboards for open/completed projects, material consumption, labor time, and related operational KPIs.
-- **RPT-12**: The system supports consumption statistics per project and time statistics per project.
+- [x] **RPT-12**: The system supports consumption statistics per project and time statistics per project.
 - **RPT-13**: AI-assisted search can help users find relevant projects, materials, documents, or context faster.
 
 ### Manufacturing, Measurement, and CAD/CNC Glue
@@ -153,7 +153,7 @@ This section captures the expanded product vision from the long-form note and tr
 
 ### Billing, Compliance, and Localization
 
-- **FIN-10**: Projects can generate invoice-ready data, including PDF invoice generation.
+- [x] **FIN-10**: Projects can generate invoice-ready data, including PDF invoice generation.
 - **FIN-11**: The product roadmap must include German e-invoicing readiness.
 - **FIN-12**: DATEV-compatible export or integration is a target capability for finance workflows.
 - **LOC-10**: The UI architecture supports multilingual operation.
@@ -226,6 +226,12 @@ Recommended near-term sequence based on current shipped state and dependency wei
 | PROJ-13 | Phase 46 | Complete |
 | PROJ-14 | Phase 46 | Complete |
 | PROJ-12 | Phase 47 | Complete |
+| PROJ-15 | Phase 52 | Complete |
+| PROJ-16 | Phase 49 | Complete |
+| PROJ-17 | Phase 50 | Complete |
+| RPT-10 | Phase 51 | Complete |
+| RPT-12 | Phase 48 | Complete |
+| FIN-10 | Phase 50 | Complete |
 
 **Coverage:**
 - v1.9 requirements: 12 total

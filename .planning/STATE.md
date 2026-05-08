@@ -5,7 +5,7 @@ milestone_name: Project Costing, Planning & Billing Basis
 status: ready
 stopped_at: Milestone v1.14 complete and next seed ready for activation
 last_updated: "2026-05-08T15:30:00Z"
-last_activity: 2026-05-08 -- Completed Phase 51
+last_activity: 2026-05-08 -- Completed Phase 52
 progress:
   total_phases: 5
   completed_phases: 5
@@ -21,14 +21,14 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-05-05)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Uberblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
-**Current focus:** Milestone v1.14 is complete. The next step is choosing the next captured milestone seed to activate.
+**Current focus:** Milestone v1.14 is complete. The next step is choosing the next captured milestone seed to activate, with `RPT-11` intentionally deferred into its own future stub.
 
 ## Current Position
 
 Phase: —
 Plan: —
 Status: v1.14 complete, ready for next milestone activation
-Last activity: 2026-05-08 -- Completed Phase 51
+Last activity: 2026-05-08 -- Completed Phase 52
 
 ## Performance Metrics
 
@@ -94,6 +94,7 @@ Last activity: 2026-05-08 -- Completed Phase 51
 - [Phase 50]: Export structured JSON first. — No PDF generation, pricing engine, or tax logic should be introduced in this phase.
 - [Phase 51]: Keep historical reporting on the projects surface. — Use read-only filtered report rows instead of broadening the dashboard into a manager KPI suite.
 - [Phase 52]: Reuse the fleet calendar with a `site_id` filter. — Project planning stays on the project detail page rather than becoming a second planner.
+- [Milestone v1.14]: Keep `RPT-11` out of scope for this shipped slice. — The broader manager dashboard split is captured separately as a future stub.
 
 ### Pending Todos
 

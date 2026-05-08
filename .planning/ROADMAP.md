@@ -16,7 +16,7 @@
 - ✅ **v1.11 Fleet Calendar on Fleet Page** — Phases 38-40 (shipped 2026-05-01) — [Archive](milestones/v1.11-ROADMAP.md)
 - ✅ **v1.12 Architecture Guardrails** — Phases 41-43 (shipped 2026-05-04) — [Archive](milestones/v1.12-ROADMAP.md)
 - ✅ **v1.13 Project Workflow Foundation** — Phases 44-47 (shipped 2026-05-07)
-- **v1.14 Project Costing, Planning & Billing Basis** — Phases 48-52 (planned)
+- ✅ **v1.14 Project Costing, Planning & Billing Basis** — Phases 48-52 (shipped 2026-05-08)
 
 ### v1.12 Mobile Modal Improvements (In Progress)
 
@@ -187,11 +187,11 @@ Success criteria:
 
 **Milestone Goal:** Turn disciplined project-linked time and material capture into reusable project aggregates, billing metadata, invoice-ready summaries, project planning views, and historical reporting.
 
-- [ ] **Phase 48: Project Costing Aggregates** — Add canonical per-project labor and material aggregates on project detail
-- [ ] **Phase 49: Project Budget & Billing Metadata** — Add budget and billing metadata on the project and show budget-vs-actual
-- [ ] **Phase 50: Invoice-Ready Project Summary** — Add structured invoice-ready summaries sourced from project aggregates and billing metadata
-- [ ] **Phase 51: Historical Project Reporting** — Add read-only reporting filters for managers over historical projects
-- [ ] **Phase 52: Project Planning View** — Show workers, reservations, and project timing together from a project-centric planning surface
+- [x] **Phase 48: Project Costing Aggregates** — Add canonical per-project labor and material aggregates on project detail
+- [x] **Phase 49: Project Budget & Billing Metadata** — Add budget and billing metadata on the project and show budget-vs-actual
+- [x] **Phase 50: Invoice-Ready Project Summary** — Add structured invoice-ready summaries sourced from project aggregates and billing metadata
+- [x] **Phase 51: Historical Project Reporting** — Add read-only reporting filters for managers over historical projects
+- [x] **Phase 52: Project Planning View** — Show workers, reservations, and project timing together from a project-centric planning surface
 
 ---
 
