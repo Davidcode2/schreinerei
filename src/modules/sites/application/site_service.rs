@@ -4,9 +4,10 @@ use crate::common::types::{ActivityId, Role, SiteId, TimeEntryId, UserId};
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::sites::domain::{
-    Activity, ActivityAttachmentMetadata, AssignUser, CreateActivity, CreateSite, CreateTimeEntry,
-    Site, SiteActivityAttachment, SiteCreatedPayload, SiteStatusChangedPayload, TimeEntry,
-    TimeEntryCreatedPayload, UpdateSite, UpdateTimeEntry, UserAssignedToSitePayload,
+    work_type_requires_project_link, Activity, ActivityAttachmentMetadata, AssignUser,
+    CreateActivity, CreateSite, CreateTimeEntry, Site, SiteActivityAttachment, SiteCreatedPayload,
+    SiteStatusChangedPayload, TimeEntry, TimeEntryCreatedPayload, UpdateSite, UpdateTimeEntry,
+    UserAssignedToSitePayload,
 };
 use crate::modules::sites::infrastructure::site_repository::{DashboardSite, SiteRepository};
 use sqlx::PgPool;
@@ -160,6 +161,29 @@ impl SiteService {
             )
             .await?;
         Ok(user.id)
+    }
+
+    fn validate_time_entry_project_link(
+        work_type: crate::common::types::WorkType,
+        site_id: Option<SiteId>,
+    ) -> Result<(), AppError> {
+        if work_type_requires_project_link(work_type) && site_id.is_none() {
+            return Err(AppError::Validation(
+                "Project link is required for productive work".to_string(),
+            ));
+        }
+
+        Ok(())
+    }
+
+    fn resolve_updated_time_entry_state(
+        existing: &TimeEntry,
+        update: &UpdateTimeEntry,
+    ) -> (crate::common::types::WorkType, Option<SiteId>) {
+        (
+            update.work_type.unwrap_or(existing.work_type),
+            update.site_id.unwrap_or(existing.site_id),
+        )
     }
 
     // === Site operations ===
@@ -366,6 +390,7 @@ impl SiteService {
         ctx: &TenantContext,
     ) -> Result<TimeEntry, AppError> {
         create.validate()?;
+        Self::validate_time_entry_project_link(create.work_type, create.site_id)?;
 
         // If site_id is provided, verify site exists
         if let Some(site_id) = create.site_id {
@@ -455,8 +480,10 @@ impl SiteService {
             ));
         }
 
-        // If site_id is being set (not None), verify site exists
-        if let Some(Some(site_id)) = update.site_id {
+        let (work_type, site_id) = Self::resolve_updated_time_entry_state(&existing, &update);
+        Self::validate_time_entry_project_link(work_type, site_id)?;
+
+        if let Some(site_id) = site_id {
             let _site = self.get_site(site_id, ctx).await?;
         }
 
@@ -691,10 +718,51 @@ impl SiteService {
 #[cfg(test)]
 mod tests {
     use super::SiteService;
-    use crate::common::types::{ActivityId, SiteId, TenantId, UserId};
-    use crate::modules::sites::domain::{Activity, ActivityType};
+    use crate::common::types::{ActivityId, SiteId, TenantId, TimeEntryId, UserId, WorkType};
+    use crate::modules::sites::domain::{Activity, ActivityType, TimeEntry, UpdateTimeEntry};
     use chrono::Utc;
     use image::GenericImageView;
+
+    fn existing_time_entry(work_type: WorkType, site_id: Option<SiteId>) -> TimeEntry {
+        TimeEntry {
+            id: TimeEntryId::new(),
+            tenant_id: TenantId::new(),
+            site_id,
+            user_id: UserId::new(),
+            work_type,
+            hours: 8.0,
+            work_date: chrono::Local::now().date_naive(),
+            notes: None,
+            created_at: Utc::now(),
+        }
+    }
+
+    #[test]
+    fn validate_time_entry_project_link_requires_project_for_productive_work() {
+        let error = SiteService::validate_time_entry_project_link(WorkType::Workshop, None)
+            .expect_err("productive workshop time should require a project");
+
+        assert_eq!(
+            error.to_string(),
+            "Validation error: Project link is required for productive work"
+        );
+    }
+
+    #[test]
+    fn resolve_updated_time_entry_state_can_clear_project_for_overhead_work() {
+        let existing = existing_time_entry(WorkType::Site, Some(SiteId::new()));
+        let update = UpdateTimeEntry {
+            work_type: Some(WorkType::Travel),
+            site_id: Some(None),
+            ..UpdateTimeEntry::default()
+        };
+
+        let (work_type, site_id) =
+            SiteService::resolve_updated_time_entry_state(&existing, &update);
+
+        assert_eq!(work_type, WorkType::Travel);
+        assert_eq!(site_id, None);
+    }
 
     #[test]
     fn activity_response_can_delete_for_owned_note_and_photo_only() {

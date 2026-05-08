@@ -86,15 +86,22 @@ pub struct WithdrawMaterial {
     pub material_id: MaterialId,
     pub quantity: i32,
     pub notes: Option<String>,
-    pub site_id: Option<SiteId>, // Optional link to Baustelle
+    pub site_id: Option<SiteId>,
     pub disposal: bool,
 }
 
 impl WithdrawMaterial {
+    pub fn requires_project_link(&self) -> bool {
+        !self.disposal
+    }
+
     /// Validate the withdraw command
     pub fn validate(&self) -> Result<(), String> {
         if self.quantity <= 0 {
             return Err("Withdrawal quantity must be positive".to_string());
+        }
+        if self.requires_project_link() && self.site_id.is_none() {
+            return Err("Project link is required for material consumption".to_string());
         }
         Ok(())
     }
@@ -305,7 +312,7 @@ mod tests {
             material_id: MaterialId::new(),
             quantity: 1,
             notes: None,
-            site_id: None,
+            site_id: Some(SiteId::new()),
             disposal: false,
         };
         assert!(cmd.validate().is_ok());
@@ -339,6 +346,35 @@ mod tests {
             cmd.validate(),
             Err("Withdrawal quantity must be positive".to_string())
         );
+    }
+
+    #[test]
+    fn withdraw_material_validate_requires_project_link_for_real_consumption() {
+        let cmd = WithdrawMaterial {
+            material_id: MaterialId::new(),
+            quantity: 1,
+            notes: None,
+            site_id: None,
+            disposal: false,
+        };
+
+        assert_eq!(
+            cmd.validate(),
+            Err("Project link is required for material consumption".to_string())
+        );
+    }
+
+    #[test]
+    fn withdraw_material_validate_allows_missing_project_for_disposal() {
+        let cmd = WithdrawMaterial {
+            material_id: MaterialId::new(),
+            quantity: 1,
+            notes: None,
+            site_id: None,
+            disposal: true,
+        };
+
+        assert!(cmd.validate().is_ok());
     }
 
     #[test]

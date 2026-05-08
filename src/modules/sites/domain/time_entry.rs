@@ -8,7 +8,7 @@ use crate::common::types::{SiteId, TenantId, TimeEntryId, UserId, WorkType};
 pub struct TimeEntry {
     pub id: TimeEntryId,
     pub tenant_id: TenantId,
-    pub site_id: Option<SiteId>, // NULL for workshop work
+    pub site_id: Option<SiteId>,
     pub user_id: UserId,
     pub work_type: WorkType,
     pub hours: f64,
@@ -50,6 +50,10 @@ impl CreateTimeEntry {
         }
         Ok(())
     }
+}
+
+pub fn work_type_requires_project_link(work_type: WorkType) -> bool {
+    matches!(work_type, WorkType::Site | WorkType::Workshop)
 }
 
 /// Command to update a time entry (partial update)
@@ -188,5 +192,17 @@ mod tests {
             cmd.validate(),
             Err("Work date cannot be in the future".to_string())
         );
+    }
+
+    #[test]
+    fn work_type_requires_project_link_for_productive_work() {
+        assert!(work_type_requires_project_link(WorkType::Site));
+        assert!(work_type_requires_project_link(WorkType::Workshop));
+    }
+
+    #[test]
+    fn work_type_does_not_require_project_link_for_overhead_work() {
+        assert!(!work_type_requires_project_link(WorkType::Travel));
+        assert!(!work_type_requires_project_link(WorkType::Other));
     }
 }

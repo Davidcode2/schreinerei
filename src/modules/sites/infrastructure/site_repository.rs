@@ -452,11 +452,8 @@ impl SiteRepository {
         id: TimeEntryId,
         update: &UpdateTimeEntry,
     ) -> Result<TimeEntry, AppError> {
-        // Build dynamic update query based on which fields are provided
-        // For notes: we need to handle Option<Option<String>> where:
-        // - None = don't update notes field
-        // - Some(None) = set notes to null
-        // - Some(Some(value)) = set notes to value
+        let should_update_site_id = update.site_id.is_some();
+        let site_id_value = update.site_id.flatten().map(|site_id| site_id.0);
         let notes_update = update.notes.clone();
         let should_update_notes = notes_update.is_some();
         let notes_value = notes_update.flatten();
@@ -465,24 +462,28 @@ impl SiteRepository {
             r#"
             UPDATE time_entries
             SET 
-                site_id = COALESCE($1, site_id),
-                work_type = COALESCE($2, work_type),
-                hours = COALESCE($3, hours),
-                work_date = COALESCE($4, work_date),
+                site_id = CASE
+                    WHEN $1::boolean THEN $2
+                    ELSE site_id
+                END,
+                work_type = COALESCE($3, work_type),
+                hours = COALESCE($4, hours),
+                work_date = COALESCE($5, work_date),
                 notes = CASE 
-                    WHEN $5::boolean THEN $6 
+                    WHEN $6::boolean THEN $7 
                     ELSE notes 
                 END
-            WHERE id = $7 AND tenant_id = $8
+            WHERE id = $8 AND tenant_id = $9
             RETURNING id, tenant_id, site_id, user_id, work_type, hours, work_date, notes, created_at
             "#
         )
-        .bind(update.site_id.as_ref().and_then(|opt| opt.as_ref().map(|s| s.0)))  // Flatten Option<Option<SiteId>> to Option<Uuid>
+        .bind(should_update_site_id)
+        .bind(site_id_value)
         .bind(update.work_type.as_ref().map(|wt| wt.as_str()))
         .bind(update.hours)
         .bind(update.work_date)
-        .bind(should_update_notes)  // Flag to indicate if notes should be updated
-        .bind(notes_value)  // The actual notes value (None = null, Some(value) = value)
+        .bind(should_update_notes)
+        .bind(notes_value)
         .bind(id.0)
         .bind(tenant_id.0)
         .fetch_optional(&self.pool)
@@ -876,12 +877,15 @@ impl SiteRepository {
             FROM sites s
             LEFT JOIN site_assignments sa ON s.id = sa.site_id AND s.tenant_id = sa.tenant_id
             LEFT JOIN time_entries te ON s.id = te.site_id AND s.tenant_id = te.tenant_id
-            WHERE s.tenant_id = $1 AND s.status IN ('planned', 'active')
+            WHERE s.tenant_id = $1 AND s.deleted_at IS NULL
             GROUP BY s.id
             ORDER BY 
                 CASE s.status 
                     WHEN 'active' THEN 1 
                     WHEN 'planned' THEN 2 
+                    WHEN 'completed' THEN 3
+                    WHEN 'archived' THEN 4
+                    ELSE 5
                 END,
                 s.start_date ASC NULLS LAST
             "#,

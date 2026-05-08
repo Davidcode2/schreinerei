@@ -49,6 +49,8 @@ export function WithdrawDialog({
   const [disposal, setDisposal] = useState(false)
 
   const maxQuantity = disposal ? Math.max(1, material.expired_quantity) : material.quantity
+  const requiresProjectLink = !disposal
+  const canSubmit = quantity > 0 && (!requiresProjectLink || Boolean(siteId))
 
   const handleQuantityChange = (value: number) => {
     const newQuantity = Math.max(1, Math.min(value, maxQuantity))
@@ -56,6 +58,10 @@ export function WithdrawDialog({
   }
 
   const handleSubmit = () => {
+    if (!canSubmit) {
+      return
+    }
+
     onConfirm(quantity, notes || undefined, disposal ? null : siteId || null, disposal)
     setQuantity(1)
     setNotes("")
@@ -201,20 +207,23 @@ export function WithdrawDialog({
 
           {!disposal && (
             <div className="space-y-2 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
-                <Label htmlFor="site">Baustelle (optional)</Label>
+                <Label htmlFor="site">Projekt</Label>
                 <select
                   id="site"
                   className="h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={siteId}
                   onChange={(event) => setSiteId(event.target.value)}
                 >
-                <option value="">Keine Zuordnung</option>
+                <option value="">Projekt auswählen</option>
                 {sites.map((site) => (
                   <option key={site.id} value={site.id}>
                     {site.name}
                   </option>
                 ))}
               </select>
+              <p className="text-xs text-muted-foreground">
+                Reale Materialentnahmen werden immer einem Projekt zugeordnet.
+              </p>
             </div>
           )}
 
@@ -235,7 +244,7 @@ export function WithdrawDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Abbrechen
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading} className="gap-2 shadow-sm active:scale-[0.97] transition-transform">
+          <Button onClick={handleSubmit} disabled={isLoading || !canSubmit} className="gap-2 shadow-sm active:scale-[0.97] transition-transform">
             {isLoading
               ? disposal
                 ? "Wird entsorgt..."

@@ -221,6 +221,50 @@ describe("InventoryDetailPage interactions", () => {
     expect(await screen.findByText("3 Stück eingelagert")).toBeInTheDocument()
   })
 
+  it("defaults withdrawals to the active project and sends the linked project id", async () => {
+    const user = userEvent.setup()
+    let withdrawPayload: unknown = null
+
+    server.use(
+      http.get(apiPath("/preferences"), () =>
+        HttpResponse.json({ active_site_id: "site-9" })
+      ),
+      http.get(apiPath("/sites"), () =>
+        HttpResponse.json([
+          {
+            id: "site-9",
+            name: "Werkstattauftrag",
+            project_type: "internal_workshop",
+          },
+        ])
+      ),
+      http.post(apiPath("/inventory/materials/mat-123/withdraw"), async ({ request }) => {
+        withdrawPayload = await request.json()
+        return HttpResponse.json({ ...materialResponse, quantity: 47 })
+      })
+    )
+
+    render(<InventoryDetailPage />)
+
+    await user.click(await screen.findByRole("button", { name: /material entnehmen/i }))
+
+    expect(
+      await screen.findByText("Reale Materialentnahmen werden immer einem Projekt zugeordnet.")
+    ).toBeInTheDocument()
+    expect(screen.getByRole("combobox")).toHaveValue("site-9")
+
+    await user.click(screen.getByRole("button", { name: /1 Stück entnehmen/i }))
+
+    await waitFor(() => {
+      expect(withdrawPayload).toEqual({
+        quantity: 1,
+        notes: null,
+        site_id: "site-9",
+        disposal: false,
+      })
+    })
+  })
+
   it("submits edit changes and translates target stock into an adjust delta", async () => {
     const user = userEvent.setup()
     let updatePayload: unknown = null

@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Package, ArrowRight, Building2, Clock, Calendar } from "lucide-react"
+import { useState } from "react"
 import { Link } from "react-router-dom"
 import { StatusBadge, LoadingSpinner, ErrorState, EmptyState, PageHeader } from "@/components/shared"
 import {
@@ -17,20 +18,32 @@ import type { Material } from "@/types/inventory"
 import type { TimeEntry } from "@/types/sites"
 import { toast } from "sonner"
 
+const defaultStatuses = ["active", "planned", "completed"]
+
 export default function DashboardPage() {
   const { data: sites, isLoading: sitesLoading, error: sitesError, refetch: refetchSites } = useDashboardSites()
   const { data: lowStock } = useLowStockMaterials()
   const { data: timeEntries } = useMyTimeEntries()
   const { data: preferences } = usePreferences()
   const updatePreferences = useUpdatePreferences()
+  const [visibleStatuses, setVisibleStatuses] = useState<string[]>(defaultStatuses)
 
   const activeSiteId = preferences?.active_site_id ?? null
 
   const activeSites = sites?.filter((s: DashboardSite) => s.status === "active") || []
+  const visibleSites = sites?.filter((site: DashboardSite) => visibleStatuses.includes(site.status)) || []
   const todayEntries = timeEntries?.filter((e: TimeEntry) => 
     e.work_date === new Date().toISOString().split("T")[0]
   ) || []
   const totalHoursToday = todayEntries.reduce((sum: number, e: TimeEntry) => sum + e.hours, 0)
+
+  const toggleStatus = (status: string) => {
+    setVisibleStatuses((current) =>
+      current.includes(status)
+        ? current.filter((value) => value !== status)
+        : [...current, status]
+    )
+  }
 
   const handleToggleActive = async (siteId: string, nextActive: boolean) => {
     try {
@@ -76,7 +89,27 @@ export default function DashboardPage() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="font-display text-lg">Aktive Projekte</CardTitle>
+          <div className="space-y-3">
+            <CardTitle className="font-display text-lg">Projekte</CardTitle>
+            <div className="flex flex-wrap gap-2">
+              {[
+                ["active", "Aktiv"],
+                ["planned", "Geplant"],
+                ["completed", "Abgeschlossen"],
+                ["archived", "Archiviert"],
+              ].map(([status, label]) => (
+                <Button
+                  key={status}
+                  variant={visibleStatuses.includes(status) ? "default" : "outline"}
+                  size="sm"
+                  className="h-8"
+                  onClick={() => toggleStatus(status)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
           <Link to="/sites">
             <Button variant="ghost" size="sm" className="gap-2 h-9">
               Alle anzeigen
@@ -89,11 +122,11 @@ export default function DashboardPage() {
             <LoadingSpinner className="py-8" />
           ) : sitesError ? (
             <ErrorState message="Projekte konnten nicht geladen werden" onRetry={() => refetchSites()} />
-          ) : activeSites.length === 0 ? (
+          ) : visibleSites.length === 0 ? (
             <EmptyState
               icon={Building2}
-              title="Keine aktiven Projekte"
-              description="Es gibt derzeit keine aktiven Projekte."
+              title="Keine Projekte im aktuellen Filter"
+              description="Passe die Statusfilter an, um weitere Projekte einzublenden."
               action={
                 <Link to="/sites">
                   <Button size="sm" className="h-10">Projekte anzeigen</Button>
@@ -102,7 +135,7 @@ export default function DashboardPage() {
             />
           ) : (
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              {activeSites.map((site: DashboardSite) => (
+              {visibleSites.map((site: DashboardSite) => (
                 <SiteCard
                   key={site.id}
                   site={site}
