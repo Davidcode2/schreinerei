@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { http, HttpResponse } from 'msw'
 import { render } from '@/test/utils'
 import { mockData } from '@/test/mocks/handlers'
+import { server } from '@/test/mocks/server'
 import DashboardPage from './DashboardPage'
+
+const apiPath = (path: string) => `*/api/v1${path}`
 
 describe('DashboardPage', () => {
   it('uses project-aware wording while keeping the active-project section', async () => {
@@ -104,9 +108,52 @@ describe('DashboardPage', () => {
       },
     ]
 
+    server.use(
+      http.get(apiPath('/inventory/alerts'), () => HttpResponse.json(mockData.materials)),
+      http.get(apiPath('/inventory/low-stock'), () => HttpResponse.json([]))
+    )
+
     render(<DashboardPage />)
 
-    expect(await screen.findByText('Ablaufwarnungen')).toBeInTheDocument()
-    expect(screen.getByText(/2 Liter bald ablaufend/i)).toBeInTheDocument()
+    expect(await screen.findByText('Materialwarnungen')).toBeInTheDocument()
+    expect(await screen.findByText(/2 Liter bald ablaufend/i)).toBeInTheDocument()
+  })
+
+  it('shows low-stock warnings in the same top material warnings section', async () => {
+    mockData.preferences = { active_site_id: null }
+    mockData.sites = []
+    mockData.timeEntries = []
+    mockData.materials = [
+      {
+        id: 'mat-2',
+        category_id: 'cat-1',
+        name: 'Schrauben',
+        description: null,
+        unit: 'Stück',
+        quantity: 2,
+        min_quantity: 10,
+        can_expire: false,
+        legacy_quantity: 2,
+        expired_quantity: 0,
+        expiring_soon_quantity: 0,
+        next_expiry_on: null,
+        expiry_batches: [],
+        location: 'Regal B',
+        qr_code: null,
+        is_low_stock: true,
+        created_at: new Date().toISOString(),
+      },
+    ]
+
+    server.use(
+      http.get(apiPath('/inventory/alerts'), () => HttpResponse.json([])),
+      http.get(apiPath('/inventory/low-stock'), () => HttpResponse.json(mockData.materials))
+    )
+
+    render(<DashboardPage />)
+
+    expect(await screen.findByText('Materialwarnungen')).toBeInTheDocument()
+    expect(await screen.findByText(/Bestand unter Minimum/i)).toBeInTheDocument()
+    expect(screen.queryByText('Niedrige Bestände')).not.toBeInTheDocument()
   })
 })
