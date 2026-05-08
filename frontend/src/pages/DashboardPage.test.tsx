@@ -77,4 +77,36 @@ describe('DashboardPage', () => {
       expect(screen.queryByText('CNC Nacharbeit')).not.toBeInTheDocument()
     })
   })
+
+  it('shows expiry alerts in the dashboard warning surfaces', async () => {
+    mockData.preferences = { active_site_id: null }
+    mockData.sites = []
+    mockData.timeEntries = []
+    mockData.materials = [
+      {
+        id: 'mat-1',
+        category_id: 'cat-1',
+        name: 'Leim',
+        description: null,
+        unit: 'Liter',
+        quantity: 6,
+        min_quantity: 2,
+        can_expire: true,
+        legacy_quantity: 0,
+        expired_quantity: 0,
+        expiring_soon_quantity: 2,
+        next_expiry_on: '2026-05-20',
+        expiry_batches: [],
+        location: 'Regal A',
+        qr_code: null,
+        is_low_stock: false,
+        created_at: new Date().toISOString(),
+      },
+    ]
+
+    render(<DashboardPage />)
+
+    expect(await screen.findByText('Ablaufwarnungen')).toBeInTheDocument()
+    expect(screen.getByText(/2 Liter bald ablaufend/i)).toBeInTheDocument()
+  })
 })

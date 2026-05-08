@@ -170,6 +170,17 @@ export const handlers = [
     return HttpResponse.json([]);
   }),
 
+  http.get(apiRoute('/inventory/alerts'), async () => {
+    await delay(10);
+    return HttpResponse.json(
+      mockData.materials.filter((entry) => {
+        const expired = Number(entry.expired_quantity ?? 0);
+        const soon = Number(entry.expiring_soon_quantity ?? 0);
+        return expired > 0 || soon > 0;
+      })
+    );
+  }),
+
   // Vehicles (fleet module)
   http.get(apiRoute('/fleet/vehicles'), async () => {
     await delay(10);

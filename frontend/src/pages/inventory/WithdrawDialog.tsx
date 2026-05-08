@@ -33,6 +33,7 @@ interface WithdrawDialogProps {
   isLoading: boolean
   sites: Array<{ id: string; name: string }>
   initialSiteId?: string | null
+  initialDisposal?: boolean
 }
 
 export function WithdrawDialog({
@@ -43,6 +44,7 @@ export function WithdrawDialog({
   isLoading,
   sites,
   initialSiteId,
+  initialDisposal = false,
 }: WithdrawDialogProps) {
   const [quantity, setQuantity] = useState(1)
   const [notes, setNotes] = useState("")
@@ -82,10 +84,10 @@ export function WithdrawDialog({
   useEffect(() => {
     if (open) {
       setSiteId(initialSiteId ?? "")
-      setDisposal(false)
+      setDisposal(initialDisposal)
       setLastPackageTaken(false)
     }
-  }, [open])
+  }, [initialDisposal, open])
 
   useEffect(() => {
     if (open && !siteId && initialSiteId) {

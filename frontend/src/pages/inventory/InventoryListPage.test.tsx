@@ -44,4 +44,22 @@ describe("InventoryListPage", () => {
     expect(within(materialLink).getByText("Holzwerkstoffe")).toBeInTheDocument()
     expect(within(materialLink).getByText("Birke 18 mm")).toBeInTheDocument()
   })
+
+  it("surfaces expiry alerts above the material list", async () => {
+    mockData.materials = [
+      createMaterial({
+        id: "mat-2",
+        name: "Lack weiss",
+        can_expire: true,
+        legacy_quantity: 0,
+        expired_quantity: 3,
+        expiring_soon_quantity: 0,
+      }),
+    ]
+
+    render(<InventoryListPage />)
+
+    expect(await screen.findByText("Ablaufwarnungen")).toBeInTheDocument()
+    expect(screen.getByText(/3 Stück abgelaufen/i)).toBeInTheDocument()
+  })
 })

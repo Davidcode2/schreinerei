@@ -213,6 +213,14 @@ export function useLowStockMaterials() {
   })
 }
 
+export function useInventoryAlerts() {
+  return useQuery({
+    queryKey: ["inventory-alerts"],
+    queryFn: () => apiClient.get<Material[]>("/api/v1/inventory/alerts"),
+    staleTime: 30000,
+  })
+}
+
 // === QR Lookup ===
 
 export function useQrLookup(code: string | null) {

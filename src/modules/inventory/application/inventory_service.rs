@@ -538,6 +538,15 @@ impl InventoryService {
             .await
     }
 
+    pub async fn list_inventory_alerts(
+        &self,
+        ctx: &TenantContext,
+    ) -> Result<Vec<Material>, AppError> {
+        self.material_repo
+            .list_inventory_alert_materials(ctx.tenant_id)
+            .await
+    }
+
     /// Delete a material (soft delete)
     /// Returns Conflict error if there are pending order requests
     pub async fn delete_material(

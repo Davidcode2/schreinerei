@@ -78,6 +78,7 @@ pub fn create_router() -> Router<AppState> {
         .route("/api/v1/inventory/materials/{id}/qr/svg", get(get_qr_svg))
         // Low stock
         .route("/api/v1/inventory/low-stock", get(list_low_stock))
+        .route("/api/v1/inventory/alerts", get(list_inventory_alerts))
         // QR lookup
         .route("/api/v1/inventory/qr/{code}", get(get_by_qr_code))
         // Order requests
@@ -880,6 +881,20 @@ pub async fn list_low_stock(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
     let materials = service.list_low_stock(&ctx).await?;
+    let response: Vec<MaterialResponse> =
+        materials.into_iter().map(MaterialResponse::from).collect();
+
+    Ok(Json(response))
+}
+
+pub async fn list_inventory_alerts(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+) -> Result<impl IntoResponse, AppError> {
+    let service = InventoryService::new(
+        crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
+    );
+    let materials = service.list_inventory_alerts(&ctx).await?;
     let response: Vec<MaterialResponse> =
         materials.into_iter().map(MaterialResponse::from).collect();
 

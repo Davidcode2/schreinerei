@@ -76,6 +76,7 @@ export default function InventoryDetailPage() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showStockInDialog, setShowStockInDialog] = useState(false)
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false)
+  const [withdrawDisposalMode, setWithdrawDisposalMode] = useState(false)
   const user = useAuthStore((state) => state.user)
   const isAdmin = user?.role === "admin"
 
@@ -107,6 +108,7 @@ export default function InventoryDetailPage() {
 
   const closeWithdrawDialog = () => {
     setShowWithdrawDialog(false)
+    setWithdrawDisposalMode(false)
 
     if (shouldOpenWithdrawDialog) {
       const nextParams = new URLSearchParams(searchParams)
@@ -433,6 +435,17 @@ export default function InventoryDetailPage() {
                 <p className="text-sm text-muted-foreground">
                   Es sind {material.expired_quantity} {material.unit} abgelaufen.
                 </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => {
+                    setWithdrawDisposalMode(true)
+                    setShowWithdrawDialog(true)
+                  }}
+                >
+                  Abgelaufenen Bestand entsorgen
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -511,6 +524,7 @@ export default function InventoryDetailPage() {
         isLoading={withdrawMutation.isPending}
         sites={(sites ?? []).map((site) => ({ id: site.id, name: site.name }))}
         initialSiteId={withdrawSiteIdFromQuery ?? preferences?.active_site_id ?? null}
+        initialDisposal={withdrawDisposalMode}
       />
 
       <StockInDialog

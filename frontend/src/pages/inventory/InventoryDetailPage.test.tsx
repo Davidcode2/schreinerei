@@ -390,6 +390,27 @@ describe("InventoryDetailPage interactions", () => {
     })
   })
 
+  it("opens the withdraw dialog in disposal mode from the expired stock alert", async () => {
+    const user = userEvent.setup()
+
+    server.use(
+      http.get(apiPath("/inventory/materials/mat-123"), () =>
+        HttpResponse.json({
+          ...materialResponse,
+          can_expire: true,
+          legacy_quantity: 0,
+          expired_quantity: 4,
+        })
+      )
+    )
+
+    render(<InventoryDetailPage />)
+
+    await user.click(await screen.findByRole("button", { name: /abgelaufenen bestand entsorgen/i }))
+
+    expect(await screen.findByRole("checkbox", { name: /entsorgung/i })).toBeChecked()
+  })
+
   it("submits edit changes and translates target stock into an adjust delta", async () => {
     const user = userEvent.setup()
     let updatePayload: unknown = null

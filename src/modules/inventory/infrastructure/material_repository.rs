@@ -853,6 +853,22 @@ impl MaterialRepository {
             .collect())
     }
 
+    pub async fn list_inventory_alert_materials(
+        &self,
+        tenant_id: TenantId,
+    ) -> Result<Vec<Material>, AppError> {
+        let materials = sqlx::query_as::<_, MaterialRow>(&Self::inventory_alert_materials_query())
+            .bind(tenant_id.0)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(materials
+            .into_iter()
+            .map(MaterialRow::into_material_without_batches)
+            .collect())
+    }
+
     fn material_list_query(filter_by_category: bool) -> String {
         let category_clause = if filter_by_category {
             "AND m.category_id = $2"
@@ -909,6 +925,38 @@ impl MaterialRepository {
             ) summary ON TRUE
             WHERE m.tenant_id = $1 AND m.deleted_at IS NULL AND m.quantity <= m.min_quantity
             ORDER BY m.quantity ASC
+            "#,
+            days = Self::EXPIRY_WARNING_DAYS,
+        )
+    }
+
+    fn inventory_alert_materials_query() -> String {
+        format!(
+            r#"
+            SELECT
+                m.id, m.tenant_id, m.category_id, m.name, m.description, m.unit,
+                m.quantity, m.min_quantity, m.legacy_quantity, m.location, m.qr_code,
+                m.created_at, m.updated_at, c.can_expire,
+                COALESCE(summary.expired_quantity, 0) AS expired_quantity,
+                COALESCE(summary.expiring_soon_quantity, 0) AS expiring_soon_quantity,
+                summary.next_expiry_on
+            FROM materials m
+            INNER JOIN categories c ON c.id = m.category_id
+            LEFT JOIN LATERAL (
+                SELECT
+                    COALESCE(SUM(CASE WHEN mb.expires_on < CURRENT_DATE THEN mb.remaining_quantity ELSE 0 END), 0)::INT4 AS expired_quantity,
+                    COALESCE(SUM(CASE WHEN mb.expires_on >= CURRENT_DATE AND mb.expires_on <= CURRENT_DATE + {days} THEN mb.remaining_quantity ELSE 0 END), 0)::INT4 AS expiring_soon_quantity,
+                    MIN(mb.expires_on) FILTER (WHERE mb.remaining_quantity > 0) AS next_expiry_on
+                FROM material_batches mb
+                WHERE mb.material_id = m.id AND mb.tenant_id = m.tenant_id AND mb.remaining_quantity > 0
+            ) summary ON TRUE
+            WHERE m.tenant_id = $1
+              AND m.deleted_at IS NULL
+              AND (COALESCE(summary.expired_quantity, 0) > 0 OR COALESCE(summary.expiring_soon_quantity, 0) > 0)
+            ORDER BY
+              COALESCE(summary.expired_quantity, 0) DESC,
+              COALESCE(summary.expiring_soon_quantity, 0) DESC,
+              m.name ASC
             "#,
             days = Self::EXPIRY_WARNING_DAYS,
         )
@@ -1825,5 +1873,13 @@ mod tests {
         let sql = MaterialRepository::batch_consumption_query(false);
         assert!(sql.contains("ORDER BY expires_on ASC, created_at ASC, id ASC"));
         assert!(sql.contains("remaining_quantity > 0"));
+    }
+
+    #[test]
+    fn inventory_alert_query_filters_to_expired_or_expiring_materials() {
+        let sql = MaterialRepository::inventory_alert_materials_query();
+        assert!(sql.contains("expired_quantity"));
+        assert!(sql.contains("expiring_soon_quantity"));
+        assert!(sql.contains("COALESCE(summary.expired_quantity, 0) > 0 OR COALESCE(summary.expiring_soon_quantity, 0) > 0"));
     }
 }

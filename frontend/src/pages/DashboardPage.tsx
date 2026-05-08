@@ -6,6 +6,7 @@ import { Link } from "react-router-dom"
 import { StatusBadge, LoadingSpinner, ErrorState, EmptyState, PageHeader } from "@/components/shared"
 import {
   useDashboardSites,
+  useInventoryAlerts,
   useLowStockMaterials,
   useMyTimeEntries,
   usePreferences,
@@ -23,6 +24,7 @@ const defaultStatuses = ["active", "planned", "completed"]
 export default function DashboardPage() {
   const { data: sites, isLoading: sitesLoading, error: sitesError, refetch: refetchSites } = useDashboardSites()
   const { data: lowStock } = useLowStockMaterials()
+  const { data: inventoryAlerts = [] } = useInventoryAlerts()
   const { data: timeEntries } = useMyTimeEntries()
   const { data: preferences } = usePreferences()
   const updatePreferences = useUpdatePreferences()
@@ -70,10 +72,10 @@ export default function DashboardPage() {
           icon={Building2}
         />
         <StatsCard
-          title="Niedrige Bestände"
-          value={lowStock?.length || 0}
+          title="Materialwarnungen"
+          value={inventoryAlerts.length}
           icon={AlertTriangle}
-          description={lowStock && lowStock.length > 0 ? "Handlungsbedarf" : "Alles im grünen Bereich"}
+          description={inventoryAlerts.length > 0 ? "Ablauf oder Nachschub" : "Alles im grünen Bereich"}
         />
         <StatsCard
           title="Heute gebucht"
@@ -184,6 +186,40 @@ export default function DashboardPage() {
                   </Button>
                 </Link>
               )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {inventoryAlerts.length > 0 && (
+        <Card className="border-destructive/20 bg-destructive/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-display text-lg flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-destructive/15 flex items-center justify-center">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+              </div>
+              Ablaufwarnungen
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              {inventoryAlerts.slice(0, 5).map((material: Material) => (
+                <Link
+                  key={material.id}
+                  to={`/inventory/${material.id}`}
+                  className="flex items-center justify-between p-2.5 rounded-lg hover:bg-destructive/10 transition-colors"
+                >
+                  <div className="min-w-0">
+                    <span className="font-medium text-sm truncate block">{material.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {material.expired_quantity > 0
+                        ? `${material.expired_quantity} ${material.unit} abgelaufen`
+                        : `${material.expiring_soon_quantity} ${material.unit} bald ablaufend`}
+                    </span>
+                  </div>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                </Link>
+              ))}
             </div>
           </CardContent>
         </Card>
