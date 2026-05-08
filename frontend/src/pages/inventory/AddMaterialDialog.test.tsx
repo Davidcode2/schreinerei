@@ -229,7 +229,7 @@ describe('AddMaterialDialog', () => {
   });
 
   describe('Form Submission', () => {
-    it('submits form with correct payload', async () => {
+    it('submits form with correct payload for an expiry-managed category', async () => {
       const user = userEvent.setup();
       let submittedPayload: Record<string, unknown> | null = null;
 
@@ -249,23 +249,30 @@ describe('AddMaterialDialog', () => {
         />
       );
 
-      // Fill Step 1 and navigate to Step 2
-      await fillStep1AndNavigate(user);
-      await user.type(screen.getByLabelText(/mindestbestand/i), '10');
+      await selectOption(user, /kategorie/i, 'Lacke');
+      await user.type(screen.getByLabelText(/name/i), 'Lack rot');
+      await user.type(screen.getByLabelText(/menge/i), '10');
+      await selectOption(user, /einheit/i, 'Liter');
+      await user.click(screen.getByRole('button', { name: 'Weiter' }));
+
+      await user.type(screen.getByLabelText(/mindestbestand/i), '2');
+      await user.type(screen.getByLabelText(/charge \/ los/i), 'LOT-START-01');
+      fireEvent.change(screen.getByLabelText(/mhd/i), { target: { value: '2026-05-20' } });
       await user.type(screen.getByLabelText(/lagerort/i), 'Regal A1');
 
       await user.click(screen.getByRole('button', { name: /erstellen/i }));
 
       await waitFor(() => {
         expect(submittedPayload).toEqual({
-          category_id: 'cat-1',
-          name: 'Schrauben M8',
+          category_id: 'cat-2',
+          name: 'Lack rot',
           description: null,
-          quantity: 100,
-          unit: 'Stück',
-          min_quantity: 10,
+          quantity: 10,
+          unit: 'Liter',
+          min_quantity: 2,
           location: 'Regal A1',
-          expires_on: null,
+          expires_on: '2026-05-20',
+          batch_code: 'LOT-START-01',
         });
       });
     });

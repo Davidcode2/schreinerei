@@ -189,11 +189,18 @@ describe("InventoryDetailPage interactions", () => {
     ).toBeTruthy()
   })
 
-  it("submits stock-in with quantity and optional notes, then shows the success toast", async () => {
+  it("submits stock-in with quantity, optional notes, and batch metadata", async () => {
     const user = userEvent.setup()
     let stockInPayload: unknown = null
 
     server.use(
+      http.get(apiPath("/inventory/materials/mat-123"), () =>
+        HttpResponse.json({
+          ...materialResponse,
+          can_expire: true,
+          legacy_quantity: 0,
+        })
+      ),
       http.get(apiPath("/inventory/materials/mat-123/history/enriched"), () =>
         HttpResponse.json([])
       ),
@@ -212,10 +219,17 @@ describe("InventoryDetailPage interactions", () => {
     await user.clear(screen.getByLabelText(/^menge$/i))
     await user.type(screen.getByLabelText(/^menge$/i), "3")
     await user.type(screen.getByLabelText(/notizen/i), "Lieferung HolzLand")
+    await user.type(screen.getByLabelText(/mhd/i), "2026-05-20")
+    await user.type(screen.getByLabelText(/charge \/ los/i), "LOT-2026-05")
     await user.click(screen.getByRole("button", { name: /einlagern$/i }))
 
     await waitFor(() => {
-      expect(stockInPayload).toEqual({ quantity: 3, notes: "Lieferung HolzLand", expires_on: null })
+      expect(stockInPayload).toEqual({
+        quantity: 3,
+        notes: "Lieferung HolzLand",
+        expires_on: "2026-05-20",
+        batch_code: "LOT-2026-05",
+      })
     })
 
     expect(await screen.findByText("3 Stück eingelagert")).toBeInTheDocument()

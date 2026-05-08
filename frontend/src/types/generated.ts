@@ -30,7 +30,7 @@ export type CreateActivityRequest = { activity_type: string, content: string | n
 
 export type CreateCategoryRequest = { name: string, description: string | null, can_expire: boolean, };
 
-export type CreateMaterialRequest = { category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, location: string | null, expires_on: string | null, };
+export type CreateMaterialRequest = { category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, location: string | null, expires_on: string | null, batch_code: string | null, };
 
 export type CreateOrderRequestDto = { material_id: string, quantity: number, reason: string | null, };
 
@@ -53,7 +53,7 @@ export type EnrichedStockHistoryResponse = { id: string, material_id: string, us
  */
 export type EntryType = "withdrawn" | "disposed" | "adjusted" | "material_added" | "location_changed" | "min_quantity_changed";
 
-export type ExpiryBatchResponse = { expires_on: string, quantity: number, is_expired: boolean, is_expiring_soon: boolean, };
+export type ExpiryBatchResponse = { id: string, batch_code: string | null, expires_on: string, quantity: number, received_at: string, is_expired: boolean, is_expiring_soon: boolean, };
 
 export type FulfillOrderRequestDto = { actual_quantity: number, notes: string | null, };
 
@@ -104,7 +104,7 @@ export type SiteStockHistoryResponse = { id: string, material_id: string, materi
  */
 export type StockEntryResponse = { id: string, quantity_change: number, quantity_after: number, notes: string | null, site_id: string | null, site_name: string | null, created_at: string, };
 
-export type StockInRequest = { quantity: number, notes: string | null, expires_on: string | null, };
+export type StockInRequest = { quantity: number, notes: string | null, expires_on: string | null, batch_code: string | null, };
 
 export type TimeEntryResponse = { id: string, site_id: string | null, user_id: string, work_type: string, hours: number, work_date: string, notes: string | null, created_at: string, };
 

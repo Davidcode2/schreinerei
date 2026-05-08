@@ -28,8 +28,11 @@ pub struct Material {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MaterialBatchSummary {
+    pub id: uuid::Uuid,
+    pub batch_code: Option<String>,
     pub expires_on: NaiveDate,
     pub quantity: i32,
+    pub received_at: DateTime<Utc>,
     pub is_expired: bool,
     pub is_expiring_soon: bool,
 }
@@ -62,6 +65,7 @@ pub struct CreateMaterial {
     pub min_quantity: i32,
     pub location: Option<String>,
     pub expires_on: Option<NaiveDate>,
+    pub batch_code: Option<String>,
 }
 
 impl CreateMaterial {
@@ -158,6 +162,7 @@ pub struct StockIn {
     pub quantity: i32,
     pub notes: Option<String>,
     pub expires_on: Option<NaiveDate>,
+    pub batch_code: Option<String>,
 }
 
 impl StockIn {
@@ -251,6 +256,7 @@ mod tests {
             min_quantity: 5,
             location: None,
             expires_on: None,
+            batch_code: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -266,6 +272,7 @@ mod tests {
             min_quantity: 5,
             location: None,
             expires_on: None,
+            batch_code: None,
         };
         assert_eq!(cmd.validate(), Err("Material name is required".to_string()));
     }
@@ -281,6 +288,7 @@ mod tests {
             min_quantity: 5,
             location: None,
             expires_on: None,
+            batch_code: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -299,6 +307,7 @@ mod tests {
             min_quantity: -1,
             location: None,
             expires_on: None,
+            batch_code: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -477,6 +486,7 @@ mod tests {
             quantity: 10,
             notes: Some("Delivery arrived".to_string()),
             expires_on: None,
+            batch_code: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -488,6 +498,7 @@ mod tests {
             quantity: 5,
             notes: None,
             expires_on: None,
+            batch_code: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -499,6 +510,7 @@ mod tests {
             quantity: 0,
             notes: None,
             expires_on: None,
+            batch_code: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -513,6 +525,7 @@ mod tests {
             quantity: -5,
             notes: None,
             expires_on: None,
+            batch_code: None,
         };
         assert_eq!(
             cmd.validate(),

@@ -10,13 +10,22 @@ use crate::common::types::{
 use crate::modules::inventory::domain::{
     Category, CreateCategory, CreateMaterial, CreateOrderRequest, EnrichedStockEntry, EntryType,
     Material, MaterialBatchSummary, OrderRequest, OrderStatus, SiteStockHistoryEntry,
-    StockEntryWithSite, UpdateCategory, UpdateMaterial,
+    StockEntryWithSite, StockIn, UpdateCategory, UpdateMaterial,
 };
 
 /// Repository for material data access with tenant isolation
 pub struct MaterialRepository {
     pool: PgPool,
     event_bus: EventBus,
+}
+
+struct BatchWrite<'a> {
+    tenant_id: TenantId,
+    material_id: MaterialId,
+    quantity: i32,
+    expires_on: NaiveDate,
+    batch_code: Option<&'a str>,
+    created_at: DateTime<Utc>,
 }
 
 impl MaterialRepository {
@@ -225,6 +234,25 @@ impl MaterialRepository {
             "#
     }
 
+    fn batch_consumption_query(expired_only: bool) -> String {
+        let filter = if expired_only {
+            "AND expires_on < CURRENT_DATE"
+        } else {
+            ""
+        };
+
+        format!(
+            r#"
+            SELECT id, remaining_quantity
+            FROM material_batches
+            WHERE material_id = $1 AND tenant_id = $2 AND remaining_quantity > 0 {filter}
+            ORDER BY expires_on ASC, created_at ASC, id ASC
+            FOR UPDATE
+            "#,
+            filter = filter,
+        )
+    }
+
     // === Material operations ===
 
     pub async fn create_material(
@@ -279,11 +307,14 @@ impl MaterialRepository {
         if can_expire && create.quantity > 0 {
             self.insert_batch(
                 &mut tx,
-                tenant_id,
-                MaterialId(id),
-                create.quantity,
-                create.expires_on.expect("validated expiry date"),
-                now,
+                &BatchWrite {
+                    tenant_id,
+                    material_id: MaterialId(id),
+                    quantity: create.quantity,
+                    expires_on: create.expires_on.expect("validated expiry date"),
+                    batch_code: create.batch_code.as_deref(),
+                    created_at: now,
+                },
             )
             .await?;
         }
@@ -652,11 +683,8 @@ impl MaterialRepository {
 
     pub async fn stock_in(
         &self,
-        material_id: MaterialId,
-        quantity: i32,
-        notes: Option<String>,
+        stock_in: &StockIn,
         user_id: UserId,
-        expires_on: Option<NaiveDate>,
         tenant_id: TenantId,
     ) -> Result<Material, AppError> {
         let mut tx = self
@@ -674,23 +702,23 @@ impl MaterialRepository {
             FOR UPDATE
             "#,
         )
-        .bind(material_id.0)
+        .bind(stock_in.material_id.0)
         .bind(tenant_id.0)
         .fetch_optional(&mut *tx)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
 
-        let new_quantity = current.quantity + quantity;
+        let new_quantity = current.quantity + stock_in.quantity;
         let new_legacy_quantity = if current.can_expire {
             current.legacy_quantity
         } else {
-            current.legacy_quantity + quantity
+            current.legacy_quantity + stock_in.quantity
         };
 
         self.update_material_quantities(
             &mut tx,
-            material_id,
+            stock_in.material_id,
             tenant_id,
             new_quantity,
             new_legacy_quantity,
@@ -700,11 +728,14 @@ impl MaterialRepository {
         if current.can_expire {
             self.insert_batch(
                 &mut tx,
-                tenant_id,
-                material_id,
-                quantity,
-                expires_on.expect("validated expiry date"),
-                Utc::now(),
+                &BatchWrite {
+                    tenant_id,
+                    material_id: stock_in.material_id,
+                    quantity: stock_in.quantity,
+                    expires_on: stock_in.expires_on.expect("validated expiry date"),
+                    batch_code: stock_in.batch_code.as_deref(),
+                    created_at: Utc::now(),
+                },
             )
             .await?;
         }
@@ -717,11 +748,11 @@ impl MaterialRepository {
         )
         .bind(Uuid::new_v4())
         .bind(tenant_id.0)
-        .bind(material_id.0)
+        .bind(stock_in.material_id.0)
         .bind(user_id.0)
-        .bind(quantity)
+        .bind(stock_in.quantity)
         .bind(new_quantity)
-        .bind(&notes)
+        .bind(&stock_in.notes)
         .bind(Utc::now())
         .execute(&mut *tx)
         .await
@@ -731,7 +762,7 @@ impl MaterialRepository {
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
-        self.find_material_by_id(material_id, tenant_id)
+        self.find_material_by_id(stock_in.material_id, tenant_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Material not found".to_string()))
     }
@@ -917,10 +948,10 @@ impl MaterialRepository {
     ) -> Result<Vec<MaterialBatchSummary>, AppError> {
         let rows = sqlx::query_as::<_, MaterialBatchRow>(
             r#"
-            SELECT expires_on, remaining_quantity
+            SELECT id, batch_code, expires_on, remaining_quantity, created_at
             FROM material_batches
             WHERE material_id = $1 AND tenant_id = $2 AND remaining_quantity > 0
-            ORDER BY expires_on ASC
+            ORDER BY expires_on ASC, created_at ASC, id ASC
             "#,
         )
         .bind(material_id.0)
@@ -934,8 +965,11 @@ impl MaterialRepository {
         Ok(rows
             .into_iter()
             .map(|row| MaterialBatchSummary {
+                id: row.id,
+                batch_code: row.batch_code,
                 expires_on: row.expires_on,
                 quantity: row.remaining_quantity,
+                received_at: row.created_at,
                 is_expired: row.expires_on < today,
                 is_expiring_soon: row.expires_on >= today && row.expires_on <= warning_cutoff,
             })
@@ -970,25 +1004,22 @@ impl MaterialRepository {
     async fn insert_batch(
         &self,
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-        tenant_id: TenantId,
-        material_id: MaterialId,
-        quantity: i32,
-        expires_on: NaiveDate,
-        created_at: DateTime<Utc>,
+        batch: &BatchWrite<'_>,
     ) -> Result<(), AppError> {
         sqlx::query(
             r#"
-            INSERT INTO material_batches (id, tenant_id, material_id, expires_on, initial_quantity, remaining_quantity, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO material_batches (id, tenant_id, material_id, batch_code, expires_on, initial_quantity, remaining_quantity, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             "#
         )
         .bind(Uuid::new_v4())
-        .bind(tenant_id.0)
-        .bind(material_id.0)
-        .bind(expires_on)
-        .bind(quantity)
-        .bind(quantity)
-        .bind(created_at)
+        .bind(batch.tenant_id.0)
+        .bind(batch.material_id.0)
+        .bind(batch.batch_code)
+        .bind(batch.expires_on)
+        .bind(batch.quantity)
+        .bind(batch.quantity)
+        .bind(batch.created_at)
         .execute(&mut **tx)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -1028,21 +1059,7 @@ impl MaterialRepository {
         quantity: i32,
         expired_only: bool,
     ) -> Result<(), AppError> {
-        let filter = if expired_only {
-            "AND expires_on < CURRENT_DATE"
-        } else {
-            ""
-        };
-        let sql = format!(
-            r#"
-            SELECT id, remaining_quantity
-            FROM material_batches
-            WHERE material_id = $1 AND tenant_id = $2 AND remaining_quantity > 0 {filter}
-            ORDER BY expires_on ASC
-            FOR UPDATE
-            "#,
-            filter = filter,
-        );
+        let sql = Self::batch_consumption_query(expired_only);
 
         let batches = sqlx::query_as::<_, MaterialBatchStateRow>(&sql)
             .bind(material_id.0)
@@ -1499,8 +1516,11 @@ struct MaterialLockRow {
 
 #[derive(Debug, FromRow)]
 struct MaterialBatchRow {
+    id: Uuid,
+    batch_code: Option<String>,
     expires_on: NaiveDate,
     remaining_quantity: i32,
+    created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, FromRow)]
@@ -1687,5 +1707,12 @@ mod tests {
         assert!(sql.contains("deleted_at IS NULL"));
         assert!(sql.contains("quantity > 0"));
         assert!(sql.contains("category_id = $1"));
+    }
+
+    #[test]
+    fn batch_consumption_query_uses_fefo_ordering() {
+        let sql = MaterialRepository::batch_consumption_query(false);
+        assert!(sql.contains("ORDER BY expires_on ASC, created_at ASC, id ASC"));
+        assert!(sql.contains("remaining_quantity > 0"));
     }
 }

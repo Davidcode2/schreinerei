@@ -132,8 +132,13 @@ export function WithdrawDialog({
                   <p className="font-medium">Erfasste MHD-Chargen</p>
                   <div className="max-h-40 space-y-1 overflow-y-auto pr-1">
                     {material.expiry_batches.map((batch) => (
-                      <div key={`${batch.expires_on}-${batch.quantity}`} className="flex justify-between">
-                        <span>{formatExpiryDate(batch.expires_on)}</span>
+                      <div key={batch.id} className="flex items-start justify-between gap-3">
+                        <div>
+                          <span>{formatExpiryDate(batch.expires_on)}</span>
+                          {batch.batch_code && (
+                            <p className="text-xs text-muted-foreground">Charge: {batch.batch_code}</p>
+                          )}
+                        </div>
                         <span className="text-muted-foreground">{batch.quantity} {material.unit}</span>
                       </div>
                     ))}

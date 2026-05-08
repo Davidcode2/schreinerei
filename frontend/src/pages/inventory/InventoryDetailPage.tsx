@@ -113,13 +113,19 @@ export default function InventoryDetailPage() {
     }
   }
 
-  const handleStockIn = async (quantity: number, notes?: string, expiresOn?: string) => {
+  const handleStockIn = async (
+    quantity: number,
+    notes?: string,
+    expiresOn?: string,
+    batchCode?: string
+  ) => {
     try {
       await stockInMutation.mutateAsync({
         id: material.id,
         quantity,
         notes: notes ?? null,
         expires_on: expiresOn ?? null,
+        batch_code: batchCode ?? null,
       })
       toast.success(`${quantity} ${material.unit} eingelagert`)
       setShowStockInDialog(false)

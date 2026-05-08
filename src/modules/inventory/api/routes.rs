@@ -140,8 +140,11 @@ pub struct UpdateCategoryRequest {
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ExpiryBatchResponse {
+    pub id: String,
+    pub batch_code: Option<String>,
     pub expires_on: String,
     pub quantity: i32,
+    pub received_at: String,
     pub is_expired: bool,
     pub is_expiring_soon: bool,
 }
@@ -207,6 +210,7 @@ pub struct CreateMaterialRequest {
     pub min_quantity: i32,
     pub location: Option<String>,
     pub expires_on: Option<String>,
+    pub batch_code: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -242,17 +246,32 @@ pub struct StockInRequest {
     pub quantity: i32,
     pub notes: Option<String>,
     pub expires_on: Option<String>,
+    pub batch_code: Option<String>,
 }
 
 impl From<crate::modules::inventory::domain::MaterialBatchSummary> for ExpiryBatchResponse {
     fn from(batch: crate::modules::inventory::domain::MaterialBatchSummary) -> Self {
         Self {
+            id: batch.id.to_string(),
+            batch_code: batch.batch_code,
             expires_on: batch.expires_on.to_string(),
             quantity: batch.quantity,
+            received_at: batch.received_at.to_rfc3339(),
             is_expired: batch.is_expired,
             is_expiring_soon: batch.is_expiring_soon,
         }
     }
+}
+
+fn normalize_optional_text(value: Option<String>) -> Option<String> {
+    value.and_then(|text| {
+        let trimmed = text.trim();
+        if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed.to_string())
+        }
+    })
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -608,6 +627,7 @@ pub async fn create_material(
         min_quantity: request.min_quantity,
         location: request.location,
         expires_on: parse_optional_date(request.expires_on, "MHD")?,
+        batch_code: normalize_optional_text(request.batch_code),
     };
 
     let material = service.create_material(create, &ctx).await?;
@@ -824,6 +844,7 @@ pub async fn stock_in_material(
                 quantity: request.quantity,
                 notes: request.notes,
                 expires_on: parse_optional_date(request.expires_on, "MHD")?,
+                batch_code: normalize_optional_text(request.batch_code),
             },
             &ctx,
         )
@@ -1012,7 +1033,8 @@ pub async fn fulfill_order_request(
 #[cfg(test)]
 mod tests {
     use super::{
-        EnrichedStockHistoryResponse, StockInRequest, UpdateCategoryRequest, UpdateMaterialRequest,
+        normalize_optional_text, EnrichedStockHistoryResponse, StockInRequest,
+        UpdateCategoryRequest, UpdateMaterialRequest,
     };
     use crate::common::types::{MaterialId, SiteId, TenantId, UserId};
     use crate::modules::inventory::domain::{
@@ -1063,12 +1085,14 @@ mod tests {
             quantity: 4,
             notes: Some("Lieferschein 1234".to_string()),
             expires_on: Some("2026-05-20".to_string()),
+            batch_code: Some("LOT-2026-05".to_string()),
         };
         let stock_in = StockIn {
             material_id: MaterialId::new(),
             quantity: request.quantity,
             notes: request.notes.clone(),
             expires_on: Some(NaiveDate::from_ymd_opt(2026, 5, 20).unwrap()),
+            batch_code: normalize_optional_text(request.batch_code.clone()),
         };
 
         assert_eq!(stock_in.notes, Some("Lieferschein 1234".to_string()));
@@ -1076,6 +1100,7 @@ mod tests {
             stock_in.expires_on,
             Some(NaiveDate::from_ymd_opt(2026, 5, 20).unwrap())
         );
+        assert_eq!(stock_in.batch_code, Some("LOT-2026-05".to_string()));
         assert!(stock_in.validate().is_ok());
 
         let invalid = StockIn {
@@ -1083,6 +1108,7 @@ mod tests {
             quantity: 0,
             notes: None,
             expires_on: None,
+            batch_code: None,
         };
         assert_eq!(
             invalid.validate(),

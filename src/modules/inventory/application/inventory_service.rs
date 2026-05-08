@@ -395,14 +395,7 @@ impl InventoryService {
 
         let material = self
             .material_repo
-            .stock_in(
-                stock_in.material_id,
-                stock_in.quantity,
-                stock_in.notes.clone(),
-                local_user_id,
-                stock_in.expires_on,
-                ctx.tenant_id,
-            )
+            .stock_in(&stock_in, local_user_id, ctx.tenant_id)
             .await?;
 
         // Emit MaterialAdded event
