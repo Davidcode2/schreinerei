@@ -233,6 +233,8 @@ impl SiteService {
             return Err(AppError::Forbidden("Admin access required".to_string()));
         }
 
+        update.validate()?;
+
         let old_site = self
             .site_repo
             .find_site_by_id(ctx.tenant_id, site_id)

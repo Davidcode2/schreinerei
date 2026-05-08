@@ -46,6 +46,14 @@ function formatDate(date: string | null): string {
   })
 }
 
+function formatCurrency(cents: number | null): string {
+  if (cents == null) return "-"
+  return new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency: "EUR",
+  }).format(cents / 100)
+}
+
 function getWorkTypeLabel(workType: WorkType): string {
   const labels: Record<WorkType, string> = {
     site: "Baustelle",
@@ -208,6 +216,49 @@ export default function SiteDetailPage() {
                 <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-1">Beschreibung</p>
                 <p className="text-sm leading-relaxed">{site.description}</p>
               </div>
+            )}
+
+            {(site.budget_amount_cents != null || site.quote_reference || site.billing_reference || site.billing_notes) && (
+              <>
+                <Separator />
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">Budget & Abrechnung</p>
+                  <div className="space-y-3 rounded-lg bg-accent/25 p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Budget</p>
+                        <p className="text-sm font-medium">{formatCurrency(site.budget_amount_cents)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Gebuchte Stunden</p>
+                        <p className="text-sm font-medium">{siteSummary ? `${siteSummary.labor.total_hours.toFixed(1)}h` : '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Angebotsreferenz</p>
+                        <p className="text-sm font-medium">{site.quote_reference || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Materialentnahmen</p>
+                        <p className="text-sm font-medium">{siteSummary ? siteSummary.materials.withdrawal_count : 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Abrechnungsreferenz</p>
+                        <p className="text-sm font-medium">{site.billing_reference || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Verbrauchte Materialien</p>
+                        <p className="text-sm font-medium">{siteSummary ? siteSummary.materials.distinct_material_count : 0}</p>
+                      </div>
+                    </div>
+                    {site.billing_notes && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Abrechnungshinweise</p>
+                        <p className="text-sm leading-relaxed">{site.billing_notes}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
             )}
 
             <Separator />

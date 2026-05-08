@@ -20,6 +20,10 @@ export interface Site {
   start_date: string | null
   end_date: string | null
   estimated_days: number | null
+  budget_amount_cents: number | null
+  billing_reference: string | null
+  billing_notes: string | null
+  quote_reference: string | null
   created_at: string
 }
 
@@ -32,6 +36,10 @@ export interface CreateSiteRequest {
   start_date?: string
   end_date?: string
   estimated_days?: number
+  budget_amount_cents?: number | null
+  billing_reference?: string | null
+  billing_notes?: string | null
+  quote_reference?: string | null
 }
 
 export interface UpdateSiteRequest {
@@ -44,6 +52,14 @@ export interface UpdateSiteRequest {
   start_date?: string
   end_date?: string
   estimated_days?: number
+  budget_amount_cents?: number | null
+  billing_reference?: string | null
+  billing_notes?: string | null
+  quote_reference?: string | null
+  clear_budget_amount?: boolean
+  clear_billing_reference?: boolean
+  clear_billing_notes?: boolean
+  clear_quote_reference?: boolean
 }
 
 export interface ListSitesQuery {

@@ -88,6 +88,10 @@ export const handlers = [
       start_date: null,
       end_date: null,
       estimated_days: null,
+      budget_amount_cents: null,
+      billing_reference: null,
+      billing_notes: null,
+      quote_reference: null,
       created_at: new Date().toISOString(),
       ...body,
     };

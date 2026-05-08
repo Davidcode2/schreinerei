@@ -54,9 +54,9 @@ impl SiteRepository {
 
         let site = sqlx::query_as::<_, SiteRow>(
             r#"
-            INSERT INTO sites (id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-            RETURNING id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+            INSERT INTO sites (id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+            RETURNING id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
             "#
         )
         .bind(id)
@@ -70,6 +70,10 @@ impl SiteRepository {
         .bind(create.start_date)
         .bind(create.end_date)
         .bind(create.estimated_days)
+        .bind(create.budget_amount_cents)
+        .bind(&create.billing_reference)
+        .bind(&create.billing_notes)
+        .bind(&create.quote_reference)
         .bind(now)
         .bind(now)
         .fetch_one(&self.pool)
@@ -92,7 +96,7 @@ impl SiteRepository {
     ) -> Result<Option<Site>, AppError> {
         let site = sqlx::query_as::<_, SiteRow>(
             r#"
-            SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+            SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
             FROM sites
             WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#
@@ -115,7 +119,7 @@ impl SiteRepository {
             Some(s) => {
                 sqlx::query_as::<_, SiteRow>(
                     r#"
-                    SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+                    SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
                     FROM sites
                     WHERE tenant_id = $1 AND status = $2 AND deleted_at IS NULL
                     ORDER BY created_at DESC
@@ -129,7 +133,7 @@ impl SiteRepository {
             None => {
                 sqlx::query_as::<_, SiteRow>(
                     r#"
-                    SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+                    SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
                     FROM sites
                     WHERE tenant_id = $1 AND deleted_at IS NULL
                     ORDER BY created_at DESC
@@ -180,9 +184,13 @@ impl SiteRepository {
                 start_date = COALESCE($7, start_date),
                 end_date = COALESCE($8, end_date),
                 estimated_days = COALESCE($9, estimated_days),
+                budget_amount_cents = CASE WHEN $10 THEN NULL ELSE COALESCE($11, budget_amount_cents) END,
+                billing_reference = CASE WHEN $12 THEN NULL ELSE COALESCE($13, billing_reference) END,
+                billing_notes = CASE WHEN $14 THEN NULL ELSE COALESCE($15, billing_notes) END,
+                quote_reference = CASE WHEN $16 THEN NULL ELSE COALESCE($17, quote_reference) END,
                 updated_at = NOW()
-            WHERE id = $10 AND tenant_id = $11
-            RETURNING id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+            WHERE id = $18 AND tenant_id = $19
+            RETURNING id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
             "#
         )
         .bind(update.project_type.as_ref().map(|p| p.as_str()))
@@ -194,6 +202,14 @@ impl SiteRepository {
         .bind(update.start_date)
         .bind(update.end_date)
         .bind(update.estimated_days)
+        .bind(update.clear_budget_amount)
+        .bind(update.budget_amount_cents)
+        .bind(update.clear_billing_reference)
+        .bind(&update.billing_reference)
+        .bind(update.clear_billing_notes)
+        .bind(&update.billing_notes)
+        .bind(update.clear_quote_reference)
+        .bind(&update.quote_reference)
         .bind(id.0)
         .bind(tenant_id.0)
         .fetch_optional(&self.pool)
@@ -955,6 +971,10 @@ struct SiteRow {
     start_date: Option<NaiveDate>,
     end_date: Option<NaiveDate>,
     estimated_days: Option<i32>,
+    budget_amount_cents: Option<i64>,
+    billing_reference: Option<String>,
+    billing_notes: Option<String>,
+    quote_reference: Option<String>,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
 }
@@ -976,6 +996,10 @@ impl SiteRow {
             start_date: self.start_date,
             end_date: self.end_date,
             estimated_days: self.estimated_days,
+            budget_amount_cents: self.budget_amount_cents,
+            billing_reference: self.billing_reference,
+            billing_notes: self.billing_notes,
+            quote_reference: self.quote_reference,
             created_at: self.created_at,
             updated_at: self.updated_at,
         }

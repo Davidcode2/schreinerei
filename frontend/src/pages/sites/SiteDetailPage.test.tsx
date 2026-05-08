@@ -18,6 +18,10 @@ const site = {
   start_date: null,
   end_date: null,
   estimated_days: 2,
+  budget_amount_cents: 320000,
+  billing_reference: 'BR-2',
+  billing_notes: 'Schlussrechnung nach Abnahme',
+  quote_reference: 'ANG-2026-09',
   created_at: new Date().toISOString(),
 }
 
@@ -145,8 +149,11 @@ describe('SiteDetailPage', () => {
     )
 
     expect(await screen.findByText('Projektkennzahlen')).toBeInTheDocument()
-    expect(screen.getByText('12.5h')).toBeInTheDocument()
+    expect(screen.getAllByText('12.5h').length).toBeGreaterThan(0)
     expect(screen.getByText('Montageschaum')).toBeInTheDocument()
     expect(screen.getByText(/4 Stück/i)).toBeInTheDocument()
+    expect(screen.getByText('Budget & Abrechnung')).toBeInTheDocument()
+    expect(screen.getByText(/3\.200,00/)).toBeInTheDocument()
+    expect(screen.getByText('ANG-2026-09')).toBeInTheDocument()
   })
 })

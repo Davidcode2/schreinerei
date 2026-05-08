@@ -102,6 +102,10 @@ pub struct SiteResponse {
     pub start_date: Option<String>,
     pub end_date: Option<String>,
     pub estimated_days: Option<i32>,
+    pub budget_amount_cents: Option<i64>,
+    pub billing_reference: Option<String>,
+    pub billing_notes: Option<String>,
+    pub quote_reference: Option<String>,
     pub created_at: String,
 }
 
@@ -155,6 +159,10 @@ impl From<crate::modules::sites::domain::Site> for SiteResponse {
             start_date: site.start_date.map(|d| d.to_string()),
             end_date: site.end_date.map(|d| d.to_string()),
             estimated_days: site.estimated_days,
+            budget_amount_cents: site.budget_amount_cents,
+            billing_reference: site.billing_reference,
+            billing_notes: site.billing_notes,
+            quote_reference: site.quote_reference,
             created_at: site.created_at.to_rfc3339(),
         }
     }
@@ -234,6 +242,10 @@ pub struct CreateSiteRequest {
     pub start_date: Option<String>,
     pub end_date: Option<String>,
     pub estimated_days: Option<i32>,
+    pub budget_amount_cents: Option<i64>,
+    pub billing_reference: Option<String>,
+    pub billing_notes: Option<String>,
+    pub quote_reference: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -248,6 +260,14 @@ pub struct UpdateSiteRequest {
     pub start_date: Option<String>,
     pub end_date: Option<String>,
     pub estimated_days: Option<i32>,
+    pub budget_amount_cents: Option<i64>,
+    pub billing_reference: Option<String>,
+    pub billing_notes: Option<String>,
+    pub quote_reference: Option<String>,
+    pub clear_budget_amount: Option<bool>,
+    pub clear_billing_reference: Option<bool>,
+    pub clear_billing_notes: Option<bool>,
+    pub clear_quote_reference: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -401,6 +421,10 @@ pub async fn create_site(
             .end_date
             .and_then(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").ok()),
         estimated_days: request.estimated_days,
+        budget_amount_cents: request.budget_amount_cents,
+        billing_reference: request.billing_reference,
+        billing_notes: request.billing_notes,
+        quote_reference: request.quote_reference,
     };
 
     let site = service.create_site(create, &ctx).await?;
@@ -479,6 +503,14 @@ pub async fn update_site(
             .end_date
             .and_then(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").ok()),
         estimated_days: request.estimated_days,
+        budget_amount_cents: request.budget_amount_cents,
+        billing_reference: request.billing_reference,
+        billing_notes: request.billing_notes,
+        quote_reference: request.quote_reference,
+        clear_budget_amount: request.clear_budget_amount.unwrap_or(false),
+        clear_billing_reference: request.clear_billing_reference.unwrap_or(false),
+        clear_billing_notes: request.clear_billing_notes.unwrap_or(false),
+        clear_quote_reference: request.clear_quote_reference.unwrap_or(false),
     };
 
     let site = service.update_site(site_id, update, &ctx).await?;
@@ -1215,6 +1247,10 @@ mod tests {
             start_date: None,
             end_date: None,
             estimated_days: Some(1),
+            budget_amount_cents: None,
+            billing_reference: None,
+            billing_notes: None,
+            quote_reference: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         });
