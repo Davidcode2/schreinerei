@@ -22,4 +22,4 @@ The existing `sites` aggregate can now represent both external and internal proj
 
 ## Notes
 
-- The documented `cargo test --features ts-rs/export` command is stale in this repo state; `cargo test export_bindings --lib` is the working ts-rs export path.
+- The documented `cargo test --features ts-rs/export` command is stale in this repo state; use `cargo export-types` (alias for `cargo test export_bindings --lib`).

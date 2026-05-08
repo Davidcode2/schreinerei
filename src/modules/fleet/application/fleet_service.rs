@@ -1,6 +1,6 @@
 use crate::common::error::AppError;
 use crate::common::types::{
-    ReservationId, ReservationStatus, ResourceType, Role, ToolId, UserId, VehicleId,
+    ReservationId, ReservationStatus, ResourceType, Role, SiteId, ToolId, UserId, VehicleId,
 };
 use crate::modules::fleet::domain::{
     CreateReservation, CreateTool, CreateVehicle, Reservation, ReservationCancelledPayload,
@@ -490,6 +490,7 @@ impl FleetService {
         user_id: Option<UserId>,
         resource_type: Option<ResourceType>,
         resource_id: Option<uuid::Uuid>,
+        site_id: Option<SiteId>,
         ctx: &TenantContext,
     ) -> Result<Vec<ReservationWithDetails>, AppError> {
         // For non-admin users, only show their own reservations
@@ -501,7 +502,13 @@ impl FleetService {
 
         let reservations = self
             .fleet_repo
-            .list_reservations(ctx.tenant_id, filter_user_id, resource_type, resource_id)
+            .list_reservations(
+                ctx.tenant_id,
+                filter_user_id,
+                resource_type,
+                resource_id,
+                site_id,
+            )
             .await?;
 
         // Get details for each reservation
@@ -525,7 +532,7 @@ impl FleetService {
         ctx: &TenantContext,
     ) -> Result<Vec<ReservationWithDetails>, AppError> {
         let local_user_id = self.resolve_local_user_id(ctx).await?;
-        self.list_reservations(Some(local_user_id), None, None, ctx)
+        self.list_reservations(Some(local_user_id), None, None, None, ctx)
             .await
     }
 
@@ -535,6 +542,7 @@ impl FleetService {
         start_date: chrono::DateTime<chrono::Utc>,
         end_date: chrono::DateTime<chrono::Utc>,
         resource_type: Option<ResourceType>,
+        site_id: Option<SiteId>,
         ctx: &TenantContext,
     ) -> Result<Vec<CalendarEntry>, AppError> {
         // Validate date range
@@ -545,7 +553,7 @@ impl FleetService {
         }
 
         self.fleet_repo
-            .get_calendar_data(ctx.tenant_id, start_date, end_date, resource_type)
+            .get_calendar_data(ctx.tenant_id, start_date, end_date, resource_type, site_id)
             .await
     }
 

@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.13
-milestone_name: Project Workflow Foundation
+milestone: v1.14
+milestone_name: Project Costing, Planning & Billing Basis
 status: ready
-stopped_at: Phase 44 complete and ready for Phase 45 planning
-last_updated: "2026-05-05T21:40:00Z"
-last_activity: 2026-05-05 -- Phase 44 verified complete
+stopped_at: Milestone v1.14 complete and next seed ready for activation
+last_updated: "2026-05-08T15:30:00Z"
+last_activity: 2026-05-08 -- Completed Phase 52
 progress:
-  total_phases: 4
-  completed_phases: 1
-  total_plans: 4
-  completed_plans: 3
-  percent: 25
+  total_phases: 5
+  completed_phases: 5
+  total_plans: 5
+  completed_plans: 5
+  percent: 100
 ---
 
 # Project State
@@ -21,21 +21,21 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-05-05)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Uberblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
-**Current focus:** Phase 44 is complete. Milestone v1.13 is ready for Phase 45 planning.
+**Current focus:** Milestone v1.14 is complete. The next step is choosing the next captured milestone seed to activate, with `RPT-11` intentionally deferred into its own future stub.
 
 ## Current Position
 
-Phase: 45. Unified Project Timeline
+Phase: —
 Plan: —
-Status: Phase 44 complete, ready to plan Phase 45
-Last activity: 2026-05-05 -- Phase 44 verified complete
+Status: v1.14 complete, ready for next milestone activation
+Last activity: 2026-05-08 -- Completed Phase 52
 
 ## Performance Metrics
 
 **Velocity:**
 
 - Total plans completed across merged milestones: 30
-- Milestones merged into this branch: 4
+- Milestones merged into this branch: 5
 
 **By Phase:**
 
@@ -56,6 +56,14 @@ Last activity: 2026-05-05 -- Phase 44 verified complete
 | 42. Request Context Extractor | 1/1 | Complete |
 | 43. Mobile-First Guardrails | 1/1 | Complete |
 | 44. Project Model Foundation | 3/3 | Complete |
+| Phase 45. Unified Project Timeline | 2/2 | Complete |
+| Phase 46. Project-Linked Execution Capture | 1/1 | Complete |
+| Phase 47. Project Dashboard Visibility | 1/1 | Complete |
+| Phase 48. Project Costing Aggregates | 1/1 | Complete |
+| Phase 49. Project Budget & Billing Metadata | 1/1 | Complete |
+| Phase 50. Invoice-Ready Project Summary | 1/1 | Complete |
+| Phase 51. Historical Project Reporting | 1/1 | Complete |
+| Phase 52. Project Planning View | 1/1 | Complete |
 
 ## Accumulated Context
 
@@ -74,10 +82,23 @@ Last activity: 2026-05-05 -- Phase 44 verified complete
 - v1.12 introduces `projects` as a safe architectural alias over the current `sites` module.
 - v1.12 makes `TenantContext` an extractor so handlers stop rebuilding request context manually.
 - v1.12 codifies mobile-first delivery in `.planning/MOBILE-FIRST-CHECKLIST.md`.
+- [Phase 45]: Use one shared composer component for both note and camera entrypoints. — Mixed-media validation, preview cleanup, and upload ordering now live in one place.
+- [Phase 45]: Keep unified submissions on the existing attachment-backed note activity path. — This reuses the protected attachment model and avoids new photo-only timeline records.
+- [Phase 45]: Promote the timeline above secondary management cards on the detail page. — Workers now see the canonical project memory before planning and administrative panels.
+- [Phase 45]: Show both exact and relative timestamps on each timeline card. — The existing created_at field remains the single source of truth while adding more precise context.
+- [Phase 48]: Reuse existing project-linked time and stock booking rows as the only cost-basis source of truth. — No accounting shadow tables should be introduced before billing semantics exist.
+- [Phase 48]: Aggregate labor and material separately, then compose the result. — This avoids SQL join multiplication between time rows and stock rows.
+- [Phase 49]: Keep budget and billing metadata on the existing project aggregate. — Persist lightweight fields on `sites` and keep actuals on the summary endpoint.
+- [Phase 49]: Do not fabricate monetary actuals without price or rate inputs. — Show budget beside operational actuals until invoice-ready export work adds richer billing semantics.
+- [Phase 50]: Keep invoice-ready output as a dedicated read-only export contract. — Reuse project metadata and actuals without collapsing them into the existing site or summary DTOs.
+- [Phase 50]: Export structured JSON first. — No PDF generation, pricing engine, or tax logic should be introduced in this phase.
+- [Phase 51]: Keep historical reporting on the projects surface. — Use read-only filtered report rows instead of broadening the dashboard into a manager KPI suite.
+- [Phase 52]: Reuse the fleet calendar with a `site_id` filter. — Project planning stays on the project detail page rather than becoming a second planner.
+- [Milestone v1.14]: Keep `RPT-11` out of scope for this shipped slice. — The broader manager dashboard split is captured separately as a future stub.
 
 ### Pending Todos
 
-- Run `/gsd-plan-phase 45` to begin execution.
+- Choose and activate the next milestone seed.
 - Use `.planning/FEATURES.md` as the comparison baseline for shipped vs desired product scope.
 - Use `.planning/REQUIREMENTS.md` `Product Backlog from 2026-05 Note` section to slice the next milestone.
 
@@ -100,6 +121,6 @@ Last activity: 2026-05-05 -- Phase 44 verified complete
 
 ## Session Continuity
 
-Last session: 2026-05-05
-Stopped at: Phase 44 complete and ready for Phase 45 planning
-Resume file: None
+Last session: 2026-05-08T15:30:00Z
+Stopped at: Milestone v1.14 complete and next seed ready for activation
+Resume file: `.planning/phases/51-historical-project-reporting/51-PLAN.md`

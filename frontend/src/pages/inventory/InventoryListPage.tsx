@@ -2,7 +2,8 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, Plus, QrCode, Settings } from "lucide-react"
+import { Search, Plus, QrCode, Settings, AlertTriangle, ArrowRight } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   PageHeader,
   EmptyState,
@@ -10,7 +11,7 @@ import {
 } from "@/components/shared"
 import { MaterialCard, MaterialCardSkeleton } from "@/components/inventory/MaterialCard"
 import { CategoryFilter } from "@/components/inventory/CategoryFilter"
-import { useCategories, useMaterials } from "@/lib/api/hooks"
+import { useCategories, useInventoryAlerts, useMaterials } from "@/lib/api/hooks"
 import { AddMaterialDialog } from "./AddMaterialDialog"
 import type { Material } from "@/types/inventory"
 
@@ -27,6 +28,7 @@ export default function InventoryListPage() {
     error,
     refetch,
   } = useMaterials(selectedCategory)
+  const { data: inventoryAlerts = [] } = useInventoryAlerts()
 
   const categoryNames = new Map(
     (categories ?? []).map((category) => [category.id, category.name])
@@ -91,6 +93,39 @@ export default function InventoryListPage() {
           </Button>
         </div>
       </div>
+
+      {inventoryAlerts.length > 0 && (
+        <Card className="border-warning/30 bg-warning/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-3 text-base font-semibold">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/15">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+              </div>
+              Ablaufwarnungen
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {inventoryAlerts.slice(0, 4).map((material: Material) => (
+              <Button
+                key={material.id}
+                variant="ghost"
+                className="h-auto w-full justify-between rounded-lg px-3 py-3"
+                onClick={() => navigate(`/inventory/${material.id}`)}
+              >
+                <div className="text-left">
+                  <p className="font-medium">{material.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {material.expired_quantity > 0
+                      ? `${material.expired_quantity} ${material.unit} abgelaufen`
+                      : `${material.expiring_soon_quantity} ${material.unit} laufen bald ab`}
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Materials List */}
       {materialsLoading ? (

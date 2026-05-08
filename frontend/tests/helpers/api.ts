@@ -32,7 +32,8 @@ interface MaterialData {
   quantity: number;
   min_quantity: number;
   location?: string | null;
-   expires_on?: string | null;
+  expires_on?: string | null;
+  batch_code?: string | null;
 }
 
 interface MaterialResponse {
@@ -48,7 +49,15 @@ interface MaterialResponse {
   expired_quantity: number;
   expiring_soon_quantity: number;
   next_expiry_on: string | null;
-  expiry_batches: Array<{ expires_on: string; quantity: number; is_expired: boolean; is_expiring_soon: boolean }>;
+  expiry_batches: Array<{
+    id: string;
+    batch_code: string | null;
+    expires_on: string;
+    quantity: number;
+    received_at: string;
+    is_expired: boolean;
+    is_expiring_soon: boolean;
+  }>;
   location?: string;
   qr_code?: string;
   is_low_stock: boolean;

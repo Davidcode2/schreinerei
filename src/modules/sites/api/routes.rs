@@ -32,8 +32,17 @@ pub fn create_router() -> Router<AppState> {
         // Sites
         .route("/api/v1/sites", get(list_sites).post(create_site))
         .route(
+            "/api/v1/sites/history-report",
+            get(list_site_history_report),
+        )
+        .route(
             "/api/v1/sites/{id}",
             get(get_site).patch(update_site).delete(delete_site),
+        )
+        .route("/api/v1/sites/{id}/summary", get(get_site_summary))
+        .route(
+            "/api/v1/sites/{id}/invoice-summary",
+            get(get_site_invoice_summary),
         )
         // Assignments
         .route("/api/v1/sites/{id}/assign", post(assign_user))
@@ -101,7 +110,82 @@ pub struct SiteResponse {
     pub start_date: Option<String>,
     pub end_date: Option<String>,
     pub estimated_days: Option<i32>,
+    pub budget_amount_cents: Option<i64>,
+    pub billing_reference: Option<String>,
+    pub billing_notes: Option<String>,
+    pub quote_reference: Option<String>,
     pub created_at: String,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct ProjectMaterialUsageLineResponse {
+    pub material_id: String,
+    pub material_name: String,
+    pub category_name: String,
+    pub unit: String,
+    pub total_withdrawn: i32,
+    pub withdrawal_count: i64,
+    pub last_withdrawn_at: String,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct ProjectMaterialSummaryResponse {
+    pub distinct_material_count: i64,
+    pub withdrawal_count: i64,
+    pub lines: Vec<ProjectMaterialUsageLineResponse>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct ProjectLaborSummaryResponse {
+    pub total_hours: f64,
+    pub entry_count: i64,
+    pub site_hours: f64,
+    pub workshop_hours: f64,
+    pub last_work_date: Option<String>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct SiteProjectSummaryResponse {
+    pub labor: ProjectLaborSummaryResponse,
+    pub materials: ProjectMaterialSummaryResponse,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct SiteInvoiceProjectResponse {
+    pub id: String,
+    pub name: String,
+    pub project_type: String,
+    pub customer_name: String,
+    pub location: Option<String>,
+    pub status: String,
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
+    pub estimated_days: Option<i32>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct SiteInvoiceBillingResponse {
+    pub budget_amount_cents: Option<i64>,
+    pub quote_reference: Option<String>,
+    pub billing_reference: Option<String>,
+    pub billing_notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct SiteInvoiceSummaryResponse {
+    pub export_version: String,
+    pub generated_at: String,
+    pub project: SiteInvoiceProjectResponse,
+    pub billing: SiteInvoiceBillingResponse,
+    pub labor: ProjectLaborSummaryResponse,
+    pub materials: ProjectMaterialSummaryResponse,
 }
 
 impl From<crate::modules::sites::domain::Site> for SiteResponse {
@@ -117,7 +201,144 @@ impl From<crate::modules::sites::domain::Site> for SiteResponse {
             start_date: site.start_date.map(|d| d.to_string()),
             end_date: site.end_date.map(|d| d.to_string()),
             estimated_days: site.estimated_days,
+            budget_amount_cents: site.budget_amount_cents,
+            billing_reference: site.billing_reference,
+            billing_notes: site.billing_notes,
+            quote_reference: site.quote_reference,
             created_at: site.created_at.to_rfc3339(),
+        }
+    }
+}
+
+impl From<crate::modules::sites::infrastructure::site_repository::SiteHistoryReportRow>
+    for SiteHistoryReportRowResponse
+{
+    fn from(
+        row: crate::modules::sites::infrastructure::site_repository::SiteHistoryReportRow,
+    ) -> Self {
+        Self {
+            site_id: row.site_id.to_string(),
+            project_type: row.project_type.to_string(),
+            name: row.name,
+            customer_name: row.customer_name,
+            status: row.status,
+            start_date: row.start_date.map(|value| value.to_string()),
+            end_date: row.end_date.map(|value| value.to_string()),
+            estimated_days: row.estimated_days,
+            budget_amount_cents: row.budget_amount_cents,
+            billing_reference: row.billing_reference,
+            quote_reference: row.quote_reference,
+            total_hours: row.total_hours,
+            worker_count: row.worker_count,
+            distinct_material_count: row.distinct_material_count,
+            withdrawal_count: row.withdrawal_count,
+            cost_basis: row.cost_basis,
+        }
+    }
+}
+
+impl From<crate::modules::inventory::infrastructure::material_repository::ProjectMaterialUsageLine>
+    for ProjectMaterialUsageLineResponse
+{
+    fn from(
+        line: crate::modules::inventory::infrastructure::material_repository::ProjectMaterialUsageLine,
+    ) -> Self {
+        Self {
+            material_id: line.material_id.to_string(),
+            material_name: line.material_name,
+            category_name: line.category_name,
+            unit: line.unit,
+            total_withdrawn: line.total_withdrawn,
+            withdrawal_count: line.withdrawal_count,
+            last_withdrawn_at: line.last_withdrawn_at.to_rfc3339(),
+        }
+    }
+}
+
+impl From<crate::modules::inventory::infrastructure::material_repository::ProjectMaterialSummary>
+    for ProjectMaterialSummaryResponse
+{
+    fn from(
+        summary: crate::modules::inventory::infrastructure::material_repository::ProjectMaterialSummary,
+    ) -> Self {
+        Self {
+            distinct_material_count: summary.distinct_material_count,
+            withdrawal_count: summary.withdrawal_count,
+            lines: summary
+                .lines
+                .into_iter()
+                .map(ProjectMaterialUsageLineResponse::from)
+                .collect(),
+        }
+    }
+}
+
+impl From<crate::modules::sites::infrastructure::site_repository::ProjectLaborSummary>
+    for ProjectLaborSummaryResponse
+{
+    fn from(
+        summary: crate::modules::sites::infrastructure::site_repository::ProjectLaborSummary,
+    ) -> Self {
+        Self {
+            total_hours: summary.total_hours,
+            entry_count: summary.entry_count,
+            site_hours: summary.site_hours,
+            workshop_hours: summary.workshop_hours,
+            last_work_date: summary.last_work_date.map(|value| value.to_string()),
+        }
+    }
+}
+
+impl From<crate::modules::sites::application::site_service::ProjectSummary>
+    for SiteProjectSummaryResponse
+{
+    fn from(summary: crate::modules::sites::application::site_service::ProjectSummary) -> Self {
+        Self {
+            labor: ProjectLaborSummaryResponse::from(summary.labor),
+            materials: ProjectMaterialSummaryResponse::from(summary.materials),
+        }
+    }
+}
+
+impl From<crate::modules::sites::domain::Site> for SiteInvoiceProjectResponse {
+    fn from(site: crate::modules::sites::domain::Site) -> Self {
+        Self {
+            id: site.id.to_string(),
+            name: site.name,
+            project_type: site.project_type.to_string(),
+            customer_name: site.customer_name,
+            location: site.location,
+            status: site.status.to_string(),
+            start_date: site.start_date.map(|value| value.to_string()),
+            end_date: site.end_date.map(|value| value.to_string()),
+            estimated_days: site.estimated_days,
+        }
+    }
+}
+
+impl From<&crate::modules::sites::domain::Site> for SiteInvoiceBillingResponse {
+    fn from(site: &crate::modules::sites::domain::Site) -> Self {
+        Self {
+            budget_amount_cents: site.budget_amount_cents,
+            quote_reference: site.quote_reference.clone(),
+            billing_reference: site.billing_reference.clone(),
+            billing_notes: site.billing_notes.clone(),
+        }
+    }
+}
+
+impl From<crate::modules::sites::application::site_service::InvoiceSummary>
+    for SiteInvoiceSummaryResponse
+{
+    fn from(summary: crate::modules::sites::application::site_service::InvoiceSummary) -> Self {
+        let generated_at = chrono::Utc::now().to_rfc3339();
+        Self {
+            export_version: "v1".to_string(),
+            generated_at,
+            billing: SiteInvoiceBillingResponse::from(&summary.site),
+            project: SiteInvoiceProjectResponse::from(summary.site),
+            labor: ProjectLaborSummaryResponse::from(summary.project.labor),
+            materials: ProjectMaterialSummaryResponse::from(summary.project.materials),
         }
     }
 }
@@ -133,6 +354,10 @@ pub struct CreateSiteRequest {
     pub start_date: Option<String>,
     pub end_date: Option<String>,
     pub estimated_days: Option<i32>,
+    pub budget_amount_cents: Option<i64>,
+    pub billing_reference: Option<String>,
+    pub billing_notes: Option<String>,
+    pub quote_reference: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -147,12 +372,54 @@ pub struct UpdateSiteRequest {
     pub start_date: Option<String>,
     pub end_date: Option<String>,
     pub estimated_days: Option<i32>,
+    pub budget_amount_cents: Option<i64>,
+    pub billing_reference: Option<String>,
+    pub billing_notes: Option<String>,
+    pub quote_reference: Option<String>,
+    pub clear_budget_amount: Option<bool>,
+    pub clear_billing_reference: Option<bool>,
+    pub clear_billing_notes: Option<bool>,
+    pub clear_quote_reference: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ListSitesQuery {
     pub status: Option<String>,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct SiteHistoryReportQuery {
+    pub customer: Option<String>,
+    pub project_type: Option<String>,
+    pub worker_id: Option<String>,
+    pub date_from: Option<String>,
+    pub date_to: Option<String>,
+    pub duration_min_hours: Option<f64>,
+    pub duration_max_hours: Option<f64>,
+    pub cost_basis: Option<String>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct SiteHistoryReportRowResponse {
+    pub site_id: String,
+    pub project_type: String,
+    pub name: String,
+    pub customer_name: String,
+    pub status: String,
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
+    pub estimated_days: Option<i32>,
+    pub budget_amount_cents: Option<i64>,
+    pub billing_reference: Option<String>,
+    pub quote_reference: Option<String>,
+    pub total_hours: f64,
+    pub worker_count: i64,
+    pub distinct_material_count: i64,
+    pub withdrawal_count: i64,
+    pub cost_basis: String,
 }
 
 #[derive(Debug, Serialize, TS)]
@@ -276,6 +543,52 @@ pub async fn list_sites(
     Ok(Json(response))
 }
 
+pub async fn list_site_history_report(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Query(query): Query<SiteHistoryReportQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
+    );
+
+    let project_type = query
+        .project_type
+        .map(|value| value.parse::<ProjectType>())
+        .transpose()
+        .map_err(|e: String| AppError::Validation(e))?;
+
+    let worker_id = query
+        .worker_id
+        .map(|value| Uuid::parse_str(&value))
+        .transpose()
+        .map_err(|_| AppError::Validation("Invalid worker ID".to_string()))?
+        .map(UserId);
+
+    let filter = crate::modules::sites::infrastructure::site_repository::SiteHistoryReportFilter {
+        customer: query.customer,
+        project_type,
+        worker_id,
+        date_from: query
+            .date_from
+            .and_then(|value| NaiveDate::parse_from_str(&value, "%Y-%m-%d").ok()),
+        date_to: query
+            .date_to
+            .and_then(|value| NaiveDate::parse_from_str(&value, "%Y-%m-%d").ok()),
+        duration_min_hours: query.duration_min_hours,
+        duration_max_hours: query.duration_max_hours,
+        cost_basis: query.cost_basis,
+    };
+
+    let rows = service.list_site_history_report(filter, &ctx).await?;
+    let response: Vec<SiteHistoryReportRowResponse> = rows
+        .into_iter()
+        .map(SiteHistoryReportRowResponse::from)
+        .collect();
+
+    Ok(Json(response))
+}
+
 pub async fn create_site(
     State(state): State<AppState>,
     ctx: TenantContext,
@@ -300,6 +613,10 @@ pub async fn create_site(
             .end_date
             .and_then(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").ok()),
         estimated_days: request.estimated_days,
+        budget_amount_cents: request.budget_amount_cents,
+        billing_reference: request.billing_reference,
+        billing_notes: request.billing_notes,
+        quote_reference: request.quote_reference,
     };
 
     let site = service.create_site(create, &ctx).await?;
@@ -322,6 +639,40 @@ pub async fn get_site(
     let site = service.get_site(site_id, &ctx).await?;
 
     Ok(Json(SiteResponse::from(site)))
+}
+
+pub async fn get_site_summary(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
+    );
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+
+    let summary = service.get_project_summary(site_id, &ctx).await?;
+
+    Ok(Json(SiteProjectSummaryResponse::from(summary)))
+}
+
+pub async fn get_site_invoice_summary(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
+    );
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+
+    let summary = service.get_invoice_summary(site_id, &ctx).await?;
+
+    Ok(Json(SiteInvoiceSummaryResponse::from(summary)))
 }
 
 pub async fn update_site(
@@ -361,6 +712,14 @@ pub async fn update_site(
             .end_date
             .and_then(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").ok()),
         estimated_days: request.estimated_days,
+        budget_amount_cents: request.budget_amount_cents,
+        billing_reference: request.billing_reference,
+        billing_notes: request.billing_notes,
+        quote_reference: request.quote_reference,
+        clear_budget_amount: request.clear_budget_amount.unwrap_or(false),
+        clear_billing_reference: request.clear_billing_reference.unwrap_or(false),
+        clear_billing_notes: request.clear_billing_notes.unwrap_or(false),
+        clear_quote_reference: request.clear_quote_reference.unwrap_or(false),
     };
 
     let site = service.update_site(site_id, update, &ctx).await?;
@@ -1097,6 +1456,10 @@ mod tests {
             start_date: None,
             end_date: None,
             estimated_days: Some(1),
+            budget_amount_cents: None,
+            billing_reference: None,
+            billing_notes: None,
+            quote_reference: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         });

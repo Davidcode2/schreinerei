@@ -123,6 +123,7 @@ export interface ListReservationsQuery {
   user_id?: string
   resource_type?: ResourceType
   resource_id?: string
+  site_id?: string
 }
 
 // === Calendar ===
@@ -132,6 +133,7 @@ export interface ReservationSummary {
   start_time: string
   end_time: string
   user_name: string
+  site_id: string | null
   site_name: string | null
   status: ReservationStatus
 }
@@ -151,6 +153,7 @@ export interface CalendarQuery {
   start_date: string
   end_date: string
   resource_type?: ResourceType
+  site_id?: string
 }
 
 // === Availability ===

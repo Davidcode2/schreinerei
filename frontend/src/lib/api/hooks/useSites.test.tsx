@@ -106,6 +106,7 @@ describe("useCreateActivity", () => {
   it("sends attachment ids when creating a document activity", async () => {
     vi.mocked(apiClient.post).mockResolvedValueOnce({ id: "activity-2" })
     const queryClient = createQueryClient()
+    const invalidateQueriesSpy = vi.spyOn(queryClient, "invalidateQueries")
 
     const { result } = renderHook(() => useCreateActivity(), {
       wrapper: createWrapper(queryClient),
@@ -122,6 +123,9 @@ describe("useCreateActivity", () => {
       activity_type: "note",
       content: "Montage abgeschlossen",
       attachment_ids: ["att-1", "att-2"],
+    })
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+      queryKey: ["activities", "site-1"],
     })
   })
 })

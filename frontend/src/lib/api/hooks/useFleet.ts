@@ -154,6 +154,7 @@ export function useReservations(query?: ListReservationsQuery) {
       if (query?.user_id) params.set("user_id", query.user_id)
       if (query?.resource_type) params.set("resource_type", query.resource_type)
       if (query?.resource_id) params.set("resource_id", query.resource_id)
+      if (query?.site_id) params.set("site_id", query.site_id)
       const queryString = params.toString()
       return apiClient.get<Reservation[]>(
         `/api/v1/fleet/reservations${queryString ? `?${queryString}` : ""}`
@@ -232,6 +233,7 @@ export function useCalendar(query: CalendarQuery) {
       params.set("start_date", query.start_date)
       params.set("end_date", query.end_date)
       if (query.resource_type) params.set("resource_type", query.resource_type)
+      if (query.site_id) params.set("site_id", query.site_id)
       return apiClient.get<CalendarResponse>(
         `/api/v1/fleet/calendar?${params.toString()}`
       )

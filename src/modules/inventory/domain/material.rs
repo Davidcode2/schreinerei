@@ -28,8 +28,11 @@ pub struct Material {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MaterialBatchSummary {
+    pub id: uuid::Uuid,
+    pub batch_code: Option<String>,
     pub expires_on: NaiveDate,
     pub quantity: i32,
+    pub received_at: DateTime<Utc>,
     pub is_expired: bool,
     pub is_expiring_soon: bool,
 }
@@ -62,6 +65,7 @@ pub struct CreateMaterial {
     pub min_quantity: i32,
     pub location: Option<String>,
     pub expires_on: Option<NaiveDate>,
+    pub batch_code: Option<String>,
 }
 
 impl CreateMaterial {
@@ -86,15 +90,23 @@ pub struct WithdrawMaterial {
     pub material_id: MaterialId,
     pub quantity: i32,
     pub notes: Option<String>,
-    pub site_id: Option<SiteId>, // Optional link to Baustelle
+    pub site_id: Option<SiteId>,
     pub disposal: bool,
+    pub last_package_taken: bool,
 }
 
 impl WithdrawMaterial {
+    pub fn requires_project_link(&self) -> bool {
+        !self.disposal
+    }
+
     /// Validate the withdraw command
     pub fn validate(&self) -> Result<(), String> {
         if self.quantity <= 0 {
             return Err("Withdrawal quantity must be positive".to_string());
+        }
+        if self.requires_project_link() && self.site_id.is_none() {
+            return Err("Project link is required for material consumption".to_string());
         }
         Ok(())
     }
@@ -151,6 +163,10 @@ pub struct StockIn {
     pub quantity: i32,
     pub notes: Option<String>,
     pub expires_on: Option<NaiveDate>,
+    pub batch_code: Option<String>,
+    pub supplier_name: Option<String>,
+    pub receipt_reference: Option<String>,
+    pub receipt_date: Option<NaiveDate>,
 }
 
 impl StockIn {
@@ -244,6 +260,7 @@ mod tests {
             min_quantity: 5,
             location: None,
             expires_on: None,
+            batch_code: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -259,6 +276,7 @@ mod tests {
             min_quantity: 5,
             location: None,
             expires_on: None,
+            batch_code: None,
         };
         assert_eq!(cmd.validate(), Err("Material name is required".to_string()));
     }
@@ -274,6 +292,7 @@ mod tests {
             min_quantity: 5,
             location: None,
             expires_on: None,
+            batch_code: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -292,6 +311,7 @@ mod tests {
             min_quantity: -1,
             location: None,
             expires_on: None,
+            batch_code: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -305,8 +325,9 @@ mod tests {
             material_id: MaterialId::new(),
             quantity: 1,
             notes: None,
-            site_id: None,
+            site_id: Some(SiteId::new()),
             disposal: false,
+            last_package_taken: false,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -319,6 +340,7 @@ mod tests {
             notes: None,
             site_id: None,
             disposal: false,
+            last_package_taken: false,
         };
         assert_eq!(
             cmd.validate(),
@@ -334,11 +356,43 @@ mod tests {
             notes: None,
             site_id: None,
             disposal: false,
+            last_package_taken: false,
         };
         assert_eq!(
             cmd.validate(),
             Err("Withdrawal quantity must be positive".to_string())
         );
+    }
+
+    #[test]
+    fn withdraw_material_validate_requires_project_link_for_real_consumption() {
+        let cmd = WithdrawMaterial {
+            material_id: MaterialId::new(),
+            quantity: 1,
+            notes: None,
+            site_id: None,
+            disposal: false,
+            last_package_taken: false,
+        };
+
+        assert_eq!(
+            cmd.validate(),
+            Err("Project link is required for material consumption".to_string())
+        );
+    }
+
+    #[test]
+    fn withdraw_material_validate_allows_missing_project_for_disposal() {
+        let cmd = WithdrawMaterial {
+            material_id: MaterialId::new(),
+            quantity: 1,
+            notes: None,
+            site_id: None,
+            disposal: true,
+            last_package_taken: false,
+        };
+
+        assert!(cmd.validate().is_ok());
     }
 
     #[test]
@@ -441,6 +495,10 @@ mod tests {
             quantity: 10,
             notes: Some("Delivery arrived".to_string()),
             expires_on: None,
+            batch_code: None,
+            supplier_name: None,
+            receipt_reference: None,
+            receipt_date: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -452,6 +510,10 @@ mod tests {
             quantity: 5,
             notes: None,
             expires_on: None,
+            batch_code: None,
+            supplier_name: None,
+            receipt_reference: None,
+            receipt_date: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -463,6 +525,10 @@ mod tests {
             quantity: 0,
             notes: None,
             expires_on: None,
+            batch_code: None,
+            supplier_name: None,
+            receipt_reference: None,
+            receipt_date: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -477,6 +543,10 @@ mod tests {
             quantity: -5,
             notes: None,
             expires_on: None,
+            batch_code: None,
+            supplier_name: None,
+            receipt_reference: None,
+            receipt_date: None,
         };
         assert_eq!(
             cmd.validate(),

@@ -88,6 +88,10 @@ export const handlers = [
       start_date: null,
       end_date: null,
       estimated_days: null,
+      budget_amount_cents: null,
+      billing_reference: null,
+      billing_notes: null,
+      quote_reference: null,
       created_at: new Date().toISOString(),
       ...body,
     };
@@ -129,6 +133,29 @@ export const handlers = [
     return HttpResponse.json([]);
   }),
 
+  http.get(apiRoute('/sites/history-report'), async () => {
+    await delay(10);
+    return HttpResponse.json([]);
+  }),
+
+  http.get(apiRoute('/sites/:id/summary'), async () => {
+    await delay(10);
+    return HttpResponse.json({
+      labor: {
+        total_hours: 0,
+        entry_count: 0,
+        site_hours: 0,
+        workshop_hours: 0,
+        last_work_date: null,
+      },
+      materials: {
+        distinct_material_count: 0,
+        withdrawal_count: 0,
+        lines: [],
+      },
+    });
+  }),
+
   http.post(apiRoute('/sites/:id/assign'), async ({ params, request }) => {
     const body = await request.json() as Record<string, unknown>;
     return HttpResponse.json(
@@ -168,6 +195,17 @@ export const handlers = [
   http.get(apiRoute('/inventory/low-stock'), async () => {
     await delay(10);
     return HttpResponse.json([]);
+  }),
+
+  http.get(apiRoute('/inventory/alerts'), async () => {
+    await delay(10);
+    return HttpResponse.json(
+      mockData.materials.filter((entry) => {
+        const expired = Number(entry.expired_quantity ?? 0);
+        const soon = Number(entry.expiring_soon_quantity ?? 0);
+        return expired > 0 || soon > 0;
+      })
+    );
   }),
 
   // Vehicles (fleet module)

@@ -4,10 +4,10 @@ use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::inventory::domain::{
     AdjustStock, ApproveOrderRequest, Category, CreateCategory, CreateMaterial, CreateOrderRequest,
-    EnrichedStockEntry, FulfillOrderRequest, LocationChangedPayload, Material,
+    EnrichedStockEntry, FulfillOrderRequest, LocationChangedPayload, MarkOrderedRequest, Material,
     MaterialAddedPayload, MaterialCreatedPayload, MinQuantityChangedPayload, OrderRequest,
-    OrderRequestCreatedPayload, OrderStatus, StockAdjustedPayload, StockIn, StockLowPayload,
-    StockWithdrawnPayload, UpdateCategory, UpdateMaterial, WithdrawMaterial,
+    OrderRequestCreatedPayload, OrderRequestKind, OrderStatus, StockAdjustedPayload, StockIn,
+    StockLowPayload, StockWithdrawnPayload, UpdateCategory, UpdateMaterial, WithdrawMaterial,
 };
 use crate::modules::inventory::infrastructure::MaterialRepository;
 use qrcode::render::svg;
@@ -21,6 +21,13 @@ pub struct InventoryService {
 }
 
 impl InventoryService {
+    const DISABLE_EXPIRY_WITH_LIVE_STOCK_ERROR: &'static str =
+        "Expiry tracking can only be disabled after all live stock in this category is depleted";
+    const LOW_STOCK_REASON: &'static str = "Automatisch: Mindestbestand unterschritten";
+    const LAST_PACKAGE_REASON: &'static str = "Automatisch: Letzte Packung entnommen";
+    const AUTO_REPLENISHMENT_RESOLVED_NOTE: &'static str =
+        "Automatisch nach Einlagerung oder Bestandskorrektur aufgelost";
+
     pub fn new(material_repo: MaterialRepository) -> Self {
         let pool = material_repo.pool();
         Self {
@@ -44,6 +51,68 @@ impl InventoryService {
             )
             .await?;
         Ok(user.id)
+    }
+
+    fn suggested_replenishment_quantity(material: &Material) -> i32 {
+        (material.min_quantity * 2).max(1)
+    }
+
+    async fn ensure_replenishment_signal(
+        &self,
+        material: &Material,
+        triggered_by: UserId,
+        kind: OrderRequestKind,
+        tenant_id: crate::common::types::TenantId,
+    ) -> Result<(), AppError> {
+        let existing = self
+            .material_repo
+            .find_active_order_request_for_material(material.id, tenant_id)
+            .await?;
+
+        if existing.is_some() {
+            return Ok(());
+        }
+
+        self.material_repo
+            .create_order_request(
+                &CreateOrderRequest {
+                    material_id: material.id,
+                    quantity: Self::suggested_replenishment_quantity(material),
+                    reason: Some(
+                        match kind {
+                            OrderRequestKind::LastPackage => Self::LAST_PACKAGE_REASON,
+                            OrderRequestKind::MinimumBreach | OrderRequestKind::Manual => {
+                                Self::LOW_STOCK_REASON
+                            }
+                        }
+                        .to_string(),
+                    ),
+                    request_kind: kind,
+                },
+                triggered_by,
+                tenant_id,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    async fn resolve_auto_replenishment_signals_if_restocked(
+        &self,
+        material: &Material,
+        tenant_id: crate::common::types::TenantId,
+    ) -> Result<(), AppError> {
+        if material.is_low_stock() {
+            return Ok(());
+        }
+
+        self.material_repo
+            .resolve_active_auto_order_requests(
+                material.id,
+                Some(Self::AUTO_REPLENISHMENT_RESOLVED_NOTE.to_string()),
+                tenant_id,
+            )
+            .await
     }
 
     // === Category operations ===
@@ -87,9 +156,35 @@ impl InventoryService {
             return Err(AppError::Forbidden("Admin access required".to_string()));
         }
         update.validate()?;
+
+        let existing = self.get_category(id, ctx).await?;
+        let has_live_stock = if matches!(update.can_expire, Some(false)) {
+            self.material_repo
+                .category_has_live_stock(id, ctx.tenant_id)
+                .await?
+        } else {
+            false
+        };
+
+        Self::validate_category_expiry_toggle(&existing, &update, has_live_stock)?;
+
         self.material_repo
             .update_category(id, &update, ctx.tenant_id)
             .await
+    }
+
+    fn validate_category_expiry_toggle(
+        existing: &Category,
+        update: &UpdateCategory,
+        has_live_stock: bool,
+    ) -> Result<(), AppError> {
+        if existing.can_expire && matches!(update.can_expire, Some(false)) && has_live_stock {
+            return Err(AppError::Validation(
+                Self::DISABLE_EXPIRY_WITH_LIVE_STOCK_ERROR.to_string(),
+            ));
+        }
+
+        Ok(())
     }
 
     pub async fn delete_category(
@@ -229,6 +324,24 @@ impl InventoryService {
             .into_event(ctx.tenant_id);
 
             self.material_repo.publish_event(&low_event).await?;
+
+            self.ensure_replenishment_signal(
+                &material,
+                local_user_id,
+                OrderRequestKind::MinimumBreach,
+                ctx.tenant_id,
+            )
+            .await?;
+        }
+
+        if withdraw.last_package_taken {
+            self.ensure_replenishment_signal(
+                &material,
+                local_user_id,
+                OrderRequestKind::LastPackage,
+                ctx.tenant_id,
+            )
+            .await?;
         }
 
         Ok(material)
@@ -283,6 +396,19 @@ impl InventoryService {
             .into_event(ctx.tenant_id);
 
             self.material_repo.publish_event(&low_event).await?;
+
+            self.ensure_replenishment_signal(
+                &material,
+                local_user_id,
+                OrderRequestKind::MinimumBreach,
+                ctx.tenant_id,
+            )
+            .await?;
+        }
+
+        if adjust.quantity > 0 {
+            self.resolve_auto_replenishment_signals_if_restocked(&material, ctx.tenant_id)
+                .await?;
         }
 
         Ok(material)
@@ -366,14 +492,7 @@ impl InventoryService {
 
         let material = self
             .material_repo
-            .stock_in(
-                stock_in.material_id,
-                stock_in.quantity,
-                stock_in.notes.clone(),
-                local_user_id,
-                stock_in.expires_on,
-                ctx.tenant_id,
-            )
+            .stock_in(&stock_in, local_user_id, ctx.tenant_id)
             .await?;
 
         // Emit MaterialAdded event
@@ -388,6 +507,9 @@ impl InventoryService {
         .into_event(ctx.tenant_id);
 
         self.material_repo.publish_event(&event).await?;
+
+        self.resolve_auto_replenishment_signals_if_restocked(&material, ctx.tenant_id)
+            .await?;
 
         Ok(material)
     }
@@ -413,6 +535,15 @@ impl InventoryService {
         }
         self.material_repo
             .list_low_stock_materials(ctx.tenant_id)
+            .await
+    }
+
+    pub async fn list_inventory_alerts(
+        &self,
+        ctx: &TenantContext,
+    ) -> Result<Vec<Material>, AppError> {
+        self.material_repo
+            .list_inventory_alert_materials(ctx.tenant_id)
             .await
     }
 
@@ -578,6 +709,20 @@ impl InventoryService {
             .await
     }
 
+    pub async fn mark_order_request_ordered(
+        &self,
+        id: OrderRequestId,
+        mark_ordered: MarkOrderedRequest,
+        ctx: &TenantContext,
+    ) -> Result<OrderRequest, AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+        self.material_repo
+            .mark_order_request_ordered(id, mark_ordered.notes, ctx.tenant_id)
+            .await
+    }
+
     pub async fn fulfill_order_request(
         &self,
         id: OrderRequestId,
@@ -590,5 +735,91 @@ impl InventoryService {
         self.material_repo
             .fulfill_order_request(id, fulfill.actual_quantity, fulfill.notes, ctx.tenant_id)
             .await
+    }
+
+    pub async fn cancel_order_request(
+        &self,
+        id: OrderRequestId,
+        notes: Option<String>,
+        ctx: &TenantContext,
+    ) -> Result<OrderRequest, AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+        self.material_repo
+            .cancel_order_request(id, notes, ctx.tenant_id)
+            .await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::InventoryService;
+    use crate::common::types::{CategoryId, TenantId};
+    use crate::modules::inventory::domain::{Category, UpdateCategory};
+    use chrono::Utc;
+
+    fn category(can_expire: bool) -> Category {
+        Category {
+            id: CategoryId::new(),
+            tenant_id: TenantId::new(),
+            name: "Lacke".to_string(),
+            description: None,
+            can_expire,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+
+    #[test]
+    fn validate_category_expiry_toggle_blocks_disabling_with_live_stock() {
+        let error = InventoryService::validate_category_expiry_toggle(
+            &category(true),
+            &UpdateCategory {
+                name: None,
+                description: None,
+                can_expire: Some(false),
+            },
+            true,
+        )
+        .expect_err("live stock should block disabling expiry");
+
+        assert_eq!(
+            error.to_string(),
+            format!(
+                "Validation error: {}",
+                InventoryService::DISABLE_EXPIRY_WITH_LIVE_STOCK_ERROR
+            )
+        );
+    }
+
+    #[test]
+    fn validate_category_expiry_toggle_allows_enabling_with_live_legacy_stock() {
+        let result = InventoryService::validate_category_expiry_toggle(
+            &category(false),
+            &UpdateCategory {
+                name: None,
+                description: None,
+                can_expire: Some(true),
+            },
+            true,
+        );
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn validate_category_expiry_toggle_allows_disabling_after_stock_is_depleted() {
+        let result = InventoryService::validate_category_expiry_toggle(
+            &category(true),
+            &UpdateCategory {
+                name: None,
+                description: None,
+                can_expire: Some(false),
+            },
+            false,
+        );
+
+        assert!(result.is_ok());
     }
 }

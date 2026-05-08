@@ -254,6 +254,7 @@ pub struct ListReservationsQuery {
     pub user_id: Option<String>,
     pub resource_type: Option<String>,
     pub resource_id: Option<String>,
+    pub site_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, TS)]
@@ -295,6 +296,7 @@ pub struct ReservationSummaryResponse {
     pub start_time: String,
     pub end_time: String,
     pub user_name: Option<String>,
+    pub site_id: Option<String>,
     pub site_name: Option<String>,
     pub status: String,
 }
@@ -306,6 +308,7 @@ impl From<ReservationSummary> for ReservationSummaryResponse {
             start_time: summary.start_time.to_rfc3339(),
             end_time: summary.end_time.to_rfc3339(),
             user_name: summary.user_name,
+            site_id: summary.site_id.map(|value| value.to_string()),
             site_name: summary.site_name,
             status: summary.status.to_string(),
         }
@@ -318,6 +321,7 @@ pub struct CalendarQuery {
     pub start_date: String,
     pub end_date: String,
     pub resource_type: Option<String>,
+    pub site_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, TS)]
@@ -622,8 +626,15 @@ pub async fn list_reservations(
         .transpose()
         .map_err(|_| AppError::Validation("Invalid resource ID".to_string()))?;
 
+    let site_id = query
+        .site_id
+        .map(|s| Uuid::parse_str(&s))
+        .transpose()
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?
+        .map(crate::common::types::SiteId);
+
     let reservations = service
-        .list_reservations(user_id, resource_type, resource_id, &ctx)
+        .list_reservations(user_id, resource_type, resource_id, site_id, &ctx)
         .await?;
     let response: Vec<ReservationResponse> = reservations
         .into_iter()
@@ -810,8 +821,15 @@ pub async fn get_calendar(
         .transpose()
         .map_err(|e: String| AppError::Validation(e))?;
 
+    let site_id = query
+        .site_id
+        .map(|s| Uuid::parse_str(&s))
+        .transpose()
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?
+        .map(crate::common::types::SiteId);
+
     let entries = service
-        .get_calendar(start_date, end_date, resource_type, &ctx)
+        .get_calendar(start_date, end_date, resource_type, site_id, &ctx)
         .await?;
     let response = CalendarResponse {
         resources: entries

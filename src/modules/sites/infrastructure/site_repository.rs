@@ -21,6 +21,46 @@ pub struct SiteRepository {
     event_bus: EventBus,
 }
 
+#[derive(Debug, Clone)]
+pub struct ProjectLaborSummary {
+    pub total_hours: f64,
+    pub entry_count: i64,
+    pub site_hours: f64,
+    pub workshop_hours: f64,
+    pub last_work_date: Option<NaiveDate>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SiteHistoryReportRow {
+    pub site_id: SiteId,
+    pub project_type: ProjectType,
+    pub name: String,
+    pub customer_name: String,
+    pub status: String,
+    pub start_date: Option<NaiveDate>,
+    pub end_date: Option<NaiveDate>,
+    pub estimated_days: Option<i32>,
+    pub budget_amount_cents: Option<i64>,
+    pub billing_reference: Option<String>,
+    pub quote_reference: Option<String>,
+    pub total_hours: f64,
+    pub worker_count: i64,
+    pub distinct_material_count: i64,
+    pub withdrawal_count: i64,
+    pub cost_basis: String,
+}
+
+pub struct SiteHistoryReportFilter {
+    pub customer: Option<String>,
+    pub project_type: Option<ProjectType>,
+    pub worker_id: Option<UserId>,
+    pub date_from: Option<NaiveDate>,
+    pub date_to: Option<NaiveDate>,
+    pub duration_min_hours: Option<f64>,
+    pub duration_max_hours: Option<f64>,
+    pub cost_basis: Option<String>,
+}
+
 impl SiteRepository {
     pub fn new(pool: PgPool) -> Self {
         Self {
@@ -45,9 +85,9 @@ impl SiteRepository {
 
         let site = sqlx::query_as::<_, SiteRow>(
             r#"
-            INSERT INTO sites (id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-            RETURNING id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+            INSERT INTO sites (id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+            RETURNING id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
             "#
         )
         .bind(id)
@@ -61,6 +101,10 @@ impl SiteRepository {
         .bind(create.start_date)
         .bind(create.end_date)
         .bind(create.estimated_days)
+        .bind(create.budget_amount_cents)
+        .bind(&create.billing_reference)
+        .bind(&create.billing_notes)
+        .bind(&create.quote_reference)
         .bind(now)
         .bind(now)
         .fetch_one(&self.pool)
@@ -83,7 +127,7 @@ impl SiteRepository {
     ) -> Result<Option<Site>, AppError> {
         let site = sqlx::query_as::<_, SiteRow>(
             r#"
-            SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+            SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
             FROM sites
             WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#
@@ -106,7 +150,7 @@ impl SiteRepository {
             Some(s) => {
                 sqlx::query_as::<_, SiteRow>(
                     r#"
-                    SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+                    SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
                     FROM sites
                     WHERE tenant_id = $1 AND status = $2 AND deleted_at IS NULL
                     ORDER BY created_at DESC
@@ -120,7 +164,7 @@ impl SiteRepository {
             None => {
                 sqlx::query_as::<_, SiteRow>(
                     r#"
-                    SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+                    SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
                     FROM sites
                     WHERE tenant_id = $1 AND deleted_at IS NULL
                     ORDER BY created_at DESC
@@ -171,9 +215,13 @@ impl SiteRepository {
                 start_date = COALESCE($7, start_date),
                 end_date = COALESCE($8, end_date),
                 estimated_days = COALESCE($9, estimated_days),
+                budget_amount_cents = CASE WHEN $10 THEN NULL ELSE COALESCE($11, budget_amount_cents) END,
+                billing_reference = CASE WHEN $12 THEN NULL ELSE COALESCE($13, billing_reference) END,
+                billing_notes = CASE WHEN $14 THEN NULL ELSE COALESCE($15, billing_notes) END,
+                quote_reference = CASE WHEN $16 THEN NULL ELSE COALESCE($17, quote_reference) END,
                 updated_at = NOW()
-            WHERE id = $10 AND tenant_id = $11
-            RETURNING id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, created_at, updated_at
+            WHERE id = $18 AND tenant_id = $19
+            RETURNING id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
             "#
         )
         .bind(update.project_type.as_ref().map(|p| p.as_str()))
@@ -185,6 +233,14 @@ impl SiteRepository {
         .bind(update.start_date)
         .bind(update.end_date)
         .bind(update.estimated_days)
+        .bind(update.clear_budget_amount)
+        .bind(update.budget_amount_cents)
+        .bind(update.clear_billing_reference)
+        .bind(&update.billing_reference)
+        .bind(update.clear_billing_notes)
+        .bind(&update.billing_notes)
+        .bind(update.clear_quote_reference)
+        .bind(&update.quote_reference)
         .bind(id.0)
         .bind(tenant_id.0)
         .fetch_optional(&self.pool)
@@ -452,11 +508,8 @@ impl SiteRepository {
         id: TimeEntryId,
         update: &UpdateTimeEntry,
     ) -> Result<TimeEntry, AppError> {
-        // Build dynamic update query based on which fields are provided
-        // For notes: we need to handle Option<Option<String>> where:
-        // - None = don't update notes field
-        // - Some(None) = set notes to null
-        // - Some(Some(value)) = set notes to value
+        let should_update_site_id = update.site_id.is_some();
+        let site_id_value = update.site_id.flatten().map(|site_id| site_id.0);
         let notes_update = update.notes.clone();
         let should_update_notes = notes_update.is_some();
         let notes_value = notes_update.flatten();
@@ -465,24 +518,28 @@ impl SiteRepository {
             r#"
             UPDATE time_entries
             SET 
-                site_id = COALESCE($1, site_id),
-                work_type = COALESCE($2, work_type),
-                hours = COALESCE($3, hours),
-                work_date = COALESCE($4, work_date),
+                site_id = CASE
+                    WHEN $1::boolean THEN $2
+                    ELSE site_id
+                END,
+                work_type = COALESCE($3, work_type),
+                hours = COALESCE($4, hours),
+                work_date = COALESCE($5, work_date),
                 notes = CASE 
-                    WHEN $5::boolean THEN $6 
+                    WHEN $6::boolean THEN $7 
                     ELSE notes 
                 END
-            WHERE id = $7 AND tenant_id = $8
+            WHERE id = $8 AND tenant_id = $9
             RETURNING id, tenant_id, site_id, user_id, work_type, hours, work_date, notes, created_at
             "#
         )
-        .bind(update.site_id.as_ref().and_then(|opt| opt.as_ref().map(|s| s.0)))  // Flatten Option<Option<SiteId>> to Option<Uuid>
+        .bind(should_update_site_id)
+        .bind(site_id_value)
         .bind(update.work_type.as_ref().map(|wt| wt.as_str()))
         .bind(update.hours)
         .bind(update.work_date)
-        .bind(should_update_notes)  // Flag to indicate if notes should be updated
-        .bind(notes_value)  // The actual notes value (None = null, Some(value) = value)
+        .bind(should_update_notes)
+        .bind(notes_value)
         .bind(id.0)
         .bind(tenant_id.0)
         .fetch_optional(&self.pool)
@@ -876,12 +933,15 @@ impl SiteRepository {
             FROM sites s
             LEFT JOIN site_assignments sa ON s.id = sa.site_id AND s.tenant_id = sa.tenant_id
             LEFT JOIN time_entries te ON s.id = te.site_id AND s.tenant_id = te.tenant_id
-            WHERE s.tenant_id = $1 AND s.status IN ('planned', 'active')
+            WHERE s.tenant_id = $1 AND s.deleted_at IS NULL
             GROUP BY s.id
             ORDER BY 
                 CASE s.status 
                     WHEN 'active' THEN 1 
                     WHEN 'planned' THEN 2 
+                    WHEN 'completed' THEN 3
+                    WHEN 'archived' THEN 4
+                    ELSE 5
                 END,
                 s.start_date ASC NULLS LAST
             "#,
@@ -892,6 +952,128 @@ impl SiteRepository {
         .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(sites.into_iter().map(|s| s.into_dashboard_site()).collect())
+    }
+
+    pub async fn get_project_labor_summary(
+        &self,
+        tenant_id: TenantId,
+        site_id: SiteId,
+    ) -> Result<ProjectLaborSummary, AppError> {
+        let row = sqlx::query_as::<_, ProjectLaborSummaryRow>(
+            r#"
+            SELECT
+                COALESCE(SUM(hours), 0)::FLOAT8 AS total_hours,
+                COUNT(*)::INT8 AS entry_count,
+                COALESCE(SUM(CASE WHEN work_type = 'site' THEN hours ELSE 0 END), 0)::FLOAT8 AS site_hours,
+                COALESCE(SUM(CASE WHEN work_type = 'workshop' THEN hours ELSE 0 END), 0)::FLOAT8 AS workshop_hours,
+                MAX(work_date) AS last_work_date
+            FROM time_entries
+            WHERE tenant_id = $1 AND site_id = $2
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(row.into_summary())
+    }
+
+    pub async fn list_site_history_report(
+        &self,
+        tenant_id: TenantId,
+        filter: &SiteHistoryReportFilter,
+    ) -> Result<Vec<SiteHistoryReportRow>, AppError> {
+        let rows = sqlx::query_as::<_, SiteHistoryReportRowDb>(
+            r#"
+            WITH labor AS (
+                SELECT
+                    te.site_id,
+                    COALESCE(SUM(te.hours), 0)::FLOAT8 AS total_hours,
+                    COUNT(DISTINCT te.user_id)::INT8 AS worker_count
+                FROM time_entries te
+                WHERE te.tenant_id = $1
+                GROUP BY te.site_id
+            ),
+            materials AS (
+                SELECT
+                    se.site_id,
+                    COUNT(DISTINCT se.material_id)::INT8 AS distinct_material_count,
+                    COUNT(*)::INT8 AS withdrawal_count
+                FROM stock_entries se
+                WHERE se.tenant_id = $1 AND se.entry_type = 'withdrawn'
+                GROUP BY se.site_id
+            )
+            SELECT
+                s.id AS site_id,
+                s.project_type,
+                s.name,
+                s.customer_name,
+                s.status,
+                s.start_date,
+                s.end_date,
+                s.estimated_days,
+                s.budget_amount_cents,
+                s.billing_reference,
+                s.quote_reference,
+                COALESCE(l.total_hours, 0)::FLOAT8 AS total_hours,
+                COALESCE(l.worker_count, 0)::INT8 AS worker_count,
+                COALESCE(m.distinct_material_count, 0)::INT8 AS distinct_material_count,
+                COALESCE(m.withdrawal_count, 0)::INT8 AS withdrawal_count,
+                CASE
+                    WHEN s.budget_amount_cents IS NOT NULL AND (s.billing_reference IS NOT NULL OR s.quote_reference IS NOT NULL) THEN 'invoice_ready'
+                    WHEN s.budget_amount_cents IS NOT NULL AND (COALESCE(l.total_hours, 0) > 0 OR COALESCE(m.withdrawal_count, 0) > 0) THEN 'budget_vs_actual'
+                    WHEN s.budget_amount_cents IS NOT NULL THEN 'budget_only'
+                    WHEN COALESCE(l.total_hours, 0) > 0 OR COALESCE(m.withdrawal_count, 0) > 0 THEN 'actuals_only'
+                    ELSE 'none'
+                END AS cost_basis
+            FROM sites s
+            LEFT JOIN labor l ON l.site_id = s.id
+            LEFT JOIN materials m ON m.site_id = s.id
+            WHERE s.tenant_id = $1
+              AND s.deleted_at IS NULL
+              AND s.status IN ('completed', 'archived')
+              AND ($2::text IS NULL OR s.customer_name ILIKE '%' || $2 || '%')
+              AND ($3::text IS NULL OR s.project_type = $3)
+              AND ($4::uuid IS NULL OR EXISTS (
+                    SELECT 1 FROM time_entries te
+                    WHERE te.tenant_id = s.tenant_id AND te.site_id = s.id AND te.user_id = $4
+                ))
+              AND ($5::date IS NULL OR s.end_date >= $5 OR s.start_date >= $5)
+              AND ($6::date IS NULL OR s.start_date <= $6 OR s.end_date <= $6)
+              AND ($7::float8 IS NULL OR COALESCE(l.total_hours, 0) >= $7)
+              AND ($8::float8 IS NULL OR COALESCE(l.total_hours, 0) <= $8)
+              AND (
+                    $9::text IS NULL OR
+                    CASE
+                        WHEN s.budget_amount_cents IS NOT NULL AND (s.billing_reference IS NOT NULL OR s.quote_reference IS NOT NULL) THEN 'invoice_ready'
+                        WHEN s.budget_amount_cents IS NOT NULL AND (COALESCE(l.total_hours, 0) > 0 OR COALESCE(m.withdrawal_count, 0) > 0) THEN 'budget_vs_actual'
+                        WHEN s.budget_amount_cents IS NOT NULL THEN 'budget_only'
+                        WHEN COALESCE(l.total_hours, 0) > 0 OR COALESCE(m.withdrawal_count, 0) > 0 THEN 'actuals_only'
+                        ELSE 'none'
+                    END = $9
+              )
+            ORDER BY COALESCE(s.end_date, s.start_date) DESC NULLS LAST, s.name ASC
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(filter.customer.as_deref())
+        .bind(filter.project_type.as_ref().map(|value| value.as_str()))
+        .bind(filter.worker_id.map(|value| value.0))
+        .bind(filter.date_from)
+        .bind(filter.date_to)
+        .bind(filter.duration_min_hours)
+        .bind(filter.duration_max_hours)
+        .bind(filter.cost_basis.as_deref())
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(rows
+            .into_iter()
+            .map(SiteHistoryReportRowDb::into_row)
+            .collect())
     }
 
     // === Event publishing ===
@@ -916,6 +1098,10 @@ struct SiteRow {
     start_date: Option<NaiveDate>,
     end_date: Option<NaiveDate>,
     estimated_days: Option<i32>,
+    budget_amount_cents: Option<i64>,
+    billing_reference: Option<String>,
+    billing_notes: Option<String>,
+    quote_reference: Option<String>,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
 }
@@ -937,6 +1123,10 @@ impl SiteRow {
             start_date: self.start_date,
             end_date: self.end_date,
             estimated_days: self.estimated_days,
+            budget_amount_cents: self.budget_amount_cents,
+            billing_reference: self.billing_reference,
+            billing_notes: self.billing_notes,
+            quote_reference: self.quote_reference,
             created_at: self.created_at,
             updated_at: self.updated_at,
         }
@@ -1095,6 +1285,35 @@ struct DashboardSiteRow {
     total_hours: Option<f64>,
 }
 
+#[derive(Debug, FromRow)]
+struct ProjectLaborSummaryRow {
+    total_hours: f64,
+    entry_count: i64,
+    site_hours: f64,
+    workshop_hours: f64,
+    last_work_date: Option<NaiveDate>,
+}
+
+#[derive(Debug, FromRow)]
+struct SiteHistoryReportRowDb {
+    site_id: Uuid,
+    project_type: String,
+    name: String,
+    customer_name: String,
+    status: String,
+    start_date: Option<NaiveDate>,
+    end_date: Option<NaiveDate>,
+    estimated_days: Option<i32>,
+    budget_amount_cents: Option<i64>,
+    billing_reference: Option<String>,
+    quote_reference: Option<String>,
+    total_hours: f64,
+    worker_count: i64,
+    distinct_material_count: i64,
+    withdrawal_count: i64,
+    cost_basis: String,
+}
+
 impl DashboardSiteRow {
     fn into_dashboard_site(self) -> DashboardSite {
         DashboardSite {
@@ -1113,6 +1332,44 @@ impl DashboardSiteRow {
             estimated_days: self.estimated_days,
             assigned_users: self.assigned_users,
             total_hours: self.total_hours.unwrap_or(0.0),
+        }
+    }
+}
+
+impl ProjectLaborSummaryRow {
+    fn into_summary(self) -> ProjectLaborSummary {
+        ProjectLaborSummary {
+            total_hours: self.total_hours,
+            entry_count: self.entry_count,
+            site_hours: self.site_hours,
+            workshop_hours: self.workshop_hours,
+            last_work_date: self.last_work_date,
+        }
+    }
+}
+
+impl SiteHistoryReportRowDb {
+    fn into_row(self) -> SiteHistoryReportRow {
+        SiteHistoryReportRow {
+            site_id: SiteId(self.site_id),
+            project_type: self
+                .project_type
+                .parse()
+                .unwrap_or(ProjectType::ExternalSite),
+            name: self.name,
+            customer_name: self.customer_name,
+            status: self.status,
+            start_date: self.start_date,
+            end_date: self.end_date,
+            estimated_days: self.estimated_days,
+            budget_amount_cents: self.budget_amount_cents,
+            billing_reference: self.billing_reference,
+            quote_reference: self.quote_reference,
+            total_hours: self.total_hours,
+            worker_count: self.worker_count,
+            distinct_material_count: self.distinct_material_count,
+            withdrawal_count: self.withdrawal_count,
+            cost_basis: self.cost_basis,
         }
     }
 }

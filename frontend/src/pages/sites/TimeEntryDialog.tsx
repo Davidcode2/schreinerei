@@ -81,6 +81,7 @@ export function TimeEntryDialog({
 
 	const formatSiteOption = (site: { name: string; project_type: "external_site" | "internal_workshop" }) =>
 		site.project_type === "internal_workshop" ? `${site.name} (Werkstatt)` : `${site.name} (Extern)`;
+	const requiresProjectLink = workType === "site" || workType === "workshop";
 
 	// Reset state when dialog opens with new data
 	useEffect(() => {
@@ -121,14 +122,15 @@ export function TimeEntryDialog({
 		}
 	};
 
-	const isFormValid = hours > 0 && hours <= 24 && workDate;
+	const isFormValid =
+		hours > 0 && hours <= 24 && Boolean(workDate) && (!requiresProjectLink || Boolean(selectedSiteId));
 
 	const handleSubmit = async () => {
 		try {
 			if (mode === "edit" && initialData) {
 				await updateMutation.mutateAsync({
 					id: initialData.id,
-					site_id: workType === "site" ? selectedSiteId || null : null,
+					site_id: selectedSiteId || null,
 					work_type: workType,
 					hours,
 					work_date: workDate,
@@ -137,7 +139,7 @@ export function TimeEntryDialog({
 				toast.success("Zeiteintrag aktualisiert");
 			} else {
 				await createMutation.mutateAsync({
-					site_id: workType === "site" ? selectedSiteId || null : null,
+					site_id: selectedSiteId || null,
 					work_type: workType,
 					hours,
 					work_date: workDate,
@@ -218,23 +220,26 @@ export function TimeEntryDialog({
 							/>
 						</div>
 
-						{workType === "site" && (
-							<div className="space-y-2">
-							<Label>Projekt (optional)</Label>
+						<div className="space-y-2">
+							<Label>{requiresProjectLink ? "Projekt" : "Projekt (optional)"}</Label>
 							<select
-									className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-									value={selectedSiteId}
-									onChange={(event) => setSelectedSiteId(event.target.value)}
-								>
-								<option value="">Keine Zuordnung</option>
+								className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+								value={selectedSiteId}
+								onChange={(event) => setSelectedSiteId(event.target.value)}
+							>
+								<option value="">{requiresProjectLink ? "Projekt auswählen" : "Ohne Projekt"}</option>
 								{sites?.map((site) => (
 									<option key={site.id} value={site.id}>
 										{formatSiteOption(site)}
 									</option>
 								))}
-								</select>
-							</div>
-						)}
+							</select>
+							{requiresProjectLink && (
+								<p className="text-sm text-muted-foreground">
+									Produktive Zeit wird immer einem Projekt zugeordnet.
+								</p>
+							)}
+						</div>
 
 						<div className="space-y-2">
 							<Label>Stunden</Label>

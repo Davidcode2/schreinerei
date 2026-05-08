@@ -14,6 +14,10 @@ import type {
   CreateActivityRequest,
   ActivityQuery,
   DashboardSite,
+  SiteHistoryReportQuery,
+  SiteHistoryReportRow,
+  SiteInvoiceSummary,
+  SiteProjectSummary,
 } from "@/types/sites"
 import type {
   UploadPhotoAttachmentResponse,
@@ -33,11 +37,50 @@ export function useSites(query?: ListSitesQuery) {
   })
 }
 
+export function useSiteHistoryReport(query?: SiteHistoryReportQuery, enabled: boolean = true) {
+  return useQuery({
+    queryKey: ["site-history-report", query],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (query?.customer) params.set('customer', query.customer)
+      if (query?.project_type) params.set('project_type', query.project_type)
+      if (query?.worker_id) params.set('worker_id', query.worker_id)
+      if (query?.date_from) params.set('date_from', query.date_from)
+      if (query?.date_to) params.set('date_to', query.date_to)
+      if (query?.duration_min_hours != null) params.set('duration_min_hours', String(query.duration_min_hours))
+      if (query?.duration_max_hours != null) params.set('duration_max_hours', String(query.duration_max_hours))
+      if (query?.cost_basis) params.set('cost_basis', query.cost_basis)
+      const queryString = params.toString()
+      return apiClient.get<SiteHistoryReportRow[]>(`/api/v1/sites/history-report${queryString ? `?${queryString}` : ''}`)
+    },
+    enabled,
+    staleTime: 30000,
+  })
+}
+
 export function useSite(id: string) {
   return useQuery({
     queryKey: ["site", id],
     queryFn: () => apiClient.get<Site>(`/api/v1/sites/${id}`),
     enabled: !!id,
+    staleTime: 30000,
+  })
+}
+
+export function useSiteSummary(id: string) {
+  return useQuery({
+    queryKey: ["site-summary", id],
+    queryFn: () => apiClient.get<SiteProjectSummary>(`/api/v1/sites/${id}/summary`),
+    enabled: !!id,
+    staleTime: 30000,
+  })
+}
+
+export function useSiteInvoiceSummary(id: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: ["site-invoice-summary", id],
+    queryFn: () => apiClient.get<SiteInvoiceSummary>(`/api/v1/sites/${id}/invoice-summary`),
+    enabled: !!id && enabled,
     staleTime: 30000,
   })
 }
@@ -168,6 +211,7 @@ export function useCreateTimeEntry() {
       queryClient.invalidateQueries({ queryKey: ["time-entries"] })
       queryClient.invalidateQueries({ queryKey: ["my-time-entries"] })
       queryClient.invalidateQueries({ queryKey: ["dashboard-sites"] })
+      queryClient.invalidateQueries({ queryKey: ["site-summary"] })
     },
   })
 }
@@ -182,6 +226,7 @@ export function useUpdateTimeEntry() {
       queryClient.invalidateQueries({ queryKey: ["time-entries"] })
       queryClient.invalidateQueries({ queryKey: ["my-time-entries"] })
       queryClient.invalidateQueries({ queryKey: ["dashboard-sites"] })
+      queryClient.invalidateQueries({ queryKey: ["site-summary"] })
     },
   })
 }
@@ -196,6 +241,7 @@ export function useDeleteTimeEntry() {
       queryClient.invalidateQueries({ queryKey: ["time-entries"] })
       queryClient.invalidateQueries({ queryKey: ["my-time-entries"] })
       queryClient.invalidateQueries({ queryKey: ["dashboard-sites"] })
+      queryClient.invalidateQueries({ queryKey: ["site-summary"] })
     },
   })
 }

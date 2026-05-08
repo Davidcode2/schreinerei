@@ -12,7 +12,7 @@ import OfflineIndicator from "@/components/offline/OfflineIndicator"
 import InstallPrompt from "@/components/pwa/InstallPrompt"
 import DashboardPage from "@/pages/DashboardPage"
 import { InventoryListPage, InventoryDetailPage } from "@/pages/inventory"
-import { SitesListPage, SiteDetailPage } from "@/pages/sites"
+import { SitesListPage, SiteDetailPage, SiteHistoryReportPage } from "@/pages/sites"
 import { FleetPage, ToolDetailPage, ToolsPage, VehicleDetailPage } from "@/pages/fleet"
 import { InventorySettingsPage, SettingsPage } from "@/pages/settings"
 import ScanPage from "@/pages/qr/ScanPage"
@@ -67,6 +67,7 @@ function AppRoutes() {
 
                 {/* Sites */}
                 <Route path="/sites" element={<SitesListPage />} />
+                <Route path="/sites/history" element={<SiteHistoryReportPage />} />
                 <Route path="/sites/:id" element={<SiteDetailPage />} />
                 <Route path="/sites/:id/media/:activityId/:attachmentId/:slug?" element={<SiteDetailPage />} />
 

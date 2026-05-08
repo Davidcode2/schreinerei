@@ -18,7 +18,7 @@ export type AvailabilityResponse = { available: boolean, conflicts: Array<Confli
 
 export type CalendarEntryResponse = { resource_type: string, resource_id: string, resource_name: string, reservations: Array<ReservationSummaryResponse>, };
 
-export type CalendarQuery = { start_date: string, end_date: string, resource_type: string | null, };
+export type CalendarQuery = { start_date: string, end_date: string, resource_type: string | null, site_id: string | null, };
 
 export type CalendarResponse = { resources: Array<CalendarEntryResponse>, };
 
@@ -30,13 +30,13 @@ export type CreateActivityRequest = { activity_type: string, content: string | n
 
 export type CreateCategoryRequest = { name: string, description: string | null, can_expire: boolean, };
 
-export type CreateMaterialRequest = { category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, location: string | null, expires_on: string | null, };
+export type CreateMaterialRequest = { category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, location: string | null, expires_on: string | null, batch_code: string | null, };
 
 export type CreateOrderRequestDto = { material_id: string, quantity: number, reason: string | null, };
 
 export type CreateReservationRequest = { resource_type: string, resource_id: string, site_id: string | null, start_time: string, end_time: string, notes: string | null, };
 
-export type CreateSiteRequest = { project_type: string, name: string, customer_name: string, location: string | null, description: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, };
+export type CreateSiteRequest = { project_type: string, name: string, customer_name: string, location: string | null, description: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, budget_amount_cents: bigint | null, billing_reference: string | null, billing_notes: string | null, quote_reference: string | null, };
 
 export type CreateTimeEntryRequest = { site_id: string | null, work_type: string, hours: number, work_date: string, notes: string | null, };
 
@@ -53,7 +53,7 @@ export type EnrichedStockHistoryResponse = { id: string, material_id: string, us
  */
 export type EntryType = "withdrawn" | "disposed" | "adjusted" | "material_added" | "location_changed" | "min_quantity_changed";
 
-export type ExpiryBatchResponse = { expires_on: string, quantity: number, is_expired: boolean, is_expiring_soon: boolean, };
+export type ExpiryBatchResponse = { id: string, batch_code: string | null, expires_on: string, quantity: number, received_at: string, is_expired: boolean, is_expiring_soon: boolean, };
 
 export type FulfillOrderRequestDto = { actual_quantity: number, notes: string | null, };
 
@@ -64,7 +64,7 @@ export type InviteUserRequest = { email: string, name: string | null, role: stri
 
 export type ListMaterialsQuery = { category_id: string | null, };
 
-export type ListReservationsQuery = { user_id: string | null, resource_type: string | null, resource_id: string | null, };
+export type ListReservationsQuery = { user_id: string | null, resource_type: string | null, resource_id: string | null, site_id: string | null, };
 
 export type ListSitesQuery = { status: string | null, };
 
@@ -72,9 +72,11 @@ export type ListToolsQuery = { status: string | null, category: string | null, }
 
 export type ListVehiclesQuery = { status: string | null, };
 
+export type MarkOrderedRequestDto = { notes: string | null, };
+
 export type MaterialResponse = { id: string, category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, can_expire: boolean, legacy_quantity: number, expired_quantity: number, expiring_soon_quantity: number, next_expiry_on: string | null, expiry_batches: Array<ExpiryBatchResponse>, location: string | null, qr_code: string | null, is_low_stock: boolean, created_at: string, };
 
-export type OrderRequestResponse = { id: string, material_id: string, material_name: string, quantity: number, requested_by: string, status: string, reason: string | null, approved_by: string | null, approved_at: string | null, fulfilled_at: string | null, notes: string | null, created_at: string, };
+export type OrderRequestResponse = { id: string, material_id: string, material_name: string, quantity: number, requested_by: string, status: string, request_kind: string, reason: string | null, approved_by: string | null, approved_at: string | null, fulfilled_at: string | null, notes: string | null, created_at: string, };
 
 export type OrderStatusQuery = { status: string | null, };
 
@@ -82,6 +84,12 @@ export type OrderStatusQuery = { status: string | null, };
  * Response DTO for user preferences
  */
 export type PreferencesResponse = { active_site_id: string | null, };
+
+export type ProjectLaborSummaryResponse = { total_hours: number, entry_count: bigint, site_hours: number, workshop_hours: number, last_work_date: string | null, };
+
+export type ProjectMaterialSummaryResponse = { distinct_material_count: bigint, withdrawal_count: bigint, lines: Array<ProjectMaterialUsageLineResponse>, };
+
+export type ProjectMaterialUsageLineResponse = { material_id: string, material_name: string, category_name: string, unit: string, total_withdrawn: number, withdrawal_count: bigint, last_withdrawn_at: string, };
 
 export type QrCodeResponse = { qr_code: string, material_id: string, material_name: string, };
 
@@ -91,11 +99,23 @@ export type QrSvgResponse = { svg: string, qr_code: string, };
 
 export type ReservationResponse = { id: string, resource_type: string, resource_id: string, resource_name: string, user_id: string, user_name: string | null, site_id: string | null, site_name: string | null, start_time: string, end_time: string, status: string, notes: string | null, created_at: string, updated_at: string, };
 
-export type ReservationSummaryResponse = { id: string, start_time: string, end_time: string, user_name: string | null, site_name: string | null, status: string, };
+export type ReservationSummaryResponse = { id: string, start_time: string, end_time: string, user_name: string | null, site_id: string | null, site_name: string | null, status: string, };
 
 export type SiteActivityAttachmentResponse = { attachment_id: string, filename: string, mime_type: string, url: string, thumbnail_url: string | null, };
 
-export type SiteResponse = { id: string, project_type: string, name: string, customer_name: string, location: string | null, description: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, created_at: string, };
+export type SiteHistoryReportQuery = { customer: string | null, project_type: string | null, worker_id: string | null, date_from: string | null, date_to: string | null, duration_min_hours: number | null, duration_max_hours: number | null, cost_basis: string | null, };
+
+export type SiteHistoryReportRowResponse = { site_id: string, project_type: string, name: string, customer_name: string, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, budget_amount_cents: bigint | null, billing_reference: string | null, quote_reference: string | null, total_hours: number, worker_count: bigint, distinct_material_count: bigint, withdrawal_count: bigint, cost_basis: string, };
+
+export type SiteInvoiceBillingResponse = { budget_amount_cents: bigint | null, quote_reference: string | null, billing_reference: string | null, billing_notes: string | null, };
+
+export type SiteInvoiceProjectResponse = { id: string, name: string, project_type: string, customer_name: string, location: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, };
+
+export type SiteInvoiceSummaryResponse = { export_version: string, generated_at: string, project: SiteInvoiceProjectResponse, billing: SiteInvoiceBillingResponse, labor: ProjectLaborSummaryResponse, materials: ProjectMaterialSummaryResponse, };
+
+export type SiteProjectSummaryResponse = { labor: ProjectLaborSummaryResponse, materials: ProjectMaterialSummaryResponse, };
+
+export type SiteResponse = { id: string, project_type: string, name: string, customer_name: string, location: string | null, description: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, budget_amount_cents: bigint | null, billing_reference: string | null, billing_notes: string | null, quote_reference: string | null, created_at: string, };
 
 export type SiteStockHistoryResponse = { id: string, material_id: string, material_name: string, category_name: string, quantity_change: number, quantity_after: number, notes: string | null, site_id: string | null, site_name: string | null, extracted_by: string, created_at: string, };
 
@@ -104,7 +124,7 @@ export type SiteStockHistoryResponse = { id: string, material_id: string, materi
  */
 export type StockEntryResponse = { id: string, quantity_change: number, quantity_after: number, notes: string | null, site_id: string | null, site_name: string | null, created_at: string, };
 
-export type StockInRequest = { quantity: number, notes: string | null, expires_on: string | null, };
+export type StockInRequest = { quantity: number, notes: string | null, expires_on: string | null, batch_code: string | null, supplier_name: string | null, receipt_reference: string | null, receipt_date: string | null, };
 
 export type TimeEntryResponse = { id: string, site_id: string | null, user_id: string, work_type: string, hours: number, work_date: string, notes: string | null, created_at: string, };
 
@@ -133,7 +153,7 @@ export type UpdateReservationRequest = { start_time: string | null, end_time: st
  */
 export type UpdateRoleRequest = { role: string, };
 
-export type UpdateSiteRequest = { project_type: string | null, name: string | null, customer_name: string | null, location: string | null, description: string | null, status: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, };
+export type UpdateSiteRequest = { project_type: string | null, name: string | null, customer_name: string | null, location: string | null, description: string | null, status: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, budget_amount_cents: bigint | null, billing_reference: string | null, billing_notes: string | null, quote_reference: string | null, clear_budget_amount: boolean | null, clear_billing_reference: boolean | null, clear_billing_notes: boolean | null, clear_quote_reference: boolean | null, };
 
 export type UpdateTimeEntryRequest = { site_id: string | null, work_type: string | null, hours: number | null, work_date: string | null, notes: string | null, };
 
@@ -154,4 +174,4 @@ export type UserResponse = { id: string, email: string, name: string | null, rol
 
 export type VehicleResponse = { id: string, name: string, license_plate: string | null, vehicle_type: string, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
 
-export type WithdrawRequest = { quantity: number, notes: string | null, site_id: string | null, disposal: boolean | null, };
+export type WithdrawRequest = { quantity: number, notes: string | null, site_id: string | null, disposal: boolean | null, last_package_taken: boolean | null, };

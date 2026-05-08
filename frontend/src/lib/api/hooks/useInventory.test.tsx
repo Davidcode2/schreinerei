@@ -256,11 +256,23 @@ describe("inventory mutations", () => {
       quantity: 10,
       notes: "Lieferung 1234",
       expires_on: "2026-05-20",
+      batch_code: "LOT-2026-05",
+      supplier_name: "HolzLand",
+      receipt_reference: "LS-1234",
+      receipt_date: "2026-05-18",
     })
 
     expect(apiClient.post).toHaveBeenCalledWith(
       "/api/v1/inventory/materials/mat-123/stock-in",
-      { quantity: 10, notes: "Lieferung 1234", expires_on: "2026-05-20" }
+      {
+        quantity: 10,
+        notes: "Lieferung 1234",
+        expires_on: "2026-05-20",
+        batch_code: "LOT-2026-05",
+        supplier_name: "HolzLand",
+        receipt_reference: "LS-1234",
+        receipt_date: "2026-05-18",
+      }
     )
     expect(invalidateQueries).toHaveBeenNthCalledWith(1, { queryKey: ["materials"] })
     expect(invalidateQueries).toHaveBeenNthCalledWith(2, { queryKey: ["material"] })
@@ -285,7 +297,13 @@ describe("inventory mutations", () => {
 
     expect(apiClient.post).toHaveBeenCalledWith(
       "/api/v1/inventory/materials/mat-123/withdraw",
-      { quantity: 2, notes: "Abgelaufen", site_id: null, disposal: true }
+      {
+        quantity: 2,
+        notes: "Abgelaufen",
+        site_id: null,
+        disposal: true,
+        last_package_taken: false,
+      }
     )
   })
 

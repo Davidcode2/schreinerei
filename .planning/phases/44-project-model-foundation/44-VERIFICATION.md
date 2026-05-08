@@ -19,4 +19,4 @@ PASS
 ## Notes
 
 - The dashboard still uses its existing active-only dataset behavior by design. Hidden filter logic remains Phase 47 scope.
-- The older `cargo test --features ts-rs/export` instruction is stale here; `cargo test export_bindings --lib` is the working export path.
+- The older `cargo test --features ts-rs/export` instruction is stale here; use `cargo export-types` (alias for `cargo test export_bindings --lib`).

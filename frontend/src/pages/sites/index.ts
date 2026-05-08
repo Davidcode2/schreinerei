@@ -1,4 +1,5 @@
 export { default as SitesListPage } from "./SitesListPage"
 export { default as SiteDetailPage } from "./SiteDetailPage"
+export { default as SiteHistoryReportPage } from "./SiteHistoryReportPage"
 export { TimeEntryDialog } from "./TimeEntryDialog"
 export { ActivityFeed } from "./ActivityFeed"

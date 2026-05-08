@@ -17,6 +17,10 @@ pub struct Site {
     pub start_date: Option<NaiveDate>,
     pub end_date: Option<NaiveDate>,
     pub estimated_days: Option<i32>,
+    pub budget_amount_cents: Option<i64>,
+    pub billing_reference: Option<String>,
+    pub billing_notes: Option<String>,
+    pub quote_reference: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -60,6 +64,10 @@ pub struct CreateSite {
     pub start_date: Option<NaiveDate>,
     pub end_date: Option<NaiveDate>,
     pub estimated_days: Option<i32>,
+    pub budget_amount_cents: Option<i64>,
+    pub billing_reference: Option<String>,
+    pub billing_notes: Option<String>,
+    pub quote_reference: Option<String>,
 }
 
 impl CreateSite {
@@ -82,6 +90,11 @@ impl CreateSite {
                 return Err("Estimated days cannot be negative".to_string());
             }
         }
+        if let Some(amount) = self.budget_amount_cents {
+            if amount < 0 {
+                return Err("Budget amount cannot be negative".to_string());
+            }
+        }
         Ok(())
     }
 }
@@ -98,6 +111,40 @@ pub struct UpdateSite {
     pub start_date: Option<NaiveDate>,
     pub end_date: Option<NaiveDate>,
     pub estimated_days: Option<i32>,
+    pub budget_amount_cents: Option<i64>,
+    pub billing_reference: Option<String>,
+    pub billing_notes: Option<String>,
+    pub quote_reference: Option<String>,
+    pub clear_budget_amount: bool,
+    pub clear_billing_reference: bool,
+    pub clear_billing_notes: bool,
+    pub clear_quote_reference: bool,
+}
+
+impl UpdateSite {
+    pub fn validate(&self) -> Result<(), String> {
+        if let Some(name) = &self.name {
+            if name.trim().is_empty() {
+                return Err("Site name cannot be empty".to_string());
+            }
+        }
+        if let Some(customer_name) = &self.customer_name {
+            if customer_name.trim().is_empty() {
+                return Err("Customer name cannot be empty".to_string());
+            }
+        }
+        if let Some(days) = self.estimated_days {
+            if days < 0 {
+                return Err("Estimated days cannot be negative".to_string());
+            }
+        }
+        if let Some(amount) = self.budget_amount_cents {
+            if amount < 0 {
+                return Err("Budget amount cannot be negative".to_string());
+            }
+        }
+        Ok(())
+    }
 }
 
 /// Command to assign a user to a site
@@ -124,6 +171,10 @@ mod tests {
             start_date: None,
             end_date: None,
             estimated_days: None,
+            budget_amount_cents: None,
+            billing_reference: None,
+            billing_notes: None,
+            quote_reference: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         }
@@ -190,6 +241,10 @@ mod tests {
             start_date: None,
             end_date: None,
             estimated_days: None,
+            budget_amount_cents: None,
+            billing_reference: None,
+            billing_notes: None,
+            quote_reference: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -205,6 +260,10 @@ mod tests {
             start_date: None,
             end_date: None,
             estimated_days: None,
+            budget_amount_cents: None,
+            billing_reference: None,
+            billing_notes: None,
+            quote_reference: None,
         };
         assert_eq!(cmd.validate(), Err("Site name is required".to_string()));
     }
@@ -220,6 +279,10 @@ mod tests {
             start_date: None,
             end_date: None,
             estimated_days: None,
+            budget_amount_cents: None,
+            billing_reference: None,
+            billing_notes: None,
+            quote_reference: None,
         };
         assert_eq!(cmd.validate(), Err("Customer name is required".to_string()));
     }
@@ -235,6 +298,10 @@ mod tests {
             start_date: Some(NaiveDate::from_ymd_opt(2024, 12, 15).unwrap()),
             end_date: Some(NaiveDate::from_ymd_opt(2024, 12, 1).unwrap()),
             estimated_days: None,
+            budget_amount_cents: None,
+            billing_reference: None,
+            billing_notes: None,
+            quote_reference: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -253,6 +320,10 @@ mod tests {
             start_date: None,
             end_date: None,
             estimated_days: Some(-5),
+            budget_amount_cents: None,
+            billing_reference: None,
+            billing_notes: None,
+            quote_reference: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -271,9 +342,36 @@ mod tests {
             start_date: None,
             end_date: None,
             estimated_days: Some(1),
+            budget_amount_cents: Some(250000),
+            billing_reference: Some("BR-1".to_string()),
+            billing_notes: Some("Teilrechnung".to_string()),
+            quote_reference: Some("ANG-2026-01".to_string()),
         };
 
         assert!(cmd.validate().is_ok());
+    }
+
+    #[test]
+    fn create_site_validate_fails_with_negative_budget_amount() {
+        let cmd = CreateSite {
+            project_type: ProjectType::ExternalSite,
+            name: "Site".to_string(),
+            customer_name: "Customer".to_string(),
+            location: None,
+            description: None,
+            start_date: None,
+            end_date: None,
+            estimated_days: None,
+            budget_amount_cents: Some(-1),
+            billing_reference: None,
+            billing_notes: None,
+            quote_reference: None,
+        };
+
+        assert_eq!(
+            cmd.validate(),
+            Err("Budget amount cannot be negative".to_string())
+        );
     }
 
     #[test]

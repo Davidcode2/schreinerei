@@ -32,6 +32,10 @@ const DELETE_CONFIRMATION =
 const BLOCKED_DELETE_MESSAGE =
   "Kategorie konnte nicht gelöscht werden. Entfernen oder verschieben Sie zuerst alle Materialien dieser Kategorie und versuchen Sie es dann erneut."
 const BLOCKED_DELETE_PREFIX = "Cannot delete category:"
+const BLOCKED_EXPIRY_DISABLE_MESSAGE =
+  "MHD kann erst deaktiviert werden, wenn in dieser Kategorie kein laufender Bestand mehr liegt."
+const BLOCKED_EXPIRY_DISABLE_PREFIX =
+  "Expiry tracking can only be disabled after all live stock in this category is depleted"
 
 function getDeleteConflictMessage(error: Error) {
   const message = error.message.trim()
@@ -42,6 +46,16 @@ function getDeleteConflictMessage(error: Error) {
     message.startsWith(BLOCKED_DELETE_PREFIX)
   ) {
     return BLOCKED_DELETE_MESSAGE
+  }
+
+  return message
+}
+
+function getUpdateCategoryErrorMessage(error: Error) {
+  const message = error.message.trim()
+
+  if (message.startsWith(BLOCKED_EXPIRY_DISABLE_PREFIX)) {
+    return BLOCKED_EXPIRY_DISABLE_MESSAGE
   }
 
   return message
@@ -125,6 +139,9 @@ export default function InventorySettingsPage() {
         onSuccess: () => {
           toast.success("Kategorie aktualisiert")
           setEditingCategory(null)
+        },
+        onError: (error) => {
+          toast.error(getUpdateCategoryErrorMessage(error))
         },
       }
     )

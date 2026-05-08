@@ -19,6 +19,7 @@ import { getResourceCalendarColor } from "./resourceCalendarColor"
 interface CalendarViewProps {
   embedded?: boolean
   resourceType?: ResourceType
+  siteId?: string
 }
 
 function getWeekDates(date: Date): { start: string; end: string } {
@@ -85,7 +86,7 @@ function formatDateLabel(date: string): string {
   })
 }
 
-export default function CalendarView({ embedded = false, resourceType }: CalendarViewProps) {
+export default function CalendarView({ embedded = false, resourceType, siteId }: CalendarViewProps) {
   const [currentWeek, setCurrentWeek] = useState(() => {
     const now = new Date()
     now.setHours(0, 0, 0, 0)
@@ -103,6 +104,7 @@ export default function CalendarView({ embedded = false, resourceType }: Calenda
     start_date: start,
     end_date: end,
     ...(resourceType ? { resource_type: resourceType } : {}),
+    ...(siteId ? { site_id: siteId } : {}),
   })
   const {
     data: selectedReservation,

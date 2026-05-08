@@ -27,11 +27,13 @@ interface WithdrawDialogProps {
     quantity: number,
     notes?: string,
     siteId?: string | null,
-    disposal?: boolean
+    disposal?: boolean,
+    lastPackageTaken?: boolean
   ) => void
   isLoading: boolean
   sites: Array<{ id: string; name: string }>
   initialSiteId?: string | null
+  initialDisposal?: boolean
 }
 
 export function WithdrawDialog({
@@ -42,13 +44,17 @@ export function WithdrawDialog({
   isLoading,
   sites,
   initialSiteId,
+  initialDisposal = false,
 }: WithdrawDialogProps) {
   const [quantity, setQuantity] = useState(1)
   const [notes, setNotes] = useState("")
   const [siteId, setSiteId] = useState(initialSiteId ?? "")
   const [disposal, setDisposal] = useState(false)
+  const [lastPackageTaken, setLastPackageTaken] = useState(false)
 
   const maxQuantity = disposal ? Math.max(1, material.expired_quantity) : material.quantity
+  const requiresProjectLink = !disposal
+  const canSubmit = quantity > 0 && (!requiresProjectLink || Boolean(siteId))
 
   const handleQuantityChange = (value: number) => {
     const newQuantity = Math.max(1, Math.min(value, maxQuantity))
@@ -56,10 +62,21 @@ export function WithdrawDialog({
   }
 
   const handleSubmit = () => {
-    onConfirm(quantity, notes || undefined, disposal ? null : siteId || null, disposal)
+    if (!canSubmit) {
+      return
+    }
+
+    onConfirm(
+      quantity,
+      notes || undefined,
+      disposal ? null : siteId || null,
+      disposal,
+      disposal ? false : lastPackageTaken
+    )
     setQuantity(1)
     setNotes("")
     setDisposal(false)
+    setLastPackageTaken(false)
   }
 
   const quickAmounts = [1, 2, 5, 10].filter((n) => n <= maxQuantity)
@@ -67,9 +84,16 @@ export function WithdrawDialog({
   useEffect(() => {
     if (open) {
       setSiteId(initialSiteId ?? "")
-      setDisposal(false)
+      setDisposal(initialDisposal)
+      setLastPackageTaken(false)
     }
-  }, [open, initialSiteId])
+  }, [initialDisposal, open])
+
+  useEffect(() => {
+    if (open && !siteId && initialSiteId) {
+      setSiteId(initialSiteId)
+    }
+  }, [initialSiteId, open, siteId])
 
   useEffect(() => {
     setQuantity((current) => Math.max(1, Math.min(current, maxQuantity)))
@@ -126,8 +150,13 @@ export function WithdrawDialog({
                   <p className="font-medium">Erfasste MHD-Chargen</p>
                   <div className="max-h-40 space-y-1 overflow-y-auto pr-1">
                     {material.expiry_batches.map((batch) => (
-                      <div key={`${batch.expires_on}-${batch.quantity}`} className="flex justify-between">
-                        <span>{formatExpiryDate(batch.expires_on)}</span>
+                      <div key={batch.id} className="flex items-start justify-between gap-3">
+                        <div>
+                          <span>{formatExpiryDate(batch.expires_on)}</span>
+                          {batch.batch_code && (
+                            <p className="text-xs text-muted-foreground">Charge: {batch.batch_code}</p>
+                          )}
+                        </div>
                         <span className="text-muted-foreground">{batch.quantity} {material.unit}</span>
                       </div>
                     ))}
@@ -201,20 +230,36 @@ export function WithdrawDialog({
 
           {!disposal && (
             <div className="space-y-2 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
-                <Label htmlFor="site">Baustelle (optional)</Label>
+                <Label htmlFor="site">Projekt</Label>
                 <select
                   id="site"
                   className="h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={siteId}
                   onChange={(event) => setSiteId(event.target.value)}
                 >
-                <option value="">Keine Zuordnung</option>
+                <option value="">Projekt auswählen</option>
                 {sites.map((site) => (
                   <option key={site.id} value={site.id}>
                     {site.name}
                   </option>
                 ))}
               </select>
+              <p className="text-xs text-muted-foreground">
+                Reale Materialentnahmen werden immer einem Projekt zugeordnet.
+              </p>
+
+              <Button
+                type="button"
+                variant={lastPackageTaken ? "default" : "outline"}
+                className="mt-3 h-10 w-full justify-start"
+                aria-pressed={lastPackageTaken}
+                onClick={() => setLastPackageTaken((current) => !current)}
+              >
+                Letzte Packung entnommen
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Löst ein persistentes Nachbestell-Signal aus, auch wenn rechnerisch noch Restbestand vorhanden ist.
+              </p>
             </div>
           )}
 
@@ -235,7 +280,7 @@ export function WithdrawDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Abbrechen
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading} className="gap-2 shadow-sm active:scale-[0.97] transition-transform">
+          <Button onClick={handleSubmit} disabled={isLoading || !canSubmit} className="gap-2 shadow-sm active:scale-[0.97] transition-transform">
             {isLoading
               ? disposal
                 ? "Wird entsorgt..."

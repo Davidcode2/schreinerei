@@ -9,14 +9,55 @@ use crate::common::types::{
 };
 use crate::modules::inventory::domain::{
     Category, CreateCategory, CreateMaterial, CreateOrderRequest, EnrichedStockEntry, EntryType,
-    Material, MaterialBatchSummary, OrderRequest, OrderStatus, SiteStockHistoryEntry,
-    StockEntryWithSite, UpdateCategory, UpdateMaterial,
+    Material, MaterialBatchSummary, OrderRequest, OrderRequestKind, OrderStatus,
+    SiteStockHistoryEntry, StockEntryWithSite, StockIn, UpdateCategory, UpdateMaterial,
 };
 
 /// Repository for material data access with tenant isolation
 pub struct MaterialRepository {
     pool: PgPool,
     event_bus: EventBus,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProjectMaterialUsageLine {
+    pub material_id: MaterialId,
+    pub material_name: String,
+    pub category_name: String,
+    pub unit: String,
+    pub total_withdrawn: i32,
+    pub withdrawal_count: i64,
+    pub last_withdrawn_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProjectMaterialSummary {
+    pub distinct_material_count: i64,
+    pub withdrawal_count: i64,
+    pub lines: Vec<ProjectMaterialUsageLine>,
+}
+
+struct BatchWrite<'a> {
+    tenant_id: TenantId,
+    material_id: MaterialId,
+    quantity: i32,
+    expires_on: NaiveDate,
+    batch_code: Option<&'a str>,
+    created_at: DateTime<Utc>,
+}
+
+struct GoodsReceiptWrite<'a> {
+    tenant_id: TenantId,
+    material_id: MaterialId,
+    received_by: UserId,
+    quantity: i32,
+    supplier_name: Option<&'a str>,
+    receipt_reference: Option<&'a str>,
+    receipt_date: Option<NaiveDate>,
+    notes: Option<&'a str>,
+    batch_code: Option<&'a str>,
+    expires_on: Option<NaiveDate>,
+    created_at: DateTime<Utc>,
 }
 
 impl MaterialRepository {
@@ -148,6 +189,19 @@ impl MaterialRepository {
         Ok(category.into_category())
     }
 
+    pub async fn category_has_live_stock(
+        &self,
+        id: CategoryId,
+        tenant_id: TenantId,
+    ) -> Result<bool, AppError> {
+        sqlx::query_scalar(Self::category_live_stock_query())
+            .bind(id.0)
+            .bind(tenant_id.0)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))
+    }
+
     pub async fn delete_category(
         &self,
         id: CategoryId,
@@ -198,6 +252,37 @@ impl MaterialRepository {
             SELECT COUNT(*) FROM materials
             WHERE category_id = $1 AND tenant_id = $2
             "#
+    }
+
+    fn category_live_stock_query() -> &'static str {
+        r#"
+            SELECT EXISTS(
+                SELECT 1 FROM materials
+                WHERE category_id = $1
+                  AND tenant_id = $2
+                  AND deleted_at IS NULL
+                  AND quantity > 0
+            )
+            "#
+    }
+
+    fn batch_consumption_query(expired_only: bool) -> String {
+        let filter = if expired_only {
+            "AND expires_on < CURRENT_DATE"
+        } else {
+            ""
+        };
+
+        format!(
+            r#"
+            SELECT id, remaining_quantity
+            FROM material_batches
+            WHERE material_id = $1 AND tenant_id = $2 AND remaining_quantity > 0 {filter}
+            ORDER BY expires_on ASC, created_at ASC, id ASC
+            FOR UPDATE
+            "#,
+            filter = filter,
+        )
     }
 
     // === Material operations ===
@@ -254,11 +339,14 @@ impl MaterialRepository {
         if can_expire && create.quantity > 0 {
             self.insert_batch(
                 &mut tx,
-                tenant_id,
-                MaterialId(id),
-                create.quantity,
-                create.expires_on.expect("validated expiry date"),
-                now,
+                &BatchWrite {
+                    tenant_id,
+                    material_id: MaterialId(id),
+                    quantity: create.quantity,
+                    expires_on: create.expires_on.expect("validated expiry date"),
+                    batch_code: create.batch_code.as_deref(),
+                    created_at: now,
+                },
             )
             .await?;
         }
@@ -627,11 +715,8 @@ impl MaterialRepository {
 
     pub async fn stock_in(
         &self,
-        material_id: MaterialId,
-        quantity: i32,
-        notes: Option<String>,
+        stock_in: &StockIn,
         user_id: UserId,
-        expires_on: Option<NaiveDate>,
         tenant_id: TenantId,
     ) -> Result<Material, AppError> {
         let mut tx = self
@@ -649,37 +734,58 @@ impl MaterialRepository {
             FOR UPDATE
             "#,
         )
-        .bind(material_id.0)
+        .bind(stock_in.material_id.0)
         .bind(tenant_id.0)
         .fetch_optional(&mut *tx)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
 
-        let new_quantity = current.quantity + quantity;
+        let new_quantity = current.quantity + stock_in.quantity;
         let new_legacy_quantity = if current.can_expire {
             current.legacy_quantity
         } else {
-            current.legacy_quantity + quantity
+            current.legacy_quantity + stock_in.quantity
         };
 
         self.update_material_quantities(
             &mut tx,
-            material_id,
+            stock_in.material_id,
             tenant_id,
             new_quantity,
             new_legacy_quantity,
         )
         .await?;
 
+        self.insert_goods_receipt(
+            &mut tx,
+            &GoodsReceiptWrite {
+                tenant_id,
+                material_id: stock_in.material_id,
+                received_by: user_id,
+                quantity: stock_in.quantity,
+                supplier_name: stock_in.supplier_name.as_deref(),
+                receipt_reference: stock_in.receipt_reference.as_deref(),
+                receipt_date: stock_in.receipt_date,
+                notes: stock_in.notes.as_deref(),
+                batch_code: stock_in.batch_code.as_deref(),
+                expires_on: stock_in.expires_on,
+                created_at: Utc::now(),
+            },
+        )
+        .await?;
+
         if current.can_expire {
             self.insert_batch(
                 &mut tx,
-                tenant_id,
-                material_id,
-                quantity,
-                expires_on.expect("validated expiry date"),
-                Utc::now(),
+                &BatchWrite {
+                    tenant_id,
+                    material_id: stock_in.material_id,
+                    quantity: stock_in.quantity,
+                    expires_on: stock_in.expires_on.expect("validated expiry date"),
+                    batch_code: stock_in.batch_code.as_deref(),
+                    created_at: Utc::now(),
+                },
             )
             .await?;
         }
@@ -692,11 +798,11 @@ impl MaterialRepository {
         )
         .bind(Uuid::new_v4())
         .bind(tenant_id.0)
-        .bind(material_id.0)
+        .bind(stock_in.material_id.0)
         .bind(user_id.0)
-        .bind(quantity)
+        .bind(stock_in.quantity)
         .bind(new_quantity)
-        .bind(&notes)
+        .bind(&stock_in.notes)
         .bind(Utc::now())
         .execute(&mut *tx)
         .await
@@ -706,7 +812,7 @@ impl MaterialRepository {
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
-        self.find_material_by_id(material_id, tenant_id)
+        self.find_material_by_id(stock_in.material_id, tenant_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Material not found".to_string()))
     }
@@ -797,6 +903,22 @@ impl MaterialRepository {
             .collect())
     }
 
+    pub async fn list_inventory_alert_materials(
+        &self,
+        tenant_id: TenantId,
+    ) -> Result<Vec<Material>, AppError> {
+        let materials = sqlx::query_as::<_, MaterialRow>(&Self::inventory_alert_materials_query())
+            .bind(tenant_id.0)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(materials
+            .into_iter()
+            .map(MaterialRow::into_material_without_batches)
+            .collect())
+    }
+
     fn material_list_query(filter_by_category: bool) -> String {
         let category_clause = if filter_by_category {
             "AND m.category_id = $2"
@@ -858,6 +980,38 @@ impl MaterialRepository {
         )
     }
 
+    fn inventory_alert_materials_query() -> String {
+        format!(
+            r#"
+            SELECT
+                m.id, m.tenant_id, m.category_id, m.name, m.description, m.unit,
+                m.quantity, m.min_quantity, m.legacy_quantity, m.location, m.qr_code,
+                m.created_at, m.updated_at, c.can_expire,
+                COALESCE(summary.expired_quantity, 0) AS expired_quantity,
+                COALESCE(summary.expiring_soon_quantity, 0) AS expiring_soon_quantity,
+                summary.next_expiry_on
+            FROM materials m
+            INNER JOIN categories c ON c.id = m.category_id
+            LEFT JOIN LATERAL (
+                SELECT
+                    COALESCE(SUM(CASE WHEN mb.expires_on < CURRENT_DATE THEN mb.remaining_quantity ELSE 0 END), 0)::INT4 AS expired_quantity,
+                    COALESCE(SUM(CASE WHEN mb.expires_on >= CURRENT_DATE AND mb.expires_on <= CURRENT_DATE + {days} THEN mb.remaining_quantity ELSE 0 END), 0)::INT4 AS expiring_soon_quantity,
+                    MIN(mb.expires_on) FILTER (WHERE mb.remaining_quantity > 0) AS next_expiry_on
+                FROM material_batches mb
+                WHERE mb.material_id = m.id AND mb.tenant_id = m.tenant_id AND mb.remaining_quantity > 0
+            ) summary ON TRUE
+            WHERE m.tenant_id = $1
+              AND m.deleted_at IS NULL
+              AND (COALESCE(summary.expired_quantity, 0) > 0 OR COALESCE(summary.expiring_soon_quantity, 0) > 0)
+            ORDER BY
+              COALESCE(summary.expired_quantity, 0) DESC,
+              COALESCE(summary.expiring_soon_quantity, 0) DESC,
+              m.name ASC
+            "#,
+            days = Self::EXPIRY_WARNING_DAYS,
+        )
+    }
+
     fn material_detail_query(filter_clause: &str) -> String {
         format!(
             r#"
@@ -892,10 +1046,10 @@ impl MaterialRepository {
     ) -> Result<Vec<MaterialBatchSummary>, AppError> {
         let rows = sqlx::query_as::<_, MaterialBatchRow>(
             r#"
-            SELECT expires_on, remaining_quantity
+            SELECT id, batch_code, expires_on, remaining_quantity, created_at
             FROM material_batches
             WHERE material_id = $1 AND tenant_id = $2 AND remaining_quantity > 0
-            ORDER BY expires_on ASC
+            ORDER BY expires_on ASC, created_at ASC, id ASC
             "#,
         )
         .bind(material_id.0)
@@ -909,8 +1063,11 @@ impl MaterialRepository {
         Ok(rows
             .into_iter()
             .map(|row| MaterialBatchSummary {
+                id: row.id,
+                batch_code: row.batch_code,
                 expires_on: row.expires_on,
                 quantity: row.remaining_quantity,
+                received_at: row.created_at,
                 is_expired: row.expires_on < today,
                 is_expiring_soon: row.expires_on >= today && row.expires_on <= warning_cutoff,
             })
@@ -942,28 +1099,72 @@ impl MaterialRepository {
         Ok(())
     }
 
+    async fn insert_goods_receipt(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        receipt: &GoodsReceiptWrite<'_>,
+    ) -> Result<(), AppError> {
+        let receipt_id = Uuid::new_v4();
+
+        sqlx::query(
+            r#"
+            INSERT INTO goods_receipts (id, tenant_id, received_by, supplier_name, receipt_reference, receipt_date, notes, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
+            "#,
+        )
+        .bind(receipt_id)
+        .bind(receipt.tenant_id.0)
+        .bind(receipt.received_by.0)
+        .bind(receipt.supplier_name)
+        .bind(receipt.receipt_reference)
+        .bind(receipt.receipt_date)
+        .bind(receipt.notes)
+        .bind(receipt.created_at)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO goods_receipt_lines (id, receipt_id, tenant_id, material_id, quantity, batch_code, expires_on, notes, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            "#,
+        )
+        .bind(Uuid::new_v4())
+        .bind(receipt_id)
+        .bind(receipt.tenant_id.0)
+        .bind(receipt.material_id.0)
+        .bind(receipt.quantity)
+        .bind(receipt.batch_code)
+        .bind(receipt.expires_on)
+        .bind(receipt.notes)
+        .bind(receipt.created_at)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(())
+    }
+
     async fn insert_batch(
         &self,
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-        tenant_id: TenantId,
-        material_id: MaterialId,
-        quantity: i32,
-        expires_on: NaiveDate,
-        created_at: DateTime<Utc>,
+        batch: &BatchWrite<'_>,
     ) -> Result<(), AppError> {
         sqlx::query(
             r#"
-            INSERT INTO material_batches (id, tenant_id, material_id, expires_on, initial_quantity, remaining_quantity, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO material_batches (id, tenant_id, material_id, batch_code, expires_on, initial_quantity, remaining_quantity, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             "#
         )
         .bind(Uuid::new_v4())
-        .bind(tenant_id.0)
-        .bind(material_id.0)
-        .bind(expires_on)
-        .bind(quantity)
-        .bind(quantity)
-        .bind(created_at)
+        .bind(batch.tenant_id.0)
+        .bind(batch.material_id.0)
+        .bind(batch.batch_code)
+        .bind(batch.expires_on)
+        .bind(batch.quantity)
+        .bind(batch.quantity)
+        .bind(batch.created_at)
         .execute(&mut **tx)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -1003,21 +1204,7 @@ impl MaterialRepository {
         quantity: i32,
         expired_only: bool,
     ) -> Result<(), AppError> {
-        let filter = if expired_only {
-            "AND expires_on < CURRENT_DATE"
-        } else {
-            ""
-        };
-        let sql = format!(
-            r#"
-            SELECT id, remaining_quantity
-            FROM material_batches
-            WHERE material_id = $1 AND tenant_id = $2 AND remaining_quantity > 0 {filter}
-            ORDER BY expires_on ASC
-            FOR UPDATE
-            "#,
-            filter = filter,
-        );
+        let sql = Self::batch_consumption_query(expired_only);
 
         let batches = sqlx::query_as::<_, MaterialBatchStateRow>(&sql)
             .bind(material_id.0)
@@ -1159,6 +1346,60 @@ impl MaterialRepository {
             .collect())
     }
 
+    pub async fn get_project_material_summary(
+        &self,
+        site_id: SiteId,
+        tenant_id: TenantId,
+    ) -> Result<ProjectMaterialSummary, AppError> {
+        let totals = sqlx::query_as::<_, ProjectMaterialSummaryTotalsRow>(
+            r#"
+            SELECT
+                COUNT(DISTINCT se.material_id)::INT8 AS distinct_material_count,
+                COUNT(*)::INT8 AS withdrawal_count
+            FROM stock_entries se
+            WHERE se.site_id = $1 AND se.tenant_id = $2 AND se.entry_type = 'withdrawn'
+            "#,
+        )
+        .bind(site_id.0)
+        .bind(tenant_id.0)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        let lines = sqlx::query_as::<_, ProjectMaterialUsageLineRow>(
+            r#"
+            SELECT
+                se.material_id,
+                m.name AS material_name,
+                c.name AS category_name,
+                m.unit,
+                COALESCE(SUM(-se.quantity_change), 0)::INT4 AS total_withdrawn,
+                COUNT(*)::INT8 AS withdrawal_count,
+                MAX(se.created_at) AS last_withdrawn_at
+            FROM stock_entries se
+            INNER JOIN materials m ON se.material_id = m.id
+            INNER JOIN categories c ON m.category_id = c.id
+            WHERE se.site_id = $1 AND se.tenant_id = $2 AND se.entry_type = 'withdrawn'
+            GROUP BY se.material_id, m.name, c.name, m.unit
+            ORDER BY total_withdrawn DESC, last_withdrawn_at DESC
+            "#,
+        )
+        .bind(site_id.0)
+        .bind(tenant_id.0)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(ProjectMaterialSummary {
+            distinct_material_count: totals.distinct_material_count,
+            withdrawal_count: totals.withdrawal_count,
+            lines: lines
+                .into_iter()
+                .map(ProjectMaterialUsageLineRow::into_summary)
+                .collect(),
+        })
+    }
+
     fn site_history_query() -> &'static str {
         r#"
         SELECT
@@ -1199,9 +1440,9 @@ impl MaterialRepository {
 
         let order = sqlx::query_as::<_, OrderRequestRow>(
             r#"
-            INSERT INTO order_requests (id, tenant_id, material_id, quantity, requested_by, status, reason, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING id, tenant_id, material_id, quantity, requested_by, status, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            INSERT INTO order_requests (id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
             "#
         )
         .bind(id)
@@ -1210,6 +1451,7 @@ impl MaterialRepository {
         .bind(create.quantity)
         .bind(user_id.0)
         .bind("pending")
+        .bind(create.request_kind.as_str())
         .bind(&create.reason)
         .bind(now)
         .bind(now)
@@ -1229,7 +1471,7 @@ impl MaterialRepository {
             Some(s) => {
                 sqlx::query_as::<_, OrderRequestRow>(
                     r#"
-                    SELECT id, tenant_id, material_id, quantity, requested_by, status, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+                    SELECT id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
                     FROM order_requests
                     WHERE tenant_id = $1 AND status = $2
                     ORDER BY created_at DESC
@@ -1243,7 +1485,7 @@ impl MaterialRepository {
             None => {
                 sqlx::query_as::<_, OrderRequestRow>(
                     r#"
-                    SELECT id, tenant_id, material_id, quantity, requested_by, status, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+                    SELECT id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
                     FROM order_requests
                     WHERE tenant_id = $1
                     ORDER BY created_at DESC
@@ -1273,7 +1515,7 @@ impl MaterialRepository {
             UPDATE order_requests
             SET status = 'approved', approved_by = $1, approved_at = $2, notes = COALESCE($3, notes), updated_at = $2
             WHERE id = $4 AND tenant_id = $5 AND status = 'pending'
-            RETURNING id, tenant_id, material_id, quantity, requested_by, status, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            RETURNING id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
             "#
         )
         .bind(user_id.0)
@@ -1285,6 +1527,34 @@ impl MaterialRepository {
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or_else(|| AppError::NotFound("Order request not found or already processed".to_string()))?;
+
+        Ok(order.into_order_request())
+    }
+
+    pub async fn mark_order_request_ordered(
+        &self,
+        id: OrderRequestId,
+        notes: Option<String>,
+        tenant_id: TenantId,
+    ) -> Result<OrderRequest, AppError> {
+        let now = Utc::now();
+
+        let order = sqlx::query_as::<_, OrderRequestRow>(
+            r#"
+            UPDATE order_requests
+            SET status = 'ordered', notes = COALESCE($1, notes), updated_at = $2
+            WHERE id = $3 AND tenant_id = $4 AND status = 'approved'
+            RETURNING id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            "#,
+        )
+        .bind(&notes)
+        .bind(now)
+        .bind(id.0)
+        .bind(tenant_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Order request not found or not approved".to_string()))?;
 
         Ok(order.into_order_request())
     }
@@ -1308,9 +1578,9 @@ impl MaterialRepository {
         // Get the order request
         let order: OrderRequestRow = sqlx::query_as(
             r#"
-            SELECT id, tenant_id, material_id, quantity, requested_by, status, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            SELECT id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
             FROM order_requests
-            WHERE id = $1 AND tenant_id = $2 AND status = 'approved'
+            WHERE id = $1 AND tenant_id = $2 AND status IN ('approved', 'ordered')
             FOR UPDATE
             "#
         )
@@ -1319,7 +1589,7 @@ impl MaterialRepository {
         .fetch_optional(&mut *tx)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or_else(|| AppError::NotFound("Order request not found or not approved".to_string()))?;
+        .ok_or_else(|| AppError::NotFound("Order request not found or not ready for fulfillment".to_string()))?;
 
         // Update material stock
         sqlx::query(
@@ -1342,7 +1612,7 @@ impl MaterialRepository {
             UPDATE order_requests
             SET status = 'fulfilled', fulfilled_at = $1, notes = COALESCE($2, notes), updated_at = $1
             WHERE id = $3 AND tenant_id = $4
-            RETURNING id, tenant_id, material_id, quantity, requested_by, status, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            RETURNING id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
             "#
         )
         .bind(now)
@@ -1367,7 +1637,7 @@ impl MaterialRepository {
     ) -> Result<Option<OrderRequest>, AppError> {
         let order = sqlx::query_as::<_, OrderRequestRow>(
             r#"
-            SELECT id, tenant_id, material_id, quantity, requested_by, status, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            SELECT id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
             FROM order_requests
             WHERE id = $1 AND tenant_id = $2
             "#
@@ -1379,6 +1649,83 @@ impl MaterialRepository {
         .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(order.map(|o| o.into_order_request()))
+    }
+
+    pub async fn find_active_order_request_for_material(
+        &self,
+        material_id: MaterialId,
+        tenant_id: TenantId,
+    ) -> Result<Option<OrderRequest>, AppError> {
+        let order = sqlx::query_as::<_, OrderRequestRow>(
+            r#"
+            SELECT id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            FROM order_requests
+            WHERE tenant_id = $1 AND material_id = $2 AND status IN ('pending', 'approved', 'ordered')
+            ORDER BY created_at DESC
+            LIMIT 1
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(material_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(order.map(|value| value.into_order_request()))
+    }
+
+    pub async fn resolve_active_auto_order_requests(
+        &self,
+        material_id: MaterialId,
+        notes: Option<String>,
+        tenant_id: TenantId,
+    ) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+            UPDATE order_requests
+            SET status = 'fulfilled', fulfilled_at = NOW(), notes = COALESCE($1, notes), updated_at = NOW()
+            WHERE tenant_id = $2
+              AND material_id = $3
+              AND request_kind IN ('minimum_breach', 'last_package')
+              AND status IN ('pending', 'approved', 'ordered')
+            "#,
+        )
+        .bind(notes)
+        .bind(tenant_id.0)
+        .bind(material_id.0)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(())
+    }
+
+    pub async fn cancel_order_request(
+        &self,
+        id: OrderRequestId,
+        notes: Option<String>,
+        tenant_id: TenantId,
+    ) -> Result<OrderRequest, AppError> {
+        let now = Utc::now();
+
+        let order = sqlx::query_as::<_, OrderRequestRow>(
+            r#"
+            UPDATE order_requests
+            SET status = 'cancelled', notes = COALESCE($1, notes), updated_at = $2
+            WHERE id = $3 AND tenant_id = $4 AND status IN ('pending', 'approved', 'ordered')
+            RETURNING id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            "#,
+        )
+        .bind(&notes)
+        .bind(now)
+        .bind(id.0)
+        .bind(tenant_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Order request not found or already resolved".to_string()))?;
+
+        Ok(order.into_order_request())
     }
 
     // === Event publishing ===
@@ -1474,14 +1821,34 @@ struct MaterialLockRow {
 
 #[derive(Debug, FromRow)]
 struct MaterialBatchRow {
+    id: Uuid,
+    batch_code: Option<String>,
     expires_on: NaiveDate,
     remaining_quantity: i32,
+    created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, FromRow)]
 struct MaterialBatchStateRow {
     id: Uuid,
     remaining_quantity: i32,
+}
+
+#[derive(Debug, FromRow)]
+struct ProjectMaterialSummaryTotalsRow {
+    distinct_material_count: i64,
+    withdrawal_count: i64,
+}
+
+#[derive(Debug, FromRow)]
+struct ProjectMaterialUsageLineRow {
+    material_id: Uuid,
+    material_name: String,
+    category_name: String,
+    unit: String,
+    total_withdrawn: i32,
+    withdrawal_count: i64,
+    last_withdrawn_at: DateTime<Utc>,
 }
 
 #[derive(Debug, FromRow)]
@@ -1492,6 +1859,7 @@ struct OrderRequestRow {
     quantity: i32,
     requested_by: Uuid,
     status: String,
+    request_kind: String,
     reason: Option<String>,
     approved_by: Option<Uuid>,
     approved_at: Option<DateTime<Utc>>,
@@ -1510,6 +1878,10 @@ impl OrderRequestRow {
             quantity: self.quantity,
             requested_by: UserId(self.requested_by),
             status: self.status.parse().unwrap_or(OrderStatus::Pending),
+            request_kind: self
+                .request_kind
+                .parse()
+                .unwrap_or(OrderRequestKind::Manual),
             reason: self.reason,
             approved_by: self.approved_by.map(UserId),
             approved_at: self.approved_at,
@@ -1610,6 +1982,20 @@ impl SiteStockHistoryRow {
     }
 }
 
+impl ProjectMaterialUsageLineRow {
+    fn into_summary(self) -> ProjectMaterialUsageLine {
+        ProjectMaterialUsageLine {
+            material_id: MaterialId(self.material_id),
+            material_name: self.material_name,
+            category_name: self.category_name,
+            unit: self.unit,
+            total_withdrawn: self.total_withdrawn,
+            withdrawal_count: self.withdrawal_count,
+            last_withdrawn_at: self.last_withdrawn_at,
+        }
+    }
+}
+
 impl StockEntryRow {
     fn into_stock_entry_with_site(self) -> StockEntryWithSite {
         StockEntryWithSite {
@@ -1654,5 +2040,28 @@ mod tests {
         let sql = MaterialRepository::delete_category_conflict_count_query();
         assert!(sql.contains("tenant_id = $2"));
         assert!(sql.contains("COUNT(*)"));
+    }
+
+    #[test]
+    fn category_live_stock_query_only_checks_active_materials_with_stock() {
+        let sql = MaterialRepository::category_live_stock_query();
+        assert!(sql.contains("deleted_at IS NULL"));
+        assert!(sql.contains("quantity > 0"));
+        assert!(sql.contains("category_id = $1"));
+    }
+
+    #[test]
+    fn batch_consumption_query_uses_fefo_ordering() {
+        let sql = MaterialRepository::batch_consumption_query(false);
+        assert!(sql.contains("ORDER BY expires_on ASC, created_at ASC, id ASC"));
+        assert!(sql.contains("remaining_quantity > 0"));
+    }
+
+    #[test]
+    fn inventory_alert_query_filters_to_expired_or_expiring_materials() {
+        let sql = MaterialRepository::inventory_alert_materials_query();
+        assert!(sql.contains("expired_quantity"));
+        assert!(sql.contains("expiring_soon_quantity"));
+        assert!(sql.contains("COALESCE(summary.expired_quantity, 0) > 0 OR COALESCE(summary.expiring_soon_quantity, 0) > 0"));
     }
 }

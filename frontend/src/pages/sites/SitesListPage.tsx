@@ -1,7 +1,8 @@
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, Plus } from "lucide-react"
+import { Search, Plus, ArrowRight } from "lucide-react"
+import { Link } from 'react-router-dom'
 import {
   PageHeader,
   EmptyState,
@@ -60,11 +61,19 @@ export default function SitesListPage() {
         title="Projekte"
         description="Externe Baustellen und interne Werkstattprojekte im Überblick"
         action={
-          <Button className="gap-2 h-10 shadow-sm" onClick={() => setAddSiteOpen(true)}>
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Projekt anlegen</span>
-            <span className="sm:hidden">Anlegen</span>
-          </Button>
+          <div className="flex gap-2">
+            <Link to="/sites/history">
+              <Button variant="outline" className="gap-2 h-10">
+                <ArrowRight className="h-4 w-4" />
+                Historische Auswertung
+              </Button>
+            </Link>
+            <Button className="gap-2 h-10 shadow-sm" onClick={() => setAddSiteOpen(true)}>
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Projekt anlegen</span>
+              <span className="sm:hidden">Anlegen</span>
+            </Button>
+          </div>
         }
       />
 

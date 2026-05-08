@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Package, QrCode, MapPin, Trash2 } from "lucide-react"
+import { Package, QrCode, MapPin, Trash2, AlertTriangle } from "lucide-react"
 import { Link } from "react-router-dom"
 import { StatusBadge } from "@/components/shared"
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
@@ -71,9 +71,23 @@ export function MaterialCard({ material, categoryName }: MaterialCardProps) {
                 </div>
               )}
               <div className="flex items-center justify-between pt-3 border-t border-border/60 ml-[46px]">
-                <Badge variant="outline" className="font-mono text-xs">
-                  {material.quantity} {material.unit}
-                </Badge>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className="font-mono text-xs">
+                    {material.quantity} {material.unit}
+                  </Badge>
+                  {material.expired_quantity > 0 && (
+                    <Badge variant="destructive" className="gap-1 text-xs">
+                      <AlertTriangle className="h-3 w-3" />
+                      {material.expired_quantity} abgelaufen
+                    </Badge>
+                  )}
+                  {material.expired_quantity === 0 && material.expiring_soon_quantity > 0 && (
+                    <Badge variant="outline" className="gap-1 border-warning/40 text-warning-foreground text-xs">
+                      <AlertTriangle className="h-3 w-3" />
+                      {material.expiring_soon_quantity} bald fallig
+                    </Badge>
+                  )}
+                </div>
                 <span className="text-xs text-muted-foreground">
                   Min: {material.min_quantity} {material.unit}
                 </span>

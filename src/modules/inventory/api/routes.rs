@@ -16,8 +16,9 @@ use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::inventory::application::InventoryService;
 use crate::modules::inventory::domain::{
     AdjustStock, ApproveOrderRequest, CreateCategory, CreateMaterial, CreateOrderRequest,
-    EnrichedStockEntry, FulfillOrderRequest, SiteStockHistoryEntry, StockEntryWithSite, StockIn,
-    UpdateCategory, UpdateMaterial, WithdrawMaterial,
+    EnrichedStockEntry, FulfillOrderRequest, MarkOrderedRequest, OrderRequestKind,
+    SiteStockHistoryEntry, StockEntryWithSite, StockIn, UpdateCategory, UpdateMaterial,
+    WithdrawMaterial,
 };
 use crate::AppState;
 
@@ -77,6 +78,7 @@ pub fn create_router() -> Router<AppState> {
         .route("/api/v1/inventory/materials/{id}/qr/svg", get(get_qr_svg))
         // Low stock
         .route("/api/v1/inventory/low-stock", get(list_low_stock))
+        .route("/api/v1/inventory/alerts", get(list_inventory_alerts))
         // QR lookup
         .route("/api/v1/inventory/qr/{code}", get(get_by_qr_code))
         // Order requests
@@ -89,8 +91,16 @@ pub fn create_router() -> Router<AppState> {
             post(approve_order_request),
         )
         .route(
+            "/api/v1/inventory/orders/{id}/ordered",
+            post(mark_order_request_ordered),
+        )
+        .route(
             "/api/v1/inventory/orders/{id}/fulfill",
             post(fulfill_order_request),
+        )
+        .route(
+            "/api/v1/inventory/orders/{id}/cancel",
+            post(cancel_order_request),
         )
 }
 
@@ -140,8 +150,11 @@ pub struct UpdateCategoryRequest {
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ExpiryBatchResponse {
+    pub id: String,
+    pub batch_code: Option<String>,
     pub expires_on: String,
     pub quantity: i32,
+    pub received_at: String,
     pub is_expired: bool,
     pub is_expiring_soon: bool,
 }
@@ -207,6 +220,7 @@ pub struct CreateMaterialRequest {
     pub min_quantity: i32,
     pub location: Option<String>,
     pub expires_on: Option<String>,
+    pub batch_code: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -227,6 +241,7 @@ pub struct WithdrawRequest {
     pub notes: Option<String>,
     pub site_id: Option<String>, // Optional Baustelle ID
     pub disposal: Option<bool>,
+    pub last_package_taken: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -242,17 +257,35 @@ pub struct StockInRequest {
     pub quantity: i32,
     pub notes: Option<String>,
     pub expires_on: Option<String>,
+    pub batch_code: Option<String>,
+    pub supplier_name: Option<String>,
+    pub receipt_reference: Option<String>,
+    pub receipt_date: Option<String>,
 }
 
 impl From<crate::modules::inventory::domain::MaterialBatchSummary> for ExpiryBatchResponse {
     fn from(batch: crate::modules::inventory::domain::MaterialBatchSummary) -> Self {
         Self {
+            id: batch.id.to_string(),
+            batch_code: batch.batch_code,
             expires_on: batch.expires_on.to_string(),
             quantity: batch.quantity,
+            received_at: batch.received_at.to_rfc3339(),
             is_expired: batch.is_expired,
             is_expiring_soon: batch.is_expiring_soon,
         }
     }
+}
+
+fn normalize_optional_text(value: Option<String>) -> Option<String> {
+    value.and_then(|text| {
+        let trimmed = text.trim();
+        if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed.to_string())
+        }
+    })
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -285,6 +318,7 @@ pub struct OrderRequestResponse {
     pub quantity: i32,
     pub requested_by: String,
     pub status: String,
+    pub request_kind: String,
     pub reason: Option<String>,
     pub approved_by: Option<String>,
     pub approved_at: Option<String>,
@@ -305,6 +339,7 @@ impl OrderRequestResponse {
             quantity: order.quantity,
             requested_by: order.requested_by.to_string(),
             status: order.status.to_string(),
+            request_kind: order.request_kind.to_string(),
             reason: order.reason,
             approved_by: order.approved_by.map(|id| id.to_string()),
             approved_at: order.approved_at.map(|t| t.to_rfc3339()),
@@ -326,6 +361,12 @@ pub struct CreateOrderRequestDto {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ApproveOrderRequestDto {
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct MarkOrderedRequestDto {
     pub notes: Option<String>,
 }
 
@@ -608,6 +649,7 @@ pub async fn create_material(
         min_quantity: request.min_quantity,
         location: request.location,
         expires_on: parse_optional_date(request.expires_on, "MHD")?,
+        batch_code: normalize_optional_text(request.batch_code),
     };
 
     let material = service.create_material(create, &ctx).await?;
@@ -773,6 +815,7 @@ pub async fn withdraw_material(
         notes: request.notes,
         site_id, // Pass parsed site_id
         disposal: request.disposal.unwrap_or(false),
+        last_package_taken: request.last_package_taken.unwrap_or(false),
     };
 
     let material = service.withdraw_material(withdraw, &ctx).await?;
@@ -824,6 +867,10 @@ pub async fn stock_in_material(
                 quantity: request.quantity,
                 notes: request.notes,
                 expires_on: parse_optional_date(request.expires_on, "MHD")?,
+                batch_code: normalize_optional_text(request.batch_code),
+                supplier_name: normalize_optional_text(request.supplier_name),
+                receipt_reference: normalize_optional_text(request.receipt_reference),
+                receipt_date: parse_optional_date(request.receipt_date, "Belegdatum")?,
             },
             &ctx,
         )
@@ -840,6 +887,20 @@ pub async fn list_low_stock(
         crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
     );
     let materials = service.list_low_stock(&ctx).await?;
+    let response: Vec<MaterialResponse> =
+        materials.into_iter().map(MaterialResponse::from).collect();
+
+    Ok(Json(response))
+}
+
+pub async fn list_inventory_alerts(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+) -> Result<impl IntoResponse, AppError> {
+    let service = InventoryService::new(
+        crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
+    );
+    let materials = service.list_inventory_alerts(&ctx).await?;
     let response: Vec<MaterialResponse> =
         materials.into_iter().map(MaterialResponse::from).collect();
 
@@ -918,6 +979,7 @@ pub async fn create_order_request(
         material_id,
         quantity: request.quantity,
         reason: request.reason,
+        request_kind: OrderRequestKind::Manual,
     };
 
     let order = service.create_order_request(create, &ctx).await?;
@@ -1009,10 +1071,59 @@ pub async fn fulfill_order_request(
     Ok(Json(OrderRequestResponse::from_order(order, material.name)))
 }
 
+pub async fn mark_order_request_ordered(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+    Json(request): Json<MarkOrderedRequestDto>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = InventoryService::new(
+        crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
+    );
+    let order_id = Uuid::parse_str(&id)
+        .map(OrderRequestId)
+        .map_err(|_| AppError::Validation("Invalid order ID".to_string()))?;
+
+    let order = service
+        .mark_order_request_ordered(
+            order_id,
+            MarkOrderedRequest {
+                notes: request.notes,
+            },
+            &ctx,
+        )
+        .await?;
+    let material = service.get_material(order.material_id, &ctx).await?;
+
+    Ok(Json(OrderRequestResponse::from_order(order, material.name)))
+}
+
+pub async fn cancel_order_request(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+    Json(request): Json<ApproveOrderRequestDto>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = InventoryService::new(
+        crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
+    );
+    let order_id = Uuid::parse_str(&id)
+        .map(OrderRequestId)
+        .map_err(|_| AppError::Validation("Invalid order ID".to_string()))?;
+
+    let order = service
+        .cancel_order_request(order_id, request.notes, &ctx)
+        .await?;
+    let material = service.get_material(order.material_id, &ctx).await?;
+
+    Ok(Json(OrderRequestResponse::from_order(order, material.name)))
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        EnrichedStockHistoryResponse, StockInRequest, UpdateCategoryRequest, UpdateMaterialRequest,
+        normalize_optional_text, EnrichedStockHistoryResponse, StockInRequest,
+        UpdateCategoryRequest, UpdateMaterialRequest,
     };
     use crate::common::types::{MaterialId, SiteId, TenantId, UserId};
     use crate::modules::inventory::domain::{
@@ -1063,18 +1174,33 @@ mod tests {
             quantity: 4,
             notes: Some("Lieferschein 1234".to_string()),
             expires_on: Some("2026-05-20".to_string()),
+            batch_code: Some("LOT-2026-05".to_string()),
+            supplier_name: Some("HolzLand".to_string()),
+            receipt_reference: Some("LS-1234".to_string()),
+            receipt_date: Some("2026-05-18".to_string()),
         };
         let stock_in = StockIn {
             material_id: MaterialId::new(),
             quantity: request.quantity,
             notes: request.notes.clone(),
             expires_on: Some(NaiveDate::from_ymd_opt(2026, 5, 20).unwrap()),
+            batch_code: normalize_optional_text(request.batch_code.clone()),
+            supplier_name: normalize_optional_text(request.supplier_name.clone()),
+            receipt_reference: normalize_optional_text(request.receipt_reference.clone()),
+            receipt_date: Some(NaiveDate::from_ymd_opt(2026, 5, 18).unwrap()),
         };
 
         assert_eq!(stock_in.notes, Some("Lieferschein 1234".to_string()));
         assert_eq!(
             stock_in.expires_on,
             Some(NaiveDate::from_ymd_opt(2026, 5, 20).unwrap())
+        );
+        assert_eq!(stock_in.batch_code, Some("LOT-2026-05".to_string()));
+        assert_eq!(stock_in.supplier_name, Some("HolzLand".to_string()));
+        assert_eq!(stock_in.receipt_reference, Some("LS-1234".to_string()));
+        assert_eq!(
+            stock_in.receipt_date,
+            Some(NaiveDate::from_ymd_opt(2026, 5, 18).unwrap())
         );
         assert!(stock_in.validate().is_ok());
 
@@ -1083,6 +1209,10 @@ mod tests {
             quantity: 0,
             notes: None,
             expires_on: None,
+            batch_code: None,
+            supplier_name: None,
+            receipt_reference: None,
+            receipt_date: None,
         };
         assert_eq!(
             invalid.validate(),

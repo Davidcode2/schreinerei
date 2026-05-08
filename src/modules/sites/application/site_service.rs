@@ -3,12 +3,19 @@ use crate::common::events::EventType;
 use crate::common::types::{ActivityId, Role, SiteId, TimeEntryId, UserId};
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
-use crate::modules::sites::domain::{
-    Activity, ActivityAttachmentMetadata, AssignUser, CreateActivity, CreateSite, CreateTimeEntry,
-    Site, SiteActivityAttachment, SiteCreatedPayload, SiteStatusChangedPayload, TimeEntry,
-    TimeEntryCreatedPayload, UpdateSite, UpdateTimeEntry, UserAssignedToSitePayload,
+use crate::modules::inventory::infrastructure::material_repository::{
+    MaterialRepository, ProjectMaterialSummary,
 };
-use crate::modules::sites::infrastructure::site_repository::{DashboardSite, SiteRepository};
+use crate::modules::sites::domain::{
+    work_type_requires_project_link, Activity, ActivityAttachmentMetadata, AssignUser,
+    CreateActivity, CreateSite, CreateTimeEntry, Site, SiteActivityAttachment, SiteCreatedPayload,
+    SiteStatusChangedPayload, TimeEntry, TimeEntryCreatedPayload, UpdateSite, UpdateTimeEntry,
+    UserAssignedToSitePayload,
+};
+use crate::modules::sites::infrastructure::site_repository::{
+    DashboardSite, ProjectLaborSummary, SiteHistoryReportFilter, SiteHistoryReportRow,
+    SiteRepository,
+};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -28,6 +35,16 @@ pub struct UploadPhotoResult {
     pub mime_type: String,
     pub photo_url: String,
     pub thumbnail_url: Option<String>,
+}
+
+pub struct ProjectSummary {
+    pub labor: ProjectLaborSummary,
+    pub materials: ProjectMaterialSummary,
+}
+
+pub struct InvoiceSummary {
+    pub site: Site,
+    pub project: ProjectSummary,
 }
 
 /// Service for site business logic
@@ -162,6 +179,29 @@ impl SiteService {
         Ok(user.id)
     }
 
+    fn validate_time_entry_project_link(
+        work_type: crate::common::types::WorkType,
+        site_id: Option<SiteId>,
+    ) -> Result<(), AppError> {
+        if work_type_requires_project_link(work_type) && site_id.is_none() {
+            return Err(AppError::Validation(
+                "Project link is required for productive work".to_string(),
+            ));
+        }
+
+        Ok(())
+    }
+
+    fn resolve_updated_time_entry_state(
+        existing: &TimeEntry,
+        update: &UpdateTimeEntry,
+    ) -> (crate::common::types::WorkType, Option<SiteId>) {
+        (
+            update.work_type.unwrap_or(existing.work_type),
+            update.site_id.unwrap_or(existing.site_id),
+        )
+    }
+
     // === Site operations ===
 
     pub async fn create_site(
@@ -198,6 +238,8 @@ impl SiteService {
         if !ctx.is_admin() {
             return Err(AppError::Forbidden("Admin access required".to_string()));
         }
+
+        update.validate()?;
 
         let old_site = self
             .site_repo
@@ -266,6 +308,48 @@ impl SiteService {
         ctx: &TenantContext,
     ) -> Result<Vec<Site>, AppError> {
         self.site_repo.list_sites(ctx.tenant_id, status).await
+    }
+
+    pub async fn list_site_history_report(
+        &self,
+        filter: SiteHistoryReportFilter,
+        ctx: &TenantContext,
+    ) -> Result<Vec<SiteHistoryReportRow>, AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+
+        self.site_repo
+            .list_site_history_report(ctx.tenant_id, &filter)
+            .await
+    }
+
+    pub async fn get_project_summary(
+        &self,
+        site_id: SiteId,
+        ctx: &TenantContext,
+    ) -> Result<ProjectSummary, AppError> {
+        let _site = self.get_site(site_id, ctx).await?;
+        let labor = self
+            .site_repo
+            .get_project_labor_summary(ctx.tenant_id, site_id)
+            .await?;
+        let materials = MaterialRepository::new(self.pool.clone())
+            .get_project_material_summary(site_id, ctx.tenant_id)
+            .await?;
+
+        Ok(ProjectSummary { labor, materials })
+    }
+
+    pub async fn get_invoice_summary(
+        &self,
+        site_id: SiteId,
+        ctx: &TenantContext,
+    ) -> Result<InvoiceSummary, AppError> {
+        let site = self.get_site(site_id, ctx).await?;
+        let project = self.get_project_summary(site_id, ctx).await?;
+
+        Ok(InvoiceSummary { site, project })
     }
 
     /// Delete a site (soft delete)
@@ -366,6 +450,7 @@ impl SiteService {
         ctx: &TenantContext,
     ) -> Result<TimeEntry, AppError> {
         create.validate()?;
+        Self::validate_time_entry_project_link(create.work_type, create.site_id)?;
 
         // If site_id is provided, verify site exists
         if let Some(site_id) = create.site_id {
@@ -455,8 +540,10 @@ impl SiteService {
             ));
         }
 
-        // If site_id is being set (not None), verify site exists
-        if let Some(Some(site_id)) = update.site_id {
+        let (work_type, site_id) = Self::resolve_updated_time_entry_state(&existing, &update);
+        Self::validate_time_entry_project_link(work_type, site_id)?;
+
+        if let Some(site_id) = site_id {
             let _site = self.get_site(site_id, ctx).await?;
         }
 
@@ -691,10 +778,51 @@ impl SiteService {
 #[cfg(test)]
 mod tests {
     use super::SiteService;
-    use crate::common::types::{ActivityId, SiteId, TenantId, UserId};
-    use crate::modules::sites::domain::{Activity, ActivityType};
+    use crate::common::types::{ActivityId, SiteId, TenantId, TimeEntryId, UserId, WorkType};
+    use crate::modules::sites::domain::{Activity, ActivityType, TimeEntry, UpdateTimeEntry};
     use chrono::Utc;
     use image::GenericImageView;
+
+    fn existing_time_entry(work_type: WorkType, site_id: Option<SiteId>) -> TimeEntry {
+        TimeEntry {
+            id: TimeEntryId::new(),
+            tenant_id: TenantId::new(),
+            site_id,
+            user_id: UserId::new(),
+            work_type,
+            hours: 8.0,
+            work_date: chrono::Local::now().date_naive(),
+            notes: None,
+            created_at: Utc::now(),
+        }
+    }
+
+    #[test]
+    fn validate_time_entry_project_link_requires_project_for_productive_work() {
+        let error = SiteService::validate_time_entry_project_link(WorkType::Workshop, None)
+            .expect_err("productive workshop time should require a project");
+
+        assert_eq!(
+            error.to_string(),
+            "Validation error: Project link is required for productive work"
+        );
+    }
+
+    #[test]
+    fn resolve_updated_time_entry_state_can_clear_project_for_overhead_work() {
+        let existing = existing_time_entry(WorkType::Site, Some(SiteId::new()));
+        let update = UpdateTimeEntry {
+            work_type: Some(WorkType::Travel),
+            site_id: Some(None),
+            ..UpdateTimeEntry::default()
+        };
+
+        let (work_type, site_id) =
+            SiteService::resolve_updated_time_entry_state(&existing, &update);
+
+        assert_eq!(work_type, WorkType::Travel);
+        assert_eq!(site_id, None);
+    }
 
     #[test]
     fn activity_response_can_delete_for_owned_note_and_photo_only() {

@@ -50,6 +50,7 @@ export function AddMaterialDialog({
   const [minQuantity, setMinQuantity] = useState("")
   const [location, setLocation] = useState("")
   const [expiresOn, setExpiresOn] = useState("")
+  const [batchCode, setBatchCode] = useState("")
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
 
@@ -75,6 +76,7 @@ export function AddMaterialDialog({
     setMinQuantity("")
     setLocation("")
     setExpiresOn("")
+    setBatchCode("")
     setIsCategoryDialogOpen(false)
     setCurrentStep(1)
   }
@@ -103,6 +105,7 @@ export function AddMaterialDialog({
         min_quantity: Number(minQuantity),
         location: location || null,
         expires_on: expiresOn || null,
+        batch_code: batchCode || null,
       },
       {
         onSuccess: () => {
@@ -246,16 +249,28 @@ export function AddMaterialDialog({
                   </div>
 
                   {selectedCategory?.can_expire && (
-                    <div className="space-y-2">
-                      <Label htmlFor="expiresOn" title="Mindesthaltbarkeitsdatum">
-                        MHD *
-                      </Label>
-                      <Input
-                        id="expiresOn"
-                        type="date"
-                        value={expiresOn}
-                        onChange={(event) => setExpiresOn(event.target.value)}
-                      />
+                    <div className="space-y-4 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
+                      <div className="space-y-2">
+                        <Label htmlFor="expiresOn" title="Mindesthaltbarkeitsdatum">
+                          MHD *
+                        </Label>
+                        <Input
+                          id="expiresOn"
+                          type="date"
+                          value={expiresOn}
+                          onChange={(event) => setExpiresOn(event.target.value)}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="batchCode">Charge / Los</Label>
+                        <Input
+                          id="batchCode"
+                          placeholder="optional, z. B. LOT-2026-05"
+                          value={batchCode}
+                          onChange={(event) => setBatchCode(event.target.value)}
+                        />
+                      </div>
                     </div>
                   )}
 

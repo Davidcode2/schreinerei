@@ -31,6 +31,6 @@ completed: 2026-05-01
 1. `c1331f8` — backend contracts + endpoint + query
 
 ## Deviations from Plan
-- **[Rule 3 - Blocking]** `cargo test --features ts-rs/export` is invalid for current ts-rs version; used `cargo test export_bindings --lib` to regenerate/export DTO bindings.
+- **[Rule 3 - Blocking]** `cargo test --features ts-rs/export` is invalid for current ts-rs version; use `cargo export-types` to regenerate/export DTO bindings.
 
 ## Self-Check: PASSED

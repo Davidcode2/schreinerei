@@ -35,6 +35,19 @@ const projectTypeOptions: Array<{ value: ProjectType; label: string; description
   },
 ]
 
+function formatBudgetAmount(value: number | null): string {
+  if (value == null) return ""
+  return (value / 100).toFixed(2)
+}
+
+function parseBudgetAmount(value: string): number | null {
+  const normalized = value.replace(',', '.').trim()
+  if (!normalized) return null
+  const parsed = Number(normalized)
+  if (!Number.isFinite(parsed)) return null
+  return Math.round(parsed * 100)
+}
+
 export function ProjectPlanningSheet({ open, onOpenChange, site }: ProjectPlanningSheetProps) {
   const updateSite = useUpdateSite()
   const [projectType, setProjectType] = useState<ProjectType>(site.project_type)
@@ -45,6 +58,10 @@ export function ProjectPlanningSheet({ open, onOpenChange, site }: ProjectPlanni
   const [startDate, setStartDate] = useState(site.start_date ?? "")
   const [endDate, setEndDate] = useState(site.end_date ?? "")
   const [estimatedDays, setEstimatedDays] = useState(site.estimated_days?.toString() ?? "")
+  const [budgetAmount, setBudgetAmount] = useState(formatBudgetAmount(site.budget_amount_cents))
+  const [quoteReference, setQuoteReference] = useState(site.quote_reference ?? "")
+  const [billingReference, setBillingReference] = useState(site.billing_reference ?? "")
+  const [billingNotes, setBillingNotes] = useState(site.billing_notes ?? "")
 
   useEffect(() => {
     if (!open) return
@@ -56,6 +73,10 @@ export function ProjectPlanningSheet({ open, onOpenChange, site }: ProjectPlanni
     setStartDate(site.start_date ?? "")
     setEndDate(site.end_date ?? "")
     setEstimatedDays(site.estimated_days?.toString() ?? "")
+    setBudgetAmount(formatBudgetAmount(site.budget_amount_cents))
+    setQuoteReference(site.quote_reference ?? "")
+    setBillingReference(site.billing_reference ?? "")
+    setBillingNotes(site.billing_notes ?? "")
   }, [open, site])
 
   const customerRequired = projectType === "external_site"
@@ -76,6 +97,27 @@ export function ProjectPlanningSheet({ open, onOpenChange, site }: ProjectPlanni
     if (startDate) payload.start_date = startDate
     if (endDate) payload.end_date = endDate
     if (estimatedDays) payload.estimated_days = Number(estimatedDays)
+    const parsedBudgetAmount = parseBudgetAmount(budgetAmount)
+    if (parsedBudgetAmount != null) {
+      payload.budget_amount_cents = parsedBudgetAmount
+    } else if (site.budget_amount_cents != null) {
+      payload.clear_budget_amount = true
+    }
+    if (quoteReference.trim()) {
+      payload.quote_reference = quoteReference.trim()
+    } else if (site.quote_reference) {
+      payload.clear_quote_reference = true
+    }
+    if (billingReference.trim()) {
+      payload.billing_reference = billingReference.trim()
+    } else if (site.billing_reference) {
+      payload.clear_billing_reference = true
+    }
+    if (billingNotes.trim()) {
+      payload.billing_notes = billingNotes.trim()
+    } else if (site.billing_notes) {
+      payload.clear_billing_notes = true
+    }
 
     updateSite.mutate(
       payload,
@@ -179,6 +221,30 @@ export function ProjectPlanningSheet({ open, onOpenChange, site }: ProjectPlanni
           <div className="space-y-2">
             <Label htmlFor="project-description">Planungsnotiz</Label>
             <Textarea id="project-description" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Wichtige Hinweise, Besonderheiten, Vorbereitung" />
+          </div>
+
+          <div className="space-y-4 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
+            <p className="text-sm font-medium">Budget & Abrechnung</p>
+
+            <div className="space-y-2">
+              <Label htmlFor="project-budget">Budget (EUR)</Label>
+              <Input id="project-budget" inputMode="decimal" className="h-11" value={budgetAmount} onChange={(e) => setBudgetAmount(e.target.value)} placeholder="z. B. 2500,00" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="project-quote-reference">Angebotsreferenz</Label>
+              <Input id="project-quote-reference" className="h-11" value={quoteReference} onChange={(e) => setQuoteReference(e.target.value)} placeholder="z. B. ANG-2026-01" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="project-billing-reference">Abrechnungsreferenz</Label>
+              <Input id="project-billing-reference" className="h-11" value={billingReference} onChange={(e) => setBillingReference(e.target.value)} placeholder="z. B. BR-2026-01" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="project-billing-notes">Abrechnungshinweise</Label>
+              <Textarea id="project-billing-notes" rows={3} value={billingNotes} onChange={(e) => setBillingNotes(e.target.value)} placeholder="Hinweise fur Teilrechnung, Abnahme oder Rechnungsstellung" />
+            </div>
           </div>
 
           <div className="flex gap-2 pt-2">

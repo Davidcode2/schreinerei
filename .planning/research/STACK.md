@@ -54,7 +54,7 @@ No new dependencies.
 If backend DTOs change during implementation:
 
 ```bash
-cargo test --features ts-rs/export
+cargo export-types
 ```
 
 ## Sources
