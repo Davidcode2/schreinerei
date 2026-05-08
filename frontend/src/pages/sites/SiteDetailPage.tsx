@@ -33,8 +33,8 @@ import { CreateNoteModal } from "./CreateNoteModal"
 import { CameraUploadFlow } from "./CameraUploadFlow"
 import { MediaViewer } from "./MediaViewer"
 import { ProjectAssignmentsSection } from "./ProjectAssignmentsSection"
+import { SitePlanningCalendar } from "./SitePlanningCalendar"
 import { ProjectPlanningSheet } from "./ProjectPlanningSheet"
-import CalendarView from "@/pages/fleet/CalendarView"
 import {
   buildMediaViewerPath,
   buildSiteDetailPath,
@@ -495,8 +495,12 @@ export default function SiteDetailPage() {
             <ProjectAssignmentsSection siteId={site.id} assignments={assignments || []} />
 
             <div className="space-y-2">
-              <p className="text-sm font-medium">Reservierungen im Projektkontext</p>
-              <CalendarView embedded siteId={site.id} />
+              <p className="text-sm font-medium">Terminplan</p>
+              <SitePlanningCalendar
+                siteId={site.id}
+                assignments={assignments || []}
+                canEdit={isAdmin}
+              />
             </div>
           </CardContent>
         </Card>

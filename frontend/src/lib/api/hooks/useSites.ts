@@ -6,10 +6,14 @@ import type {
   UpdateSiteRequest,
   ListSitesQuery,
   SiteAssignment,
+  SiteAppointment,
+  SiteAppointmentsQuery,
   AssignUserRequest,
+  CreateSiteAppointmentRequest,
   TimeEntry,
   CreateTimeEntryRequest,
   UpdateTimeEntryRequest,
+  UpdateSiteAppointmentRequest,
   Activity,
   CreateActivityRequest,
   ActivityQuery,
@@ -174,6 +178,76 @@ export function useRemoveAssignment() {
       })
       queryClient.invalidateQueries({ queryKey: ["site", variables.siteId] })
       queryClient.invalidateQueries({ queryKey: ["dashboard-sites"] })
+    },
+  })
+}
+
+// === Site Appointments ===
+
+export function useSiteAppointments(siteId: string, query?: SiteAppointmentsQuery) {
+  return useQuery({
+    queryKey: ["site-appointments", siteId, query],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (query?.start_date) params.set("start_date", query.start_date)
+      if (query?.end_date) params.set("end_date", query.end_date)
+      const queryString = params.toString()
+      return apiClient.get<SiteAppointment[]>(
+        `/api/v1/sites/${siteId}/appointments${queryString ? `?${queryString}` : ""}`
+      )
+    },
+    enabled: !!siteId,
+    staleTime: 30000,
+  })
+}
+
+export function useCreateSiteAppointment() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      siteId,
+      ...data
+    }: CreateSiteAppointmentRequest & { siteId: string }) =>
+      apiClient.post<SiteAppointment>(`/api/v1/sites/${siteId}/appointments`, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["site-appointments", variables.siteId] })
+    },
+  })
+}
+
+export function useUpdateSiteAppointment() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      siteId,
+      appointmentId,
+      ...data
+    }: UpdateSiteAppointmentRequest & { siteId: string; appointmentId: string }) =>
+      apiClient.patch<SiteAppointment>(
+        `/api/v1/sites/${siteId}/appointments/${appointmentId}`,
+        data
+      ),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["site-appointments", variables.siteId] })
+    },
+  })
+}
+
+export function useDeleteSiteAppointment() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      siteId,
+      appointmentId,
+    }: {
+      siteId: string
+      appointmentId: string
+    }) => apiClient.delete(`/api/v1/sites/${siteId}/appointments/${appointmentId}`),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["site-appointments", variables.siteId] })
     },
   })
 }

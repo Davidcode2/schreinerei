@@ -1,6 +1,6 @@
 use crate::common::error::AppError;
 use crate::common::events::EventType;
-use crate::common::types::{ActivityId, Role, SiteId, TimeEntryId, UserId};
+use crate::common::types::{ActivityId, Role, SiteAppointmentId, SiteId, TimeEntryId, UserId};
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::inventory::infrastructure::material_repository::{
@@ -8,8 +8,9 @@ use crate::modules::inventory::infrastructure::material_repository::{
 };
 use crate::modules::sites::domain::{
     work_type_requires_project_link, Activity, ActivityAttachmentMetadata, AssignUser,
-    CreateActivity, CreateSite, CreateTimeEntry, Site, SiteActivityAttachment, SiteCreatedPayload,
-    SiteStatusChangedPayload, TimeEntry, TimeEntryCreatedPayload, UpdateSite, UpdateTimeEntry,
+    CreateActivity, CreateSite, CreateSiteAppointment, CreateTimeEntry, Site,
+    SiteActivityAttachment, SiteAppointment, SiteCreatedPayload, SiteStatusChangedPayload,
+    TimeEntry, TimeEntryCreatedPayload, UpdateSite, UpdateSiteAppointment, UpdateTimeEntry,
     UserAssignedToSitePayload,
 };
 use crate::modules::sites::infrastructure::site_repository::{
@@ -190,6 +191,31 @@ impl SiteService {
         Ok(user.id)
     }
 
+    async fn validate_appointment_assignees(
+        &self,
+        user_ids: &[UserId],
+        ctx: &TenantContext,
+    ) -> Result<(), AppError> {
+        if user_ids.is_empty() {
+            return Ok(());
+        }
+
+        let user_repo = UserRepository::new(self.pool.clone());
+        for user_id in user_ids {
+            let exists = user_repo
+                .find_by_id(*user_id, ctx.tenant_id)
+                .await?
+                .is_some();
+            if !exists {
+                return Err(AppError::Validation(format!(
+                    "Assigned user {user_id} is not available in this tenant"
+                )));
+            }
+        }
+
+        Ok(())
+    }
+
     fn validate_time_entry_project_link(
         work_type: crate::common::types::WorkType,
         site_id: Option<SiteId>,
@@ -238,6 +264,72 @@ impl SiteService {
         self.site_repo.publish_event(&event).await?;
 
         Ok(site)
+    }
+
+    pub async fn list_site_appointments(
+        &self,
+        site_id: SiteId,
+        starts_at: Option<chrono::DateTime<chrono::Utc>>,
+        ends_at: Option<chrono::DateTime<chrono::Utc>>,
+        ctx: &TenantContext,
+    ) -> Result<Vec<SiteAppointment>, AppError> {
+        self.site_repo
+            .list_site_appointments(ctx.tenant_id, site_id, starts_at, ends_at)
+            .await
+    }
+
+    pub async fn create_site_appointment(
+        &self,
+        create: CreateSiteAppointment,
+        ctx: &TenantContext,
+    ) -> Result<SiteAppointment, AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+
+        create.validate().map_err(AppError::Validation)?;
+        self.validate_appointment_assignees(&create.assigned_user_ids, ctx)
+            .await?;
+
+        self.site_repo
+            .create_site_appointment(ctx.tenant_id, &create)
+            .await
+    }
+
+    pub async fn update_site_appointment(
+        &self,
+        site_id: SiteId,
+        appointment_id: SiteAppointmentId,
+        update: UpdateSiteAppointment,
+        ctx: &TenantContext,
+    ) -> Result<SiteAppointment, AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+
+        update.validate().map_err(AppError::Validation)?;
+        if let Some(user_ids) = &update.assigned_user_ids {
+            self.validate_appointment_assignees(user_ids, ctx).await?;
+        }
+
+        self.site_repo
+            .update_site_appointment(ctx.tenant_id, site_id, appointment_id, &update)
+            .await
+    }
+
+    pub async fn delete_site_appointment(
+        &self,
+        site_id: SiteId,
+        appointment_id: SiteAppointmentId,
+        ctx: &TenantContext,
+    ) -> Result<(), AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+
+        self.site_repo
+            .delete_site_appointment(ctx.tenant_id, site_id, appointment_id)
+            .await
     }
 
     pub async fn update_site(
