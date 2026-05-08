@@ -1,3 +1,5 @@
+import type { SiteProjectSummaryResponse as GeneratedSiteProjectSummaryResponse } from '@/types/generated'
+
 /**
  * Sites module types matching backend DTOs
  */
@@ -155,3 +157,5 @@ export interface DashboardSite {
   assigned_users: number
   total_hours: number
 }
+
+export type SiteProjectSummary = GeneratedSiteProjectSummaryResponse

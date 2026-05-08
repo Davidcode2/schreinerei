@@ -14,6 +14,7 @@ import type {
   CreateActivityRequest,
   ActivityQuery,
   DashboardSite,
+  SiteProjectSummary,
 } from "@/types/sites"
 import type {
   UploadPhotoAttachmentResponse,
@@ -37,6 +38,15 @@ export function useSite(id: string) {
   return useQuery({
     queryKey: ["site", id],
     queryFn: () => apiClient.get<Site>(`/api/v1/sites/${id}`),
+    enabled: !!id,
+    staleTime: 30000,
+  })
+}
+
+export function useSiteSummary(id: string) {
+  return useQuery({
+    queryKey: ["site-summary", id],
+    queryFn: () => apiClient.get<SiteProjectSummary>(`/api/v1/sites/${id}/summary`),
     enabled: !!id,
     staleTime: 30000,
   })
@@ -168,6 +178,7 @@ export function useCreateTimeEntry() {
       queryClient.invalidateQueries({ queryKey: ["time-entries"] })
       queryClient.invalidateQueries({ queryKey: ["my-time-entries"] })
       queryClient.invalidateQueries({ queryKey: ["dashboard-sites"] })
+      queryClient.invalidateQueries({ queryKey: ["site-summary"] })
     },
   })
 }
@@ -182,6 +193,7 @@ export function useUpdateTimeEntry() {
       queryClient.invalidateQueries({ queryKey: ["time-entries"] })
       queryClient.invalidateQueries({ queryKey: ["my-time-entries"] })
       queryClient.invalidateQueries({ queryKey: ["dashboard-sites"] })
+      queryClient.invalidateQueries({ queryKey: ["site-summary"] })
     },
   })
 }
@@ -196,6 +208,7 @@ export function useDeleteTimeEntry() {
       queryClient.invalidateQueries({ queryKey: ["time-entries"] })
       queryClient.invalidateQueries({ queryKey: ["my-time-entries"] })
       queryClient.invalidateQueries({ queryKey: ["dashboard-sites"] })
+      queryClient.invalidateQueries({ queryKey: ["site-summary"] })
     },
   })
 }

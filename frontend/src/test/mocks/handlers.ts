@@ -129,6 +129,24 @@ export const handlers = [
     return HttpResponse.json([]);
   }),
 
+  http.get(apiRoute('/sites/:id/summary'), async () => {
+    await delay(10);
+    return HttpResponse.json({
+      labor: {
+        total_hours: 0,
+        entry_count: 0,
+        site_hours: 0,
+        workshop_hours: 0,
+        last_work_date: null,
+      },
+      materials: {
+        distinct_material_count: 0,
+        withdrawal_count: 0,
+        lines: [],
+      },
+    });
+  }),
+
   http.post(apiRoute('/sites/:id/assign'), async ({ params, request }) => {
     const body = await request.json() as Record<string, unknown>;
     return HttpResponse.json(

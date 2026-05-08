@@ -21,6 +21,15 @@ pub struct SiteRepository {
     event_bus: EventBus,
 }
 
+#[derive(Debug, Clone)]
+pub struct ProjectLaborSummary {
+    pub total_hours: f64,
+    pub entry_count: i64,
+    pub site_hours: f64,
+    pub workshop_hours: f64,
+    pub last_work_date: Option<NaiveDate>,
+}
+
 impl SiteRepository {
     pub fn new(pool: PgPool) -> Self {
         Self {
@@ -898,6 +907,32 @@ impl SiteRepository {
         Ok(sites.into_iter().map(|s| s.into_dashboard_site()).collect())
     }
 
+    pub async fn get_project_labor_summary(
+        &self,
+        tenant_id: TenantId,
+        site_id: SiteId,
+    ) -> Result<ProjectLaborSummary, AppError> {
+        let row = sqlx::query_as::<_, ProjectLaborSummaryRow>(
+            r#"
+            SELECT
+                COALESCE(SUM(hours), 0)::FLOAT8 AS total_hours,
+                COUNT(*)::INT8 AS entry_count,
+                COALESCE(SUM(CASE WHEN work_type = 'site' THEN hours ELSE 0 END), 0)::FLOAT8 AS site_hours,
+                COALESCE(SUM(CASE WHEN work_type = 'workshop' THEN hours ELSE 0 END), 0)::FLOAT8 AS workshop_hours,
+                MAX(work_date) AS last_work_date
+            FROM time_entries
+            WHERE tenant_id = $1 AND site_id = $2
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(row.into_summary())
+    }
+
     // === Event publishing ===
 
     pub async fn publish_event(&self, event: &DomainEvent) -> Result<(), AppError> {
@@ -1099,6 +1134,15 @@ struct DashboardSiteRow {
     total_hours: Option<f64>,
 }
 
+#[derive(Debug, FromRow)]
+struct ProjectLaborSummaryRow {
+    total_hours: f64,
+    entry_count: i64,
+    site_hours: f64,
+    workshop_hours: f64,
+    last_work_date: Option<NaiveDate>,
+}
+
 impl DashboardSiteRow {
     fn into_dashboard_site(self) -> DashboardSite {
         DashboardSite {
@@ -1117,6 +1161,18 @@ impl DashboardSiteRow {
             estimated_days: self.estimated_days,
             assigned_users: self.assigned_users,
             total_hours: self.total_hours.unwrap_or(0.0),
+        }
+    }
+}
+
+impl ProjectLaborSummaryRow {
+    fn into_summary(self) -> ProjectLaborSummary {
+        ProjectLaborSummary {
+            total_hours: self.total_hours,
+            entry_count: self.entry_count,
+            site_hours: self.site_hours,
+            workshop_hours: self.workshop_hours,
+            last_work_date: self.last_work_date,
         }
     }
 }

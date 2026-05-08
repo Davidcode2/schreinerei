@@ -21,7 +21,7 @@ import {
   ErrorState,
   StatusBadge,
 } from "@/components/shared"
-import { useSite, useActivities, useTimeEntries, useSiteAssignments } from "@/lib/api/hooks"
+import { useSite, useSiteSummary, useActivities, useTimeEntries, useSiteAssignments } from "@/lib/api/hooks"
 import type { WorkType } from "@/types/sites"
 import { TimeEntryDialog } from "./TimeEntryDialog"
 import { ActivityFeed } from "./ActivityFeed"
@@ -72,6 +72,7 @@ export default function SiteDetailPage() {
   const [showPlanningSheet, setShowPlanningSheet] = useState(false)
 
   const { data: site, isLoading, error, refetch } = useSite(id!)
+  const { data: siteSummary } = useSiteSummary(id!)
   const { data: activities, refetch: refetchActivities } = useActivities(id!)
   const { data: timeEntries } = useTimeEntries(id!)
   const { data: assignments } = useSiteAssignments(id!)
@@ -98,7 +99,8 @@ export default function SiteDetailPage() {
     ? buildMediaViewerPath(site.id, viewerTarget.activity.id, viewerTarget.attachment.attachment_id, viewerTarget.title)
     : buildSiteDetailPath(id || "")
 
-  const totalHours = timeEntries?.reduce((sum, e) => sum + e.hours, 0) || 0
+  const totalHours = siteSummary?.labor.total_hours ?? 0
+  const materialSummary = siteSummary?.materials
 
   return (
     <div className="space-y-6">
@@ -209,6 +211,55 @@ export default function SiteDetailPage() {
             )}
 
             <Separator />
+
+            {siteSummary && (
+              <>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">Projektkennzahlen</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Materialien</p>
+                      <p className="text-sm font-medium">{materialSummary?.distinct_material_count || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Entnahmen</p>
+                      <p className="text-sm font-medium">{materialSummary?.withdrawal_count || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Baustelle-Stunden</p>
+                      <p className="text-sm font-medium">{siteSummary.labor.site_hours.toFixed(1)}h</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Werkstatt-Stunden</p>
+                      <p className="text-sm font-medium">{siteSummary.labor.workshop_hours.toFixed(1)}h</p>
+                    </div>
+                  </div>
+                </div>
+
+                {materialSummary && materialSummary.lines.length > 0 && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">Materialverbrauch</p>
+                      <div className="space-y-3">
+                        {materialSummary.lines.slice(0, 4).map((line) => (
+                          <div key={line.material_id} className="flex items-start justify-between gap-3 rounded-lg bg-accent/25 p-3">
+                            <div>
+                              <p className="text-sm font-medium">{line.material_name}</p>
+                              <p className="text-xs text-muted-foreground">{line.category_name}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium">{line.total_withdrawn} {line.unit}</p>
+                              <p className="text-xs text-muted-foreground">{line.withdrawal_count} Entnahmen</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-start gap-2.5">

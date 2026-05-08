@@ -148,6 +148,7 @@ export function useUpdateMaterial() {
       queryClient.invalidateQueries({ queryKey: ["materials"] })
       queryClient.invalidateQueries({ queryKey: ["material"] })
       queryClient.invalidateQueries({ queryKey: ["low-stock"] })
+      queryClient.invalidateQueries({ queryKey: ["site-summary"] })
     },
   })
 }

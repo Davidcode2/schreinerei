@@ -100,4 +100,53 @@ describe('SiteDetailPage', () => {
       expect(screen.getByText('Projektplanung')).toBeInTheDocument()
     })
   })
+
+  it('shows project labor and material aggregates on the detail surface', async () => {
+    window.history.pushState({}, '', '/sites/site-1')
+
+    server.use(
+      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
+      http.get('*/api/v1/sites/site-1/summary', () =>
+        HttpResponse.json({
+          labor: {
+            total_hours: 12.5,
+            entry_count: 4,
+            site_hours: 7.5,
+            workshop_hours: 5,
+            last_work_date: '2026-05-08',
+          },
+          materials: {
+            distinct_material_count: 2,
+            withdrawal_count: 3,
+            lines: [
+              {
+                material_id: 'mat-1',
+                material_name: 'Montageschaum',
+                category_name: 'Chemie',
+                unit: 'Stück',
+                total_withdrawn: 4,
+                withdrawal_count: 2,
+                last_withdrawn_at: new Date().toISOString(),
+              },
+            ],
+          },
+        })
+      ),
+      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
+    )
+
+    render(
+      <Routes>
+        <Route path="/sites/:id" element={<SiteDetailPage />} />
+      </Routes>
+    )
+
+    expect(await screen.findByText('Projektkennzahlen')).toBeInTheDocument()
+    expect(screen.getByText('12.5h')).toBeInTheDocument()
+    expect(screen.getByText('Montageschaum')).toBeInTheDocument()
+    expect(screen.getByText(/4 Stück/i)).toBeInTheDocument()
+  })
 })

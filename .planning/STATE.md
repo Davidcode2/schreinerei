@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.13
-milestone_name: Project Workflow Foundation
-status: ready
-stopped_at: Milestone v1.13 complete and future milestone seeds captured
-last_updated: "2026-05-07T21:08:39Z"
-last_activity: 2026-05-07 -- Completed Phase 47
+milestone: v1.14
+milestone_name: Project Costing, Planning & Billing Basis
+status: in_progress
+stopped_at: Phase 48 planned and ready for execution
+last_updated: "2026-05-08T12:55:00Z"
+last_activity: 2026-05-08 -- Planned Phase 48
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 7
-  completed_plans: 7
-  percent: 100
+  total_phases: 5
+  completed_phases: 0
+  total_plans: 5
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,21 +21,21 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-05-05)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Uberblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
-**Current focus:** Milestone v1.13 is complete. The next step is choosing which captured milestone seed to activate next.
+**Current focus:** Phase 48 is planned. Execution should add canonical per-project labor and material aggregates before budget, invoice, planning, or reporting work builds on them.
 
 ## Current Position
 
-Phase: —
-Plan: —
-Status: v1.13 complete, ready for next milestone activation
-Last activity: 2026-05-07 -- Completed Phase 47
+Phase: 48. Project Costing Aggregates
+Plan: `48-PLAN.md`
+Status: planned, ready for execution
+Last activity: 2026-05-08 -- Planned Phase 48
 
 ## Performance Metrics
 
 **Velocity:**
 
 - Total plans completed across merged milestones: 30
-- Milestones merged into this branch: 4
+- Milestones merged into this branch: 5
 
 **By Phase:**
 
@@ -59,6 +59,7 @@ Last activity: 2026-05-07 -- Completed Phase 47
 | Phase 45. Unified Project Timeline | 2/2 | Complete |
 | Phase 46. Project-Linked Execution Capture | 1/1 | Complete |
 | Phase 47. Project Dashboard Visibility | 1/1 | Complete |
+| Phase 48. Project Costing Aggregates | 1/1 | In Progress |
 
 ## Accumulated Context
 
@@ -81,10 +82,12 @@ Last activity: 2026-05-07 -- Completed Phase 47
 - [Phase 45]: Keep unified submissions on the existing attachment-backed note activity path. — This reuses the protected attachment model and avoids new photo-only timeline records.
 - [Phase 45]: Promote the timeline above secondary management cards on the detail page. — Workers now see the canonical project memory before planning and administrative panels.
 - [Phase 45]: Show both exact and relative timestamps on each timeline card. — The existing created_at field remains the single source of truth while adding more precise context.
+- [Phase 48]: Reuse existing project-linked time and stock booking rows as the only cost-basis source of truth. — No accounting shadow tables should be introduced before billing semantics exist.
+- [Phase 48]: Aggregate labor and material separately, then compose the result. — This avoids SQL join multiplication between time rows and stock rows.
 
 ### Pending Todos
 
-- Choose and activate the next milestone seed (`schreinerei-d3w`, `schreinerei-sb1`, or `schreinerei-v8l`).
+- Execute `48-PLAN.md` for project costing aggregates.
 - Use `.planning/FEATURES.md` as the comparison baseline for shipped vs desired product scope.
 - Use `.planning/REQUIREMENTS.md` `Product Backlog from 2026-05 Note` section to slice the next milestone.
 
@@ -107,6 +110,6 @@ Last activity: 2026-05-07 -- Completed Phase 47
 
 ## Session Continuity
 
-Last session: 2026-05-07T21:08:39Z
-Stopped at: Milestone v1.13 complete and future milestone seeds captured
-Resume file: `.planning/phases/47-project-dashboard-visibility/47-SUMMARY.md`
+Last session: 2026-05-08T12:55:00Z
+Stopped at: Phase 48 planned and ready for execution
+Resume file: `.planning/phases/48-project-costing-aggregates/48-PLAN.md`

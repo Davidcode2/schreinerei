@@ -85,6 +85,12 @@ export type OrderStatusQuery = { status: string | null, };
  */
 export type PreferencesResponse = { active_site_id: string | null, };
 
+export type ProjectLaborSummaryResponse = { total_hours: number, entry_count: bigint, site_hours: number, workshop_hours: number, last_work_date: string | null, };
+
+export type ProjectMaterialSummaryResponse = { distinct_material_count: bigint, withdrawal_count: bigint, lines: Array<ProjectMaterialUsageLineResponse>, };
+
+export type ProjectMaterialUsageLineResponse = { material_id: string, material_name: string, category_name: string, unit: string, total_withdrawn: number, withdrawal_count: bigint, last_withdrawn_at: string, };
+
 export type QrCodeResponse = { qr_code: string, material_id: string, material_name: string, };
 
 export type QrStatusResponse = { resource_type: string, resource_id: string, resource_name: string, status: string, current_reservation: ReservationSummaryResponse | null, upcoming_reservations: Array<ReservationSummaryResponse>, };
@@ -96,6 +102,8 @@ export type ReservationResponse = { id: string, resource_type: string, resource_
 export type ReservationSummaryResponse = { id: string, start_time: string, end_time: string, user_name: string | null, site_name: string | null, status: string, };
 
 export type SiteActivityAttachmentResponse = { attachment_id: string, filename: string, mime_type: string, url: string, thumbnail_url: string | null, };
+
+export type SiteProjectSummaryResponse = { labor: ProjectLaborSummaryResponse, materials: ProjectMaterialSummaryResponse, };
 
 export type SiteResponse = { id: string, project_type: string, name: string, customer_name: string, location: string | null, description: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, created_at: string, };
 

@@ -19,6 +19,24 @@ pub struct MaterialRepository {
     event_bus: EventBus,
 }
 
+#[derive(Debug, Clone)]
+pub struct ProjectMaterialUsageLine {
+    pub material_id: MaterialId,
+    pub material_name: String,
+    pub category_name: String,
+    pub unit: String,
+    pub total_withdrawn: i32,
+    pub withdrawal_count: i64,
+    pub last_withdrawn_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProjectMaterialSummary {
+    pub distinct_material_count: i64,
+    pub withdrawal_count: i64,
+    pub lines: Vec<ProjectMaterialUsageLine>,
+}
+
 struct BatchWrite<'a> {
     tenant_id: TenantId,
     material_id: MaterialId,
@@ -1328,6 +1346,60 @@ impl MaterialRepository {
             .collect())
     }
 
+    pub async fn get_project_material_summary(
+        &self,
+        site_id: SiteId,
+        tenant_id: TenantId,
+    ) -> Result<ProjectMaterialSummary, AppError> {
+        let totals = sqlx::query_as::<_, ProjectMaterialSummaryTotalsRow>(
+            r#"
+            SELECT
+                COUNT(DISTINCT se.material_id)::INT8 AS distinct_material_count,
+                COUNT(*)::INT8 AS withdrawal_count
+            FROM stock_entries se
+            WHERE se.site_id = $1 AND se.tenant_id = $2 AND se.entry_type = 'withdrawn'
+            "#,
+        )
+        .bind(site_id.0)
+        .bind(tenant_id.0)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        let lines = sqlx::query_as::<_, ProjectMaterialUsageLineRow>(
+            r#"
+            SELECT
+                se.material_id,
+                m.name AS material_name,
+                c.name AS category_name,
+                m.unit,
+                COALESCE(SUM(-se.quantity_change), 0)::INT4 AS total_withdrawn,
+                COUNT(*)::INT8 AS withdrawal_count,
+                MAX(se.created_at) AS last_withdrawn_at
+            FROM stock_entries se
+            INNER JOIN materials m ON se.material_id = m.id
+            INNER JOIN categories c ON m.category_id = c.id
+            WHERE se.site_id = $1 AND se.tenant_id = $2 AND se.entry_type = 'withdrawn'
+            GROUP BY se.material_id, m.name, c.name, m.unit
+            ORDER BY total_withdrawn DESC, last_withdrawn_at DESC
+            "#,
+        )
+        .bind(site_id.0)
+        .bind(tenant_id.0)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(ProjectMaterialSummary {
+            distinct_material_count: totals.distinct_material_count,
+            withdrawal_count: totals.withdrawal_count,
+            lines: lines
+                .into_iter()
+                .map(ProjectMaterialUsageLineRow::into_summary)
+                .collect(),
+        })
+    }
+
     fn site_history_query() -> &'static str {
         r#"
         SELECT
@@ -1763,6 +1835,23 @@ struct MaterialBatchStateRow {
 }
 
 #[derive(Debug, FromRow)]
+struct ProjectMaterialSummaryTotalsRow {
+    distinct_material_count: i64,
+    withdrawal_count: i64,
+}
+
+#[derive(Debug, FromRow)]
+struct ProjectMaterialUsageLineRow {
+    material_id: Uuid,
+    material_name: String,
+    category_name: String,
+    unit: String,
+    total_withdrawn: i32,
+    withdrawal_count: i64,
+    last_withdrawn_at: DateTime<Utc>,
+}
+
+#[derive(Debug, FromRow)]
 struct OrderRequestRow {
     id: Uuid,
     tenant_id: Uuid,
@@ -1889,6 +1978,20 @@ impl SiteStockHistoryRow {
             site_id: self.site_id.map(SiteId),
             site_name: self.site_name,
             created_at: self.created_at,
+        }
+    }
+}
+
+impl ProjectMaterialUsageLineRow {
+    fn into_summary(self) -> ProjectMaterialUsageLine {
+        ProjectMaterialUsageLine {
+            material_id: MaterialId(self.material_id),
+            material_name: self.material_name,
+            category_name: self.category_name,
+            unit: self.unit,
+            total_withdrawn: self.total_withdrawn,
+            withdrawal_count: self.withdrawal_count,
+            last_withdrawn_at: self.last_withdrawn_at,
         }
     }
 }

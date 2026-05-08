@@ -35,6 +35,7 @@ pub fn create_router() -> Router<AppState> {
             "/api/v1/sites/{id}",
             get(get_site).patch(update_site).delete(delete_site),
         )
+        .route("/api/v1/sites/{id}/summary", get(get_site_summary))
         // Assignments
         .route("/api/v1/sites/{id}/assign", post(assign_user))
         .route(
@@ -104,6 +105,43 @@ pub struct SiteResponse {
     pub created_at: String,
 }
 
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct ProjectMaterialUsageLineResponse {
+    pub material_id: String,
+    pub material_name: String,
+    pub category_name: String,
+    pub unit: String,
+    pub total_withdrawn: i32,
+    pub withdrawal_count: i64,
+    pub last_withdrawn_at: String,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct ProjectMaterialSummaryResponse {
+    pub distinct_material_count: i64,
+    pub withdrawal_count: i64,
+    pub lines: Vec<ProjectMaterialUsageLineResponse>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct ProjectLaborSummaryResponse {
+    pub total_hours: f64,
+    pub entry_count: i64,
+    pub site_hours: f64,
+    pub workshop_hours: f64,
+    pub last_work_date: Option<String>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct SiteProjectSummaryResponse {
+    pub labor: ProjectLaborSummaryResponse,
+    pub materials: ProjectMaterialSummaryResponse,
+}
+
 impl From<crate::modules::sites::domain::Site> for SiteResponse {
     fn from(site: crate::modules::sites::domain::Site) -> Self {
         Self {
@@ -118,6 +156,69 @@ impl From<crate::modules::sites::domain::Site> for SiteResponse {
             end_date: site.end_date.map(|d| d.to_string()),
             estimated_days: site.estimated_days,
             created_at: site.created_at.to_rfc3339(),
+        }
+    }
+}
+
+impl From<crate::modules::inventory::infrastructure::material_repository::ProjectMaterialUsageLine>
+    for ProjectMaterialUsageLineResponse
+{
+    fn from(
+        line: crate::modules::inventory::infrastructure::material_repository::ProjectMaterialUsageLine,
+    ) -> Self {
+        Self {
+            material_id: line.material_id.to_string(),
+            material_name: line.material_name,
+            category_name: line.category_name,
+            unit: line.unit,
+            total_withdrawn: line.total_withdrawn,
+            withdrawal_count: line.withdrawal_count,
+            last_withdrawn_at: line.last_withdrawn_at.to_rfc3339(),
+        }
+    }
+}
+
+impl From<crate::modules::inventory::infrastructure::material_repository::ProjectMaterialSummary>
+    for ProjectMaterialSummaryResponse
+{
+    fn from(
+        summary: crate::modules::inventory::infrastructure::material_repository::ProjectMaterialSummary,
+    ) -> Self {
+        Self {
+            distinct_material_count: summary.distinct_material_count,
+            withdrawal_count: summary.withdrawal_count,
+            lines: summary
+                .lines
+                .into_iter()
+                .map(ProjectMaterialUsageLineResponse::from)
+                .collect(),
+        }
+    }
+}
+
+impl From<crate::modules::sites::infrastructure::site_repository::ProjectLaborSummary>
+    for ProjectLaborSummaryResponse
+{
+    fn from(
+        summary: crate::modules::sites::infrastructure::site_repository::ProjectLaborSummary,
+    ) -> Self {
+        Self {
+            total_hours: summary.total_hours,
+            entry_count: summary.entry_count,
+            site_hours: summary.site_hours,
+            workshop_hours: summary.workshop_hours,
+            last_work_date: summary.last_work_date.map(|value| value.to_string()),
+        }
+    }
+}
+
+impl From<crate::modules::sites::application::site_service::ProjectSummary>
+    for SiteProjectSummaryResponse
+{
+    fn from(summary: crate::modules::sites::application::site_service::ProjectSummary) -> Self {
+        Self {
+            labor: ProjectLaborSummaryResponse::from(summary.labor),
+            materials: ProjectMaterialSummaryResponse::from(summary.materials),
         }
     }
 }
@@ -322,6 +423,23 @@ pub async fn get_site(
     let site = service.get_site(site_id, &ctx).await?;
 
     Ok(Json(SiteResponse::from(site)))
+}
+
+pub async fn get_site_summary(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
+    );
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+
+    let summary = service.get_project_summary(site_id, &ctx).await?;
+
+    Ok(Json(SiteProjectSummaryResponse::from(summary)))
 }
 
 pub async fn update_site(

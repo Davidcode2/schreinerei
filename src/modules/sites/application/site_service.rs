@@ -3,13 +3,18 @@ use crate::common::events::EventType;
 use crate::common::types::{ActivityId, Role, SiteId, TimeEntryId, UserId};
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
+use crate::modules::inventory::infrastructure::material_repository::{
+    MaterialRepository, ProjectMaterialSummary,
+};
 use crate::modules::sites::domain::{
     work_type_requires_project_link, Activity, ActivityAttachmentMetadata, AssignUser,
     CreateActivity, CreateSite, CreateTimeEntry, Site, SiteActivityAttachment, SiteCreatedPayload,
     SiteStatusChangedPayload, TimeEntry, TimeEntryCreatedPayload, UpdateSite, UpdateTimeEntry,
     UserAssignedToSitePayload,
 };
-use crate::modules::sites::infrastructure::site_repository::{DashboardSite, SiteRepository};
+use crate::modules::sites::infrastructure::site_repository::{
+    DashboardSite, ProjectLaborSummary, SiteRepository,
+};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -29,6 +34,11 @@ pub struct UploadPhotoResult {
     pub mime_type: String,
     pub photo_url: String,
     pub thumbnail_url: Option<String>,
+}
+
+pub struct ProjectSummary {
+    pub labor: ProjectLaborSummary,
+    pub materials: ProjectMaterialSummary,
 }
 
 /// Service for site business logic
@@ -290,6 +300,23 @@ impl SiteService {
         ctx: &TenantContext,
     ) -> Result<Vec<Site>, AppError> {
         self.site_repo.list_sites(ctx.tenant_id, status).await
+    }
+
+    pub async fn get_project_summary(
+        &self,
+        site_id: SiteId,
+        ctx: &TenantContext,
+    ) -> Result<ProjectSummary, AppError> {
+        let _site = self.get_site(site_id, ctx).await?;
+        let labor = self
+            .site_repo
+            .get_project_labor_summary(ctx.tenant_id, site_id)
+            .await?;
+        let materials = MaterialRepository::new(self.pool.clone())
+            .get_project_material_summary(site_id, ctx.tenant_id)
+            .await?;
+
+        Ok(ProjectSummary { labor, materials })
     }
 
     /// Delete a site (soft delete)

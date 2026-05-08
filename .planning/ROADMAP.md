@@ -16,6 +16,7 @@
 - ✅ **v1.11 Fleet Calendar on Fleet Page** — Phases 38-40 (shipped 2026-05-01) — [Archive](milestones/v1.11-ROADMAP.md)
 - ✅ **v1.12 Architecture Guardrails** — Phases 41-43 (shipped 2026-05-04) — [Archive](milestones/v1.12-ROADMAP.md)
 - ✅ **v1.13 Project Workflow Foundation** — Phases 44-47 (shipped 2026-05-07)
+- **v1.14 Project Costing, Planning & Billing Basis** — Phases 48-52 (planned)
 
 ### v1.12 Mobile Modal Improvements (In Progress)
 
@@ -94,7 +95,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40 → 41 → 42 → 43 → 44 → 45 → 46 → 47
+Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40 → 41 → 42 → 43 → 44 → 45 → 46 → 47 → 48 → 49 → 50 → 51 → 52
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -116,6 +117,11 @@ Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 �
 | 45. Unified Project Timeline | v1.13 | 2/2 | Complete   | 2026-05-07 |
 | 46. Project-Linked Execution Capture | v1.13 | 1/1 | Complete | 2026-05-07 |
 | 47. Project Dashboard Visibility | v1.13 | 1/1 | Complete | 2026-05-07 |
+| 48. Project Costing Aggregates | v1.14 | 1/1 | In Progress | — |
+| 49. Project Budget & Billing Metadata | v1.14 | 0/1 | Planned | — |
+| 50. Invoice-Ready Project Summary | v1.14 | 0/1 | Planned | — |
+| 51. Historical Project Reporting | v1.14 | 0/1 | Planned | — |
+| 52. Project Planning View | v1.14 | 0/1 | Planned | — |
 
 ## Next Planning Inputs
 
@@ -177,7 +183,17 @@ Success criteria:
 2. Status filtering is explicit and user-controlled.
 3. The new behavior does not regress the current dashboard’s speed or readability.
 
+### ✅ v1.14 Project Costing, Planning & Billing Basis (Planned)
+
+**Milestone Goal:** Turn disciplined project-linked time and material capture into reusable project aggregates, billing metadata, invoice-ready summaries, project planning views, and historical reporting.
+
+- [ ] **Phase 48: Project Costing Aggregates** — Add canonical per-project labor and material aggregates on project detail
+- [ ] **Phase 49: Project Budget & Billing Metadata** — Add budget and billing metadata on the project and show budget-vs-actual
+- [ ] **Phase 50: Invoice-Ready Project Summary** — Add structured invoice-ready summaries sourced from project aggregates and billing metadata
+- [ ] **Phase 51: Historical Project Reporting** — Add read-only reporting filters for managers over historical projects
+- [ ] **Phase 52: Project Planning View** — Show workers, reservations, and project timing together from a project-centric planning surface
+
 ---
 
-*Roadmap last updated: 2026-05-07*
-*Next: choose and activate the next milestone seed*
+*Roadmap last updated: 2026-05-08*
+*Next: execute Phase 48 project costing aggregates*
