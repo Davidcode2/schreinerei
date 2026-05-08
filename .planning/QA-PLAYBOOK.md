@@ -206,7 +206,7 @@ const material = MaterialSchema.parse(data) as Material;
 ### Checklist for New Endpoints
 
 1. [ ] Add `#[derive(TS)]` and `#[ts(export)]` to Rust DTO
-2. [ ] Run `cargo test --features ts-rs/export`
+2. [ ] Run `cargo export-types`
 3. [ ] Import generated type in frontend
 4. [ ] Add Zod schema for runtime validation (optional but recommended)
 5. [ ] Add E2E test for the endpoint

@@ -230,7 +230,7 @@ pub struct CreateMaterialRequest {
 
 2. Run type generation:
 ```bash
-cargo test --features ts-rs/export
+cargo export-types
 ```
 
 3. Types are generated to `frontend/src/types/generated.ts`
@@ -242,7 +242,7 @@ import { CreateMaterialRequest } from './types/generated';
 
 **Guidelines:**
 - Add `#[ts(export)]` to all request/response DTOs
-- Run generation after modifying DTOs
+- Run `cargo export-types` after modifying DTOs
 - CI should fail if generated types differ from committed
 
 **Phase 15** will add ts-rs to all existing DTOs.

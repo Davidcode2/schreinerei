@@ -28,7 +28,7 @@
 - Every query and mutation must remain tenant-scoped through `TenantId`/request context. [VERIFIED: AGENTS.md]
 - Stay inside the modular-monolith boundaries (`common`, `auth`, `modules/*`) rather than creating cross-cutting shadow subsystems. [VERIFIED: AGENTS.md]
 - Prefer the modern Rust module file structure for any new module work; do not introduce new `mod.rs`-style modules. [VERIFIED: AGENTS.md]
-- Use `ts-rs` for request/response DTO contract changes and regenerate frontend types with `cargo test --features ts-rs/export` when DTOs change. [VERIFIED: AGENTS.md]
+- Use `ts-rs` for request/response DTO contract changes and regenerate frontend types with `cargo export-types` when DTOs change. [VERIFIED: AGENTS.md]
 - Before any runtime verification, use a dedicated worktree-local PostgreSQL database/container; never run tests or migrations against a shared local database. [VERIFIED: AGENTS.md]
 - Full-stack changes must verify both backend and frontend quality gates before commit. [VERIFIED: AGENTS.md]
 - Use `bd` for task tracking during execution; do not introduce markdown TODO workflows. [VERIFIED: AGENTS.md]
