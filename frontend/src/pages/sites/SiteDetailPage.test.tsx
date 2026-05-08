@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import userEvent from '@testing-library/user-event'
 import { screen, waitFor, within } from '@testing-library/react'
 import { Route, Routes } from 'react-router-dom'
 import { http, HttpResponse } from 'msw'
 import { render } from '@/test/utils'
 import { server } from '@/test/mocks/server'
+import { useAuthStore } from '@/lib/auth/authStore'
 import SiteDetailPage from './SiteDetailPage'
 
 const site = {
@@ -26,6 +27,21 @@ const site = {
 }
 
 describe('SiteDetailPage', () => {
+  function setAdminUser() {
+    useAuthStore.setState({
+      user: {
+        id: 'user-1',
+        email: 'admin@example.com',
+        name: 'Admin',
+        role: 'admin',
+        created_at: new Date().toISOString(),
+      },
+      tokens: null,
+      isAuthenticated: true,
+      isLoading: false,
+    })
+  }
+
   it('labels the main feed as Projekt-Timeline with canonical context copy', async () => {
     window.history.pushState({}, '', '/sites/site-1')
 
@@ -155,5 +171,62 @@ describe('SiteDetailPage', () => {
     expect(screen.getByText('Budget & Abrechnung')).toBeInTheDocument()
     expect(screen.getByText(/3\.200,00/)).toBeInTheDocument()
     expect(screen.getByText('ANG-2026-09')).toBeInTheDocument()
+  })
+
+  it('lets admins export the invoice-ready project summary', async () => {
+    window.history.pushState({}, '', '/sites/site-1')
+    setAdminUser()
+
+    const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:invoice-summary')
+    const revokeObjectUrlSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+
+    server.use(
+      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
+      http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
+        labor: { total_hours: 12.5, entry_count: 4, site_hours: 7.5, workshop_hours: 5, last_work_date: '2026-05-08' },
+        materials: { distinct_material_count: 2, withdrawal_count: 3, lines: [] },
+      })),
+      http.get('*/api/v1/sites/site-1/invoice-summary', () => HttpResponse.json({
+        export_version: 'v1',
+        generated_at: new Date().toISOString(),
+        project: {
+          id: 'site-1',
+          name: 'CNC Vorbereitung',
+          project_type: 'internal_workshop',
+          customer_name: '',
+          location: 'Werkstatt',
+          status: 'planned',
+          start_date: null,
+          end_date: null,
+          estimated_days: 2,
+        },
+        billing: {
+          budget_amount_cents: 320000,
+          quote_reference: 'ANG-2026-09',
+          billing_reference: 'BR-2',
+          billing_notes: 'Schlussrechnung nach Abnahme',
+        },
+        labor: { total_hours: 12.5, entry_count: 4, site_hours: 7.5, workshop_hours: 5, last_work_date: '2026-05-08' },
+        materials: { distinct_material_count: 2, withdrawal_count: 3, lines: [] },
+      })),
+      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
+    )
+
+    render(
+      <Routes>
+        <Route path="/sites/:id" element={<SiteDetailPage />} />
+      </Routes>
+    )
+
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: /projektübersicht exportieren/i }))
+
+    await waitFor(() => {
+      expect(createObjectUrlSpy).toHaveBeenCalled()
+      expect(revokeObjectUrlSpy).toHaveBeenCalledWith('blob:invoice-summary')
+    })
   })
 })

@@ -41,6 +41,11 @@ pub struct ProjectSummary {
     pub materials: ProjectMaterialSummary,
 }
 
+pub struct InvoiceSummary {
+    pub site: Site,
+    pub project: ProjectSummary,
+}
+
 /// Service for site business logic
 pub struct SiteService {
     site_repo: SiteRepository,
@@ -319,6 +324,17 @@ impl SiteService {
             .await?;
 
         Ok(ProjectSummary { labor, materials })
+    }
+
+    pub async fn get_invoice_summary(
+        &self,
+        site_id: SiteId,
+        ctx: &TenantContext,
+    ) -> Result<InvoiceSummary, AppError> {
+        let site = self.get_site(site_id, ctx).await?;
+        let project = self.get_project_summary(site_id, ctx).await?;
+
+        Ok(InvoiceSummary { site, project })
     }
 
     /// Delete a site (soft delete)

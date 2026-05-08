@@ -9,6 +9,7 @@ import {
   Clock,
   Camera,
   FileText,
+  Download,
   Building2,
   Users,
   Timer,
@@ -21,7 +22,9 @@ import {
   ErrorState,
   StatusBadge,
 } from "@/components/shared"
-import { useSite, useSiteSummary, useActivities, useTimeEntries, useSiteAssignments } from "@/lib/api/hooks"
+import { useSite, useSiteSummary, useSiteInvoiceSummary, useActivities, useTimeEntries, useSiteAssignments } from "@/lib/api/hooks"
+import { useAuthStore } from "@/lib/auth/authStore"
+import { toast } from 'sonner'
 import type { WorkType } from "@/types/sites"
 import { TimeEntryDialog } from "./TimeEntryDialog"
 import { ActivityFeed } from "./ActivityFeed"
@@ -54,6 +57,11 @@ function formatCurrency(cents: number | null): string {
   }).format(cents / 100)
 }
 
+function buildInvoiceSummaryFilename(siteName: string): string {
+  const slug = siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  return `${slug || 'projekt'}-projektuebersicht.json`
+}
+
 function getWorkTypeLabel(workType: WorkType): string {
   const labels: Record<WorkType, string> = {
     site: "Baustelle",
@@ -73,6 +81,7 @@ export default function SiteDetailPage() {
     slug?: string
   }>()
   const navigate = useNavigate()
+  const user = useAuthStore((state) => state.user)
   const [showTimeDialog, setShowTimeDialog] = useState(false)
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [showNoteModal, setShowNoteModal] = useState(false)
@@ -81,6 +90,7 @@ export default function SiteDetailPage() {
 
   const { data: site, isLoading, error, refetch } = useSite(id!)
   const { data: siteSummary } = useSiteSummary(id!)
+  const { refetch: refetchInvoiceSummary } = useSiteInvoiceSummary(id!, false)
   const { data: activities, refetch: refetchActivities } = useActivities(id!)
   const { data: timeEntries } = useTimeEntries(id!)
   const { data: assignments } = useSiteAssignments(id!)
@@ -89,6 +99,7 @@ export default function SiteDetailPage() {
     () => resolveMediaViewerTarget(activities || [], activityId, attachmentId),
     [activities, activityId, attachmentId]
   )
+  const isAdmin = user?.role === 'admin'
 
   if (isLoading) {
     return <LoadingSpinner className="min-h-[400px]" size="lg" />
@@ -110,6 +121,28 @@ export default function SiteDetailPage() {
   const totalHours = siteSummary?.labor.total_hours ?? 0
   const materialSummary = siteSummary?.materials
 
+  async function handleExportInvoiceSummary() {
+    try {
+      const response = await refetchInvoiceSummary()
+      if (!response.data) {
+        throw new Error('missing summary')
+      }
+
+      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = buildInvoiceSummaryFilename(site.name)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+      toast.success('Projektübersicht exportiert')
+    } catch {
+      toast.error('Projektübersicht konnte nicht exportiert werden')
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -118,6 +151,16 @@ export default function SiteDetailPage() {
         backTo="/sites"
         action={
           <div className="flex gap-2">
+            {isAdmin && (
+              <Button
+                variant="outline"
+                onClick={handleExportInvoiceSummary}
+                className="gap-2 h-10"
+              >
+                <Download className="h-4 w-4" />
+                Projektübersicht exportieren
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => setShowPlanningSheet(true)}

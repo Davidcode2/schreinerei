@@ -1,4 +1,7 @@
-import type { SiteProjectSummaryResponse as GeneratedSiteProjectSummaryResponse } from '@/types/generated'
+import type {
+  SiteInvoiceSummaryResponse as GeneratedSiteInvoiceSummaryResponse,
+  SiteProjectSummaryResponse as GeneratedSiteProjectSummaryResponse,
+} from '@/types/generated'
 
 /**
  * Sites module types matching backend DTOs
@@ -175,3 +178,5 @@ export interface DashboardSite {
 }
 
 export type SiteProjectSummary = GeneratedSiteProjectSummaryResponse
+
+export type SiteInvoiceSummary = GeneratedSiteInvoiceSummaryResponse

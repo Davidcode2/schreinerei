@@ -14,6 +14,7 @@ import type {
   CreateActivityRequest,
   ActivityQuery,
   DashboardSite,
+  SiteInvoiceSummary,
   SiteProjectSummary,
 } from "@/types/sites"
 import type {
@@ -48,6 +49,15 @@ export function useSiteSummary(id: string) {
     queryKey: ["site-summary", id],
     queryFn: () => apiClient.get<SiteProjectSummary>(`/api/v1/sites/${id}/summary`),
     enabled: !!id,
+    staleTime: 30000,
+  })
+}
+
+export function useSiteInvoiceSummary(id: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: ["site-invoice-summary", id],
+    queryFn: () => apiClient.get<SiteInvoiceSummary>(`/api/v1/sites/${id}/invoice-summary`),
+    enabled: !!id && enabled,
     staleTime: 30000,
   })
 }

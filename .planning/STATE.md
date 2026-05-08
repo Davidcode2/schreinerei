@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.14
 milestone_name: Project Costing, Planning & Billing Basis
 status: in_progress
-stopped_at: Phase 49 planned and ready for execution
-last_updated: "2026-05-08T14:18:00Z"
-last_activity: 2026-05-08 -- Planned Phase 49
+stopped_at: Phase 50 planned and ready for execution
+last_updated: "2026-05-08T14:32:00Z"
+last_activity: 2026-05-08 -- Planned Phase 50
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 1
-  percent: 20
+  completed_plans: 2
+  percent: 40
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-05-05)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Uberblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
-**Current focus:** Phase 49 is planned. Execution should add lightweight budget and billing metadata on the project aggregate while reusing Phase 48 actuals for the operational actual side.
+**Current focus:** Phase 50 is planned. Execution should add an invoice-ready project summary/export surface on top of the existing project aggregate and billing metadata, without building a billing engine.
 
 ## Current Position
 
-Phase: 49. Project Budget & Billing Metadata
-Plan: `49-PLAN.md`
+Phase: 50. Invoice-Ready Project Summary
+Plan: `50-PLAN.md`
 Status: planned, ready for execution
-Last activity: 2026-05-08 -- Planned Phase 49
+Last activity: 2026-05-08 -- Planned Phase 50
 
 ## Performance Metrics
 
@@ -60,7 +60,8 @@ Last activity: 2026-05-08 -- Planned Phase 49
 | Phase 46. Project-Linked Execution Capture | 1/1 | Complete |
 | Phase 47. Project Dashboard Visibility | 1/1 | Complete |
 | Phase 48. Project Costing Aggregates | 1/1 | Complete |
-| Phase 49. Project Budget & Billing Metadata | 1/1 | In Progress |
+| Phase 49. Project Budget & Billing Metadata | 1/1 | Complete |
+| Phase 50. Invoice-Ready Project Summary | 1/1 | In Progress |
 
 ## Accumulated Context
 
@@ -87,10 +88,12 @@ Last activity: 2026-05-08 -- Planned Phase 49
 - [Phase 48]: Aggregate labor and material separately, then compose the result. — This avoids SQL join multiplication between time rows and stock rows.
 - [Phase 49]: Keep budget and billing metadata on the existing project aggregate. — Persist lightweight fields on `sites` and keep actuals on the summary endpoint.
 - [Phase 49]: Do not fabricate monetary actuals without price or rate inputs. — Show budget beside operational actuals until invoice-ready export work adds richer billing semantics.
+- [Phase 50]: Keep invoice-ready output as a dedicated read-only export contract. — Reuse project metadata and actuals without collapsing them into the existing site or summary DTOs.
+- [Phase 50]: Export structured JSON first. — No PDF generation, pricing engine, or tax logic should be introduced in this phase.
 
 ### Pending Todos
 
-- Execute `49-PLAN.md` for project budget and billing metadata.
+- Execute `50-PLAN.md` for invoice-ready project summaries.
 - Use `.planning/FEATURES.md` as the comparison baseline for shipped vs desired product scope.
 - Use `.planning/REQUIREMENTS.md` `Product Backlog from 2026-05 Note` section to slice the next milestone.
 
@@ -113,6 +116,6 @@ Last activity: 2026-05-08 -- Planned Phase 49
 
 ## Session Continuity
 
-Last session: 2026-05-08T14:18:00Z
-Stopped at: Phase 49 planned and ready for execution
-Resume file: `.planning/phases/49-project-budget-billing-metadata/49-PLAN.md`
+Last session: 2026-05-08T14:32:00Z
+Stopped at: Phase 50 planned and ready for execution
+Resume file: `.planning/phases/50-invoice-ready-project-summary/50-PLAN.md`

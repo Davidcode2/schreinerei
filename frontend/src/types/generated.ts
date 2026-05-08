@@ -103,6 +103,12 @@ export type ReservationSummaryResponse = { id: string, start_time: string, end_t
 
 export type SiteActivityAttachmentResponse = { attachment_id: string, filename: string, mime_type: string, url: string, thumbnail_url: string | null, };
 
+export type SiteInvoiceBillingResponse = { budget_amount_cents: bigint | null, quote_reference: string | null, billing_reference: string | null, billing_notes: string | null, };
+
+export type SiteInvoiceProjectResponse = { id: string, name: string, project_type: string, customer_name: string, location: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, };
+
+export type SiteInvoiceSummaryResponse = { export_version: string, generated_at: string, project: SiteInvoiceProjectResponse, billing: SiteInvoiceBillingResponse, labor: ProjectLaborSummaryResponse, materials: ProjectMaterialSummaryResponse, };
+
 export type SiteProjectSummaryResponse = { labor: ProjectLaborSummaryResponse, materials: ProjectMaterialSummaryResponse, };
 
 export type SiteResponse = { id: string, project_type: string, name: string, customer_name: string, location: string | null, description: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, budget_amount_cents: bigint | null, billing_reference: string | null, billing_notes: string | null, quote_reference: string | null, created_at: string, };
