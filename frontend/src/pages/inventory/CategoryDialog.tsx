@@ -33,6 +33,9 @@ const defaultValues = {
   canExpire: false,
 }
 
+const EXPIRY_HELPER_TEXT =
+  "Nur fur verderbliche Kategorien aktivieren. Neue Zugange brauchen dann ein MHD, vorhandener Bestand ohne MHD bleibt sichtbar."
+
 export function CategoryDialog({
   open,
   onOpenChange,
@@ -100,6 +103,7 @@ export function CategoryDialog({
               MHD
             </span>
           </label>
+          <p className="text-xs text-muted-foreground">{EXPIRY_HELPER_TEXT}</p>
         </div>
 
         <DialogFooter>

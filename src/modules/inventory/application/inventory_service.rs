@@ -21,6 +21,9 @@ pub struct InventoryService {
 }
 
 impl InventoryService {
+    const DISABLE_EXPIRY_WITH_LIVE_STOCK_ERROR: &'static str =
+        "Expiry tracking can only be disabled after all live stock in this category is depleted";
+
     pub fn new(material_repo: MaterialRepository) -> Self {
         let pool = material_repo.pool();
         Self {
@@ -87,9 +90,35 @@ impl InventoryService {
             return Err(AppError::Forbidden("Admin access required".to_string()));
         }
         update.validate()?;
+
+        let existing = self.get_category(id, ctx).await?;
+        let has_live_stock = if matches!(update.can_expire, Some(false)) {
+            self.material_repo
+                .category_has_live_stock(id, ctx.tenant_id)
+                .await?
+        } else {
+            false
+        };
+
+        Self::validate_category_expiry_toggle(&existing, &update, has_live_stock)?;
+
         self.material_repo
             .update_category(id, &update, ctx.tenant_id)
             .await
+    }
+
+    fn validate_category_expiry_toggle(
+        existing: &Category,
+        update: &UpdateCategory,
+        has_live_stock: bool,
+    ) -> Result<(), AppError> {
+        if existing.can_expire && matches!(update.can_expire, Some(false)) && has_live_stock {
+            return Err(AppError::Validation(
+                Self::DISABLE_EXPIRY_WITH_LIVE_STOCK_ERROR.to_string(),
+            ));
+        }
+
+        Ok(())
     }
 
     pub async fn delete_category(
@@ -590,5 +619,77 @@ impl InventoryService {
         self.material_repo
             .fulfill_order_request(id, fulfill.actual_quantity, fulfill.notes, ctx.tenant_id)
             .await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::InventoryService;
+    use crate::common::types::{CategoryId, TenantId};
+    use crate::modules::inventory::domain::{Category, UpdateCategory};
+    use chrono::Utc;
+
+    fn category(can_expire: bool) -> Category {
+        Category {
+            id: CategoryId::new(),
+            tenant_id: TenantId::new(),
+            name: "Lacke".to_string(),
+            description: None,
+            can_expire,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+
+    #[test]
+    fn validate_category_expiry_toggle_blocks_disabling_with_live_stock() {
+        let error = InventoryService::validate_category_expiry_toggle(
+            &category(true),
+            &UpdateCategory {
+                name: None,
+                description: None,
+                can_expire: Some(false),
+            },
+            true,
+        )
+        .expect_err("live stock should block disabling expiry");
+
+        assert_eq!(
+            error.to_string(),
+            format!(
+                "Validation error: {}",
+                InventoryService::DISABLE_EXPIRY_WITH_LIVE_STOCK_ERROR
+            )
+        );
+    }
+
+    #[test]
+    fn validate_category_expiry_toggle_allows_enabling_with_live_legacy_stock() {
+        let result = InventoryService::validate_category_expiry_toggle(
+            &category(false),
+            &UpdateCategory {
+                name: None,
+                description: None,
+                can_expire: Some(true),
+            },
+            true,
+        );
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn validate_category_expiry_toggle_allows_disabling_after_stock_is_depleted() {
+        let result = InventoryService::validate_category_expiry_toggle(
+            &category(true),
+            &UpdateCategory {
+                name: None,
+                description: None,
+                can_expire: Some(false),
+            },
+            false,
+        );
+
+        assert!(result.is_ok());
     }
 }

@@ -1,12 +1,24 @@
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { http, HttpResponse } from "msw"
+import { toast } from "sonner"
 import { render } from "@/test/utils"
 import { server } from "@/test/mocks/server"
 import { mockData } from "@/test/mocks/handlers"
 import { createCategory } from "@/test/factories/category"
 import InventorySettingsPage from "./InventorySettingsPage"
+
+vi.mock("sonner", async () => {
+  const actual = await vi.importActual<typeof import("sonner")>("sonner")
+  return {
+    ...actual,
+    toast: {
+      ...actual.toast,
+      error: vi.fn(),
+    },
+  }
+})
 
 describe("InventorySettingsPage", () => {
   const categories = [
@@ -23,6 +35,7 @@ describe("InventorySettingsPage", () => {
   ]
 
   beforeEach(() => {
+    vi.clearAllMocks()
     mockData.categories = structuredClone(categories)
   })
 
@@ -68,6 +81,11 @@ describe("InventorySettingsPage", () => {
     expect(await screen.findByText("Holz")).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: /holz bearbeiten/i }))
+    expect(
+      screen.getByText(
+        "Nur fur verderbliche Kategorien aktivieren. Neue Zugange brauchen dann ein MHD, vorhandener Bestand ohne MHD bleibt sichtbar."
+      )
+    ).toBeInTheDocument()
     await user.clear(screen.getByLabelText(/^name$/i))
     await user.type(screen.getByLabelText(/^name$/i), "Plattenwerkstoffe")
     await user.clear(screen.getByLabelText(/^beschreibung$/i))
@@ -79,6 +97,47 @@ describe("InventorySettingsPage", () => {
     })
 
     expect(screen.getByText("MDF und Multiplex")).toBeInTheDocument()
+  })
+
+  it("keeps the edit dialog open and shows the expiry-toggle validation copy on conflict", async () => {
+    const user = userEvent.setup()
+
+    server.use(
+      http.patch("*/api/v1/inventory/categories/:id", () =>
+        HttpResponse.json(
+          {
+            message:
+              "Expiry tracking can only be disabled after all live stock in this category is depleted",
+          },
+          { status: 409 }
+        )
+      )
+    )
+
+    mockData.categories = [
+      createCategory({
+        id: "cat-3",
+        name: "Lacke",
+        description: "Mit Mindesthaltbarkeit",
+        can_expire: true,
+      }),
+    ]
+
+    render(<InventorySettingsPage />)
+
+    expect(await screen.findByText("Lacke")).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: /lacke bearbeiten/i }))
+    await user.click(screen.getByLabelText(/mhd/i))
+    await user.click(screen.getByRole("button", { name: /änderungen speichern/i }))
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "MHD kann erst deaktiviert werden, wenn in dieser Kategorie kein laufender Bestand mehr liegt."
+      )
+    })
+
+    expect(screen.getByRole("button", { name: /änderungen speichern/i })).toBeInTheDocument()
   })
 
   it("keeps the category row visible and shows the blocked delete copy on conflict", async () => {

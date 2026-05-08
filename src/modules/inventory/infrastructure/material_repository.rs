@@ -148,6 +148,19 @@ impl MaterialRepository {
         Ok(category.into_category())
     }
 
+    pub async fn category_has_live_stock(
+        &self,
+        id: CategoryId,
+        tenant_id: TenantId,
+    ) -> Result<bool, AppError> {
+        sqlx::query_scalar(Self::category_live_stock_query())
+            .bind(id.0)
+            .bind(tenant_id.0)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))
+    }
+
     pub async fn delete_category(
         &self,
         id: CategoryId,
@@ -197,6 +210,18 @@ impl MaterialRepository {
         r#"
             SELECT COUNT(*) FROM materials
             WHERE category_id = $1 AND tenant_id = $2
+            "#
+    }
+
+    fn category_live_stock_query() -> &'static str {
+        r#"
+            SELECT EXISTS(
+                SELECT 1 FROM materials
+                WHERE category_id = $1
+                  AND tenant_id = $2
+                  AND deleted_at IS NULL
+                  AND quantity > 0
+            )
             "#
     }
 
@@ -1654,5 +1679,13 @@ mod tests {
         let sql = MaterialRepository::delete_category_conflict_count_query();
         assert!(sql.contains("tenant_id = $2"));
         assert!(sql.contains("COUNT(*)"));
+    }
+
+    #[test]
+    fn category_live_stock_query_only_checks_active_materials_with_stock() {
+        let sql = MaterialRepository::category_live_stock_query();
+        assert!(sql.contains("deleted_at IS NULL"));
+        assert!(sql.contains("quantity > 0"));
+        assert!(sql.contains("category_id = $1"));
     }
 }
