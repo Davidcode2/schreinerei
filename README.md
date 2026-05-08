@@ -214,7 +214,9 @@ To install the versioned hooks for this worktree:
 ./scripts/install-git-hooks.sh
 ```
 
+The installer chains the repo hooks after any existing Beads-managed hooks in the active worktree hook directory.
+
 Installed hooks:
 
-- `pre-commit`: runs fast staged checks only
+- `pre-commit`: runs full selective checks for staged changes
 - `pre-push`: runs CI-equivalent checks for the current branch range
