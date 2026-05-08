@@ -178,6 +178,25 @@ export const handlers = [
     return HttpResponse.json(mockData.timeEntries);
   }),
 
+  http.patch(apiRoute('/time-entries/:id'), async ({ params, request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    const index = mockData.timeEntries.findIndex((entry) => entry.id === params.id);
+    if (index === -1) {
+      return HttpResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    mockData.timeEntries[index] = { ...mockData.timeEntries[index], ...body };
+    return HttpResponse.json(mockData.timeEntries[index]);
+  }),
+
+  http.delete(apiRoute('/time-entries/:id'), async ({ params }) => {
+    const index = mockData.timeEntries.findIndex((entry) => entry.id === params.id);
+    if (index === -1) {
+      return HttpResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    mockData.timeEntries.splice(index, 1);
+    return HttpResponse.json({ success: true }, { status: 200 });
+  }),
+
   http.get(apiRoute('/sites/:id/activities'), async () => {
     await delay(10);
     return HttpResponse.json([]);
@@ -305,6 +324,10 @@ export const handlers = [
     const newTimeEntry = {
       id: crypto.randomUUID(),
       site_id: null,
+      user_id: 'user-1',
+      creator_name: 'Max Mustermann',
+      can_edit: true,
+      can_delete: true,
       notes: null,
       created_at: new Date().toISOString(),
       ...body,

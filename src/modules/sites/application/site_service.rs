@@ -162,6 +162,17 @@ impl SiteService {
         ) && activity.user_id == requester_id
     }
 
+    fn can_manage_time_entry(entry: &TimeEntry, requester_id: UserId) -> bool {
+        entry.user_id == requester_id
+    }
+
+    fn with_time_entry_permissions(mut entry: TimeEntry, requester_id: UserId) -> TimeEntry {
+        let can_manage = Self::can_manage_time_entry(&entry, requester_id);
+        entry.can_edit = can_manage;
+        entry.can_delete = can_manage;
+        entry
+    }
+
     async fn resolve_local_user_id(&self, ctx: &TenantContext) -> Result<UserId, AppError> {
         let user_repo = UserRepository::new(self.pool.clone());
         let user = user_repo
@@ -476,7 +487,7 @@ impl SiteService {
 
         self.site_repo.publish_event(&event).await?;
 
-        Ok(entry)
+        Ok(Self::with_time_entry_permissions(entry, local_user_id))
     }
 
     pub async fn list_time_entries(
@@ -490,9 +501,16 @@ impl SiteService {
             let _site = self.get_site(site_id, ctx).await?;
         }
 
-        self.site_repo
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+        let entries = self
+            .site_repo
             .list_time_entries(ctx.tenant_id, site_id, user_id)
-            .await
+            .await?;
+
+        Ok(entries
+            .into_iter()
+            .map(|entry| Self::with_time_entry_permissions(entry, local_user_id))
+            .collect())
     }
 
     pub async fn list_my_time_entries(
@@ -500,9 +518,15 @@ impl SiteService {
         ctx: &TenantContext,
     ) -> Result<Vec<TimeEntry>, AppError> {
         let local_user_id = self.resolve_local_user_id(ctx).await?;
-        self.site_repo
+        let entries = self
+            .site_repo
             .list_time_entries(ctx.tenant_id, None, Some(local_user_id))
-            .await
+            .await?;
+
+        Ok(entries
+            .into_iter()
+            .map(|entry| Self::with_time_entry_permissions(entry, local_user_id))
+            .collect())
     }
 
     pub async fn get_time_entry(
@@ -510,10 +534,14 @@ impl SiteService {
         entry_id: TimeEntryId,
         ctx: &TenantContext,
     ) -> Result<TimeEntry, AppError> {
-        self.site_repo
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+        let entry = self
+            .site_repo
             .find_time_entry_by_id(ctx.tenant_id, entry_id)
             .await?
-            .ok_or_else(|| AppError::NotFound("Time entry not found".to_string()))
+            .ok_or_else(|| AppError::NotFound("Time entry not found".to_string()))?;
+
+        Ok(Self::with_time_entry_permissions(entry, local_user_id))
     }
 
     pub async fn update_time_entry(
@@ -532,9 +560,9 @@ impl SiteService {
             .await?
             .ok_or_else(|| AppError::NotFound("Time entry not found".to_string()))?;
 
-        // Check ownership: only the owner or admin can edit
+        // Creator-only policy: even admins cannot modify another user's booking.
         let local_user_id = self.resolve_local_user_id(ctx).await?;
-        if existing.user_id != local_user_id && !ctx.is_admin() {
+        if !Self::can_manage_time_entry(&existing, local_user_id) {
             return Err(AppError::Forbidden(
                 "Can only edit own time entries".to_string(),
             ));
@@ -547,9 +575,12 @@ impl SiteService {
             let _site = self.get_site(site_id, ctx).await?;
         }
 
-        self.site_repo
+        let entry = self
+            .site_repo
             .update_time_entry(ctx.tenant_id, entry_id, &update)
-            .await
+            .await?;
+
+        Ok(Self::with_time_entry_permissions(entry, local_user_id))
     }
 
     pub async fn delete_time_entry(
@@ -564,9 +595,9 @@ impl SiteService {
             .await?
             .ok_or_else(|| AppError::NotFound("Time entry not found".to_string()))?;
 
-        // Check ownership: only the owner or admin can delete
+        // Creator-only policy: even admins cannot remove another user's booking.
         let local_user_id = self.resolve_local_user_id(ctx).await?;
-        if existing.user_id != local_user_id && !ctx.is_admin() {
+        if !Self::can_manage_time_entry(&existing, local_user_id) {
             return Err(AppError::Forbidden(
                 "Can only delete own time entries".to_string(),
             ));
@@ -789,6 +820,9 @@ mod tests {
             tenant_id: TenantId::new(),
             site_id,
             user_id: UserId::new(),
+            creator_name: "Max Mustermann".to_string(),
+            can_edit: false,
+            can_delete: false,
             work_type,
             hours: 8.0,
             work_date: chrono::Local::now().date_naive(),
@@ -822,6 +856,33 @@ mod tests {
 
         assert_eq!(work_type, WorkType::Travel);
         assert_eq!(site_id, None);
+    }
+
+    #[test]
+    fn time_entry_permissions_are_creator_only() {
+        let owner_id = UserId::new();
+        let other_user_id = UserId::new();
+        let entry = TimeEntry {
+            user_id: owner_id,
+            ..existing_time_entry(WorkType::Site, Some(SiteId::new()))
+        };
+
+        assert!(SiteService::can_manage_time_entry(&entry, owner_id));
+        assert!(!SiteService::can_manage_time_entry(&entry, other_user_id));
+    }
+
+    #[test]
+    fn time_entry_permissions_set_edit_and_delete_together() {
+        let owner_id = UserId::new();
+        let entry = TimeEntry {
+            user_id: owner_id,
+            ..existing_time_entry(WorkType::Site, Some(SiteId::new()))
+        };
+
+        let entry = SiteService::with_time_entry_permissions(entry, owner_id);
+
+        assert!(entry.can_edit);
+        assert!(entry.can_delete);
     }
 
     #[test]

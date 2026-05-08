@@ -25,7 +25,7 @@ import {
 import { useSite, useSiteSummary, useSiteInvoiceSummary, useActivities, useTimeEntries, useSiteAssignments } from "@/lib/api/hooks"
 import { useAuthStore } from "@/lib/auth/authStore"
 import { toast } from 'sonner'
-import type { WorkType } from "@/types/sites"
+import type { TimeEntry, WorkType } from "@/types/sites"
 import { TimeEntryDialog } from "./TimeEntryDialog"
 import { ActivityFeed } from "./ActivityFeed"
 import { StatusChangeModal } from "./StatusChangeModal"
@@ -88,6 +88,7 @@ export default function SiteDetailPage() {
   const [showNoteModal, setShowNoteModal] = useState(false)
   const [showCameraFlow, setShowCameraFlow] = useState(false)
   const [showPlanningSheet, setShowPlanningSheet] = useState(false)
+  const [selectedTimeEntry, setSelectedTimeEntry] = useState<TimeEntry | null>(null)
 
   const { data: site, isLoading, error, refetch } = useSite(id!)
   const { data: siteSummary } = useSiteSummary(id!)
@@ -124,6 +125,10 @@ export default function SiteDetailPage() {
 
   async function handleExportInvoiceSummary() {
     try {
+      if (!site) {
+        throw new Error('missing site')
+      }
+
       const response = await refetchInvoiceSummary()
       if (!response.data) {
         throw new Error('missing summary')
@@ -417,17 +422,42 @@ export default function SiteDetailPage() {
                 {timeEntries.slice(0, 5).map((entry) => (
                   <div
                     key={entry.id}
-                    className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-accent/40 transition-colors"
+                    className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-accent/40"
                   >
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium capitalize">
                         {getWorkTypeLabel(entry.work_type)}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(entry.work_date).toLocaleDateString("de-DE")}
-                      </p>
+                      <div className="space-y-0.5">
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(entry.work_date).toLocaleDateString("de-DE")}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Erfasst von {entry.creator_name}
+                        </p>
+                        {entry.notes && (
+                          <p className="truncate text-xs text-muted-foreground">
+                            {entry.notes}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <Badge variant="outline" className="text-xs font-normal">{entry.hours}h</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs font-normal">{entry.hours}h</Badge>
+                      {entry.can_edit && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-xs"
+                          onClick={() => {
+                            setSelectedTimeEntry(entry)
+                            setShowTimeDialog(true)
+                          }}
+                        >
+                          Bearbeiten
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 {timeEntries.length > 5 && (
@@ -475,9 +505,16 @@ export default function SiteDetailPage() {
 
       <TimeEntryDialog
         open={showTimeDialog}
-        onOpenChange={setShowTimeDialog}
+        onOpenChange={(open) => {
+          setShowTimeDialog(open)
+          if (!open) {
+            setSelectedTimeEntry(null)
+          }
+        }}
         siteId={site.id}
         siteName={site.name}
+        mode={selectedTimeEntry ? "edit" : "create"}
+        {...(selectedTimeEntry ? { initialData: selectedTimeEntry } : {})}
       />
 
       <StatusChangeModal

@@ -393,7 +393,11 @@ impl SiteRepository {
             r#"
             INSERT INTO time_entries (id, tenant_id, site_id, user_id, work_type, hours, work_date, notes, created_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING id, tenant_id, site_id, user_id, work_type, hours, work_date, notes, created_at
+            RETURNING id, tenant_id, site_id, user_id,
+                      COALESCE((SELECT NULLIF(users.name, '') FROM users WHERE users.id = time_entries.user_id AND users.tenant_id = time_entries.tenant_id),
+                               (SELECT users.email FROM users WHERE users.id = time_entries.user_id AND users.tenant_id = time_entries.tenant_id),
+                               time_entries.user_id::text) AS creator_name,
+                      work_type, hours, work_date, notes, created_at
             "#
         )
         .bind(id)
@@ -422,10 +426,12 @@ impl SiteRepository {
             (Some(site), Some(user)) => {
                 sqlx::query_as::<_, TimeEntryRow>(
                     r#"
-                    SELECT id, tenant_id, site_id, user_id, work_type, hours, work_date, notes, created_at
+                    SELECT time_entries.id, time_entries.tenant_id, time_entries.site_id, time_entries.user_id, time_entries.work_type, time_entries.hours, time_entries.work_date, time_entries.notes, time_entries.created_at,
+                           COALESCE(NULLIF(users.name, ''), users.email, time_entries.user_id::text) AS creator_name
                     FROM time_entries
-                    WHERE tenant_id = $1 AND site_id = $2 AND user_id = $3
-                    ORDER BY work_date DESC, created_at DESC
+                    LEFT JOIN users ON users.id = time_entries.user_id AND users.tenant_id = time_entries.tenant_id
+                    WHERE time_entries.tenant_id = $1 AND time_entries.site_id = $2 AND time_entries.user_id = $3
+                    ORDER BY time_entries.work_date DESC, time_entries.created_at DESC
                     "#
                 )
                 .bind(tenant_id.0)
@@ -437,10 +443,12 @@ impl SiteRepository {
             (Some(site), None) => {
                 sqlx::query_as::<_, TimeEntryRow>(
                     r#"
-                    SELECT id, tenant_id, site_id, user_id, work_type, hours, work_date, notes, created_at
+                    SELECT time_entries.id, time_entries.tenant_id, time_entries.site_id, time_entries.user_id, time_entries.work_type, time_entries.hours, time_entries.work_date, time_entries.notes, time_entries.created_at,
+                           COALESCE(NULLIF(users.name, ''), users.email, time_entries.user_id::text) AS creator_name
                     FROM time_entries
-                    WHERE tenant_id = $1 AND site_id = $2
-                    ORDER BY work_date DESC, created_at DESC
+                    LEFT JOIN users ON users.id = time_entries.user_id AND users.tenant_id = time_entries.tenant_id
+                    WHERE time_entries.tenant_id = $1 AND time_entries.site_id = $2
+                    ORDER BY time_entries.work_date DESC, time_entries.created_at DESC
                     "#
                 )
                 .bind(tenant_id.0)
@@ -451,10 +459,12 @@ impl SiteRepository {
             (None, Some(user)) => {
                 sqlx::query_as::<_, TimeEntryRow>(
                     r#"
-                    SELECT id, tenant_id, site_id, user_id, work_type, hours, work_date, notes, created_at
+                    SELECT time_entries.id, time_entries.tenant_id, time_entries.site_id, time_entries.user_id, time_entries.work_type, time_entries.hours, time_entries.work_date, time_entries.notes, time_entries.created_at,
+                           COALESCE(NULLIF(users.name, ''), users.email, time_entries.user_id::text) AS creator_name
                     FROM time_entries
-                    WHERE tenant_id = $1 AND user_id = $2
-                    ORDER BY work_date DESC, created_at DESC
+                    LEFT JOIN users ON users.id = time_entries.user_id AND users.tenant_id = time_entries.tenant_id
+                    WHERE time_entries.tenant_id = $1 AND time_entries.user_id = $2
+                    ORDER BY time_entries.work_date DESC, time_entries.created_at DESC
                     "#
                 )
                 .bind(tenant_id.0)
@@ -465,10 +475,12 @@ impl SiteRepository {
             (None, None) => {
                 sqlx::query_as::<_, TimeEntryRow>(
                     r#"
-                    SELECT id, tenant_id, site_id, user_id, work_type, hours, work_date, notes, created_at
+                    SELECT time_entries.id, time_entries.tenant_id, time_entries.site_id, time_entries.user_id, time_entries.work_type, time_entries.hours, time_entries.work_date, time_entries.notes, time_entries.created_at,
+                           COALESCE(NULLIF(users.name, ''), users.email, time_entries.user_id::text) AS creator_name
                     FROM time_entries
-                    WHERE tenant_id = $1
-                    ORDER BY work_date DESC, created_at DESC
+                    LEFT JOIN users ON users.id = time_entries.user_id AND users.tenant_id = time_entries.tenant_id
+                    WHERE time_entries.tenant_id = $1
+                    ORDER BY time_entries.work_date DESC, time_entries.created_at DESC
                     "#
                 )
                 .bind(tenant_id.0)
@@ -488,9 +500,11 @@ impl SiteRepository {
     ) -> Result<Option<TimeEntry>, AppError> {
         let entry = sqlx::query_as::<_, TimeEntryRow>(
             r#"
-            SELECT id, tenant_id, site_id, user_id, work_type, hours, work_date, notes, created_at
+            SELECT time_entries.id, time_entries.tenant_id, time_entries.site_id, time_entries.user_id, time_entries.work_type, time_entries.hours, time_entries.work_date, time_entries.notes, time_entries.created_at,
+                   COALESCE(NULLIF(users.name, ''), users.email, time_entries.user_id::text) AS creator_name
             FROM time_entries
-            WHERE id = $1 AND tenant_id = $2
+            LEFT JOIN users ON users.id = time_entries.user_id AND users.tenant_id = time_entries.tenant_id
+            WHERE time_entries.id = $1 AND time_entries.tenant_id = $2
             "#,
         )
         .bind(id.0)
@@ -530,7 +544,10 @@ impl SiteRepository {
                     ELSE notes 
                 END
             WHERE id = $8 AND tenant_id = $9
-            RETURNING id, tenant_id, site_id, user_id, work_type, hours, work_date, notes, created_at
+            RETURNING id, tenant_id, site_id, user_id, work_type, hours, work_date, notes, created_at,
+                      COALESCE((SELECT NULLIF(users.name, '') FROM users WHERE users.id = time_entries.user_id AND users.tenant_id = time_entries.tenant_id),
+                               (SELECT users.email FROM users WHERE users.id = time_entries.user_id AND users.tenant_id = time_entries.tenant_id),
+                               time_entries.user_id::text) AS creator_name
             "#
         )
         .bind(should_update_site_id)
@@ -1162,6 +1179,7 @@ struct TimeEntryRow {
     tenant_id: Uuid,
     site_id: Option<Uuid>,
     user_id: Uuid,
+    creator_name: String,
     work_type: String,
     hours: f64,
     work_date: NaiveDate,
@@ -1176,6 +1194,9 @@ impl TimeEntryRow {
             tenant_id: TenantId(self.tenant_id),
             site_id: self.site_id.map(SiteId),
             user_id: UserId(self.user_id),
+            creator_name: self.creator_name,
+            can_edit: false,
+            can_delete: false,
             work_type: self.work_type.parse().unwrap_or(WorkType::Site),
             hours: self.hours,
             work_date: self.work_date,

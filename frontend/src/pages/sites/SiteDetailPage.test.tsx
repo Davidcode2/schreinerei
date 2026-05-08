@@ -35,6 +35,7 @@ describe('SiteDetailPage', () => {
     useAuthStore.setState({
       user: {
         id: 'user-1',
+        tenant_id: 'tenant-1',
         email: 'admin@example.com',
         name: 'Admin',
         role: 'admin',
@@ -286,5 +287,106 @@ describe('SiteDetailPage', () => {
 
     expect(await screen.findByText('Reservierungen im Projektkontext')).toBeInTheDocument()
     expect(await screen.findByText('Sprinter')).toBeInTheDocument()
+  })
+
+  it('shows booking author and only offers edit for the creator entry', async () => {
+    window.history.pushState({}, '', '/sites/site-1')
+    setAdminUser()
+
+    server.use(
+      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
+      http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
+        labor: { total_hours: 6.5, entry_count: 2, site_hours: 6.5, workshop_hours: 0, last_work_date: '2026-05-08' },
+        materials: { distinct_material_count: 0, withdrawal_count: 0, lines: [] },
+      })),
+      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([
+        {
+          id: 'entry-own',
+          site_id: 'site-1',
+          user_id: 'user-1',
+          creator_name: 'Admin',
+          can_edit: true,
+          can_delete: true,
+          work_type: 'site',
+          hours: 4,
+          work_date: '2026-05-08',
+          notes: 'Montage',
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: 'entry-other',
+          site_id: 'site-1',
+          user_id: 'user-2',
+          creator_name: 'Anna Tischler',
+          can_edit: false,
+          can_delete: false,
+          work_type: 'travel',
+          hours: 2.5,
+          work_date: '2026-05-07',
+          notes: 'Anfahrt',
+          created_at: new Date().toISOString(),
+        },
+      ])),
+      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
+      http.get('*/api/v1/fleet/calendar*', emptyCalendarResponse)
+    )
+
+    render(
+      <Routes>
+        <Route path="/sites/:id" element={<SiteDetailPage />} />
+      </Routes>
+    )
+
+    expect(await screen.findByText('Erfasst von Admin')).toBeInTheDocument()
+    expect(screen.getByText('Erfasst von Anna Tischler')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /bearbeiten/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /bearbeiten/i })).toHaveLength(1)
+  })
+
+  it('opens the time dialog in edit mode for creator-owned entries', async () => {
+    window.history.pushState({}, '', '/sites/site-1')
+    setAdminUser()
+
+    server.use(
+      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
+      http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
+        labor: { total_hours: 4, entry_count: 1, site_hours: 4, workshop_hours: 0, last_work_date: '2026-05-08' },
+        materials: { distinct_material_count: 0, withdrawal_count: 0, lines: [] },
+      })),
+      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([
+        {
+          id: 'entry-own',
+          site_id: 'site-1',
+          user_id: 'user-1',
+          creator_name: 'Admin',
+          can_edit: true,
+          can_delete: true,
+          work_type: 'site',
+          hours: 4,
+          work_date: '2026-05-08',
+          notes: 'Montage',
+          created_at: new Date().toISOString(),
+        },
+      ])),
+      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
+      http.get('*/api/v1/fleet/calendar*', emptyCalendarResponse)
+    )
+
+    render(
+      <Routes>
+        <Route path="/sites/:id" element={<SiteDetailPage />} />
+      </Routes>
+    )
+
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: /bearbeiten/i }))
+
+    expect(await screen.findByText('Zeit bearbeiten')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Montage')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^löschen$/i })).toBeInTheDocument()
   })
 })

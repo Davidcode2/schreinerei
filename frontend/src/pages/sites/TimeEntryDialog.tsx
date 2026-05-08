@@ -170,6 +170,7 @@ export function TimeEntryDialog({
 	};
 
 	const isPending = createMutation.isPending || updateMutation.isPending;
+	const canDeleteEntry = mode === "edit" && initialData?.can_delete;
 
 	return (
 		<>
@@ -298,7 +299,7 @@ export function TimeEntryDialog({
 					</div>
 
 					<DialogFooter className="flex-col gap-2 sm:flex-row">
-						{mode === "edit" && (
+						{canDeleteEntry && (
 							<Button
 								variant="destructive"
 								onClick={() => setShowDeleteConfirm(true)}

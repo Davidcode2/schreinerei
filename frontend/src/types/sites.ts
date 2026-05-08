@@ -96,6 +96,9 @@ export interface TimeEntry {
   id: string
   site_id: string | null
   user_id: string
+  creator_name: string
+  can_edit: boolean
+  can_delete: boolean
   work_type: WorkType
   hours: number
   work_date: string
@@ -185,4 +188,4 @@ export type SiteInvoiceSummary = GeneratedSiteInvoiceSummaryResponse
 
 export type SiteHistoryReportRow = GeneratedSiteHistoryReportRowResponse
 
-export type SiteHistoryReportQuery = GeneratedSiteHistoryReportQuery
+export type SiteHistoryReportQuery = Partial<GeneratedSiteHistoryReportQuery>

@@ -126,7 +126,7 @@ export type StockEntryResponse = { id: string, quantity_change: number, quantity
 
 export type StockInRequest = { quantity: number, notes: string | null, expires_on: string | null, batch_code: string | null, supplier_name: string | null, receipt_reference: string | null, receipt_date: string | null, };
 
-export type TimeEntryResponse = { id: string, site_id: string | null, user_id: string, work_type: string, hours: number, work_date: string, notes: string | null, created_at: string, };
+export type TimeEntryResponse = { id: string, site_id: string | null, user_id: string, creator_name: string, can_edit: boolean, can_delete: boolean, work_type: string, hours: number, work_date: string, notes: string | null, created_at: string, };
 
 export type ToolResponse = { id: string, name: string, category: string | null, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
 
