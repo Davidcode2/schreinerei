@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { Filter, Search } from 'lucide-react'
 import { PageHeader, LoadingSpinner, EmptyState, ErrorState } from '@/components/shared'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -13,6 +12,7 @@ import {
 } from '@/components/ui/select'
 import { useSiteHistoryReport } from '@/lib/api/hooks'
 import { useUsers } from '@/lib/api/hooks/useIam'
+import type { SiteHistoryReportQuery } from '@/types/sites'
 
 const costBasisOptions = [
   ['budget_only', 'Nur Budget'],
@@ -32,7 +32,7 @@ export default function SiteHistoryReportPage() {
   const [costBasis, setCostBasis] = useState('')
 
   const query = useMemo(
-    () => ({
+    (): SiteHistoryReportQuery => ({
       ...(customer ? { customer } : {}),
       ...(projectType ? { project_type: projectType } : {}),
       ...(workerId ? { worker_id: workerId } : {}),

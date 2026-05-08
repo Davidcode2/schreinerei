@@ -293,6 +293,7 @@ describe("inventory mutations", () => {
       notes: "Abgelaufen",
       site_id: null,
       disposal: true,
+      last_package_taken: false,
     })
 
     expect(apiClient.post).toHaveBeenCalledWith(

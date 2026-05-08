@@ -14,6 +14,7 @@ describe('SiteHistoryReportPage', () => {
         email: 'admin@example.com',
         name: 'Admin',
         role: 'admin',
+        tenant_id: 'tenant-1',
         created_at: new Date().toISOString(),
       },
       tokens: null,

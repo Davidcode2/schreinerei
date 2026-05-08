@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { AlertTriangle, Package, ArrowRight, Building2, Clock, Calendar } from "lucide-react"
+import { AlertTriangle, ArrowRight, Building2, Clock, Calendar } from "lucide-react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { StatusBadge, LoadingSpinner, ErrorState, EmptyState, PageHeader } from "@/components/shared"
+import { LoadingSpinner, ErrorState, EmptyState, PageHeader } from "@/components/shared"
 import {
   useDashboardSites,
   useInventoryAlerts,
@@ -20,6 +20,12 @@ import type { TimeEntry } from "@/types/sites"
 import { toast } from "sonner"
 
 const defaultStatuses = ["active", "planned", "completed"]
+const statusOptions = [
+  { value: "active", label: "Aktiv" },
+  { value: "planned", label: "Geplant" },
+  { value: "completed", label: "Abgeschlossen" },
+  { value: "archived", label: "Archiviert" },
+] as const
 
 export default function DashboardPage() {
   const { data: sites, isLoading: sitesLoading, error: sitesError, refetch: refetchSites } = useDashboardSites()
@@ -143,18 +149,13 @@ export default function DashboardPage() {
           <div className="space-y-3">
             <CardTitle className="font-display text-lg">Projekte</CardTitle>
             <div className="flex flex-wrap gap-2">
-              {[
-                ["active", "Aktiv"],
-                ["planned", "Geplant"],
-                ["completed", "Abgeschlossen"],
-                ["archived", "Archiviert"],
-              ].map(([status, label]) => (
+              {statusOptions.map(({ value, label }) => (
                 <Button
-                  key={status}
-                  variant={visibleStatuses.includes(status) ? "default" : "outline"}
+                  key={value}
+                  variant={visibleStatuses.includes(value) ? "default" : "outline"}
                   size="sm"
                   className="h-8"
-                  onClick={() => toggleStatus(status)}
+                  onClick={() => toggleStatus(value)}
                 >
                   {label}
                 </Button>

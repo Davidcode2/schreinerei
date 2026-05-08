@@ -7,7 +7,7 @@ set -e
 BASE_URL="${BASE_URL:-http://localhost:3000}"
 KEYCLOAK_URL="${KEYCLOAK_URL:-https://auth.jakob-lingel.dev}"
 REALM="${KEYCLOAK_REALM:-schreinerei}"
-CLIENT_ID="${KEYCLOAK_CLIENT_ID:-schreinerei-app}"
+CLIENT_ID="${KEYCLOAK_CLIENT_ID:-schreinerei_pwa}"
 CLIENT_SECRET="${KEYCLOAK_CLIENT_SECRET:-TG776i8yxgKVuFPakoOpQZDWMHRycYkG}"
 
 # Test user credentials (create this user in Keycloak)

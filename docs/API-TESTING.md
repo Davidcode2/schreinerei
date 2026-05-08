@@ -20,7 +20,7 @@
    - **Claim JSON Type**: `String`
    - **Add to ID token**: ON
    - **Add to access token**: ON
-4. Go to **Clients** → `schreinerei-app` → **Client Scopes**
+4. Go to **Clients** → `schreinerei_pwa` → **Client Scopes**
 5. Add `tenant` scope to **Default Client Scopes**
 
 ### Step 2: Create Test User with Tenant
@@ -84,7 +84,7 @@ TOKEN=$(curl -s -X POST \
   "https://auth.jakob-lingel.dev/realms/schreinerei/protocol/openid-connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=password" \
-  -d "client_id=schreinerei-app" \
+  -d "client_id=schreinerei_pwa" \
   -d "client_secret=TG776i8yxgKVuFPakoOpQZDWMHRycYkG" \
   -d "username=test@schreinerei.test" \
   -d "password=test123" | jq -r '.access_token')
