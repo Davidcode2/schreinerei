@@ -30,6 +30,37 @@ pub struct ProjectLaborSummary {
     pub last_work_date: Option<NaiveDate>,
 }
 
+#[derive(Debug, Clone)]
+pub struct SiteHistoryReportRow {
+    pub site_id: SiteId,
+    pub project_type: ProjectType,
+    pub name: String,
+    pub customer_name: String,
+    pub status: String,
+    pub start_date: Option<NaiveDate>,
+    pub end_date: Option<NaiveDate>,
+    pub estimated_days: Option<i32>,
+    pub budget_amount_cents: Option<i64>,
+    pub billing_reference: Option<String>,
+    pub quote_reference: Option<String>,
+    pub total_hours: f64,
+    pub worker_count: i64,
+    pub distinct_material_count: i64,
+    pub withdrawal_count: i64,
+    pub cost_basis: String,
+}
+
+pub struct SiteHistoryReportFilter {
+    pub customer: Option<String>,
+    pub project_type: Option<ProjectType>,
+    pub worker_id: Option<UserId>,
+    pub date_from: Option<NaiveDate>,
+    pub date_to: Option<NaiveDate>,
+    pub duration_min_hours: Option<f64>,
+    pub duration_max_hours: Option<f64>,
+    pub cost_basis: Option<String>,
+}
+
 impl SiteRepository {
     pub fn new(pool: PgPool) -> Self {
         Self {
@@ -949,6 +980,102 @@ impl SiteRepository {
         Ok(row.into_summary())
     }
 
+    pub async fn list_site_history_report(
+        &self,
+        tenant_id: TenantId,
+        filter: &SiteHistoryReportFilter,
+    ) -> Result<Vec<SiteHistoryReportRow>, AppError> {
+        let rows = sqlx::query_as::<_, SiteHistoryReportRowDb>(
+            r#"
+            WITH labor AS (
+                SELECT
+                    te.site_id,
+                    COALESCE(SUM(te.hours), 0)::FLOAT8 AS total_hours,
+                    COUNT(DISTINCT te.user_id)::INT8 AS worker_count
+                FROM time_entries te
+                WHERE te.tenant_id = $1
+                GROUP BY te.site_id
+            ),
+            materials AS (
+                SELECT
+                    se.site_id,
+                    COUNT(DISTINCT se.material_id)::INT8 AS distinct_material_count,
+                    COUNT(*)::INT8 AS withdrawal_count
+                FROM stock_entries se
+                WHERE se.tenant_id = $1 AND se.entry_type = 'withdrawn'
+                GROUP BY se.site_id
+            )
+            SELECT
+                s.id AS site_id,
+                s.project_type,
+                s.name,
+                s.customer_name,
+                s.status,
+                s.start_date,
+                s.end_date,
+                s.estimated_days,
+                s.budget_amount_cents,
+                s.billing_reference,
+                s.quote_reference,
+                COALESCE(l.total_hours, 0)::FLOAT8 AS total_hours,
+                COALESCE(l.worker_count, 0)::INT8 AS worker_count,
+                COALESCE(m.distinct_material_count, 0)::INT8 AS distinct_material_count,
+                COALESCE(m.withdrawal_count, 0)::INT8 AS withdrawal_count,
+                CASE
+                    WHEN s.budget_amount_cents IS NOT NULL AND (s.billing_reference IS NOT NULL OR s.quote_reference IS NOT NULL) THEN 'invoice_ready'
+                    WHEN s.budget_amount_cents IS NOT NULL AND (COALESCE(l.total_hours, 0) > 0 OR COALESCE(m.withdrawal_count, 0) > 0) THEN 'budget_vs_actual'
+                    WHEN s.budget_amount_cents IS NOT NULL THEN 'budget_only'
+                    WHEN COALESCE(l.total_hours, 0) > 0 OR COALESCE(m.withdrawal_count, 0) > 0 THEN 'actuals_only'
+                    ELSE 'none'
+                END AS cost_basis
+            FROM sites s
+            LEFT JOIN labor l ON l.site_id = s.id
+            LEFT JOIN materials m ON m.site_id = s.id
+            WHERE s.tenant_id = $1
+              AND s.deleted_at IS NULL
+              AND s.status IN ('completed', 'archived')
+              AND ($2::text IS NULL OR s.customer_name ILIKE '%' || $2 || '%')
+              AND ($3::text IS NULL OR s.project_type = $3)
+              AND ($4::uuid IS NULL OR EXISTS (
+                    SELECT 1 FROM time_entries te
+                    WHERE te.tenant_id = s.tenant_id AND te.site_id = s.id AND te.user_id = $4
+                ))
+              AND ($5::date IS NULL OR s.end_date >= $5 OR s.start_date >= $5)
+              AND ($6::date IS NULL OR s.start_date <= $6 OR s.end_date <= $6)
+              AND ($7::float8 IS NULL OR COALESCE(l.total_hours, 0) >= $7)
+              AND ($8::float8 IS NULL OR COALESCE(l.total_hours, 0) <= $8)
+              AND (
+                    $9::text IS NULL OR
+                    CASE
+                        WHEN s.budget_amount_cents IS NOT NULL AND (s.billing_reference IS NOT NULL OR s.quote_reference IS NOT NULL) THEN 'invoice_ready'
+                        WHEN s.budget_amount_cents IS NOT NULL AND (COALESCE(l.total_hours, 0) > 0 OR COALESCE(m.withdrawal_count, 0) > 0) THEN 'budget_vs_actual'
+                        WHEN s.budget_amount_cents IS NOT NULL THEN 'budget_only'
+                        WHEN COALESCE(l.total_hours, 0) > 0 OR COALESCE(m.withdrawal_count, 0) > 0 THEN 'actuals_only'
+                        ELSE 'none'
+                    END = $9
+              )
+            ORDER BY COALESCE(s.end_date, s.start_date) DESC NULLS LAST, s.name ASC
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(filter.customer.as_deref())
+        .bind(filter.project_type.as_ref().map(|value| value.as_str()))
+        .bind(filter.worker_id.map(|value| value.0))
+        .bind(filter.date_from)
+        .bind(filter.date_to)
+        .bind(filter.duration_min_hours)
+        .bind(filter.duration_max_hours)
+        .bind(filter.cost_basis.as_deref())
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(rows
+            .into_iter()
+            .map(SiteHistoryReportRowDb::into_row)
+            .collect())
+    }
+
     // === Event publishing ===
 
     pub async fn publish_event(&self, event: &DomainEvent) -> Result<(), AppError> {
@@ -1167,6 +1294,26 @@ struct ProjectLaborSummaryRow {
     last_work_date: Option<NaiveDate>,
 }
 
+#[derive(Debug, FromRow)]
+struct SiteHistoryReportRowDb {
+    site_id: Uuid,
+    project_type: String,
+    name: String,
+    customer_name: String,
+    status: String,
+    start_date: Option<NaiveDate>,
+    end_date: Option<NaiveDate>,
+    estimated_days: Option<i32>,
+    budget_amount_cents: Option<i64>,
+    billing_reference: Option<String>,
+    quote_reference: Option<String>,
+    total_hours: f64,
+    worker_count: i64,
+    distinct_material_count: i64,
+    withdrawal_count: i64,
+    cost_basis: String,
+}
+
 impl DashboardSiteRow {
     fn into_dashboard_site(self) -> DashboardSite {
         DashboardSite {
@@ -1197,6 +1344,32 @@ impl ProjectLaborSummaryRow {
             site_hours: self.site_hours,
             workshop_hours: self.workshop_hours,
             last_work_date: self.last_work_date,
+        }
+    }
+}
+
+impl SiteHistoryReportRowDb {
+    fn into_row(self) -> SiteHistoryReportRow {
+        SiteHistoryReportRow {
+            site_id: SiteId(self.site_id),
+            project_type: self
+                .project_type
+                .parse()
+                .unwrap_or(ProjectType::ExternalSite),
+            name: self.name,
+            customer_name: self.customer_name,
+            status: self.status,
+            start_date: self.start_date,
+            end_date: self.end_date,
+            estimated_days: self.estimated_days,
+            budget_amount_cents: self.budget_amount_cents,
+            billing_reference: self.billing_reference,
+            quote_reference: self.quote_reference,
+            total_hours: self.total_hours,
+            worker_count: self.worker_count,
+            distinct_material_count: self.distinct_material_count,
+            withdrawal_count: self.withdrawal_count,
+            cost_basis: self.cost_basis,
         }
     }
 }

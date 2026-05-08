@@ -32,6 +32,10 @@ pub fn create_router() -> Router<AppState> {
         // Sites
         .route("/api/v1/sites", get(list_sites).post(create_site))
         .route(
+            "/api/v1/sites/history-report",
+            get(list_site_history_report),
+        )
+        .route(
             "/api/v1/sites/{id}",
             get(get_site).patch(update_site).delete(delete_site),
         )
@@ -206,6 +210,33 @@ impl From<crate::modules::sites::domain::Site> for SiteResponse {
     }
 }
 
+impl From<crate::modules::sites::infrastructure::site_repository::SiteHistoryReportRow>
+    for SiteHistoryReportRowResponse
+{
+    fn from(
+        row: crate::modules::sites::infrastructure::site_repository::SiteHistoryReportRow,
+    ) -> Self {
+        Self {
+            site_id: row.site_id.to_string(),
+            project_type: row.project_type.to_string(),
+            name: row.name,
+            customer_name: row.customer_name,
+            status: row.status,
+            start_date: row.start_date.map(|value| value.to_string()),
+            end_date: row.end_date.map(|value| value.to_string()),
+            estimated_days: row.estimated_days,
+            budget_amount_cents: row.budget_amount_cents,
+            billing_reference: row.billing_reference,
+            quote_reference: row.quote_reference,
+            total_hours: row.total_hours,
+            worker_count: row.worker_count,
+            distinct_material_count: row.distinct_material_count,
+            withdrawal_count: row.withdrawal_count,
+            cost_basis: row.cost_basis,
+        }
+    }
+}
+
 impl From<crate::modules::inventory::infrastructure::material_repository::ProjectMaterialUsageLine>
     for ProjectMaterialUsageLineResponse
 {
@@ -357,6 +388,40 @@ pub struct ListSitesQuery {
     pub status: Option<String>,
 }
 
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct SiteHistoryReportQuery {
+    pub customer: Option<String>,
+    pub project_type: Option<String>,
+    pub worker_id: Option<String>,
+    pub date_from: Option<String>,
+    pub date_to: Option<String>,
+    pub duration_min_hours: Option<f64>,
+    pub duration_max_hours: Option<f64>,
+    pub cost_basis: Option<String>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct SiteHistoryReportRowResponse {
+    pub site_id: String,
+    pub project_type: String,
+    pub name: String,
+    pub customer_name: String,
+    pub status: String,
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
+    pub estimated_days: Option<i32>,
+    pub budget_amount_cents: Option<i64>,
+    pub billing_reference: Option<String>,
+    pub quote_reference: Option<String>,
+    pub total_hours: f64,
+    pub worker_count: i64,
+    pub distinct_material_count: i64,
+    pub withdrawal_count: i64,
+    pub cost_basis: String,
+}
+
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct AssignmentResponse {
@@ -474,6 +539,52 @@ pub async fn list_sites(
     );
     let sites = service.list_sites(query.status, &ctx).await?;
     let response: Vec<SiteResponse> = sites.into_iter().map(SiteResponse::from).collect();
+
+    Ok(Json(response))
+}
+
+pub async fn list_site_history_report(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Query(query): Query<SiteHistoryReportQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
+    );
+
+    let project_type = query
+        .project_type
+        .map(|value| value.parse::<ProjectType>())
+        .transpose()
+        .map_err(|e: String| AppError::Validation(e))?;
+
+    let worker_id = query
+        .worker_id
+        .map(|value| Uuid::parse_str(&value))
+        .transpose()
+        .map_err(|_| AppError::Validation("Invalid worker ID".to_string()))?
+        .map(UserId);
+
+    let filter = crate::modules::sites::infrastructure::site_repository::SiteHistoryReportFilter {
+        customer: query.customer,
+        project_type,
+        worker_id,
+        date_from: query
+            .date_from
+            .and_then(|value| NaiveDate::parse_from_str(&value, "%Y-%m-%d").ok()),
+        date_to: query
+            .date_to
+            .and_then(|value| NaiveDate::parse_from_str(&value, "%Y-%m-%d").ok()),
+        duration_min_hours: query.duration_min_hours,
+        duration_max_hours: query.duration_max_hours,
+        cost_basis: query.cost_basis,
+    };
+
+    let rows = service.list_site_history_report(filter, &ctx).await?;
+    let response: Vec<SiteHistoryReportRowResponse> = rows
+        .into_iter()
+        .map(SiteHistoryReportRowResponse::from)
+        .collect();
 
     Ok(Json(response))
 }

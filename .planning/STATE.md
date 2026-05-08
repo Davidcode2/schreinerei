@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.14
 milestone_name: Project Costing, Planning & Billing Basis
-status: in_progress
-stopped_at: Phase 50 planned and ready for execution
-last_updated: "2026-05-08T14:32:00Z"
-last_activity: 2026-05-08 -- Planned Phase 50
+status: ready
+stopped_at: Milestone v1.14 complete and next seed ready for activation
+last_updated: "2026-05-08T15:30:00Z"
+last_activity: 2026-05-08 -- Completed Phase 51
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 5
   total_plans: 5
-  completed_plans: 2
-  percent: 40
+  completed_plans: 5
+  percent: 100
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-05-05)
 
 **Core value:** Mitarbeiter finden alles schnell, Chefs haben den Uberblick. Weniger Suchzeit, weniger Fehler, keine vergessenen Bestellungen.
-**Current focus:** Phase 50 is planned. Execution should add an invoice-ready project summary/export surface on top of the existing project aggregate and billing metadata, without building a billing engine.
+**Current focus:** Milestone v1.14 is complete. The next step is choosing the next captured milestone seed to activate.
 
 ## Current Position
 
-Phase: 50. Invoice-Ready Project Summary
-Plan: `50-PLAN.md`
-Status: planned, ready for execution
-Last activity: 2026-05-08 -- Planned Phase 50
+Phase: —
+Plan: —
+Status: v1.14 complete, ready for next milestone activation
+Last activity: 2026-05-08 -- Completed Phase 51
 
 ## Performance Metrics
 
@@ -61,7 +61,9 @@ Last activity: 2026-05-08 -- Planned Phase 50
 | Phase 47. Project Dashboard Visibility | 1/1 | Complete |
 | Phase 48. Project Costing Aggregates | 1/1 | Complete |
 | Phase 49. Project Budget & Billing Metadata | 1/1 | Complete |
-| Phase 50. Invoice-Ready Project Summary | 1/1 | In Progress |
+| Phase 50. Invoice-Ready Project Summary | 1/1 | Complete |
+| Phase 51. Historical Project Reporting | 1/1 | Complete |
+| Phase 52. Project Planning View | 1/1 | Complete |
 
 ## Accumulated Context
 
@@ -90,10 +92,12 @@ Last activity: 2026-05-08 -- Planned Phase 50
 - [Phase 49]: Do not fabricate monetary actuals without price or rate inputs. — Show budget beside operational actuals until invoice-ready export work adds richer billing semantics.
 - [Phase 50]: Keep invoice-ready output as a dedicated read-only export contract. — Reuse project metadata and actuals without collapsing them into the existing site or summary DTOs.
 - [Phase 50]: Export structured JSON first. — No PDF generation, pricing engine, or tax logic should be introduced in this phase.
+- [Phase 51]: Keep historical reporting on the projects surface. — Use read-only filtered report rows instead of broadening the dashboard into a manager KPI suite.
+- [Phase 52]: Reuse the fleet calendar with a `site_id` filter. — Project planning stays on the project detail page rather than becoming a second planner.
 
 ### Pending Todos
 
-- Execute `50-PLAN.md` for invoice-ready project summaries.
+- Choose and activate the next milestone seed.
 - Use `.planning/FEATURES.md` as the comparison baseline for shipped vs desired product scope.
 - Use `.planning/REQUIREMENTS.md` `Product Backlog from 2026-05 Note` section to slice the next milestone.
 
@@ -116,6 +120,6 @@ Last activity: 2026-05-08 -- Planned Phase 50
 
 ## Session Continuity
 
-Last session: 2026-05-08T14:32:00Z
-Stopped at: Phase 50 planned and ready for execution
-Resume file: `.planning/phases/50-invoice-ready-project-summary/50-PLAN.md`
+Last session: 2026-05-08T15:30:00Z
+Stopped at: Milestone v1.14 complete and next seed ready for activation
+Resume file: `.planning/phases/51-historical-project-reporting/51-PLAN.md`

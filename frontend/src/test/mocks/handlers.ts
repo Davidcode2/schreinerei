@@ -133,6 +133,11 @@ export const handlers = [
     return HttpResponse.json([]);
   }),
 
+  http.get(apiRoute('/sites/history-report'), async () => {
+    await delay(10);
+    return HttpResponse.json([]);
+  }),
+
   http.get(apiRoute('/sites/:id/summary'), async () => {
     await delay(10);
     return HttpResponse.json({

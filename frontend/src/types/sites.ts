@@ -1,4 +1,6 @@
 import type {
+  SiteHistoryReportQuery as GeneratedSiteHistoryReportQuery,
+  SiteHistoryReportRowResponse as GeneratedSiteHistoryReportRowResponse,
   SiteInvoiceSummaryResponse as GeneratedSiteInvoiceSummaryResponse,
   SiteProjectSummaryResponse as GeneratedSiteProjectSummaryResponse,
 } from '@/types/generated'
@@ -180,3 +182,7 @@ export interface DashboardSite {
 export type SiteProjectSummary = GeneratedSiteProjectSummaryResponse
 
 export type SiteInvoiceSummary = GeneratedSiteInvoiceSummaryResponse
+
+export type SiteHistoryReportRow = GeneratedSiteHistoryReportRowResponse
+
+export type SiteHistoryReportQuery = GeneratedSiteHistoryReportQuery

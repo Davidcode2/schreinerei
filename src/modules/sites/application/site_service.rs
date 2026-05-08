@@ -13,7 +13,8 @@ use crate::modules::sites::domain::{
     UserAssignedToSitePayload,
 };
 use crate::modules::sites::infrastructure::site_repository::{
-    DashboardSite, ProjectLaborSummary, SiteRepository,
+    DashboardSite, ProjectLaborSummary, SiteHistoryReportFilter, SiteHistoryReportRow,
+    SiteRepository,
 };
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -307,6 +308,20 @@ impl SiteService {
         ctx: &TenantContext,
     ) -> Result<Vec<Site>, AppError> {
         self.site_repo.list_sites(ctx.tenant_id, status).await
+    }
+
+    pub async fn list_site_history_report(
+        &self,
+        filter: SiteHistoryReportFilter,
+        ctx: &TenantContext,
+    ) -> Result<Vec<SiteHistoryReportRow>, AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+
+        self.site_repo
+            .list_site_history_report(ctx.tenant_id, &filter)
+            .await
     }
 
     pub async fn get_project_summary(
