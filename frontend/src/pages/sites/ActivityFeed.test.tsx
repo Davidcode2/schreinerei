@@ -127,6 +127,14 @@ describe("ActivityFeed document entries", () => {
     vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:legacy-photo")
     vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined)
 
+    const expectedAbsoluteTimestamp = new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(baseActivity.created_at))
+
     try {
       render(
         <ActivityFeed
@@ -154,7 +162,7 @@ describe("ActivityFeed document entries", () => {
         />
       )
 
-      const absoluteTimestamps = screen.getAllByText("01.05.2026, 12:00")
+      const absoluteTimestamps = screen.getAllByText(expectedAbsoluteTimestamp)
       const relativeTimestamps = screen.getAllByText("vor 2 Std.")
 
       expect(absoluteTimestamps).toHaveLength(3)
