@@ -12,6 +12,7 @@ pub struct OrderRequest {
     pub quantity: i32,
     pub requested_by: UserId,
     pub status: OrderStatus,
+    pub request_kind: OrderRequestKind,
     pub reason: Option<String>,
     pub approved_by: Option<UserId>,
     pub approved_at: Option<DateTime<Utc>>,
@@ -19,6 +20,47 @@ pub struct OrderRequest {
     pub notes: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum OrderRequestKind {
+    Manual,
+    MinimumBreach,
+    LastPackage,
+}
+
+impl OrderRequestKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            OrderRequestKind::Manual => "manual",
+            OrderRequestKind::MinimumBreach => "minimum_breach",
+            OrderRequestKind::LastPackage => "last_package",
+        }
+    }
+
+    pub fn is_automatic(&self) -> bool {
+        !matches!(self, OrderRequestKind::Manual)
+    }
+}
+
+impl std::str::FromStr for OrderRequestKind {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "manual" => Ok(OrderRequestKind::Manual),
+            "minimum_breach" => Ok(OrderRequestKind::MinimumBreach),
+            "last_package" => Ok(OrderRequestKind::LastPackage),
+            _ => Err(format!("Unknown order request kind: {}", s)),
+        }
+    }
+}
+
+impl std::fmt::Display for OrderRequestKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -68,6 +110,7 @@ pub struct CreateOrderRequest {
     pub material_id: MaterialId,
     pub quantity: i32,
     pub reason: Option<String>,
+    pub request_kind: OrderRequestKind,
 }
 
 impl CreateOrderRequest {
@@ -81,6 +124,11 @@ impl CreateOrderRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApproveOrderRequest {
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MarkOrderedRequest {
     pub notes: Option<String>,
 }
 
@@ -100,6 +148,7 @@ mod tests {
             material_id: MaterialId::new(),
             quantity: 10,
             reason: None,
+            request_kind: OrderRequestKind::Manual,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -110,6 +159,7 @@ mod tests {
             material_id: MaterialId::new(),
             quantity: 0,
             reason: None,
+            request_kind: OrderRequestKind::Manual,
         };
         assert_eq!(cmd.validate(), Err("Quantity must be positive".to_string()));
     }
@@ -120,6 +170,7 @@ mod tests {
             material_id: MaterialId::new(),
             quantity: -5,
             reason: None,
+            request_kind: OrderRequestKind::Manual,
         };
         assert_eq!(cmd.validate(), Err("Quantity must be positive".to_string()));
     }
@@ -164,5 +215,16 @@ mod tests {
         assert_eq!(OrderStatus::Ordered.to_string(), "ordered");
         assert_eq!(OrderStatus::Fulfilled.to_string(), "fulfilled");
         assert_eq!(OrderStatus::Cancelled.to_string(), "cancelled");
+    }
+
+    #[test]
+    fn order_request_kind_roundtrips() {
+        assert_eq!(OrderRequestKind::Manual.to_string(), "manual");
+        assert_eq!(
+            "minimum_breach".parse(),
+            Ok(OrderRequestKind::MinimumBreach)
+        );
+        assert!(OrderRequestKind::LastPackage.is_automatic());
+        assert!(!OrderRequestKind::Manual.is_automatic());
     }
 }

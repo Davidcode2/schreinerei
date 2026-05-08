@@ -27,7 +27,8 @@ interface WithdrawDialogProps {
     quantity: number,
     notes?: string,
     siteId?: string | null,
-    disposal?: boolean
+    disposal?: boolean,
+    lastPackageTaken?: boolean
   ) => void
   isLoading: boolean
   sites: Array<{ id: string; name: string }>
@@ -47,6 +48,7 @@ export function WithdrawDialog({
   const [notes, setNotes] = useState("")
   const [siteId, setSiteId] = useState(initialSiteId ?? "")
   const [disposal, setDisposal] = useState(false)
+  const [lastPackageTaken, setLastPackageTaken] = useState(false)
 
   const maxQuantity = disposal ? Math.max(1, material.expired_quantity) : material.quantity
   const requiresProjectLink = !disposal
@@ -62,10 +64,17 @@ export function WithdrawDialog({
       return
     }
 
-    onConfirm(quantity, notes || undefined, disposal ? null : siteId || null, disposal)
+    onConfirm(
+      quantity,
+      notes || undefined,
+      disposal ? null : siteId || null,
+      disposal,
+      disposal ? false : lastPackageTaken
+    )
     setQuantity(1)
     setNotes("")
     setDisposal(false)
+    setLastPackageTaken(false)
   }
 
   const quickAmounts = [1, 2, 5, 10].filter((n) => n <= maxQuantity)
@@ -74,8 +83,15 @@ export function WithdrawDialog({
     if (open) {
       setSiteId(initialSiteId ?? "")
       setDisposal(false)
+      setLastPackageTaken(false)
     }
-  }, [open, initialSiteId])
+  }, [open])
+
+  useEffect(() => {
+    if (open && !siteId && initialSiteId) {
+      setSiteId(initialSiteId)
+    }
+  }, [initialSiteId, open, siteId])
 
   useEffect(() => {
     setQuantity((current) => Math.max(1, Math.min(current, maxQuantity)))
@@ -228,6 +244,19 @@ export function WithdrawDialog({
               </select>
               <p className="text-xs text-muted-foreground">
                 Reale Materialentnahmen werden immer einem Projekt zugeordnet.
+              </p>
+
+              <Button
+                type="button"
+                variant={lastPackageTaken ? "default" : "outline"}
+                className="mt-3 h-10 w-full justify-start"
+                aria-pressed={lastPackageTaken}
+                onClick={() => setLastPackageTaken((current) => !current)}
+              >
+                Letzte Packung entnommen
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Löst ein persistentes Nachbestell-Signal aus, auch wenn rechnerisch noch Restbestand vorhanden ist.
               </p>
             </div>
           )}

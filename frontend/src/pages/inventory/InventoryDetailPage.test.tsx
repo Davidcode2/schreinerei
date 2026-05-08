@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event"
 import { http, HttpResponse } from "msw"
 import { render, screen } from "@/test/utils"
 import { server } from "@/test/mocks/server"
+import { useAuthStore } from "@/lib/auth/authStore"
 import InventoryDetailPage from "./InventoryDetailPage"
 
 vi.mock("react-router-dom", async () => {
@@ -57,6 +58,12 @@ function createHistoryEntry(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
+  useAuthStore.setState({
+    user: null,
+    tokens: null,
+    isAuthenticated: false,
+    isLoading: false,
+  })
   server.use(
     http.get(apiPath("/inventory/materials/mat-123"), () =>
       HttpResponse.json(materialResponse)
@@ -275,7 +282,111 @@ describe("InventoryDetailPage interactions", () => {
         notes: null,
         site_id: "site-9",
         disposal: false,
+        last_package_taken: false,
       })
+    })
+  })
+
+  it("lets workers mark the last package during withdrawal", async () => {
+    const user = userEvent.setup()
+    let withdrawPayload: unknown = null
+
+    server.use(
+      http.get(apiPath("/preferences"), () => HttpResponse.json({ active_site_id: "site-9" })),
+      http.get(apiPath("/sites"), () =>
+        HttpResponse.json([{ id: "site-9", name: "Werkstattauftrag", project_type: "internal_workshop" }])
+      ),
+      http.post(apiPath("/inventory/materials/mat-123/withdraw"), async ({ request }) => {
+        withdrawPayload = await request.json()
+        return HttpResponse.json({ ...materialResponse, quantity: 47 })
+      })
+    )
+
+    render(<InventoryDetailPage />)
+
+    await user.click(await screen.findByRole("button", { name: /material entnehmen/i }))
+    const lastPackageToggle = screen.getByRole("button", { name: /letzte packung entnommen/i })
+    await user.click(lastPackageToggle)
+    expect(lastPackageToggle).toHaveAttribute("aria-pressed", "true")
+    await user.click(screen.getByRole("button", { name: /1 stück entnehmen/i }))
+
+    await waitFor(() => {
+      expect(withdrawPayload).toEqual({
+        quantity: 1,
+        notes: null,
+        site_id: "site-9",
+        disposal: false,
+        last_package_taken: true,
+      })
+    })
+  })
+
+  it("shows an active replenishment signal for admins and lets them confirm it", async () => {
+    const user = userEvent.setup()
+    let approveCalled = false
+
+    useAuthStore.setState({
+      user: {
+        id: "user-1",
+        email: "admin@example.com",
+        name: "Admin",
+        role: "admin",
+        created_at: new Date().toISOString(),
+      },
+      tokens: null,
+      isAuthenticated: true,
+      isLoading: false,
+    })
+
+    server.use(
+      http.get(apiPath("/inventory/orders"), () =>
+        HttpResponse.json([
+          {
+            id: "order-1",
+            material_id: "mat-123",
+            material_name: "Betonschraube",
+            quantity: 20,
+            requested_by: "user-2",
+            status: "pending",
+            request_kind: "last_package",
+            reason: "Automatisch: Letzte Packung entnommen",
+            approved_by: null,
+            approved_at: null,
+            fulfilled_at: null,
+            notes: null,
+            created_at: new Date().toISOString(),
+          },
+        ])
+      ),
+      http.post(apiPath("/inventory/orders/order-1/approve"), async () => {
+        approveCalled = true
+        return HttpResponse.json({
+          id: "order-1",
+          material_id: "mat-123",
+          material_name: "Betonschraube",
+          quantity: 20,
+          requested_by: "user-2",
+          status: "approved",
+          request_kind: "last_package",
+          reason: "Automatisch: Letzte Packung entnommen",
+          approved_by: "user-1",
+          approved_at: new Date().toISOString(),
+          fulfilled_at: null,
+          notes: null,
+          created_at: new Date().toISOString(),
+        })
+      })
+    )
+
+    render(<InventoryDetailPage />)
+
+    expect(await screen.findByText(/nachbestell-signal aktiv/i)).toBeInTheDocument()
+    expect(screen.getByText(/automatisch: letzte packung entnommen/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: /bestatigen/i }))
+
+    await waitFor(() => {
+      expect(approveCalled).toBe(true)
     })
   })
 

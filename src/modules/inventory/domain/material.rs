@@ -92,6 +92,7 @@ pub struct WithdrawMaterial {
     pub notes: Option<String>,
     pub site_id: Option<SiteId>,
     pub disposal: bool,
+    pub last_package_taken: bool,
 }
 
 impl WithdrawMaterial {
@@ -323,6 +324,7 @@ mod tests {
             notes: None,
             site_id: Some(SiteId::new()),
             disposal: false,
+            last_package_taken: false,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -335,6 +337,7 @@ mod tests {
             notes: None,
             site_id: None,
             disposal: false,
+            last_package_taken: false,
         };
         assert_eq!(
             cmd.validate(),
@@ -350,6 +353,7 @@ mod tests {
             notes: None,
             site_id: None,
             disposal: false,
+            last_package_taken: false,
         };
         assert_eq!(
             cmd.validate(),
@@ -365,6 +369,7 @@ mod tests {
             notes: None,
             site_id: None,
             disposal: false,
+            last_package_taken: false,
         };
 
         assert_eq!(
@@ -381,6 +386,7 @@ mod tests {
             notes: None,
             site_id: None,
             disposal: true,
+            last_package_taken: false,
         };
 
         assert!(cmd.validate().is_ok());

@@ -291,7 +291,13 @@ describe("inventory mutations", () => {
 
     expect(apiClient.post).toHaveBeenCalledWith(
       "/api/v1/inventory/materials/mat-123/withdraw",
-      { quantity: 2, notes: "Abgelaufen", site_id: null, disposal: true }
+      {
+        quantity: 2,
+        notes: "Abgelaufen",
+        site_id: null,
+        disposal: true,
+        last_package_taken: false,
+      }
     )
   })
 

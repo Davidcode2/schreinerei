@@ -9,8 +9,8 @@ use crate::common::types::{
 };
 use crate::modules::inventory::domain::{
     Category, CreateCategory, CreateMaterial, CreateOrderRequest, EnrichedStockEntry, EntryType,
-    Material, MaterialBatchSummary, OrderRequest, OrderStatus, SiteStockHistoryEntry,
-    StockEntryWithSite, StockIn, UpdateCategory, UpdateMaterial,
+    Material, MaterialBatchSummary, OrderRequest, OrderRequestKind, OrderStatus,
+    SiteStockHistoryEntry, StockEntryWithSite, StockIn, UpdateCategory, UpdateMaterial,
 };
 
 /// Repository for material data access with tenant isolation
@@ -1241,9 +1241,9 @@ impl MaterialRepository {
 
         let order = sqlx::query_as::<_, OrderRequestRow>(
             r#"
-            INSERT INTO order_requests (id, tenant_id, material_id, quantity, requested_by, status, reason, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING id, tenant_id, material_id, quantity, requested_by, status, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            INSERT INTO order_requests (id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
             "#
         )
         .bind(id)
@@ -1252,6 +1252,7 @@ impl MaterialRepository {
         .bind(create.quantity)
         .bind(user_id.0)
         .bind("pending")
+        .bind(create.request_kind.as_str())
         .bind(&create.reason)
         .bind(now)
         .bind(now)
@@ -1271,7 +1272,7 @@ impl MaterialRepository {
             Some(s) => {
                 sqlx::query_as::<_, OrderRequestRow>(
                     r#"
-                    SELECT id, tenant_id, material_id, quantity, requested_by, status, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+                    SELECT id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
                     FROM order_requests
                     WHERE tenant_id = $1 AND status = $2
                     ORDER BY created_at DESC
@@ -1285,7 +1286,7 @@ impl MaterialRepository {
             None => {
                 sqlx::query_as::<_, OrderRequestRow>(
                     r#"
-                    SELECT id, tenant_id, material_id, quantity, requested_by, status, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+                    SELECT id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
                     FROM order_requests
                     WHERE tenant_id = $1
                     ORDER BY created_at DESC
@@ -1315,7 +1316,7 @@ impl MaterialRepository {
             UPDATE order_requests
             SET status = 'approved', approved_by = $1, approved_at = $2, notes = COALESCE($3, notes), updated_at = $2
             WHERE id = $4 AND tenant_id = $5 AND status = 'pending'
-            RETURNING id, tenant_id, material_id, quantity, requested_by, status, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            RETURNING id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
             "#
         )
         .bind(user_id.0)
@@ -1327,6 +1328,34 @@ impl MaterialRepository {
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or_else(|| AppError::NotFound("Order request not found or already processed".to_string()))?;
+
+        Ok(order.into_order_request())
+    }
+
+    pub async fn mark_order_request_ordered(
+        &self,
+        id: OrderRequestId,
+        notes: Option<String>,
+        tenant_id: TenantId,
+    ) -> Result<OrderRequest, AppError> {
+        let now = Utc::now();
+
+        let order = sqlx::query_as::<_, OrderRequestRow>(
+            r#"
+            UPDATE order_requests
+            SET status = 'ordered', notes = COALESCE($1, notes), updated_at = $2
+            WHERE id = $3 AND tenant_id = $4 AND status = 'approved'
+            RETURNING id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            "#,
+        )
+        .bind(&notes)
+        .bind(now)
+        .bind(id.0)
+        .bind(tenant_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Order request not found or not approved".to_string()))?;
 
         Ok(order.into_order_request())
     }
@@ -1350,9 +1379,9 @@ impl MaterialRepository {
         // Get the order request
         let order: OrderRequestRow = sqlx::query_as(
             r#"
-            SELECT id, tenant_id, material_id, quantity, requested_by, status, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            SELECT id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
             FROM order_requests
-            WHERE id = $1 AND tenant_id = $2 AND status = 'approved'
+            WHERE id = $1 AND tenant_id = $2 AND status IN ('approved', 'ordered')
             FOR UPDATE
             "#
         )
@@ -1361,7 +1390,7 @@ impl MaterialRepository {
         .fetch_optional(&mut *tx)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
-        .ok_or_else(|| AppError::NotFound("Order request not found or not approved".to_string()))?;
+        .ok_or_else(|| AppError::NotFound("Order request not found or not ready for fulfillment".to_string()))?;
 
         // Update material stock
         sqlx::query(
@@ -1384,7 +1413,7 @@ impl MaterialRepository {
             UPDATE order_requests
             SET status = 'fulfilled', fulfilled_at = $1, notes = COALESCE($2, notes), updated_at = $1
             WHERE id = $3 AND tenant_id = $4
-            RETURNING id, tenant_id, material_id, quantity, requested_by, status, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            RETURNING id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
             "#
         )
         .bind(now)
@@ -1409,7 +1438,7 @@ impl MaterialRepository {
     ) -> Result<Option<OrderRequest>, AppError> {
         let order = sqlx::query_as::<_, OrderRequestRow>(
             r#"
-            SELECT id, tenant_id, material_id, quantity, requested_by, status, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            SELECT id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
             FROM order_requests
             WHERE id = $1 AND tenant_id = $2
             "#
@@ -1421,6 +1450,83 @@ impl MaterialRepository {
         .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(order.map(|o| o.into_order_request()))
+    }
+
+    pub async fn find_active_order_request_for_material(
+        &self,
+        material_id: MaterialId,
+        tenant_id: TenantId,
+    ) -> Result<Option<OrderRequest>, AppError> {
+        let order = sqlx::query_as::<_, OrderRequestRow>(
+            r#"
+            SELECT id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            FROM order_requests
+            WHERE tenant_id = $1 AND material_id = $2 AND status IN ('pending', 'approved', 'ordered')
+            ORDER BY created_at DESC
+            LIMIT 1
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(material_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(order.map(|value| value.into_order_request()))
+    }
+
+    pub async fn resolve_active_auto_order_requests(
+        &self,
+        material_id: MaterialId,
+        notes: Option<String>,
+        tenant_id: TenantId,
+    ) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+            UPDATE order_requests
+            SET status = 'fulfilled', fulfilled_at = NOW(), notes = COALESCE($1, notes), updated_at = NOW()
+            WHERE tenant_id = $2
+              AND material_id = $3
+              AND request_kind IN ('minimum_breach', 'last_package')
+              AND status IN ('pending', 'approved', 'ordered')
+            "#,
+        )
+        .bind(notes)
+        .bind(tenant_id.0)
+        .bind(material_id.0)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(())
+    }
+
+    pub async fn cancel_order_request(
+        &self,
+        id: OrderRequestId,
+        notes: Option<String>,
+        tenant_id: TenantId,
+    ) -> Result<OrderRequest, AppError> {
+        let now = Utc::now();
+
+        let order = sqlx::query_as::<_, OrderRequestRow>(
+            r#"
+            UPDATE order_requests
+            SET status = 'cancelled', notes = COALESCE($1, notes), updated_at = $2
+            WHERE id = $3 AND tenant_id = $4 AND status IN ('pending', 'approved', 'ordered')
+            RETURNING id, tenant_id, material_id, quantity, requested_by, status, request_kind, reason, approved_by, approved_at, fulfilled_at, notes, created_at, updated_at
+            "#,
+        )
+        .bind(&notes)
+        .bind(now)
+        .bind(id.0)
+        .bind(tenant_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Order request not found or already resolved".to_string()))?;
+
+        Ok(order.into_order_request())
     }
 
     // === Event publishing ===
@@ -1537,6 +1643,7 @@ struct OrderRequestRow {
     quantity: i32,
     requested_by: Uuid,
     status: String,
+    request_kind: String,
     reason: Option<String>,
     approved_by: Option<Uuid>,
     approved_at: Option<DateTime<Utc>>,
@@ -1555,6 +1662,10 @@ impl OrderRequestRow {
             quantity: self.quantity,
             requested_by: UserId(self.requested_by),
             status: self.status.parse().unwrap_or(OrderStatus::Pending),
+            request_kind: self
+                .request_kind
+                .parse()
+                .unwrap_or(OrderRequestKind::Manual),
             reason: self.reason,
             approved_by: self.approved_by.map(UserId),
             approved_at: self.approved_at,

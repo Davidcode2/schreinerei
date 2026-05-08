@@ -12,12 +12,15 @@ import type {
 } from "@/types/inventory"
 import type {
   AdjustStockRequest,
+  ApproveOrderRequestDto,
   CreateCategoryRequest,
   CreateMaterialRequest,
   StockInRequest,
   UpdateCategoryRequest,
   UpdateMaterialRequest,
   WithdrawRequest,
+  MarkOrderedRequestDto,
+  FulfillOrderRequestDto,
 } from "@/types/generated"
 
 // === Categories ===
@@ -190,6 +193,7 @@ export function useWithdrawMaterial() {
         notes: data.notes,
         site_id: data.site_id ?? null,
         disposal: data.disposal ?? false,
+        last_package_taken: data.last_package_taken ?? false,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["materials"] })
@@ -222,13 +226,14 @@ export function useQrLookup(code: string | null) {
 
 // === Order Requests ===
 
-export function useOrderRequests(query?: OrderStatusQuery) {
+export function useOrderRequests(query?: OrderStatusQuery, enabled: boolean = true) {
   return useQuery({
     queryKey: ["order-requests", query],
     queryFn: () => {
       const params = query?.status ? `?status=${query.status}` : ""
       return apiClient.get<OrderRequest[]>(`/api/v1/inventory/orders${params}`)
     },
+    enabled,
     staleTime: 30000,
   })
 }
@@ -241,6 +246,64 @@ export function useCreateOrderRequest() {
       apiClient.post<OrderRequest>("/api/v1/inventory/orders", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["order-requests"] })
+      queryClient.invalidateQueries({ queryKey: ["material"] })
+      queryClient.invalidateQueries({ queryKey: ["low-stock"] })
+    },
+  })
+}
+
+export function useApproveOrderRequest() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: ApproveOrderRequestDto }) =>
+      apiClient.post<OrderRequest>(`/api/v1/inventory/orders/${id}/approve`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order-requests"] })
+      queryClient.invalidateQueries({ queryKey: ["material"] })
+      queryClient.invalidateQueries({ queryKey: ["low-stock"] })
+    },
+  })
+}
+
+export function useMarkOrderRequestOrdered() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: MarkOrderedRequestDto }) =>
+      apiClient.post<OrderRequest>(`/api/v1/inventory/orders/${id}/ordered`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order-requests"] })
+      queryClient.invalidateQueries({ queryKey: ["material"] })
+      queryClient.invalidateQueries({ queryKey: ["low-stock"] })
+    },
+  })
+}
+
+export function useCancelOrderRequest() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: ApproveOrderRequestDto }) =>
+      apiClient.post<OrderRequest>(`/api/v1/inventory/orders/${id}/cancel`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order-requests"] })
+      queryClient.invalidateQueries({ queryKey: ["material"] })
+      queryClient.invalidateQueries({ queryKey: ["low-stock"] })
+    },
+  })
+}
+
+export function useFulfillOrderRequest() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: FulfillOrderRequestDto }) =>
+      apiClient.post<OrderRequest>(`/api/v1/inventory/orders/${id}/fulfill`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["order-requests"] })
+      queryClient.invalidateQueries({ queryKey: ["material"] })
+      queryClient.invalidateQueries({ queryKey: ["low-stock"] })
     },
   })
 }

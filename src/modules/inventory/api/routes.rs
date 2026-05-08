@@ -16,8 +16,9 @@ use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::inventory::application::InventoryService;
 use crate::modules::inventory::domain::{
     AdjustStock, ApproveOrderRequest, CreateCategory, CreateMaterial, CreateOrderRequest,
-    EnrichedStockEntry, FulfillOrderRequest, SiteStockHistoryEntry, StockEntryWithSite, StockIn,
-    UpdateCategory, UpdateMaterial, WithdrawMaterial,
+    EnrichedStockEntry, FulfillOrderRequest, MarkOrderedRequest, OrderRequestKind,
+    SiteStockHistoryEntry, StockEntryWithSite, StockIn, UpdateCategory, UpdateMaterial,
+    WithdrawMaterial,
 };
 use crate::AppState;
 
@@ -89,8 +90,16 @@ pub fn create_router() -> Router<AppState> {
             post(approve_order_request),
         )
         .route(
+            "/api/v1/inventory/orders/{id}/ordered",
+            post(mark_order_request_ordered),
+        )
+        .route(
             "/api/v1/inventory/orders/{id}/fulfill",
             post(fulfill_order_request),
+        )
+        .route(
+            "/api/v1/inventory/orders/{id}/cancel",
+            post(cancel_order_request),
         )
 }
 
@@ -231,6 +240,7 @@ pub struct WithdrawRequest {
     pub notes: Option<String>,
     pub site_id: Option<String>, // Optional Baustelle ID
     pub disposal: Option<bool>,
+    pub last_package_taken: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -304,6 +314,7 @@ pub struct OrderRequestResponse {
     pub quantity: i32,
     pub requested_by: String,
     pub status: String,
+    pub request_kind: String,
     pub reason: Option<String>,
     pub approved_by: Option<String>,
     pub approved_at: Option<String>,
@@ -324,6 +335,7 @@ impl OrderRequestResponse {
             quantity: order.quantity,
             requested_by: order.requested_by.to_string(),
             status: order.status.to_string(),
+            request_kind: order.request_kind.to_string(),
             reason: order.reason,
             approved_by: order.approved_by.map(|id| id.to_string()),
             approved_at: order.approved_at.map(|t| t.to_rfc3339()),
@@ -345,6 +357,12 @@ pub struct CreateOrderRequestDto {
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct ApproveOrderRequestDto {
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct MarkOrderedRequestDto {
     pub notes: Option<String>,
 }
 
@@ -793,6 +811,7 @@ pub async fn withdraw_material(
         notes: request.notes,
         site_id, // Pass parsed site_id
         disposal: request.disposal.unwrap_or(false),
+        last_package_taken: request.last_package_taken.unwrap_or(false),
     };
 
     let material = service.withdraw_material(withdraw, &ctx).await?;
@@ -939,6 +958,7 @@ pub async fn create_order_request(
         material_id,
         quantity: request.quantity,
         reason: request.reason,
+        request_kind: OrderRequestKind::Manual,
     };
 
     let order = service.create_order_request(create, &ctx).await?;
@@ -1024,6 +1044,54 @@ pub async fn fulfill_order_request(
 
     let order = service
         .fulfill_order_request(order_id, fulfill, &ctx)
+        .await?;
+    let material = service.get_material(order.material_id, &ctx).await?;
+
+    Ok(Json(OrderRequestResponse::from_order(order, material.name)))
+}
+
+pub async fn mark_order_request_ordered(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+    Json(request): Json<MarkOrderedRequestDto>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = InventoryService::new(
+        crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
+    );
+    let order_id = Uuid::parse_str(&id)
+        .map(OrderRequestId)
+        .map_err(|_| AppError::Validation("Invalid order ID".to_string()))?;
+
+    let order = service
+        .mark_order_request_ordered(
+            order_id,
+            MarkOrderedRequest {
+                notes: request.notes,
+            },
+            &ctx,
+        )
+        .await?;
+    let material = service.get_material(order.material_id, &ctx).await?;
+
+    Ok(Json(OrderRequestResponse::from_order(order, material.name)))
+}
+
+pub async fn cancel_order_request(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+    Json(request): Json<ApproveOrderRequestDto>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = InventoryService::new(
+        crate::modules::inventory::infrastructure::MaterialRepository::new(state.pool),
+    );
+    let order_id = Uuid::parse_str(&id)
+        .map(OrderRequestId)
+        .map_err(|_| AppError::Validation("Invalid order ID".to_string()))?;
+
+    let order = service
+        .cancel_order_request(order_id, request.notes, &ctx)
         .await?;
     let material = service.get_material(order.material_id, &ctx).await?;
 

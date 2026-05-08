@@ -4,10 +4,10 @@ use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::inventory::domain::{
     AdjustStock, ApproveOrderRequest, Category, CreateCategory, CreateMaterial, CreateOrderRequest,
-    EnrichedStockEntry, FulfillOrderRequest, LocationChangedPayload, Material,
+    EnrichedStockEntry, FulfillOrderRequest, LocationChangedPayload, MarkOrderedRequest, Material,
     MaterialAddedPayload, MaterialCreatedPayload, MinQuantityChangedPayload, OrderRequest,
-    OrderRequestCreatedPayload, OrderStatus, StockAdjustedPayload, StockIn, StockLowPayload,
-    StockWithdrawnPayload, UpdateCategory, UpdateMaterial, WithdrawMaterial,
+    OrderRequestCreatedPayload, OrderRequestKind, OrderStatus, StockAdjustedPayload, StockIn,
+    StockLowPayload, StockWithdrawnPayload, UpdateCategory, UpdateMaterial, WithdrawMaterial,
 };
 use crate::modules::inventory::infrastructure::MaterialRepository;
 use qrcode::render::svg;
@@ -23,6 +23,10 @@ pub struct InventoryService {
 impl InventoryService {
     const DISABLE_EXPIRY_WITH_LIVE_STOCK_ERROR: &'static str =
         "Expiry tracking can only be disabled after all live stock in this category is depleted";
+    const LOW_STOCK_REASON: &'static str = "Automatisch: Mindestbestand unterschritten";
+    const LAST_PACKAGE_REASON: &'static str = "Automatisch: Letzte Packung entnommen";
+    const AUTO_REPLENISHMENT_RESOLVED_NOTE: &'static str =
+        "Automatisch nach Einlagerung oder Bestandskorrektur aufgelost";
 
     pub fn new(material_repo: MaterialRepository) -> Self {
         let pool = material_repo.pool();
@@ -47,6 +51,68 @@ impl InventoryService {
             )
             .await?;
         Ok(user.id)
+    }
+
+    fn suggested_replenishment_quantity(material: &Material) -> i32 {
+        (material.min_quantity * 2).max(1)
+    }
+
+    async fn ensure_replenishment_signal(
+        &self,
+        material: &Material,
+        triggered_by: UserId,
+        kind: OrderRequestKind,
+        tenant_id: crate::common::types::TenantId,
+    ) -> Result<(), AppError> {
+        let existing = self
+            .material_repo
+            .find_active_order_request_for_material(material.id, tenant_id)
+            .await?;
+
+        if existing.is_some() {
+            return Ok(());
+        }
+
+        self.material_repo
+            .create_order_request(
+                &CreateOrderRequest {
+                    material_id: material.id,
+                    quantity: Self::suggested_replenishment_quantity(material),
+                    reason: Some(
+                        match kind {
+                            OrderRequestKind::LastPackage => Self::LAST_PACKAGE_REASON,
+                            OrderRequestKind::MinimumBreach | OrderRequestKind::Manual => {
+                                Self::LOW_STOCK_REASON
+                            }
+                        }
+                        .to_string(),
+                    ),
+                    request_kind: kind,
+                },
+                triggered_by,
+                tenant_id,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    async fn resolve_auto_replenishment_signals_if_restocked(
+        &self,
+        material: &Material,
+        tenant_id: crate::common::types::TenantId,
+    ) -> Result<(), AppError> {
+        if material.is_low_stock() {
+            return Ok(());
+        }
+
+        self.material_repo
+            .resolve_active_auto_order_requests(
+                material.id,
+                Some(Self::AUTO_REPLENISHMENT_RESOLVED_NOTE.to_string()),
+                tenant_id,
+            )
+            .await
     }
 
     // === Category operations ===
@@ -258,6 +324,24 @@ impl InventoryService {
             .into_event(ctx.tenant_id);
 
             self.material_repo.publish_event(&low_event).await?;
+
+            self.ensure_replenishment_signal(
+                &material,
+                local_user_id,
+                OrderRequestKind::MinimumBreach,
+                ctx.tenant_id,
+            )
+            .await?;
+        }
+
+        if withdraw.last_package_taken {
+            self.ensure_replenishment_signal(
+                &material,
+                local_user_id,
+                OrderRequestKind::LastPackage,
+                ctx.tenant_id,
+            )
+            .await?;
         }
 
         Ok(material)
@@ -312,6 +396,19 @@ impl InventoryService {
             .into_event(ctx.tenant_id);
 
             self.material_repo.publish_event(&low_event).await?;
+
+            self.ensure_replenishment_signal(
+                &material,
+                local_user_id,
+                OrderRequestKind::MinimumBreach,
+                ctx.tenant_id,
+            )
+            .await?;
+        }
+
+        if adjust.quantity > 0 {
+            self.resolve_auto_replenishment_signals_if_restocked(&material, ctx.tenant_id)
+                .await?;
         }
 
         Ok(material)
@@ -410,6 +507,9 @@ impl InventoryService {
         .into_event(ctx.tenant_id);
 
         self.material_repo.publish_event(&event).await?;
+
+        self.resolve_auto_replenishment_signals_if_restocked(&material, ctx.tenant_id)
+            .await?;
 
         Ok(material)
     }
@@ -600,6 +700,20 @@ impl InventoryService {
             .await
     }
 
+    pub async fn mark_order_request_ordered(
+        &self,
+        id: OrderRequestId,
+        mark_ordered: MarkOrderedRequest,
+        ctx: &TenantContext,
+    ) -> Result<OrderRequest, AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+        self.material_repo
+            .mark_order_request_ordered(id, mark_ordered.notes, ctx.tenant_id)
+            .await
+    }
+
     pub async fn fulfill_order_request(
         &self,
         id: OrderRequestId,
@@ -611,6 +725,20 @@ impl InventoryService {
         }
         self.material_repo
             .fulfill_order_request(id, fulfill.actual_quantity, fulfill.notes, ctx.tenant_id)
+            .await
+    }
+
+    pub async fn cancel_order_request(
+        &self,
+        id: OrderRequestId,
+        notes: Option<String>,
+        ctx: &TenantContext,
+    ) -> Result<OrderRequest, AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+        self.material_repo
+            .cancel_order_request(id, notes, ctx.tenant_id)
             .await
     }
 }

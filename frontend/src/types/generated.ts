@@ -72,9 +72,11 @@ export type ListToolsQuery = { status: string | null, category: string | null, }
 
 export type ListVehiclesQuery = { status: string | null, };
 
+export type MarkOrderedRequestDto = { notes: string | null, };
+
 export type MaterialResponse = { id: string, category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, can_expire: boolean, legacy_quantity: number, expired_quantity: number, expiring_soon_quantity: number, next_expiry_on: string | null, expiry_batches: Array<ExpiryBatchResponse>, location: string | null, qr_code: string | null, is_low_stock: boolean, created_at: string, };
 
-export type OrderRequestResponse = { id: string, material_id: string, material_name: string, quantity: number, requested_by: string, status: string, reason: string | null, approved_by: string | null, approved_at: string | null, fulfilled_at: string | null, notes: string | null, created_at: string, };
+export type OrderRequestResponse = { id: string, material_id: string, material_name: string, quantity: number, requested_by: string, status: string, request_kind: string, reason: string | null, approved_by: string | null, approved_at: string | null, fulfilled_at: string | null, notes: string | null, created_at: string, };
 
 export type OrderStatusQuery = { status: string | null, };
 
@@ -154,4 +156,4 @@ export type UserResponse = { id: string, email: string, name: string | null, rol
 
 export type VehicleResponse = { id: string, name: string, license_plate: string | null, vehicle_type: string, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
 
-export type WithdrawRequest = { quantity: number, notes: string | null, site_id: string | null, disposal: boolean | null, };
+export type WithdrawRequest = { quantity: number, notes: string | null, site_id: string | null, disposal: boolean | null, last_package_taken: boolean | null, };
