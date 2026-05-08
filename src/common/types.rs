@@ -276,6 +276,33 @@ impl fmt::Display for TimeEntryId {
     }
 }
 
+/// Site appointment identifier - wraps UUID
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct SiteAppointmentId(pub Uuid);
+
+impl SiteAppointmentId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+
+    pub fn parse(s: &str) -> Result<Self, uuid::Error> {
+        Uuid::parse_str(s).map(Self)
+    }
+}
+
+impl Default for SiteAppointmentId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for SiteAppointmentId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 /// Activity identifier - wraps UUID
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]

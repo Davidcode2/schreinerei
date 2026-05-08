@@ -7,12 +7,13 @@ use uuid::Uuid;
 use crate::common::error::AppError;
 use crate::common::events::{DomainEvent, EventBus};
 use crate::common::types::{
-    ActivityId, AssignmentRole, ProjectType, SiteId, SiteStatus, TenantId, TimeEntryId, UserId,
-    WorkType,
+    ActivityId, AssignmentRole, ProjectType, SiteAppointmentId, SiteId, SiteStatus, TenantId,
+    TimeEntryId, UserId, WorkType,
 };
 use crate::modules::sites::domain::{
-    Activity, CreateActivity, CreateSite, CreateTimeEntry, Site, SiteActivityAttachment,
-    SiteAssignment, TimeEntry, UpdateSite, UpdateTimeEntry,
+    Activity, CreateActivity, CreateSite, CreateSiteAppointment, CreateTimeEntry, Site,
+    SiteActivityAttachment, SiteAppointment, SiteAppointmentKind, SiteAssignment, TimeEntry,
+    UpdateSite, UpdateSiteAppointment, UpdateTimeEntry,
 };
 
 /// Repository for site data access with tenant isolation
@@ -997,6 +998,180 @@ impl SiteRepository {
         Ok(row.into_summary())
     }
 
+    pub async fn list_site_appointments(
+        &self,
+        tenant_id: TenantId,
+        site_id: SiteId,
+        starts_at: Option<DateTime<Utc>>,
+        ends_at: Option<DateTime<Utc>>,
+    ) -> Result<Vec<SiteAppointment>, AppError> {
+        let rows = sqlx::query_as::<_, SiteAppointmentRow>(
+            r#"
+            SELECT id, tenant_id, site_id, title, appointment_kind, starts_at, ends_at, notes, assigned_user_ids, created_at, updated_at
+            FROM site_appointments
+            WHERE tenant_id = $1
+              AND site_id = $2
+              AND ($3::timestamptz IS NULL OR ends_at > $3)
+              AND ($4::timestamptz IS NULL OR starts_at < $4)
+            ORDER BY starts_at ASC, created_at ASC
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .bind(starts_at)
+        .bind(ends_at)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(rows
+            .into_iter()
+            .map(SiteAppointmentRow::into_appointment)
+            .collect())
+    }
+
+    pub async fn create_site_appointment(
+        &self,
+        tenant_id: TenantId,
+        create: &CreateSiteAppointment,
+    ) -> Result<SiteAppointment, AppError> {
+        let appointment = sqlx::query_as::<_, SiteAppointmentRow>(
+            r#"
+            INSERT INTO site_appointments (
+                id, tenant_id, site_id, title, appointment_kind, starts_at, ends_at, notes,
+                assigned_user_ids, created_at, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+            RETURNING id, tenant_id, site_id, title, appointment_kind, starts_at, ends_at, notes, assigned_user_ids, created_at, updated_at
+            "#,
+        )
+        .bind(SiteAppointmentId::new().0)
+        .bind(tenant_id.0)
+        .bind(create.site_id.0)
+        .bind(create.title.trim())
+        .bind(create.appointment_kind.as_str())
+        .bind(create.starts_at)
+        .bind(create.ends_at)
+        .bind(&create.notes)
+        .bind(
+            create
+                .assigned_user_ids
+                .iter()
+                .map(|user_id| user_id.0)
+                .collect::<Vec<_>>(),
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(appointment.into_appointment())
+    }
+
+    pub async fn update_site_appointment(
+        &self,
+        tenant_id: TenantId,
+        site_id: SiteId,
+        appointment_id: SiteAppointmentId,
+        update: &UpdateSiteAppointment,
+    ) -> Result<SiteAppointment, AppError> {
+        let current = self
+            .find_site_appointment_by_id(tenant_id, site_id, appointment_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Site appointment not found".to_string()))?;
+
+        let next_starts_at = update.starts_at.unwrap_or(current.starts_at);
+        let next_ends_at = update.ends_at.unwrap_or(current.ends_at);
+
+        if next_ends_at <= next_starts_at {
+            return Err(AppError::Validation(
+                "Appointment end must be after start".to_string(),
+            ));
+        }
+
+        let appointment = sqlx::query_as::<_, SiteAppointmentRow>(
+            r#"
+            UPDATE site_appointments
+            SET
+                title = COALESCE($1, title),
+                appointment_kind = COALESCE($2, appointment_kind),
+                starts_at = COALESCE($3, starts_at),
+                ends_at = COALESCE($4, ends_at),
+                notes = CASE WHEN $5 THEN NULL ELSE COALESCE($6, notes) END,
+                assigned_user_ids = COALESCE($7, assigned_user_ids),
+                updated_at = NOW()
+            WHERE tenant_id = $8 AND site_id = $9 AND id = $10
+            RETURNING id, tenant_id, site_id, title, appointment_kind, starts_at, ends_at, notes, assigned_user_ids, created_at, updated_at
+            "#,
+        )
+        .bind(update.title.as_deref().map(str::trim))
+        .bind(update.appointment_kind.as_ref().map(|kind| kind.as_str()))
+        .bind(update.starts_at)
+        .bind(update.ends_at)
+        .bind(matches!(update.notes, Some(None)))
+        .bind(update.notes.as_ref().and_then(|notes| notes.clone()))
+        .bind(update.assigned_user_ids.as_ref().map(|user_ids| {
+            user_ids.iter().map(|user_id| user_id.0).collect::<Vec<_>>()
+        }))
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .bind(appointment_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Site appointment not found".to_string()))?;
+
+        Ok(appointment.into_appointment())
+    }
+
+    pub async fn delete_site_appointment(
+        &self,
+        tenant_id: TenantId,
+        site_id: SiteId,
+        appointment_id: SiteAppointmentId,
+    ) -> Result<(), AppError> {
+        let result = sqlx::query(
+            r#"
+            DELETE FROM site_appointments
+            WHERE tenant_id = $1 AND site_id = $2 AND id = $3
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .bind(appointment_id.0)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        if result.rows_affected() == 0 {
+            return Err(AppError::NotFound("Site appointment not found".to_string()));
+        }
+
+        Ok(())
+    }
+
+    pub async fn find_site_appointment_by_id(
+        &self,
+        tenant_id: TenantId,
+        site_id: SiteId,
+        appointment_id: SiteAppointmentId,
+    ) -> Result<Option<SiteAppointment>, AppError> {
+        let row = sqlx::query_as::<_, SiteAppointmentRow>(
+            r#"
+            SELECT id, tenant_id, site_id, title, appointment_kind, starts_at, ends_at, notes, assigned_user_ids, created_at, updated_at
+            FROM site_appointments
+            WHERE tenant_id = $1 AND site_id = $2 AND id = $3
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .bind(appointment_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(row.map(SiteAppointmentRow::into_appointment))
+    }
+
     pub async fn list_site_history_report(
         &self,
         tenant_id: TenantId,
@@ -1202,6 +1377,42 @@ impl TimeEntryRow {
             work_date: self.work_date,
             notes: self.notes,
             created_at: self.created_at,
+        }
+    }
+}
+
+#[derive(Debug, FromRow)]
+struct SiteAppointmentRow {
+    id: Uuid,
+    tenant_id: Uuid,
+    site_id: Uuid,
+    title: String,
+    appointment_kind: String,
+    starts_at: DateTime<Utc>,
+    ends_at: DateTime<Utc>,
+    notes: Option<String>,
+    assigned_user_ids: Vec<Uuid>,
+    created_at: DateTime<Utc>,
+    updated_at: DateTime<Utc>,
+}
+
+impl SiteAppointmentRow {
+    fn into_appointment(self) -> SiteAppointment {
+        SiteAppointment {
+            id: SiteAppointmentId(self.id),
+            tenant_id: TenantId(self.tenant_id),
+            site_id: SiteId(self.site_id),
+            title: self.title,
+            appointment_kind: self
+                .appointment_kind
+                .parse()
+                .unwrap_or(SiteAppointmentKind::CustomerAppointment),
+            starts_at: self.starts_at,
+            ends_at: self.ends_at,
+            notes: self.notes,
+            assigned_user_ids: self.assigned_user_ids.into_iter().map(UserId).collect(),
+            created_at: self.created_at,
+            updated_at: self.updated_at,
         }
     }
 }

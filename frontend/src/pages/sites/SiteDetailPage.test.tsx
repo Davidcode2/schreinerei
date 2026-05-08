@@ -26,8 +26,8 @@ const site = {
   created_at: new Date().toISOString(),
 }
 
-function emptyCalendarResponse() {
-  return HttpResponse.json({ resources: [] })
+function emptyAppointmentsResponse() {
+  return HttpResponse.json([])
 }
 
 describe('SiteDetailPage', () => {
@@ -53,10 +53,11 @@ describe('SiteDetailPage', () => {
     server.use(
       http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/users', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
       http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
-      http.get('*/api/v1/fleet/calendar*', emptyCalendarResponse)
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
     )
 
     render(
@@ -80,10 +81,11 @@ describe('SiteDetailPage', () => {
     server.use(
       http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/users', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
       http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
-      http.get('*/api/v1/fleet/calendar*', emptyCalendarResponse)
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
     )
 
     render(
@@ -111,10 +113,11 @@ describe('SiteDetailPage', () => {
     server.use(
       http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/users', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
       http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
-      http.get('*/api/v1/fleet/calendar*', emptyCalendarResponse)
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
     )
 
     render(
@@ -161,10 +164,11 @@ describe('SiteDetailPage', () => {
         })
       ),
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/users', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
       http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
-      http.get('*/api/v1/fleet/calendar*', emptyCalendarResponse)
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
     )
 
     render(
@@ -219,10 +223,11 @@ describe('SiteDetailPage', () => {
         materials: { distinct_material_count: 2, withdrawal_count: 3, lines: [] },
       })),
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/users', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
       http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
-      http.get('*/api/v1/fleet/calendar*', emptyCalendarResponse)
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
     )
 
     render(
@@ -240,7 +245,7 @@ describe('SiteDetailPage', () => {
     })
   })
 
-  it('shows the embedded project planning calendar filtered to the current project', async () => {
+  it('shows the dedicated appointment planner instead of the fleet reservation calendar', async () => {
     window.history.pushState({}, '', '/sites/site-1')
 
     server.use(
@@ -249,34 +254,46 @@ describe('SiteDetailPage', () => {
         labor: { total_hours: 0, entry_count: 0, site_hours: 0, workshop_hours: 0, last_work_date: null },
         materials: { distinct_material_count: 0, withdrawal_count: 0, lines: [] },
       })),
-      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([
+        {
+          id: 'assignment-1',
+          site_id: 'site-1',
+          user_id: 'user-1',
+          role: 'worker',
+          created_at: new Date().toISOString(),
+        },
+      ])),
+      http.get('*/api/v1/users', () => HttpResponse.json([
+        {
+          id: 'user-1',
+          email: 'max@example.com',
+          name: 'Max Mustermann',
+          role: 'employee',
+          created_at: new Date().toISOString(),
+        },
+      ])),
+      http.get('*/api/v1/sites/site-1/appointments*', ({ request }) => {
+        const url = new URL(request.url)
+        expect(url.searchParams.get('start_date')).toBeTruthy()
+        expect(url.searchParams.get('end_date')).toBeTruthy()
+        return HttpResponse.json([
+          {
+            id: 'appt-1',
+            site_id: 'site-1',
+            title: 'Abnahme vor Ort',
+            appointment_kind: 'customer_appointment',
+            starts_at: '2026-05-06T08:30:00.000Z',
+            ends_at: '2026-05-06T10:00:00.000Z',
+            notes: 'Mit Bauherr',
+            assigned_user_ids: ['user-1'],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ])
+      }),
       http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
-      http.get('*/api/v1/fleet/calendar*', ({ request }) => {
-        const url = new URL(request.url)
-        expect(url.searchParams.get('site_id')).toBe('site-1')
-        return HttpResponse.json({
-          resources: [
-            {
-              resource_type: 'vehicle',
-              resource_id: 'veh-1',
-              resource_name: 'Sprinter',
-              reservations: [
-                {
-                  id: 'res-1',
-                  start_time: new Date().toISOString(),
-                  end_time: new Date().toISOString(),
-                  user_name: 'Max Mustermann',
-                  site_id: 'site-1',
-                  site_name: 'CNC Vorbereitung',
-                  status: 'confirmed',
-                },
-              ],
-            },
-          ],
-        })
-      })
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
     )
 
     render(
@@ -285,8 +302,9 @@ describe('SiteDetailPage', () => {
       </Routes>
     )
 
-    expect(await screen.findByText('Reservierungen im Projektkontext')).toBeInTheDocument()
-    expect(await screen.findByText('Sprinter')).toBeInTheDocument()
+    expect(await screen.findByText('Terminplan')).toBeInTheDocument()
+    expect(await screen.findByText('Abnahme vor Ort')).toBeInTheDocument()
+    expect(screen.queryByText('Reservierungen im Projektkontext')).not.toBeInTheDocument()
   })
 
   it('shows booking author and only offers edit for the creator entry', async () => {
@@ -300,6 +318,8 @@ describe('SiteDetailPage', () => {
         materials: { distinct_material_count: 0, withdrawal_count: 0, lines: [] },
       })),
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/users', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
       http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([
         {
           id: 'entry-own',
@@ -329,8 +349,7 @@ describe('SiteDetailPage', () => {
         },
       ])),
       http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
-      http.get('*/api/v1/fleet/calendar*', emptyCalendarResponse)
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
     )
 
     render(
@@ -356,6 +375,8 @@ describe('SiteDetailPage', () => {
         materials: { distinct_material_count: 0, withdrawal_count: 0, lines: [] },
       })),
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/users', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
       http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([
         {
           id: 'entry-own',
@@ -372,8 +393,7 @@ describe('SiteDetailPage', () => {
         },
       ])),
       http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
-      http.get('*/api/v1/fleet/calendar*', emptyCalendarResponse)
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
     )
 
     render(

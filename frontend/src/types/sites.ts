@@ -1,8 +1,12 @@
 import type {
+  CreateSiteAppointmentRequest as GeneratedCreateSiteAppointmentRequest,
   SiteHistoryReportQuery as GeneratedSiteHistoryReportQuery,
   SiteHistoryReportRowResponse as GeneratedSiteHistoryReportRowResponse,
+  SiteAppointmentResponse as GeneratedSiteAppointmentResponse,
+  SiteAppointmentsQuery as GeneratedSiteAppointmentsQuery,
   SiteInvoiceSummaryResponse as GeneratedSiteInvoiceSummaryResponse,
   SiteProjectSummaryResponse as GeneratedSiteProjectSummaryResponse,
+  UpdateSiteAppointmentRequest as GeneratedUpdateSiteAppointmentRequest,
 } from '@/types/generated'
 
 /**
@@ -87,6 +91,19 @@ export interface AssignUserRequest {
   user_id: string
   role?: AssignmentRole
 }
+
+// === Site Appointments ===
+
+export type SiteAppointment = GeneratedSiteAppointmentResponse
+
+export type SiteAppointmentKind =
+  SiteAppointment["appointment_kind"]
+
+export type SiteAppointmentsQuery = Partial<GeneratedSiteAppointmentsQuery>
+
+export type CreateSiteAppointmentRequest = GeneratedCreateSiteAppointmentRequest
+
+export type UpdateSiteAppointmentRequest = Partial<GeneratedUpdateSiteAppointmentRequest>
 
 // === Time Entry ===
 

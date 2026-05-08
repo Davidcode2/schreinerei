@@ -6,20 +6,21 @@ use axum::{
     routing::{delete, get, post},
     Json, Router,
 };
-use chrono::NaiveDate;
+use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use uuid::Uuid;
 
 use crate::common::error::AppError;
 use crate::common::types::{
-    AssignmentRole, ProjectType, SiteId, SiteStatus, TimeEntryId, UserId, WorkType,
+    AssignmentRole, ProjectType, SiteAppointmentId, SiteId, SiteStatus, TimeEntryId, UserId,
+    WorkType,
 };
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::sites::application::site_service::SiteService;
 use crate::modules::sites::domain::{
-    ActivityType, AssignUser, CreateActivity, CreateSite, CreateTimeEntry, UpdateSite,
-    UpdateTimeEntry,
+    ActivityType, AssignUser, CreateActivity, CreateSite, CreateSiteAppointment, CreateTimeEntry,
+    SiteAppointmentKind, UpdateSite, UpdateSiteAppointment, UpdateTimeEntry,
 };
 use crate::modules::sites::infrastructure::site_repository::DashboardSite;
 use crate::AppState;
@@ -43,6 +44,14 @@ pub fn create_router() -> Router<AppState> {
         .route(
             "/api/v1/sites/{id}/invoice-summary",
             get(get_site_invoice_summary),
+        )
+        .route(
+            "/api/v1/sites/{id}/appointments",
+            get(list_site_appointments).post(create_site_appointment),
+        )
+        .route(
+            "/api/v1/sites/{id}/appointments/{appointment_id}",
+            delete(delete_site_appointment).patch(update_site_appointment),
         )
         // Assignments
         .route("/api/v1/sites/{id}/assign", post(assign_user))
@@ -453,6 +462,73 @@ pub struct AssignUserRequest {
 
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct SiteAppointmentResponse {
+    pub id: String,
+    pub site_id: String,
+    pub title: String,
+    pub appointment_kind: String,
+    pub starts_at: String,
+    pub ends_at: String,
+    pub notes: Option<String>,
+    pub assigned_user_ids: Vec<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+impl From<crate::modules::sites::domain::SiteAppointment> for SiteAppointmentResponse {
+    fn from(appointment: crate::modules::sites::domain::SiteAppointment) -> Self {
+        Self {
+            id: appointment.id.to_string(),
+            site_id: appointment.site_id.to_string(),
+            title: appointment.title,
+            appointment_kind: appointment.appointment_kind.as_str().to_string(),
+            starts_at: appointment.starts_at.to_rfc3339(),
+            ends_at: appointment.ends_at.to_rfc3339(),
+            notes: appointment.notes,
+            assigned_user_ids: appointment
+                .assigned_user_ids
+                .into_iter()
+                .map(|user_id| user_id.to_string())
+                .collect(),
+            created_at: appointment.created_at.to_rfc3339(),
+            updated_at: appointment.updated_at.to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct SiteAppointmentsQuery {
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct CreateSiteAppointmentRequest {
+    pub title: String,
+    pub appointment_kind: String,
+    pub starts_at: String,
+    pub ends_at: String,
+    pub notes: Option<String>,
+    #[serde(default)]
+    pub assigned_user_ids: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct UpdateSiteAppointmentRequest {
+    pub title: Option<String>,
+    pub appointment_kind: Option<String>,
+    pub starts_at: Option<String>,
+    pub ends_at: Option<String>,
+    pub notes: Option<String>,
+    pub clear_notes: Option<bool>,
+    pub assigned_user_ids: Option<Vec<String>>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
 pub struct TimeEntryResponse {
     pub id: String,
     pub site_id: Option<String>,
@@ -823,6 +899,153 @@ pub async fn list_assignments(
     Ok(Json(response))
 }
 
+pub async fn list_site_appointments(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+    Query(query): Query<SiteAppointmentsQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
+    );
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+
+    let starts_at = query.start_date.as_deref().map(parse_rfc3339).transpose()?;
+    let ends_at = query.end_date.as_deref().map(parse_rfc3339).transpose()?;
+
+    let appointments = service
+        .list_site_appointments(site_id, starts_at, ends_at, &ctx)
+        .await?;
+    let response: Vec<SiteAppointmentResponse> = appointments
+        .into_iter()
+        .map(SiteAppointmentResponse::from)
+        .collect();
+
+    Ok(Json(response))
+}
+
+pub async fn create_site_appointment(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+    Json(request): Json<CreateSiteAppointmentRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
+    );
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+
+    let appointment_kind = request
+        .appointment_kind
+        .parse::<SiteAppointmentKind>()
+        .map_err(AppError::Validation)?;
+    let starts_at = parse_rfc3339(&request.starts_at)?;
+    let ends_at = parse_rfc3339(&request.ends_at)?;
+    let assigned_user_ids = parse_user_ids(&request.assigned_user_ids)?;
+
+    let appointment = service
+        .create_site_appointment(
+            CreateSiteAppointment {
+                site_id,
+                title: request.title,
+                appointment_kind,
+                starts_at,
+                ends_at,
+                notes: request.notes,
+                assigned_user_ids,
+            },
+            &ctx,
+        )
+        .await?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(SiteAppointmentResponse::from(appointment)),
+    ))
+}
+
+pub async fn update_site_appointment(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path((id, appointment_id)): Path<(String, String)>,
+    Json(request): Json<UpdateSiteAppointmentRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
+    );
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+    let appointment_id = Uuid::parse_str(&appointment_id)
+        .map(SiteAppointmentId)
+        .map_err(|_| AppError::Validation("Invalid appointment ID".to_string()))?;
+
+    let appointment_kind = request
+        .appointment_kind
+        .map(|value| value.parse::<SiteAppointmentKind>())
+        .transpose()
+        .map_err(AppError::Validation)?;
+    let starts_at = request
+        .starts_at
+        .as_deref()
+        .map(parse_rfc3339)
+        .transpose()?;
+    let ends_at = request.ends_at.as_deref().map(parse_rfc3339).transpose()?;
+    let assigned_user_ids = request
+        .assigned_user_ids
+        .as_ref()
+        .map(|user_ids| parse_user_ids(user_ids))
+        .transpose()?;
+
+    let appointment = service
+        .update_site_appointment(
+            site_id,
+            appointment_id,
+            UpdateSiteAppointment {
+                title: request.title,
+                appointment_kind,
+                starts_at,
+                ends_at,
+                notes: if request.clear_notes.unwrap_or(false) {
+                    Some(None)
+                } else {
+                    request.notes.map(Some)
+                },
+                assigned_user_ids,
+            },
+            &ctx,
+        )
+        .await?;
+
+    Ok(Json(SiteAppointmentResponse::from(appointment)))
+}
+
+pub async fn delete_site_appointment(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path((id, appointment_id)): Path<(String, String)>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = SiteService::new(
+        crate::modules::sites::infrastructure::site_repository::SiteRepository::new(state.pool),
+    );
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+    let appointment_id = Uuid::parse_str(&appointment_id)
+        .map(SiteAppointmentId)
+        .map_err(|_| AppError::Validation("Invalid appointment ID".to_string()))?;
+
+    service
+        .delete_site_appointment(site_id, appointment_id, &ctx)
+        .await?;
+
+    Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
+}
+
 pub async fn list_site_time_entries(
     State(state): State<AppState>,
     ctx: TenantContext,
@@ -876,6 +1099,23 @@ pub async fn create_time_entry(
     let entry = service.create_time_entry(create, &ctx).await?;
 
     Ok((StatusCode::CREATED, Json(TimeEntryResponse::from(entry))))
+}
+
+fn parse_rfc3339(value: &str) -> Result<DateTime<Utc>, AppError> {
+    DateTime::parse_from_rfc3339(value)
+        .map(|value| value.with_timezone(&Utc))
+        .map_err(|_| AppError::Validation("Invalid datetime format (expected RFC3339)".to_string()))
+}
+
+fn parse_user_ids(values: &[String]) -> Result<Vec<UserId>, AppError> {
+    values
+        .iter()
+        .map(|value| {
+            Uuid::parse_str(value)
+                .map(UserId)
+                .map_err(|_| AppError::Validation("Invalid user ID".to_string()))
+        })
+        .collect()
 }
 
 pub async fn list_my_time_entries(
