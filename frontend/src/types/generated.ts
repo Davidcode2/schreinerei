@@ -18,7 +18,7 @@ export type AvailabilityResponse = { available: boolean, conflicts: Array<Confli
 
 export type CalendarEntryResponse = { resource_type: string, resource_id: string, resource_name: string, reservations: Array<ReservationSummaryResponse>, };
 
-export type CalendarQuery = { start_date: string, end_date: string, resource_type: string | null, };
+export type CalendarQuery = { start_date: string, end_date: string, resource_type: string | null, site_id: string | null, };
 
 export type CalendarResponse = { resources: Array<CalendarEntryResponse>, };
 
@@ -64,7 +64,7 @@ export type InviteUserRequest = { email: string, name: string | null, role: stri
 
 export type ListMaterialsQuery = { category_id: string | null, };
 
-export type ListReservationsQuery = { user_id: string | null, resource_type: string | null, resource_id: string | null, };
+export type ListReservationsQuery = { user_id: string | null, resource_type: string | null, resource_id: string | null, site_id: string | null, };
 
 export type ListSitesQuery = { status: string | null, };
 
@@ -99,7 +99,7 @@ export type QrSvgResponse = { svg: string, qr_code: string, };
 
 export type ReservationResponse = { id: string, resource_type: string, resource_id: string, resource_name: string, user_id: string, user_name: string | null, site_id: string | null, site_name: string | null, start_time: string, end_time: string, status: string, notes: string | null, created_at: string, updated_at: string, };
 
-export type ReservationSummaryResponse = { id: string, start_time: string, end_time: string, user_name: string | null, site_name: string | null, status: string, };
+export type ReservationSummaryResponse = { id: string, start_time: string, end_time: string, user_name: string | null, site_id: string | null, site_name: string | null, status: string, };
 
 export type SiteActivityAttachmentResponse = { attachment_id: string, filename: string, mime_type: string, url: string, thumbnail_url: string | null, };
 

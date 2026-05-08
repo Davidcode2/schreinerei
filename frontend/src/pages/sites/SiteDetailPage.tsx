@@ -34,6 +34,7 @@ import { CameraUploadFlow } from "./CameraUploadFlow"
 import { MediaViewer } from "./MediaViewer"
 import { ProjectAssignmentsSection } from "./ProjectAssignmentsSection"
 import { ProjectPlanningSheet } from "./ProjectPlanningSheet"
+import CalendarView from "@/pages/fleet/CalendarView"
 import {
   buildMediaViewerPath,
   buildSiteDetailPath,
@@ -443,8 +444,30 @@ export default function SiteDetailPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold">Projektplanung</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg bg-accent/25 p-3">
+                <p className="text-xs text-muted-foreground">Zeitraum</p>
+                <p className="mt-1 text-sm font-medium">
+                  {site.start_date || site.end_date
+                    ? `${formatDate(site.start_date)} – ${formatDate(site.end_date)}`
+                    : 'Noch kein Zeitraum geplant'}
+                </p>
+              </div>
+              <div className="rounded-lg bg-accent/25 p-3">
+                <p className="text-xs text-muted-foreground">Projektart</p>
+                <p className="mt-1 text-sm font-medium">
+                  {site.project_type === 'internal_workshop' ? 'Werkstattprojekt' : 'Baustelle'}
+                </p>
+              </div>
+            </div>
+
             <ProjectAssignmentsSection siteId={site.id} assignments={assignments || []} />
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Reservierungen im Projektkontext</p>
+              <CalendarView embedded siteId={site.id} />
+            </div>
           </CardContent>
         </Card>
 

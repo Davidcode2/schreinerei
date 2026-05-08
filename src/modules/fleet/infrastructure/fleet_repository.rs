@@ -546,124 +546,27 @@ impl FleetRepository {
         user_id: Option<UserId>,
         resource_type: Option<ResourceType>,
         resource_id: Option<Uuid>,
+        site_id: Option<crate::common::types::SiteId>,
     ) -> Result<Vec<Reservation>, AppError> {
-        let reservations = match (&user_id, &resource_type, &resource_id) {
-            (Some(uid), Some(rt), Some(rid)) => {
-                sqlx::query_as::<_, ReservationRow>(
-                    r#"
-                    SELECT id, tenant_id, resource_type, resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at
-                    FROM reservations
-                    WHERE tenant_id = $1 AND user_id = $2 AND resource_type = $3 AND resource_id = $4
-                    ORDER BY start_time DESC
-                    "#
-                )
-                .bind(tenant_id.0)
-                .bind(uid.0)
-                .bind(rt.as_str())
-                .bind(*rid)
-                .fetch_all(&self.pool)
-                .await
-            }
-            (Some(uid), Some(rt), None) => {
-                sqlx::query_as::<_, ReservationRow>(
-                    r#"
-                    SELECT id, tenant_id, resource_type, resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at
-                    FROM reservations
-                    WHERE tenant_id = $1 AND user_id = $2 AND resource_type = $3
-                    ORDER BY start_time DESC
-                    "#
-                )
-                .bind(tenant_id.0)
-                .bind(uid.0)
-                .bind(rt.as_str())
-                .fetch_all(&self.pool)
-                .await
-            }
-            (Some(uid), None, None) => {
-                sqlx::query_as::<_, ReservationRow>(
-                    r#"
-                    SELECT id, tenant_id, resource_type, resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at
-                    FROM reservations
-                    WHERE tenant_id = $1 AND user_id = $2
-                    ORDER BY start_time DESC
-                    "#
-                )
-                .bind(tenant_id.0)
-                .bind(uid.0)
-                .fetch_all(&self.pool)
-                .await
-            }
-            (None, Some(rt), Some(rid)) => {
-                sqlx::query_as::<_, ReservationRow>(
-                    r#"
-                    SELECT id, tenant_id, resource_type, resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at
-                    FROM reservations
-                    WHERE tenant_id = $1 AND resource_type = $2 AND resource_id = $3
-                    ORDER BY start_time DESC
-                    "#
-                )
-                .bind(tenant_id.0)
-                .bind(rt.as_str())
-                .bind(*rid)
-                .fetch_all(&self.pool)
-                .await
-            }
-            (None, Some(rt), None) => {
-                sqlx::query_as::<_, ReservationRow>(
-                    r#"
-                    SELECT id, tenant_id, resource_type, resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at
-                    FROM reservations
-                    WHERE tenant_id = $1 AND resource_type = $2
-                    ORDER BY start_time DESC
-                    "#
-                )
-                .bind(tenant_id.0)
-                .bind(rt.as_str())
-                .fetch_all(&self.pool)
-                .await
-            }
-            (None, None, Some(rid)) => {
-                sqlx::query_as::<_, ReservationRow>(
-                    r#"
-                    SELECT id, tenant_id, resource_type, resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at
-                    FROM reservations
-                    WHERE tenant_id = $1 AND resource_id = $2
-                    ORDER BY start_time DESC
-                    "#
-                )
-                .bind(tenant_id.0)
-                .bind(*rid)
-                .fetch_all(&self.pool)
-                .await
-            }
-            (None, None, None) => {
-                sqlx::query_as::<_, ReservationRow>(
-                    r#"
-                    SELECT id, tenant_id, resource_type, resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at
-                    FROM reservations
-                    WHERE tenant_id = $1
-                    ORDER BY start_time DESC
-                    "#
-                )
-                .bind(tenant_id.0)
-                .fetch_all(&self.pool)
-                .await
-            }
-            // Other combinations (uid, None, rid) - not matched above
-            _ => {
-                sqlx::query_as::<_, ReservationRow>(
-                    r#"
-                    SELECT id, tenant_id, resource_type, resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at
-                    FROM reservations
-                    WHERE tenant_id = $1
-                    ORDER BY start_time DESC
-                    "#
-                )
-                .bind(tenant_id.0)
-                .fetch_all(&self.pool)
-                .await
-            }
-        }
+        let reservations = sqlx::query_as::<_, ReservationRow>(
+            r#"
+            SELECT id, tenant_id, resource_type, resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at
+            FROM reservations
+            WHERE tenant_id = $1
+              AND ($2::uuid IS NULL OR user_id = $2)
+              AND ($3::text IS NULL OR resource_type = $3)
+              AND ($4::uuid IS NULL OR resource_id = $4)
+              AND ($5::uuid IS NULL OR site_id = $5)
+            ORDER BY start_time DESC
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(user_id.map(|value| value.0))
+        .bind(resource_type.as_ref().map(|value| value.as_str()))
+        .bind(resource_id)
+        .bind(site_id.map(|value| value.0))
+        .fetch_all(&self.pool)
+        .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(reservations
@@ -802,6 +705,7 @@ impl FleetRepository {
                 r.start_time, 
                 r.end_time, 
                 COALESCE(NULLIF(u.name, ''), u.email, r.user_id::text) as user_name,
+                r.site_id,
                 s.name as site_name,
                 r.status
             FROM reservations r
@@ -834,6 +738,7 @@ impl FleetRepository {
         start_date: DateTime<Utc>,
         end_date: DateTime<Utc>,
         resource_type: Option<ResourceType>,
+        site_id: Option<crate::common::types::SiteId>,
     ) -> Result<Vec<CalendarEntry>, AppError> {
         // First get all resources with their reservations
         let rows = sqlx::query_as::<_, CalendarRow>(
@@ -858,6 +763,7 @@ impl FleetRepository {
                             'start_time', res.start_time,
                             'end_time', res.end_time,
                             'user_name', COALESCE(NULLIF(u.name, ''), u.email, res.user_id::text),
+                            'site_id', res.site_id,
                             'site_name', s.name,
                             'status', res.status
                         )
@@ -866,12 +772,13 @@ impl FleetRepository {
                 ) as reservations
             FROM resources r
             LEFT JOIN reservations res ON res.resource_id = r.id 
-                AND res.tenant_id = $1 
-                AND res.status != 'cancelled'
-                AND (res.start_time, res.end_time) OVERLAPS ($2, $3)
-            LEFT JOIN users u ON u.id = res.user_id
-            LEFT JOIN sites s ON s.id = res.site_id
-            WHERE ($4::text IS NULL OR r.resource_type = $4)
+                 AND res.tenant_id = $1 
+                 AND res.status != 'cancelled'
+                 AND (res.start_time, res.end_time) OVERLAPS ($2, $3)
+                 AND ($5::uuid IS NULL OR res.site_id = $5)
+             LEFT JOIN users u ON u.id = res.user_id
+             LEFT JOIN sites s ON s.id = res.site_id
+             WHERE ($4::text IS NULL OR r.resource_type = $4)
             GROUP BY r.resource_type, r.id, r.name
             ORDER BY r.resource_type, r.name
             "#,
@@ -880,6 +787,7 @@ impl FleetRepository {
         .bind(start_date)
         .bind(end_date)
         .bind(resource_type.as_ref().map(|rt| rt.as_str()))
+        .bind(site_id.map(|value| value.0))
         .fetch_all(&self.pool)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -937,6 +845,7 @@ impl FleetRepository {
             r#"
             SELECT res.id, res.start_time, res.end_time,
                    COALESCE(NULLIF(u.name, ''), u.email, res.user_id::text) as user_name,
+                   res.site_id,
                    s.name as site_name, res.status
             FROM reservations res
             LEFT JOIN users u ON u.id = res.user_id
@@ -962,6 +871,7 @@ impl FleetRepository {
             r#"
             SELECT res.id, res.start_time, res.end_time,
                    COALESCE(NULLIF(u.name, ''), u.email, res.user_id::text) as user_name,
+                   res.site_id,
                    s.name as site_name, res.status
             FROM reservations res
             LEFT JOIN users u ON u.id = res.user_id
@@ -1152,6 +1062,7 @@ pub struct ReservationSummary {
     pub start_time: DateTime<Utc>,
     pub end_time: DateTime<Utc>,
     pub user_name: Option<String>,
+    pub site_id: Option<crate::common::types::SiteId>,
     pub site_name: Option<String>,
     pub status: ReservationStatus,
 }
@@ -1191,6 +1102,7 @@ struct ReservationSummaryRow {
     start_time: DateTime<Utc>,
     end_time: DateTime<Utc>,
     user_name: Option<String>,
+    site_id: Option<Uuid>,
     site_name: Option<String>,
     status: String,
 }
@@ -1202,6 +1114,7 @@ impl ReservationSummaryRow {
             start_time: self.start_time,
             end_time: self.end_time,
             user_name: self.user_name,
+            site_id: self.site_id.map(crate::common::types::SiteId),
             site_name: self.site_name,
             status: self.status.parse().unwrap_or(ReservationStatus::Pending),
         }

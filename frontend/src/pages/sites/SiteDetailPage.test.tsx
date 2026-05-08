@@ -26,6 +26,10 @@ const site = {
   created_at: new Date().toISOString(),
 }
 
+function emptyCalendarResponse() {
+  return HttpResponse.json({ resources: [] })
+}
+
 describe('SiteDetailPage', () => {
   function setAdminUser() {
     useAuthStore.setState({
@@ -50,7 +54,8 @@ describe('SiteDetailPage', () => {
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
+      http.get('*/api/v1/fleet/calendar*', emptyCalendarResponse)
     )
 
     render(
@@ -60,7 +65,7 @@ describe('SiteDetailPage', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Werkstattprojekt')).toBeInTheDocument()
+      expect(screen.getAllByText('Werkstattprojekt').length).toBeGreaterThan(0)
       expect(screen.getAllByText('Projekt-Timeline').length).toBeGreaterThan(0)
       expect(
         screen.getByText(/Der zentrale Ort für Notizen, Fotos und Dokumente/i)
@@ -76,7 +81,8 @@ describe('SiteDetailPage', () => {
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
+      http.get('*/api/v1/fleet/calendar*', emptyCalendarResponse)
     )
 
     render(
@@ -106,7 +112,8 @@ describe('SiteDetailPage', () => {
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
+      http.get('*/api/v1/fleet/calendar*', emptyCalendarResponse)
     )
 
     render(
@@ -155,7 +162,8 @@ describe('SiteDetailPage', () => {
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
+      http.get('*/api/v1/fleet/calendar*', emptyCalendarResponse)
     )
 
     render(
@@ -212,7 +220,8 @@ describe('SiteDetailPage', () => {
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
+      http.get('*/api/v1/fleet/calendar*', emptyCalendarResponse)
     )
 
     render(
@@ -228,5 +237,54 @@ describe('SiteDetailPage', () => {
       expect(createObjectUrlSpy).toHaveBeenCalled()
       expect(revokeObjectUrlSpy).toHaveBeenCalledWith('blob:invoice-summary')
     })
+  })
+
+  it('shows the embedded project planning calendar filtered to the current project', async () => {
+    window.history.pushState({}, '', '/sites/site-1')
+
+    server.use(
+      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
+      http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
+        labor: { total_hours: 0, entry_count: 0, site_hours: 0, workshop_hours: 0, last_work_date: null },
+        materials: { distinct_material_count: 0, withdrawal_count: 0, lines: [] },
+      })),
+      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([])),
+      http.get('*/api/v1/fleet/calendar*', ({ request }) => {
+        const url = new URL(request.url)
+        expect(url.searchParams.get('site_id')).toBe('site-1')
+        return HttpResponse.json({
+          resources: [
+            {
+              resource_type: 'vehicle',
+              resource_id: 'veh-1',
+              resource_name: 'Sprinter',
+              reservations: [
+                {
+                  id: 'res-1',
+                  start_time: new Date().toISOString(),
+                  end_time: new Date().toISOString(),
+                  user_name: 'Max Mustermann',
+                  site_id: 'site-1',
+                  site_name: 'CNC Vorbereitung',
+                  status: 'confirmed',
+                },
+              ],
+            },
+          ],
+        })
+      })
+    )
+
+    render(
+      <Routes>
+        <Route path="/sites/:id" element={<SiteDetailPage />} />
+      </Routes>
+    )
+
+    expect(await screen.findByText('Reservierungen im Projektkontext')).toBeInTheDocument()
+    expect(await screen.findByText('Sprinter')).toBeInTheDocument()
   })
 })
