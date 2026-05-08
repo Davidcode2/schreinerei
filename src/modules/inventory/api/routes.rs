@@ -258,6 +258,9 @@ pub struct StockInRequest {
     pub notes: Option<String>,
     pub expires_on: Option<String>,
     pub batch_code: Option<String>,
+    pub supplier_name: Option<String>,
+    pub receipt_reference: Option<String>,
+    pub receipt_date: Option<String>,
 }
 
 impl From<crate::modules::inventory::domain::MaterialBatchSummary> for ExpiryBatchResponse {
@@ -865,6 +868,9 @@ pub async fn stock_in_material(
                 notes: request.notes,
                 expires_on: parse_optional_date(request.expires_on, "MHD")?,
                 batch_code: normalize_optional_text(request.batch_code),
+                supplier_name: normalize_optional_text(request.supplier_name),
+                receipt_reference: normalize_optional_text(request.receipt_reference),
+                receipt_date: parse_optional_date(request.receipt_date, "Belegdatum")?,
             },
             &ctx,
         )
@@ -1169,6 +1175,9 @@ mod tests {
             notes: Some("Lieferschein 1234".to_string()),
             expires_on: Some("2026-05-20".to_string()),
             batch_code: Some("LOT-2026-05".to_string()),
+            supplier_name: Some("HolzLand".to_string()),
+            receipt_reference: Some("LS-1234".to_string()),
+            receipt_date: Some("2026-05-18".to_string()),
         };
         let stock_in = StockIn {
             material_id: MaterialId::new(),
@@ -1176,6 +1185,9 @@ mod tests {
             notes: request.notes.clone(),
             expires_on: Some(NaiveDate::from_ymd_opt(2026, 5, 20).unwrap()),
             batch_code: normalize_optional_text(request.batch_code.clone()),
+            supplier_name: normalize_optional_text(request.supplier_name.clone()),
+            receipt_reference: normalize_optional_text(request.receipt_reference.clone()),
+            receipt_date: Some(NaiveDate::from_ymd_opt(2026, 5, 18).unwrap()),
         };
 
         assert_eq!(stock_in.notes, Some("Lieferschein 1234".to_string()));
@@ -1184,6 +1196,12 @@ mod tests {
             Some(NaiveDate::from_ymd_opt(2026, 5, 20).unwrap())
         );
         assert_eq!(stock_in.batch_code, Some("LOT-2026-05".to_string()));
+        assert_eq!(stock_in.supplier_name, Some("HolzLand".to_string()));
+        assert_eq!(stock_in.receipt_reference, Some("LS-1234".to_string()));
+        assert_eq!(
+            stock_in.receipt_date,
+            Some(NaiveDate::from_ymd_opt(2026, 5, 18).unwrap())
+        );
         assert!(stock_in.validate().is_ok());
 
         let invalid = StockIn {
@@ -1192,6 +1210,9 @@ mod tests {
             notes: None,
             expires_on: None,
             batch_code: None,
+            supplier_name: None,
+            receipt_reference: None,
+            receipt_date: None,
         };
         assert_eq!(
             invalid.validate(),

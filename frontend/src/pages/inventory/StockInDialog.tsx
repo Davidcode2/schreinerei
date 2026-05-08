@@ -18,7 +18,15 @@ interface StockInDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   material: Material
-  onConfirm: (quantity: number, notes?: string, expiresOn?: string, batchCode?: string) => void
+  onConfirm: (
+    quantity: number,
+    notes?: string,
+    expiresOn?: string,
+    batchCode?: string,
+    supplierName?: string,
+    receiptReference?: string,
+    receiptDate?: string
+  ) => void
   isLoading: boolean
 }
 
@@ -33,6 +41,9 @@ export function StockInDialog({
   const [notes, setNotes] = useState("")
   const [expiresOn, setExpiresOn] = useState("")
   const [batchCode, setBatchCode] = useState("")
+  const [supplierName, setSupplierName] = useState("")
+  const [receiptReference, setReceiptReference] = useState("")
+  const [receiptDate, setReceiptDate] = useState("")
 
   useEffect(() => {
     if (open) {
@@ -40,6 +51,9 @@ export function StockInDialog({
       setNotes("")
       setExpiresOn("")
       setBatchCode("")
+      setSupplierName("")
+      setReceiptReference("")
+      setReceiptDate("")
     }
   }, [open])
 
@@ -114,6 +128,40 @@ export function StockInDialog({
               </div>
             </div>
           )}
+
+          <div className="space-y-4 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
+            <p className="text-sm font-medium">Wareneingang</p>
+
+            <div className="space-y-2">
+              <Label htmlFor="stock-in-supplier">Lieferant</Label>
+              <Input
+                id="stock-in-supplier"
+                placeholder="optional, z. B. HolzLand"
+                value={supplierName}
+                onChange={(event) => setSupplierName(event.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="stock-in-reference">Belegnummer</Label>
+              <Input
+                id="stock-in-reference"
+                placeholder="optional, z. B. LS-1234"
+                value={receiptReference}
+                onChange={(event) => setReceiptReference(event.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="stock-in-receipt-date">Belegdatum</Label>
+              <Input
+                id="stock-in-receipt-date"
+                type="date"
+                value={receiptDate}
+                onChange={(event) => setReceiptDate(event.target.value)}
+              />
+            </div>
+          </div>
         </div>
 
         <DialogFooter>
@@ -126,7 +174,10 @@ export function StockInDialog({
                 parsedQuantity,
                 notes || undefined,
                 expiresOn || undefined,
-                batchCode || undefined
+                batchCode || undefined,
+                supplierName || undefined,
+                receiptReference || undefined,
+                receiptDate || undefined
               )
             }
             disabled={isSubmitDisabled}

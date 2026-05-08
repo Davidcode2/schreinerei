@@ -257,6 +257,9 @@ describe("inventory mutations", () => {
       notes: "Lieferung 1234",
       expires_on: "2026-05-20",
       batch_code: "LOT-2026-05",
+      supplier_name: "HolzLand",
+      receipt_reference: "LS-1234",
+      receipt_date: "2026-05-18",
     })
 
     expect(apiClient.post).toHaveBeenCalledWith(
@@ -266,6 +269,9 @@ describe("inventory mutations", () => {
         notes: "Lieferung 1234",
         expires_on: "2026-05-20",
         batch_code: "LOT-2026-05",
+        supplier_name: "HolzLand",
+        receipt_reference: "LS-1234",
+        receipt_date: "2026-05-18",
       }
     )
     expect(invalidateQueries).toHaveBeenNthCalledWith(1, { queryKey: ["materials"] })

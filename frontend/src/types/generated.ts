@@ -106,7 +106,7 @@ export type SiteStockHistoryResponse = { id: string, material_id: string, materi
  */
 export type StockEntryResponse = { id: string, quantity_change: number, quantity_after: number, notes: string | null, site_id: string | null, site_name: string | null, created_at: string, };
 
-export type StockInRequest = { quantity: number, notes: string | null, expires_on: string | null, batch_code: string | null, };
+export type StockInRequest = { quantity: number, notes: string | null, expires_on: string | null, batch_code: string | null, supplier_name: string | null, receipt_reference: string | null, receipt_date: string | null, };
 
 export type TimeEntryResponse = { id: string, site_id: string | null, user_id: string, work_type: string, hours: number, work_date: string, notes: string | null, created_at: string, };
 

@@ -28,6 +28,20 @@ struct BatchWrite<'a> {
     created_at: DateTime<Utc>,
 }
 
+struct GoodsReceiptWrite<'a> {
+    tenant_id: TenantId,
+    material_id: MaterialId,
+    received_by: UserId,
+    quantity: i32,
+    supplier_name: Option<&'a str>,
+    receipt_reference: Option<&'a str>,
+    receipt_date: Option<NaiveDate>,
+    notes: Option<&'a str>,
+    batch_code: Option<&'a str>,
+    expires_on: Option<NaiveDate>,
+    created_at: DateTime<Utc>,
+}
+
 impl MaterialRepository {
     const EXPIRY_WARNING_DAYS: i64 = 10;
 
@@ -725,6 +739,24 @@ impl MaterialRepository {
         )
         .await?;
 
+        self.insert_goods_receipt(
+            &mut tx,
+            &GoodsReceiptWrite {
+                tenant_id,
+                material_id: stock_in.material_id,
+                received_by: user_id,
+                quantity: stock_in.quantity,
+                supplier_name: stock_in.supplier_name.as_deref(),
+                receipt_reference: stock_in.receipt_reference.as_deref(),
+                receipt_date: stock_in.receipt_date,
+                notes: stock_in.notes.as_deref(),
+                batch_code: stock_in.batch_code.as_deref(),
+                expires_on: stock_in.expires_on,
+                created_at: Utc::now(),
+            },
+        )
+        .await?;
+
         if current.can_expire {
             self.insert_batch(
                 &mut tx,
@@ -1046,6 +1078,53 @@ impl MaterialRepository {
         .execute(&mut **tx)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+        Ok(())
+    }
+
+    async fn insert_goods_receipt(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        receipt: &GoodsReceiptWrite<'_>,
+    ) -> Result<(), AppError> {
+        let receipt_id = Uuid::new_v4();
+
+        sqlx::query(
+            r#"
+            INSERT INTO goods_receipts (id, tenant_id, received_by, supplier_name, receipt_reference, receipt_date, notes, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
+            "#,
+        )
+        .bind(receipt_id)
+        .bind(receipt.tenant_id.0)
+        .bind(receipt.received_by.0)
+        .bind(receipt.supplier_name)
+        .bind(receipt.receipt_reference)
+        .bind(receipt.receipt_date)
+        .bind(receipt.notes)
+        .bind(receipt.created_at)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO goods_receipt_lines (id, receipt_id, tenant_id, material_id, quantity, batch_code, expires_on, notes, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            "#,
+        )
+        .bind(Uuid::new_v4())
+        .bind(receipt_id)
+        .bind(receipt.tenant_id.0)
+        .bind(receipt.material_id.0)
+        .bind(receipt.quantity)
+        .bind(receipt.batch_code)
+        .bind(receipt.expires_on)
+        .bind(receipt.notes)
+        .bind(receipt.created_at)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
         Ok(())
     }
 

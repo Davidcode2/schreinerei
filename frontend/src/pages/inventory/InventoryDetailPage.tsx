@@ -162,7 +162,10 @@ export default function InventoryDetailPage() {
     quantity: number,
     notes?: string,
     expiresOn?: string,
-    batchCode?: string
+    batchCode?: string,
+    supplierName?: string,
+    receiptReference?: string,
+    receiptDate?: string
   ) => {
     try {
       await stockInMutation.mutateAsync({
@@ -171,6 +174,9 @@ export default function InventoryDetailPage() {
         notes: notes ?? null,
         expires_on: expiresOn ?? null,
         batch_code: batchCode ?? null,
+        supplier_name: supplierName ?? null,
+        receipt_reference: receiptReference ?? null,
+        receipt_date: receiptDate ?? null,
       })
       toast.success(`${quantity} ${material.unit} eingelagert`)
       setShowStockInDialog(false)

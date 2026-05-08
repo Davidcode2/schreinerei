@@ -164,6 +164,9 @@ pub struct StockIn {
     pub notes: Option<String>,
     pub expires_on: Option<NaiveDate>,
     pub batch_code: Option<String>,
+    pub supplier_name: Option<String>,
+    pub receipt_reference: Option<String>,
+    pub receipt_date: Option<NaiveDate>,
 }
 
 impl StockIn {
@@ -493,6 +496,9 @@ mod tests {
             notes: Some("Delivery arrived".to_string()),
             expires_on: None,
             batch_code: None,
+            supplier_name: None,
+            receipt_reference: None,
+            receipt_date: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -505,6 +511,9 @@ mod tests {
             notes: None,
             expires_on: None,
             batch_code: None,
+            supplier_name: None,
+            receipt_reference: None,
+            receipt_date: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -517,6 +526,9 @@ mod tests {
             notes: None,
             expires_on: None,
             batch_code: None,
+            supplier_name: None,
+            receipt_reference: None,
+            receipt_date: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -532,6 +544,9 @@ mod tests {
             notes: None,
             expires_on: None,
             batch_code: None,
+            supplier_name: None,
+            receipt_reference: None,
+            receipt_date: None,
         };
         assert_eq!(
             cmd.validate(),

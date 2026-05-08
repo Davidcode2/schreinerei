@@ -196,7 +196,7 @@ describe("InventoryDetailPage interactions", () => {
     ).toBeTruthy()
   })
 
-  it("submits stock-in with quantity, optional notes, and batch metadata", async () => {
+  it("submits stock-in with quantity, batch metadata, and receipt fields", async () => {
     const user = userEvent.setup()
     let stockInPayload: unknown = null
 
@@ -228,6 +228,9 @@ describe("InventoryDetailPage interactions", () => {
     await user.type(screen.getByLabelText(/notizen/i), "Lieferung HolzLand")
     await user.type(screen.getByLabelText(/mhd/i), "2026-05-20")
     await user.type(screen.getByLabelText(/charge \/ los/i), "LOT-2026-05")
+    await user.type(screen.getByLabelText(/lieferant/i), "HolzLand")
+    await user.type(screen.getByLabelText(/belegnummer/i), "LS-1234")
+    await user.type(screen.getByLabelText(/belegdatum/i), "2026-05-18")
     await user.click(screen.getByRole("button", { name: /einlagern$/i }))
 
     await waitFor(() => {
@@ -236,6 +239,9 @@ describe("InventoryDetailPage interactions", () => {
         notes: "Lieferung HolzLand",
         expires_on: "2026-05-20",
         batch_code: "LOT-2026-05",
+        supplier_name: "HolzLand",
+        receipt_reference: "LS-1234",
+        receipt_date: "2026-05-18",
       })
     })
 
