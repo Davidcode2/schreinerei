@@ -106,11 +106,11 @@ function toIso(datetimeLocal: string): string {
   return new Date(datetimeLocal).toISOString()
 }
 
-function defaultDraft(day?: Date): PlannerDraft {
+function defaultDraft(day?: Date, hour: number = 8): PlannerDraft {
   const base = day ? new Date(day) : new Date()
-  base.setHours(8, 0, 0, 0)
+  base.setHours(hour, 0, 0, 0)
   const end = new Date(base)
-  end.setHours(base.getHours() + 2)
+  end.setHours(Math.min(base.getHours() + 2, endHour), 0, 0, 0)
 
   return {
     title: "",
@@ -169,6 +169,14 @@ function formatTimeRange(start: string, end: string) {
   })}`
 }
 
+function formatSlotLabel(day: Date, hour: number) {
+  return `${day.toLocaleDateString("de-DE", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+  })} um ${String(hour).padStart(2, "0")}:00`
+}
+
 export function SitePlanningCalendar({
   siteId,
   assignments,
@@ -217,8 +225,8 @@ export function SitePlanningCalendar({
 
   const isSaving = createAppointment.isPending || updateAppointment.isPending
 
-  function openCreateDialog(day?: Date) {
-    setDraft(defaultDraft(day))
+  function openCreateDialog(day?: Date, hour?: number) {
+    setDraft(defaultDraft(day, hour))
     setDialogOpen(true)
   }
 
@@ -429,11 +437,22 @@ export function SitePlanningCalendar({
                     style={{ height: totalVisibleHours * hourSlotHeight }}
                   >
                     {Array.from({ length: totalVisibleHours }).map((_, index) => (
-                      <div
-                        key={index}
-                        className="border-b border-dashed border-border/70"
-                        style={{ height: hourSlotHeight }}
-                      />
+                      canEdit ? (
+                        <button
+                          key={index}
+                          type="button"
+                          className="block w-full border-b border-dashed border-border/70 text-left transition-colors hover:bg-accent/30 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ring"
+                          style={{ height: hourSlotHeight }}
+                          aria-label={`Termin am ${formatSlotLabel(day, startHour + index)} erstellen`}
+                          onClick={() => openCreateDialog(day, startHour + index)}
+                        />
+                      ) : (
+                        <div
+                          key={index}
+                          className="border-b border-dashed border-border/70"
+                          style={{ height: hourSlotHeight }}
+                        />
+                      )
                     ))}
 
                     {dayAppointments.map((appointment) => {
