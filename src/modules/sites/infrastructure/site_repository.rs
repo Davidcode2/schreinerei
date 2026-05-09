@@ -15,6 +15,9 @@ use crate::modules::sites::domain::{
     SiteActivityAttachment, SiteAppointment, SiteAppointmentKind, SiteAssignment, TimeEntry,
     UpdateSite, UpdateSiteAppointment, UpdateTimeEntry,
 };
+use crate::modules::sites::infrastructure::site_read_model::{
+    classify_cost_basis, SiteReadModelRepository,
+};
 
 /// Repository for site data access with tenant isolation
 pub struct SiteRepository {
@@ -1177,52 +1180,13 @@ impl SiteRepository {
         tenant_id: TenantId,
         filter: &SiteHistoryReportFilter,
     ) -> Result<Vec<SiteHistoryReportRow>, AppError> {
-        let rows = sqlx::query_as::<_, SiteHistoryReportRowDb>(
+        let base_rows = sqlx::query_as::<_, SiteHistoryBaseRow>(
             r#"
-            WITH labor AS (
-                SELECT
-                    te.site_id,
-                    COALESCE(SUM(te.hours), 0)::FLOAT8 AS total_hours,
-                    COUNT(DISTINCT te.user_id)::INT8 AS worker_count
-                FROM time_entries te
-                WHERE te.tenant_id = $1
-                GROUP BY te.site_id
-            ),
-            materials AS (
-                SELECT
-                    se.site_id,
-                    COUNT(DISTINCT se.material_id)::INT8 AS distinct_material_count,
-                    COUNT(*)::INT8 AS withdrawal_count
-                FROM stock_entries se
-                WHERE se.tenant_id = $1 AND se.entry_type = 'withdrawn'
-                GROUP BY se.site_id
-            )
             SELECT
-                s.id AS site_id,
-                s.project_type,
-                s.name,
-                s.customer_name,
-                s.status,
-                s.start_date,
-                s.end_date,
-                s.estimated_days,
-                s.budget_amount_cents,
-                s.billing_reference,
-                s.quote_reference,
-                COALESCE(l.total_hours, 0)::FLOAT8 AS total_hours,
-                COALESCE(l.worker_count, 0)::INT8 AS worker_count,
-                COALESCE(m.distinct_material_count, 0)::INT8 AS distinct_material_count,
-                COALESCE(m.withdrawal_count, 0)::INT8 AS withdrawal_count,
-                CASE
-                    WHEN s.budget_amount_cents IS NOT NULL AND (s.billing_reference IS NOT NULL OR s.quote_reference IS NOT NULL) THEN 'invoice_ready'
-                    WHEN s.budget_amount_cents IS NOT NULL AND (COALESCE(l.total_hours, 0) > 0 OR COALESCE(m.withdrawal_count, 0) > 0) THEN 'budget_vs_actual'
-                    WHEN s.budget_amount_cents IS NOT NULL THEN 'budget_only'
-                    WHEN COALESCE(l.total_hours, 0) > 0 OR COALESCE(m.withdrawal_count, 0) > 0 THEN 'actuals_only'
-                    ELSE 'none'
-                END AS cost_basis
+                s.id, s.project_type, s.name, s.customer_name, s.status,
+                s.start_date, s.end_date, s.estimated_days,
+                s.budget_amount_cents, s.billing_reference, s.quote_reference
             FROM sites s
-            LEFT JOIN labor l ON l.site_id = s.id
-            LEFT JOIN materials m ON m.site_id = s.id
             WHERE s.tenant_id = $1
               AND s.deleted_at IS NULL
               AND s.status IN ('completed', 'archived')
@@ -1234,18 +1198,6 @@ impl SiteRepository {
                 ))
               AND ($5::date IS NULL OR s.end_date >= $5 OR s.start_date >= $5)
               AND ($6::date IS NULL OR s.start_date <= $6 OR s.end_date <= $6)
-              AND ($7::float8 IS NULL OR COALESCE(l.total_hours, 0) >= $7)
-              AND ($8::float8 IS NULL OR COALESCE(l.total_hours, 0) <= $8)
-              AND (
-                    $9::text IS NULL OR
-                    CASE
-                        WHEN s.budget_amount_cents IS NOT NULL AND (s.billing_reference IS NOT NULL OR s.quote_reference IS NOT NULL) THEN 'invoice_ready'
-                        WHEN s.budget_amount_cents IS NOT NULL AND (COALESCE(l.total_hours, 0) > 0 OR COALESCE(m.withdrawal_count, 0) > 0) THEN 'budget_vs_actual'
-                        WHEN s.budget_amount_cents IS NOT NULL THEN 'budget_only'
-                        WHEN COALESCE(l.total_hours, 0) > 0 OR COALESCE(m.withdrawal_count, 0) > 0 THEN 'actuals_only'
-                        ELSE 'none'
-                    END = $9
-              )
             ORDER BY COALESCE(s.end_date, s.start_date) DESC NULLS LAST, s.name ASC
             "#,
         )
@@ -1255,17 +1207,76 @@ impl SiteRepository {
         .bind(filter.worker_id.map(|value| value.0))
         .bind(filter.date_from)
         .bind(filter.date_to)
-        .bind(filter.duration_min_hours)
-        .bind(filter.duration_max_hours)
-        .bind(filter.cost_basis.as_deref())
         .fetch_all(&self.pool)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-        Ok(rows
+        let site_ids: Vec<SiteId> = base_rows.iter().map(|r| SiteId(r.id)).collect();
+        let read_model = SiteReadModelRepository::new(self.pool.clone());
+        let labor_map = read_model
+            .get_labor_summaries(tenant_id, Some(&site_ids))
+            .await?;
+        let material_map = read_model
+            .get_material_withdrawal_totals(tenant_id, Some(&site_ids))
+            .await?;
+
+        let results: Vec<SiteHistoryReportRow> = base_rows
             .into_iter()
-            .map(SiteHistoryReportRowDb::into_row)
-            .collect())
+            .filter_map(|row| {
+                let site_id = SiteId(row.id);
+                let labor = labor_map.get(&site_id).copied().unwrap_or_default();
+                let material = material_map.get(&site_id).copied().unwrap_or_default();
+
+                if let Some(min_hours) = filter.duration_min_hours {
+                    if labor.total_hours < min_hours {
+                        return None;
+                    }
+                }
+                if let Some(max_hours) = filter.duration_max_hours {
+                    if labor.total_hours > max_hours {
+                        return None;
+                    }
+                }
+
+                let cost_basis = classify_cost_basis(
+                    row.budget_amount_cents,
+                    row.billing_reference.as_deref(),
+                    row.quote_reference.as_deref(),
+                    labor.total_hours,
+                    material.withdrawal_count,
+                );
+
+                if let Some(ref filter_basis) = filter.cost_basis {
+                    if cost_basis != filter_basis.as_str() {
+                        return None;
+                    }
+                }
+
+                Some(SiteHistoryReportRow {
+                    site_id,
+                    project_type: row
+                        .project_type
+                        .parse()
+                        .unwrap_or(ProjectType::ExternalSite),
+                    name: row.name,
+                    customer_name: row.customer_name,
+                    status: row.status,
+                    start_date: row.start_date,
+                    end_date: row.end_date,
+                    estimated_days: row.estimated_days,
+                    budget_amount_cents: row.budget_amount_cents,
+                    billing_reference: row.billing_reference,
+                    quote_reference: row.quote_reference,
+                    total_hours: labor.total_hours,
+                    worker_count: labor.worker_count,
+                    distinct_material_count: material.distinct_material_count,
+                    withdrawal_count: material.withdrawal_count,
+                    cost_basis: cost_basis.to_string(),
+                })
+            })
+            .collect();
+
+        Ok(results)
     }
 
     // === Event publishing ===
@@ -1527,8 +1538,8 @@ struct ProjectLaborSummaryRow {
 }
 
 #[derive(Debug, FromRow)]
-struct SiteHistoryReportRowDb {
-    site_id: Uuid,
+struct SiteHistoryBaseRow {
+    id: Uuid,
     project_type: String,
     name: String,
     customer_name: String,
@@ -1539,11 +1550,6 @@ struct SiteHistoryReportRowDb {
     budget_amount_cents: Option<i64>,
     billing_reference: Option<String>,
     quote_reference: Option<String>,
-    total_hours: f64,
-    worker_count: i64,
-    distinct_material_count: i64,
-    withdrawal_count: i64,
-    cost_basis: String,
 }
 
 impl DashboardSiteRow {
@@ -1576,32 +1582,6 @@ impl ProjectLaborSummaryRow {
             site_hours: self.site_hours,
             workshop_hours: self.workshop_hours,
             last_work_date: self.last_work_date,
-        }
-    }
-}
-
-impl SiteHistoryReportRowDb {
-    fn into_row(self) -> SiteHistoryReportRow {
-        SiteHistoryReportRow {
-            site_id: SiteId(self.site_id),
-            project_type: self
-                .project_type
-                .parse()
-                .unwrap_or(ProjectType::ExternalSite),
-            name: self.name,
-            customer_name: self.customer_name,
-            status: self.status,
-            start_date: self.start_date,
-            end_date: self.end_date,
-            estimated_days: self.estimated_days,
-            budget_amount_cents: self.budget_amount_cents,
-            billing_reference: self.billing_reference,
-            quote_reference: self.quote_reference,
-            total_hours: self.total_hours,
-            worker_count: self.worker_count,
-            distinct_material_count: self.distinct_material_count,
-            withdrawal_count: self.withdrawal_count,
-            cost_basis: self.cost_basis,
         }
     }
 }
