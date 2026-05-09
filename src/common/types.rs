@@ -485,6 +485,33 @@ impl FromStr for AssignmentRole {
     }
 }
 
+/// Asset identifier - wraps UUID
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct AssetId(pub Uuid);
+
+impl AssetId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+
+    pub fn parse(s: &str) -> Result<Self, uuid::Error> {
+        Uuid::parse_str(s).map(Self)
+    }
+}
+
+impl Default for AssetId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for AssetId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 /// Vehicle identifier - wraps UUID
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -516,6 +543,33 @@ impl fmt::Display for VehicleId {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct ToolId(pub Uuid);
+
+/// Machine identifier - wraps UUID
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct MachineId(pub Uuid);
+
+impl MachineId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+
+    pub fn parse(s: &str) -> Result<Self, uuid::Error> {
+        Uuid::parse_str(s).map(Self)
+    }
+}
+
+impl Default for MachineId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for MachineId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 impl ToolId {
     pub fn new() -> Self {
@@ -566,12 +620,51 @@ impl fmt::Display for ReservationId {
     }
 }
 
-/// Resource type for vehicles and tools
+/// Asset kind for shared asset identity and type-specific details
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AssetKind {
+    Vehicle,
+    Tool,
+    Machine,
+}
+
+impl AssetKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            AssetKind::Vehicle => "vehicle",
+            AssetKind::Tool => "tool",
+            AssetKind::Machine => "machine",
+        }
+    }
+}
+
+impl fmt::Display for AssetKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl FromStr for AssetKind {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "vehicle" => Ok(AssetKind::Vehicle),
+            "tool" => Ok(AssetKind::Tool),
+            "machine" => Ok(AssetKind::Machine),
+            _ => Err(format!("Invalid asset kind: {}", s)),
+        }
+    }
+}
+
+/// Resource type for reservable fleet assets
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ResourceType {
     Vehicle,
     Tool,
+    Machine,
 }
 
 impl ResourceType {
@@ -579,6 +672,7 @@ impl ResourceType {
         match self {
             ResourceType::Vehicle => "vehicle",
             ResourceType::Tool => "tool",
+            ResourceType::Machine => "machine",
         }
     }
 }
@@ -596,7 +690,28 @@ impl FromStr for ResourceType {
         match s.to_lowercase().as_str() {
             "vehicle" => Ok(ResourceType::Vehicle),
             "tool" => Ok(ResourceType::Tool),
+            "machine" => Ok(ResourceType::Machine),
             _ => Err(format!("Invalid resource type: {}", s)),
+        }
+    }
+}
+
+impl From<ResourceType> for AssetKind {
+    fn from(resource_type: ResourceType) -> Self {
+        match resource_type {
+            ResourceType::Vehicle => AssetKind::Vehicle,
+            ResourceType::Tool => AssetKind::Tool,
+            ResourceType::Machine => AssetKind::Machine,
+        }
+    }
+}
+
+impl From<AssetKind> for ResourceType {
+    fn from(asset_kind: AssetKind) -> Self {
+        match asset_kind {
+            AssetKind::Vehicle => ResourceType::Vehicle,
+            AssetKind::Tool => ResourceType::Tool,
+            AssetKind::Machine => ResourceType::Machine,
         }
     }
 }

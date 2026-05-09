@@ -3,7 +3,7 @@ use serde_json::json;
 use uuid::Uuid;
 
 use crate::common::events::{DomainEvent, EventType};
-use crate::common::types::{ReservationId, ResourceType, TenantId, ToolId, VehicleId};
+use crate::common::types::{MachineId, ReservationId, ResourceType, TenantId, ToolId, VehicleId};
 
 /// Payload for VehicleCreated event
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,6 +40,26 @@ impl ToolCreatedPayload {
             tenant_id,
             "Tool",
             self.tool_id.to_string(),
+            json!(self),
+        )
+    }
+}
+
+/// Payload for MachineCreated event
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MachineCreatedPayload {
+    pub machine_id: MachineId,
+    pub name: String,
+    pub machine_type: Option<String>,
+}
+
+impl MachineCreatedPayload {
+    pub fn into_event(self, tenant_id: TenantId) -> DomainEvent {
+        DomainEvent::new(
+            EventType::MachineCreated,
+            tenant_id,
+            "Machine",
+            self.machine_id.to_string(),
             json!(self),
         )
     }

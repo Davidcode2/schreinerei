@@ -30,6 +30,8 @@ export type CreateActivityRequest = { activity_type: string, content: string | n
 
 export type CreateCategoryRequest = { name: string, description: string | null, can_expire: boolean, };
 
+export type CreateMachineRequest = { name: string, machine_type: string | null, description: string | null, location: string | null, qr_code: string | null, };
+
 export type CreateMaterialRequest = { category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, location: string | null, expires_on: string | null, batch_code: string | null, };
 
 export type CreateOrderRequestDto = { material_id: string, quantity: number, reason: string | null, };
@@ -64,6 +66,8 @@ export type FulfillOrderRequestDto = { actual_quantity: number, notes: string | 
  */
 export type InviteUserRequest = { email: string, name: string | null, role: string, };
 
+export type ListMachinesQuery = { status: string | null, };
+
 export type ListMaterialsQuery = { category_id: string | null, };
 
 export type ListReservationsQuery = { user_id: string | null, resource_type: string | null, resource_id: string | null, site_id: string | null, };
@@ -73,6 +77,8 @@ export type ListSitesQuery = { status: string | null, };
 export type ListToolsQuery = { status: string | null, category: string | null, };
 
 export type ListVehiclesQuery = { status: string | null, };
+
+export type MachineResponse = { id: string, name: string, machine_type: string | null, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
 
 export type MarkOrderedRequestDto = { notes: string | null, };
 
@@ -137,6 +143,8 @@ export type TimeEntryResponse = { id: string, site_id: string | null, user_id: s
 export type ToolResponse = { id: string, name: string, category: string | null, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
 
 export type UpdateCategoryRequest = { name?: string, description?: string, can_expire?: boolean, };
+
+export type UpdateMachineRequest = { name: string | null, machine_type: string | null, description: string | null, status: string | null, location: string | null, qr_code: string | null, };
 
 export type UpdateMaterialRequest = { location?: string, min_quantity?: number, clear_location?: boolean, };
 

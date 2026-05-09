@@ -9,6 +9,10 @@ import type {
   CreateToolRequest,
   UpdateToolRequest,
   ListToolsQuery,
+  Machine,
+  CreateMachineRequest,
+  UpdateMachineRequest,
+  ListMachinesQuery,
   Reservation,
   CreateReservationRequest,
   UpdateReservationRequest,
@@ -139,6 +143,68 @@ export function useDeleteTool() {
       apiClient.delete(`/api/v1/fleet/tools/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tools"] })
+      queryClient.invalidateQueries({ queryKey: ["calendar"] })
+    },
+  })
+}
+
+// === Machines ===
+
+export function useMachines(query?: ListMachinesQuery) {
+  return useQuery({
+    queryKey: ["machines", query],
+    queryFn: () => {
+      const params = query?.status ? `?status=${query.status}` : ""
+      return apiClient.get<Machine[]>(`/api/v1/fleet/machines${params}`)
+    },
+    staleTime: 30000,
+  })
+}
+
+export function useMachine(id: string) {
+  return useQuery({
+    queryKey: ["machine", id],
+    queryFn: () => apiClient.get<Machine>(`/api/v1/fleet/machines/${id}`),
+    enabled: !!id,
+    staleTime: 30000,
+  })
+}
+
+export function useCreateMachine() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: CreateMachineRequest) =>
+      apiClient.post<Machine>("/api/v1/fleet/machines", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["machines"] })
+      queryClient.invalidateQueries({ queryKey: ["calendar"] })
+    },
+  })
+}
+
+export function useUpdateMachine() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, ...data }: UpdateMachineRequest & { id: string }) =>
+      apiClient.patch<Machine>(`/api/v1/fleet/machines/${id}`, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["machines"] })
+      queryClient.invalidateQueries({ queryKey: ["machine", variables.id] })
+      queryClient.invalidateQueries({ queryKey: ["calendar"] })
+    },
+  })
+}
+
+export function useDeleteMachine() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.delete(`/api/v1/fleet/machines/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["machines"] })
       queryClient.invalidateQueries({ queryKey: ["calendar"] })
     },
   })

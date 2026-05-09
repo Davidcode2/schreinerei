@@ -1,4 +1,4 @@
-import type { CalendarEntry, ReservationSummary, ResourceStatus } from "@/types/fleet"
+import type { CalendarEntry, ReservationSummary, ResourceStatus, ResourceType } from "@/types/fleet"
 
 function buildResourceKey(resourceType: string, resourceId: string): string {
   return `${resourceType}:${resourceId}`
@@ -52,7 +52,7 @@ export function buildEffectiveStatusMap(
 export function getEffectiveResourceStatus(
   currentStatus: ResourceStatus,
   statusMap: Map<string, ResourceStatus>,
-  resourceType: "vehicle" | "tool",
+  resourceType: ResourceType,
   resourceId: string
 ): ResourceStatus {
   if (currentStatus !== "available") {

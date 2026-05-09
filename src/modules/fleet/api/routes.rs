@@ -12,11 +12,13 @@ use uuid::Uuid;
 
 use crate::common::error::AppError;
 use crate::common::types::{
-    ReservationId, ReservationStatus, ResourceStatus, ResourceType, ToolId, VehicleId, VehicleType,
+    MachineId, ReservationId, ReservationStatus, ResourceStatus, ResourceType, ToolId, VehicleId,
+    VehicleType,
 };
 use crate::modules::fleet::application::fleet_service::FleetService;
 use crate::modules::fleet::domain::{
-    CreateReservation, CreateTool, CreateVehicle, UpdateReservation, UpdateTool, UpdateVehicle,
+    CreateMachine, CreateReservation, CreateTool, CreateVehicle, UpdateMachine, UpdateReservation,
+    UpdateTool, UpdateVehicle,
 };
 use crate::modules::fleet::infrastructure::fleet_repository::{
     FleetRepository, ReservationSummary,
@@ -43,6 +45,17 @@ pub fn create_router() -> Router<AppState> {
         .route(
             "/api/v1/fleet/tools/{id}",
             get(get_tool).patch(update_tool).delete(delete_tool),
+        )
+        // Machines
+        .route(
+            "/api/v1/fleet/machines",
+            get(list_machines).post(create_machine),
+        )
+        .route(
+            "/api/v1/fleet/machines/{id}",
+            get(get_machine)
+                .patch(update_machine)
+                .delete(delete_machine),
         )
         // Reservations
         .route(
@@ -183,6 +196,65 @@ pub struct UpdateToolRequest {
 pub struct ListToolsQuery {
     pub status: Option<String>,
     pub category: Option<String>,
+}
+
+// === Machine DTOs ===
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct MachineResponse {
+    pub id: String,
+    pub name: String,
+    pub machine_type: Option<String>,
+    pub description: Option<String>,
+    pub status: String,
+    pub location: Option<String>,
+    pub qr_code: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+impl From<crate::modules::fleet::domain::Machine> for MachineResponse {
+    fn from(machine: crate::modules::fleet::domain::Machine) -> Self {
+        Self {
+            id: machine.id.to_string(),
+            name: machine.name,
+            machine_type: machine.machine_type,
+            description: machine.description,
+            status: machine.status.to_string(),
+            location: machine.location,
+            qr_code: machine.qr_code,
+            created_at: machine.created_at.to_rfc3339(),
+            updated_at: machine.updated_at.to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct CreateMachineRequest {
+    pub name: String,
+    pub machine_type: Option<String>,
+    pub description: Option<String>,
+    pub location: Option<String>,
+    pub qr_code: Option<String>,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct UpdateMachineRequest {
+    pub name: Option<String>,
+    pub machine_type: Option<String>,
+    pub description: Option<String>,
+    pub status: Option<String>,
+    pub location: Option<String>,
+    pub qr_code: Option<String>,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "frontend/src/types/generated.ts")]
+pub struct ListMachinesQuery {
+    pub status: Option<String>,
 }
 
 // === Reservation DTOs ===
@@ -594,6 +666,105 @@ pub async fn delete_tool(
         .map_err(|_| AppError::Validation("Invalid tool ID".to_string()))?;
 
     service.delete_tool(tool_id, &ctx).await?;
+
+    Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
+}
+
+// === Machine Handlers ===
+
+pub async fn list_machines(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Query(query): Query<ListMachinesQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = FleetService::new(FleetRepository::new(state.pool));
+
+    let machines = service.list_machines(query.status, &ctx).await?;
+    let response: Vec<MachineResponse> = machines.into_iter().map(MachineResponse::from).collect();
+
+    Ok(Json(response))
+}
+
+pub async fn create_machine(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Json(request): Json<CreateMachineRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = FleetService::new(FleetRepository::new(state.pool));
+
+    let create = CreateMachine {
+        name: request.name,
+        machine_type: request.machine_type,
+        description: request.description,
+        location: request.location,
+        qr_code: request.qr_code,
+    };
+
+    let machine = service.create_machine(create, &ctx).await?;
+
+    Ok((StatusCode::CREATED, Json(MachineResponse::from(machine))))
+}
+
+pub async fn get_machine(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = FleetService::new(FleetRepository::new(state.pool));
+
+    let machine_id = Uuid::parse_str(&id)
+        .map(MachineId)
+        .map_err(|_| AppError::Validation("Invalid machine ID".to_string()))?;
+
+    let machine = service.get_machine(machine_id, &ctx).await?;
+
+    Ok(Json(MachineResponse::from(machine)))
+}
+
+pub async fn update_machine(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+    Json(request): Json<UpdateMachineRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = FleetService::new(FleetRepository::new(state.pool));
+
+    let machine_id = Uuid::parse_str(&id)
+        .map(MachineId)
+        .map_err(|_| AppError::Validation("Invalid machine ID".to_string()))?;
+
+    let status = request
+        .status
+        .map(|s| s.parse::<ResourceStatus>())
+        .transpose()
+        .map_err(|e: String| AppError::Validation(e))?;
+
+    let update = UpdateMachine {
+        name: request.name,
+        machine_type: request.machine_type,
+        description: request.description,
+        status,
+        location: request.location,
+        qr_code: request.qr_code,
+    };
+
+    let machine = service.update_machine(machine_id, update, &ctx).await?;
+
+    Ok(Json(MachineResponse::from(machine)))
+}
+
+pub async fn delete_machine(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = FleetService::new(FleetRepository::new(state.pool));
+
+    let machine_id = Uuid::parse_str(&id)
+        .map(MachineId)
+        .map_err(|_| AppError::Validation("Invalid machine ID".to_string()))?;
+
+    service.delete_machine(machine_id, &ctx).await?;
 
     Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
 }

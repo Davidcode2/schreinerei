@@ -1,12 +1,13 @@
 use crate::common::error::AppError;
 use crate::common::types::{
-    ReservationId, ReservationStatus, ResourceType, Role, SiteId, ToolId, UserId, VehicleId,
+    MachineId, ReservationId, ReservationStatus, ResourceType, Role, SiteId, ToolId, UserId,
+    VehicleId,
 };
 use crate::modules::fleet::domain::{
-    CreateReservation, CreateTool, CreateVehicle, Reservation, ReservationCancelledPayload,
-    ReservationCreatedPayload, ReservationUpdatedPayload, ReservationWithDetails,
-    ResourceStatusChangedPayload, Tool, ToolCreatedPayload, UpdateReservation, UpdateTool,
-    UpdateVehicle, Vehicle, VehicleCreatedPayload,
+    CreateMachine, CreateReservation, CreateTool, CreateVehicle, Machine, MachineCreatedPayload,
+    Reservation, ReservationCancelledPayload, ReservationCreatedPayload, ReservationUpdatedPayload,
+    ReservationWithDetails, ResourceStatusChangedPayload, Tool, ToolCreatedPayload, UpdateMachine,
+    UpdateReservation, UpdateTool, UpdateVehicle, Vehicle, VehicleCreatedPayload,
 };
 use crate::modules::fleet::infrastructure::fleet_repository::{
     CalendarEntry, FleetRepository, ResourceStatusInfo,
@@ -144,7 +145,7 @@ impl FleetService {
         // Check for active reservations
         let active_count = self
             .fleet_repo
-            .count_active_reservations(ctx.tenant_id, ResourceType::Vehicle, vehicle_id.0)
+            .count_active_reservations(ctx.tenant_id, vehicle_id.0)
             .await?;
 
         if active_count > 0 {
@@ -251,7 +252,7 @@ impl FleetService {
         // Check for active reservations
         let active_count = self
             .fleet_repo
-            .count_active_reservations(ctx.tenant_id, ResourceType::Tool, tool_id.0)
+            .count_active_reservations(ctx.tenant_id, tool_id.0)
             .await?;
 
         if active_count > 0 {
@@ -262,6 +263,118 @@ impl FleetService {
         }
 
         self.fleet_repo.delete_tool(ctx.tenant_id, tool_id).await
+    }
+
+    // === Machine operations ===
+
+    pub async fn create_machine(
+        &self,
+        create: CreateMachine,
+        ctx: &TenantContext,
+    ) -> Result<Machine, AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+        create.validate()?;
+
+        let machine = self
+            .fleet_repo
+            .create_machine(&create, ctx.tenant_id)
+            .await?;
+
+        let event = MachineCreatedPayload {
+            machine_id: machine.id,
+            name: machine.name.clone(),
+            machine_type: machine.machine_type.clone(),
+        }
+        .into_event(ctx.tenant_id);
+
+        self.fleet_repo.publish_event(&event).await?;
+
+        Ok(machine)
+    }
+
+    pub async fn update_machine(
+        &self,
+        machine_id: MachineId,
+        update: UpdateMachine,
+        ctx: &TenantContext,
+    ) -> Result<Machine, AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+
+        let old_machine = self
+            .fleet_repo
+            .find_machine_by_id(ctx.tenant_id, machine_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Machine not found".to_string()))?;
+
+        let machine = self
+            .fleet_repo
+            .update_machine(ctx.tenant_id, machine_id, &update)
+            .await?;
+
+        if let Some(new_status) = &update.status {
+            if old_machine.status != *new_status {
+                let event = ResourceStatusChangedPayload {
+                    resource_type: ResourceType::Machine,
+                    resource_id: machine.id.to_string(),
+                    old_status: old_machine.status.to_string(),
+                    new_status: new_status.to_string(),
+                }
+                .into_event(ctx.tenant_id);
+
+                self.fleet_repo.publish_event(&event).await?;
+            }
+        }
+
+        Ok(machine)
+    }
+
+    pub async fn get_machine(
+        &self,
+        machine_id: MachineId,
+        ctx: &TenantContext,
+    ) -> Result<Machine, AppError> {
+        self.fleet_repo
+            .find_machine_by_id(ctx.tenant_id, machine_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Machine not found".to_string()))
+    }
+
+    pub async fn list_machines(
+        &self,
+        status: Option<String>,
+        ctx: &TenantContext,
+    ) -> Result<Vec<Machine>, AppError> {
+        self.fleet_repo.list_machines(ctx.tenant_id, status).await
+    }
+
+    pub async fn delete_machine(
+        &self,
+        machine_id: MachineId,
+        ctx: &TenantContext,
+    ) -> Result<(), AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+
+        let active_count = self
+            .fleet_repo
+            .count_active_reservations(ctx.tenant_id, machine_id.0)
+            .await?;
+
+        if active_count > 0 {
+            return Err(AppError::Conflict(format!(
+                "Cannot delete: {} active reservation(s) exist",
+                active_count
+            )));
+        }
+
+        self.fleet_repo
+            .delete_machine(ctx.tenant_id, machine_id)
+            .await
     }
 
     // === Reservation operations ===
@@ -275,21 +388,12 @@ impl FleetService {
         // Validate the reservation
         create.validate()?;
 
-        // Check that the resource exists
-        let resource_exists = match create.resource_type {
-            ResourceType::Vehicle => self
-                .fleet_repo
-                .find_vehicle_by_id(ctx.tenant_id, VehicleId(create.resource_id))
-                .await?
-                .is_some(),
-            ResourceType::Tool => self
-                .fleet_repo
-                .find_tool_by_id(ctx.tenant_id, ToolId(create.resource_id))
-                .await?
-                .is_some(),
-        };
+        let resource = self
+            .fleet_repo
+            .find_reservable_asset(ctx.tenant_id, create.resource_type, create.resource_id)
+            .await?;
 
-        if !resource_exists {
+        if resource.is_none() {
             return Err(AppError::NotFound(format!(
                 "{} not found",
                 create.resource_type
@@ -301,7 +405,6 @@ impl FleetService {
             .fleet_repo
             .check_availability(
                 ctx.tenant_id,
-                create.resource_type,
                 create.resource_id,
                 create.start_time,
                 create.end_time,
@@ -372,7 +475,6 @@ impl FleetService {
                 .fleet_repo
                 .check_availability(
                     ctx.tenant_id,
-                    current.resource_type,
                     current.resource_id,
                     *new_start,
                     *new_end,
@@ -574,14 +676,12 @@ impl FleetService {
         }
 
         self.fleet_repo
-            .check_availability(
-                ctx.tenant_id,
-                resource_type,
-                resource_id,
-                start_time,
-                end_time,
-                None,
-            )
+            .find_reservable_asset(ctx.tenant_id, resource_type, resource_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound(format!("{} not found", resource_type)))?;
+
+        self.fleet_repo
+            .check_availability(ctx.tenant_id, resource_id, start_time, end_time, None)
             .await
     }
 
@@ -602,15 +702,14 @@ impl FleetService {
             ));
         }
 
+        self.fleet_repo
+            .find_reservable_asset(ctx.tenant_id, resource_type, resource_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound(format!("{} not found", resource_type)))?;
+
         let conflicts = self
             .fleet_repo
-            .find_conflicts(
-                ctx.tenant_id,
-                resource_type,
-                resource_id,
-                start_time,
-                end_time,
-            )
+            .find_conflicts(ctx.tenant_id, resource_id, start_time, end_time)
             .await?;
 
         Ok(

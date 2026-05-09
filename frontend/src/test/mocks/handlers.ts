@@ -13,6 +13,7 @@ export const mockData = {
   preferences: { active_site_id: null as string | null },
   vehicles: [] as MockRecord[],
   tools: [] as MockRecord[],
+  machines: [] as MockRecord[],
   reservations: [] as MockRecord[],
   timeEntries: [] as MockRecord[],
 };
@@ -271,6 +272,29 @@ export const handlers = [
     };
     mockData.tools.push(newTool);
     return HttpResponse.json(newTool, { status: 201 });
+  }),
+
+  // Machines (fleet module)
+  http.get(apiRoute('/fleet/machines'), async () => {
+    await delay(10);
+    return HttpResponse.json(mockData.machines);
+  }),
+
+  http.post(apiRoute('/fleet/machines'), async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    const newMachine = {
+      id: crypto.randomUUID(),
+      machine_type: null,
+      description: null,
+      status: 'available',
+      location: null,
+      qr_code: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      ...body,
+    };
+    mockData.machines.push(newMachine);
+    return HttpResponse.json(newMachine, { status: 201 });
   }),
 
   // Reservations (fleet module)

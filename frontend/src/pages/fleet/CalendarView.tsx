@@ -74,6 +74,12 @@ const reservationStatusStyles = {
   },
 } as const
 
+const resourceTypeLabels: Record<ResourceType, string> = {
+  vehicle: "Fahrzeug",
+  tool: "Werkzeug",
+  machine: "Maschine",
+}
+
 function isDateInRange(date: string, startDate: string, endDate: string): boolean {
   return date >= startDate && date <= endDate
 }
@@ -261,7 +267,7 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
                         </p>
                       </div>
                       <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                        <span>{entry.resource_type === "vehicle" ? "Fahrzeug" : "Werkzeug"}</span>
+                        <span>{resourceTypeLabels[entry.resource_type]}</span>
                       </div>
                     </div>
                   </div>

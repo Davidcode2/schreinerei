@@ -14,6 +14,7 @@ import { Calendar, AlertCircle } from "lucide-react"
 import {
   useAvailability,
   useCreateReservation,
+  useMachines,
   usePreferences,
   useSites,
   useTools,
@@ -24,7 +25,15 @@ import { StatusTransitionButtons, statusLabels } from "@/components/fleet/Status
 import { formatDateTimeLocalInput } from "@/lib/utils"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import type { ResourceType, Vehicle, Tool, Reservation, ReservationStatus, ConflictDetail } from "@/types/fleet"
+import type {
+  ResourceType,
+  Vehicle,
+  Tool,
+  Machine,
+  Reservation,
+  ReservationStatus,
+  ConflictDetail,
+} from "@/types/fleet"
 
 const formatDateToRfc3339 = (datetimeLocal: string): string => {
   const date = new Date(datetimeLocal)
@@ -88,6 +97,7 @@ export function ReservationDialog({
 
   const { data: vehicles } = useVehicles()
   const { data: tools } = useTools()
+  const { data: machines } = useMachines()
   const { data: preferences } = usePreferences()
   const { data: sites } = useSites()
 
@@ -176,7 +186,12 @@ export function ReservationDialog({
     }
   }
 
-  const resources = fixedResourceType === "vehicle" ? vehicles : tools
+  const resources =
+    fixedResourceType === "vehicle"
+      ? vehicles
+      : fixedResourceType === "tool"
+        ? tools
+        : machines
   const isEditing = mode === "edit" && initialData
   const canTransition = isEditing &&
     initialData.status !== "cancelled" &&
@@ -286,7 +301,7 @@ export function ReservationDialog({
                     onChange={(e) => setSelectedResourceId(e.target.value)}
                   >
                     <option value="">Bitte wählen...</option>
-                    {resources?.map((r: Vehicle | Tool) => (
+                    {resources?.map((r: Vehicle | Tool | Machine) => (
                       <option key={r.id} value={r.id}>
                         {r.name}
                       </option>

@@ -6,7 +6,7 @@
 
 export type VehicleType = 'car' | 'van' | 'truck' | 'trailer' | 'other'
 export type ResourceStatus = 'available' | 'in_use' | 'maintenance' | 'reserved'
-export type ResourceType = 'vehicle' | 'tool'
+export type ResourceType = 'vehicle' | 'tool' | 'machine'
 export type ReservationStatus = 'pending' | 'confirmed' | 'in_use' | 'completed' | 'cancelled'
 
 // === Vehicle ===
@@ -81,6 +81,41 @@ export interface UpdateToolRequest {
 export interface ListToolsQuery {
   status?: ResourceStatus
   category?: string
+}
+
+// === Machine ===
+
+export interface Machine {
+  id: string
+  name: string
+  machine_type: string | null
+  description: string | null
+  status: ResourceStatus
+  location: string | null
+  qr_code: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateMachineRequest {
+  name: string
+  machine_type?: string
+  description?: string
+  location?: string
+  qr_code?: string
+}
+
+export interface UpdateMachineRequest {
+  name?: string
+  machine_type?: string
+  description?: string
+  status?: ResourceStatus
+  location?: string
+  qr_code?: string
+}
+
+export interface ListMachinesQuery {
+  status?: ResourceStatus
 }
 
 // === Reservation ===

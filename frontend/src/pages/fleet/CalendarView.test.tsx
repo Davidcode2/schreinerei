@@ -7,6 +7,7 @@ import { startOfLocalWeek } from "@/lib/utils"
 vi.mock("@/lib/api/hooks", () => ({
   useCalendar: vi.fn(),
   useCreateReservation: vi.fn(),
+  useMachines: vi.fn(),
   usePreferences: vi.fn(),
   useReservation: vi.fn(),
   useSites: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock("@/lib/api/hooks", () => ({
 import {
   useCalendar,
   useCreateReservation,
+  useMachines,
   usePreferences,
   useReservation,
   useSites,
@@ -54,7 +56,7 @@ function requireElement<T>(value: T | undefined): T {
 }
 
 function setCalendarData(resources: Array<{
-  resource_type: "vehicle" | "tool"
+  resource_type: "vehicle" | "tool" | "machine"
   resource_id: string
   resource_name: string
   reservations: Array<{
@@ -92,6 +94,7 @@ describe("CalendarView", () => {
     } as never)
     vi.mocked(useVehicles).mockReturnValue({ data: [], isLoading: false } as never)
     vi.mocked(useTools).mockReturnValue({ data: [], isLoading: false } as never)
+    vi.mocked(useMachines).mockReturnValue({ data: [], isLoading: false } as never)
     vi.mocked(useAvailability).mockReturnValue({ data: { available: true } } as never)
     vi.mocked(useUpdateReservation).mockReturnValue({
       mutateAsync: vi.fn(),

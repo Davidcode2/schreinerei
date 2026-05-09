@@ -40,6 +40,7 @@ pub enum EventType {
     // Fleet events
     VehicleCreated,
     ToolCreated,
+    MachineCreated,
     ReservationCreated,
     ReservationUpdated,
     ReservationCancelled,
