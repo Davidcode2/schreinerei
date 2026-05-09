@@ -186,20 +186,31 @@ export interface Reservation {
   user_name: string
   site_id: string | null
   site_name: string | null
+  project_id: string | null
+  project_name: string | null
   start_time: string
   end_time: string
   status: ReservationStatus
+  purpose: string | null
   notes: string | null
+  current_holder: ReservationHolder | null
   created_at: string
   updated_at: string
+}
+
+export interface ReservationHolder {
+  user_id: string
+  user_name: string | null
 }
 
 export interface CreateReservationRequest {
   resource_type: ResourceType
   resource_id: string
   site_id?: string | null
+  project_id?: string | null
   start_time: string
   end_time: string
+  purpose?: string | null
   notes?: string
 }
 
@@ -207,6 +218,8 @@ export interface UpdateReservationRequest {
   start_time?: string
   end_time?: string
   site_id?: string | null
+  project_id?: string | null
+  purpose?: string | null
   notes?: string
   status?: ReservationStatus
 }

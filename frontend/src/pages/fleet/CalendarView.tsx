@@ -408,6 +408,7 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
           resourceName={completedSelection.resourceName}
           startDate={completedSelection.startDate}
           endDate={completedSelection.endDate}
+          projectId={siteId}
         />
       )}
 

@@ -362,8 +362,10 @@ describe("CalendarView", () => {
         resource_id: "vehicle-1",
         resource_type: "vehicle",
         site_id: "site-1",
+        project_id: "site-1",
         start_time: payload.start_time,
         end_time: payload.end_time,
+        purpose: "Reservierung fuer Baustelle Nord",
       })
       expect(new Date(payload.start_time).getTime()).toBeLessThan(new Date(payload.end_time).getTime())
     })

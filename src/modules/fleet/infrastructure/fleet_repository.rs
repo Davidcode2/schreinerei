@@ -12,9 +12,9 @@ use crate::common::types::{
 };
 use crate::modules::fleet::domain::{
     Asset, CreateMachine, CreateMaintenanceSchedule, CreateReservation, CreateTool, CreateVehicle,
-    Machine, MaintenanceDue, MaintenanceSchedule, Reservation, ReservationWithDetails,
-    ResolveMaintenanceDue, Tool, UpdateMachine, UpdateReservation, UpdateTool, UpdateVehicle,
-    Vehicle,
+    Machine, MaintenanceDue, MaintenanceSchedule, Reservation, ReservationHolder,
+    ReservationWithDetails, ResolveMaintenanceDue, Tool, UpdateMachine, UpdateReservation,
+    UpdateTool, UpdateVehicle, Vehicle,
 };
 
 /// Repository for fleet data access with tenant isolation
@@ -84,6 +84,31 @@ impl FleetRepository {
         } else {
             Ok(None)
         }
+    }
+
+    pub async fn project_exists(
+        &self,
+        tenant_id: TenantId,
+        project_id: SiteId,
+    ) -> Result<bool, AppError> {
+        let exists: bool = sqlx::query_scalar(
+            r#"
+            SELECT EXISTS(
+                SELECT 1
+                FROM sites
+                WHERE id = $1
+                  AND tenant_id = $2
+                  AND deleted_at IS NULL
+            )
+            "#,
+        )
+        .bind(project_id.0)
+        .bind(tenant_id.0)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(exists)
     }
 
     // === Maintenance operations ===
@@ -1157,9 +1182,9 @@ impl FleetRepository {
 
         let reservation = sqlx::query_as::<_, ReservationRow>(
             r#"
-            INSERT INTO reservations (id, tenant_id, resource_type, resource_id, asset_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-            RETURNING id, tenant_id, resource_type, asset_id AS resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at
+            INSERT INTO reservations (id, tenant_id, resource_type, resource_id, asset_id, user_id, site_id, project_id, start_time, end_time, status, purpose, notes, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            RETURNING id, tenant_id, resource_type, asset_id AS resource_id, user_id, site_id, project_id, start_time, end_time, status, purpose, notes, created_at, updated_at
             "#
         )
         .bind(id)
@@ -1168,9 +1193,11 @@ impl FleetRepository {
         .bind(create.resource_id)
         .bind(user_id.0)
         .bind(create.site_id.map(|s| s.0))
+        .bind(create.project_id.map(|s| s.0))
         .bind(create.start_time)
         .bind(create.end_time)
         .bind(ReservationStatus::Confirmed.as_str())
+        .bind(&create.purpose)
         .bind(&create.notes)
         .bind(now)
         .bind(now)
@@ -1188,7 +1215,7 @@ impl FleetRepository {
     ) -> Result<Option<Reservation>, AppError> {
         let reservation = sqlx::query_as::<_, ReservationRow>(
             r#"
-            SELECT id, tenant_id, resource_type, asset_id AS resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at
+            SELECT id, tenant_id, resource_type, asset_id AS resource_id, user_id, site_id, project_id, start_time, end_time, status, purpose, notes, created_at, updated_at
             FROM reservations
             WHERE id = $1 AND tenant_id = $2
             "#
@@ -1212,7 +1239,7 @@ impl FleetRepository {
     ) -> Result<Vec<Reservation>, AppError> {
         let reservations = sqlx::query_as::<_, ReservationRow>(
             r#"
-            SELECT id, tenant_id, resource_type, asset_id AS resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at
+            SELECT id, tenant_id, resource_type, asset_id AS resource_id, user_id, site_id, project_id, start_time, end_time, status, purpose, notes, created_at, updated_at
             FROM reservations
             WHERE tenant_id = $1
               AND ($2::uuid IS NULL OR user_id = $2)
@@ -1269,16 +1296,20 @@ impl FleetRepository {
                 start_time = COALESCE($1, start_time),
                 end_time = COALESCE($2, end_time),
                 site_id = COALESCE($3, site_id),
-                notes = COALESCE($4, notes),
-                status = COALESCE($5, status),
+                project_id = COALESCE($4, project_id),
+                purpose = COALESCE($5, purpose),
+                notes = COALESCE($6, notes),
+                status = COALESCE($7, status),
                 updated_at = NOW()
-            WHERE id = $6 AND tenant_id = $7
-            RETURNING id, tenant_id, resource_type, asset_id AS resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at
+            WHERE id = $8 AND tenant_id = $9
+            RETURNING id, tenant_id, resource_type, asset_id AS resource_id, user_id, site_id, project_id, start_time, end_time, status, purpose, notes, created_at, updated_at
             "#
         )
         .bind(update.start_time)
         .bind(update.end_time)
         .bind(update.site_id.map(|s| s.0))
+        .bind(update.project_id.map(|s| s.0))
+        .bind(&update.purpose)
         .bind(&update.notes)
         .bind(update.status.as_ref().map(|s| s.as_str()))
         .bind(id.0)
@@ -1561,15 +1592,31 @@ impl FleetRepository {
             r#"
             SELECT 
                 res.id, res.tenant_id, a.asset_kind as resource_type, res.asset_id as resource_id,
-                res.user_id, res.site_id, res.start_time, res.end_time, 
-                res.status, res.notes, res.created_at, res.updated_at,
+                res.user_id, res.site_id, res.project_id, res.start_time, res.end_time,
+                res.status, res.purpose, res.notes, res.created_at, res.updated_at,
                 a.name as resource_name,
                 COALESCE(NULLIF(u.name, ''), u.email, res.user_id::text) as user_name,
-                s.name as site_name
+                s.name as site_name,
+                p.name as project_name,
+                CASE
+                    WHEN res.status IN ('confirmed', 'in_use')
+                     AND res.start_time <= NOW()
+                     AND res.end_time >= NOW()
+                    THEN res.user_id
+                    ELSE NULL
+                END AS current_holder_user_id,
+                CASE
+                    WHEN res.status IN ('confirmed', 'in_use')
+                     AND res.start_time <= NOW()
+                     AND res.end_time >= NOW()
+                    THEN COALESCE(NULLIF(u.name, ''), u.email, res.user_id::text)
+                    ELSE NULL
+                END AS current_holder_user_name
             FROM reservations res
             JOIN assets a ON a.id = res.asset_id AND a.tenant_id = res.tenant_id
-            LEFT JOIN users u ON u.id = res.user_id
-            LEFT JOIN sites s ON s.id = res.site_id
+            LEFT JOIN users u ON u.id = res.user_id AND u.tenant_id = res.tenant_id
+            LEFT JOIN sites s ON s.id = res.site_id AND s.tenant_id = res.tenant_id
+            LEFT JOIN sites p ON p.id = res.project_id AND p.tenant_id = res.tenant_id
             WHERE res.id = $1 AND res.tenant_id = $2
             "#,
         )
@@ -1850,9 +1897,11 @@ struct ReservationRow {
     resource_id: Uuid,
     user_id: Uuid,
     site_id: Option<Uuid>,
+    project_id: Option<Uuid>,
     start_time: DateTime<Utc>,
     end_time: DateTime<Utc>,
     status: String,
+    purpose: Option<String>,
     notes: Option<String>,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
@@ -1867,9 +1916,11 @@ impl ReservationRow {
             resource_id: self.resource_id,
             user_id: UserId(self.user_id),
             site_id: self.site_id.map(SiteId),
+            project_id: self.project_id.map(SiteId),
             start_time: self.start_time,
             end_time: self.end_time,
             status: self.status.parse().unwrap_or(ReservationStatus::Pending),
+            purpose: self.purpose,
             notes: self.notes,
             created_at: self.created_at,
             updated_at: self.updated_at,
@@ -1975,15 +2026,20 @@ struct ReservationDetailsRow {
     resource_id: Uuid,
     user_id: Uuid,
     site_id: Option<Uuid>,
+    project_id: Option<Uuid>,
     start_time: DateTime<Utc>,
     end_time: DateTime<Utc>,
     status: String,
+    purpose: Option<String>,
     notes: Option<String>,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
     resource_name: String,
     user_name: Option<String>,
     site_name: Option<String>,
+    project_name: Option<String>,
+    current_holder_user_id: Option<Uuid>,
+    current_holder_user_name: Option<String>,
 }
 
 impl ReservationDetailsRow {
@@ -1996,9 +2052,11 @@ impl ReservationDetailsRow {
                 resource_id: self.resource_id,
                 user_id: UserId(self.user_id),
                 site_id: self.site_id.map(SiteId),
+                project_id: self.project_id.map(SiteId),
                 start_time: self.start_time,
                 end_time: self.end_time,
                 status: self.status.parse().unwrap_or(ReservationStatus::Pending),
+                purpose: self.purpose,
                 notes: self.notes,
                 created_at: self.created_at,
                 updated_at: self.updated_at,
@@ -2006,6 +2064,13 @@ impl ReservationDetailsRow {
             resource_name: self.resource_name,
             user_name: self.user_name,
             site_name: self.site_name,
+            project_name: self.project_name,
+            current_holder: self
+                .current_holder_user_id
+                .map(|user_id| ReservationHolder {
+                    user_id: UserId(user_id),
+                    user_name: self.current_holder_user_name,
+                }),
         }
     }
 }

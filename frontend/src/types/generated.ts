@@ -40,7 +40,7 @@ export type CreateMaterialRequest = { category_id: string, name: string, descrip
 
 export type CreateOrderRequestDto = { material_id: string, quantity: number, reason: string | null, };
 
-export type CreateReservationRequest = { resource_type: string, resource_id: string, site_id: string | null, start_time: string, end_time: string, notes: string | null, };
+export type CreateReservationRequest = { resource_type: string, resource_id: string, site_id: string | null, project_id: string | null, start_time: string, end_time: string, purpose: string | null, notes: string | null, };
 
 export type CreateSiteAppointmentRequest = { title: string, appointment_kind: string, starts_at: string, ends_at: string, notes: string | null, assigned_user_ids: Array<string>, };
 
@@ -117,7 +117,9 @@ export type QrStatusResponse = { resource_type: string, resource_id: string, res
 
 export type QrSvgResponse = { svg: string, qr_code: string, };
 
-export type ReservationResponse = { id: string, resource_type: string, resource_id: string, resource_name: string, user_id: string, user_name: string | null, site_id: string | null, site_name: string | null, start_time: string, end_time: string, status: string, notes: string | null, created_at: string, updated_at: string, };
+export type ReservationHolderResponse = { user_id: string, user_name: string | null, };
+
+export type ReservationResponse = { id: string, resource_type: string, resource_id: string, resource_name: string, user_id: string, user_name: string | null, site_id: string | null, site_name: string | null, project_id: string | null, project_name: string | null, start_time: string, end_time: string, status: string, purpose: string | null, notes: string | null, current_holder: ReservationHolderResponse | null, created_at: string, updated_at: string, };
 
 export type ReservationSummaryResponse = { id: string, start_time: string, end_time: string, user_name: string | null, site_id: string | null, site_name: string | null, status: string, };
 
@@ -174,7 +176,7 @@ export type UpdatePreferencesRequest = { active_site_id: string | null, };
  */
 export type UpdateProfileRequest = { name: string | null, };
 
-export type UpdateReservationRequest = { start_time: string | null, end_time: string | null, site_id: string | null, notes: string | null, status: string | null, };
+export type UpdateReservationRequest = { start_time: string | null, end_time: string | null, site_id: string | null, project_id: string | null, purpose: string | null, notes: string | null, status: string | null, };
 
 /**
  * Request DTO for updating role

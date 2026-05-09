@@ -179,8 +179,20 @@ export function ResourceDetailPage({
                         <p className="text-xs text-muted-foreground mt-1">
                           {formatReservationDateTime(reservation.start_time)} - {formatReservationDateTime(reservation.end_time)}
                         </p>
-                        {reservation.site_name ? (
-                          <p className="text-xs text-muted-foreground mt-1">{reservation.site_name}</p>
+                        {reservation.project_name || reservation.site_name ? (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {reservation.project_name || reservation.site_name}
+                          </p>
+                        ) : null}
+                        {reservation.purpose ? (
+                          <p className="mt-1 line-clamp-2 text-xs text-foreground">
+                            {reservation.purpose}
+                          </p>
+                        ) : null}
+                        {reservation.current_holder ? (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Aktuell bei {reservation.current_holder.user_name || "Unbekannt"}
+                          </p>
                         ) : null}
                       </div>
                       <StatusBadge status={reservation.status} />

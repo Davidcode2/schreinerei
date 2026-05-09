@@ -35,8 +35,10 @@ const actionHandlers: Record<string, (data: Record<string, unknown>) => Promise<
       resource_type: data.resourceType,
       resource_id: data.resourceId,
       site_id: data.siteId,
+      project_id: data.projectId ?? data.siteId,
       start_time: data.startTime,
       end_time: data.endTime,
+      purpose: data.purpose,
       notes: data.notes
     })
   },

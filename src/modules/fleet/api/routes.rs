@@ -386,10 +386,14 @@ pub struct ReservationResponse {
     pub user_name: Option<String>,
     pub site_id: Option<String>,
     pub site_name: Option<String>,
+    pub project_id: Option<String>,
+    pub project_name: Option<String>,
     pub start_time: String,
     pub end_time: String,
     pub status: String,
+    pub purpose: Option<String>,
     pub notes: Option<String>,
+    pub current_holder: Option<ReservationHolderResponse>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -405,12 +409,32 @@ impl From<crate::modules::fleet::domain::ReservationWithDetails> for Reservation
             user_name: details.user_name,
             site_id: details.reservation.site_id.map(|s| s.to_string()),
             site_name: details.site_name,
+            project_id: details.reservation.project_id.map(|s| s.to_string()),
+            project_name: details.project_name,
             start_time: details.reservation.start_time.to_rfc3339(),
             end_time: details.reservation.end_time.to_rfc3339(),
             status: details.reservation.status.to_string(),
+            purpose: details.reservation.purpose,
             notes: details.reservation.notes,
+            current_holder: details.current_holder.map(ReservationHolderResponse::from),
             created_at: details.reservation.created_at.to_rfc3339(),
             updated_at: details.reservation.updated_at.to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "generated.ts")]
+pub struct ReservationHolderResponse {
+    pub user_id: String,
+    pub user_name: Option<String>,
+}
+
+impl From<crate::modules::fleet::domain::ReservationHolder> for ReservationHolderResponse {
+    fn from(holder: crate::modules::fleet::domain::ReservationHolder) -> Self {
+        Self {
+            user_id: holder.user_id.to_string(),
+            user_name: holder.user_name,
         }
     }
 }
@@ -421,8 +445,10 @@ pub struct CreateReservationRequest {
     pub resource_type: String,
     pub resource_id: String,
     pub site_id: Option<String>,
+    pub project_id: Option<String>,
     pub start_time: String,
     pub end_time: String,
+    pub purpose: Option<String>,
     pub notes: Option<String>,
 }
 
@@ -432,6 +458,8 @@ pub struct UpdateReservationRequest {
     pub start_time: Option<String>,
     pub end_time: Option<String>,
     pub site_id: Option<String>,
+    pub project_id: Option<String>,
+    pub purpose: Option<String>,
     pub notes: Option<String>,
     pub status: Option<String>,
 }
@@ -1069,9 +1097,17 @@ pub async fn create_reservation(
 
     let site_id = request
         .site_id
-        .map(|s| Uuid::parse_str(&s))
+        .as_deref()
+        .map(Uuid::parse_str)
         .transpose()
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?
+        .map(crate::common::types::SiteId);
+
+    let project_id = request
+        .project_id
+        .map(|s| Uuid::parse_str(&s))
+        .transpose()
+        .map_err(|_| AppError::Validation("Invalid project ID".to_string()))?
         .map(crate::common::types::SiteId);
 
     let start_time = DateTime::parse_from_rfc3339(&request.start_time)
@@ -1086,8 +1122,10 @@ pub async fn create_reservation(
         resource_type,
         resource_id,
         site_id,
+        project_id: project_id.or(site_id),
         start_time,
         end_time,
+        purpose: request.purpose,
         notes: request.notes,
     };
 
@@ -1146,9 +1184,17 @@ pub async fn update_reservation(
 
     let site_id = request
         .site_id
-        .map(|s| Uuid::parse_str(&s))
+        .as_deref()
+        .map(Uuid::parse_str)
         .transpose()
         .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?
+        .map(crate::common::types::SiteId);
+
+    let project_id = request
+        .project_id
+        .map(|s| Uuid::parse_str(&s))
+        .transpose()
+        .map_err(|_| AppError::Validation("Invalid project ID".to_string()))?
         .map(crate::common::types::SiteId);
 
     let status = request
@@ -1161,6 +1207,8 @@ pub async fn update_reservation(
         start_time,
         end_time,
         site_id,
+        project_id,
+        purpose: request.purpose,
         notes: request.notes,
         status,
     };

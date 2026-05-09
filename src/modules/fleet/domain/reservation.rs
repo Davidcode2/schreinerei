@@ -15,9 +15,11 @@ pub struct Reservation {
     pub resource_id: Uuid, // Polymorphic - references vehicle or tool
     pub user_id: UserId,
     pub site_id: Option<SiteId>,
+    pub project_id: Option<SiteId>,
     pub start_time: DateTime<Utc>,
     pub end_time: DateTime<Utc>,
     pub status: ReservationStatus,
+    pub purpose: Option<String>,
     pub notes: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -67,8 +69,10 @@ pub struct CreateReservation {
     pub resource_type: ResourceType,
     pub resource_id: Uuid,
     pub site_id: Option<SiteId>,
+    pub project_id: Option<SiteId>,
     pub start_time: DateTime<Utc>,
     pub end_time: DateTime<Utc>,
+    pub purpose: Option<String>,
     pub notes: Option<String>,
 }
 
@@ -86,6 +90,12 @@ impl CreateReservation {
             return Err("Start time cannot be in the past".to_string());
         }
 
+        if let Some(purpose) = &self.purpose {
+            if purpose.chars().count() > 160 {
+                return Err("Purpose must be 160 characters or less".to_string());
+            }
+        }
+
         Ok(())
     }
 }
@@ -96,6 +106,8 @@ pub struct UpdateReservation {
     pub start_time: Option<DateTime<Utc>>,
     pub end_time: Option<DateTime<Utc>>,
     pub site_id: Option<SiteId>,
+    pub project_id: Option<SiteId>,
+    pub purpose: Option<String>,
     pub notes: Option<String>,
     pub status: Option<ReservationStatus>,
 }
@@ -122,6 +134,12 @@ impl UpdateReservation {
             }
         }
 
+        if let Some(purpose) = &self.purpose {
+            if purpose.chars().count() > 160 {
+                return Err("Purpose must be 160 characters or less".to_string());
+            }
+        }
+
         Ok(())
     }
 }
@@ -133,6 +151,14 @@ pub struct ReservationWithDetails {
     pub resource_name: String,
     pub user_name: Option<String>,
     pub site_name: Option<String>,
+    pub project_name: Option<String>,
+    pub current_holder: Option<ReservationHolder>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReservationHolder {
+    pub user_id: UserId,
+    pub user_name: Option<String>,
 }
 
 #[cfg(test)]
@@ -158,9 +184,11 @@ mod tests {
             resource_id: Uuid::new_v4(),
             user_id: UserId::new(),
             site_id: None,
+            project_id: None,
             start_time: test_time(start_hour),
             end_time: test_time(end_hour),
             status,
+            purpose: None,
             notes: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
@@ -262,8 +290,10 @@ mod tests {
             resource_type: ResourceType::Vehicle,
             resource_id: Uuid::new_v4(),
             site_id: None,
+            project_id: None,
             start_time: future_start,
             end_time: future_end,
+            purpose: None,
             notes: None,
         };
         assert!(cmd.validate().is_ok());
@@ -276,8 +306,10 @@ mod tests {
             resource_type: ResourceType::Vehicle,
             resource_id: Uuid::new_v4(),
             site_id: None,
+            project_id: None,
             start_time: future_time,
             end_time: future_time,
+            purpose: None,
             notes: None,
         };
         assert_eq!(
@@ -294,13 +326,36 @@ mod tests {
             resource_type: ResourceType::Vehicle,
             resource_id: Uuid::new_v4(),
             site_id: None,
+            project_id: None,
             start_time: past_start,
             end_time: future_end,
+            purpose: None,
             notes: None,
         };
         assert_eq!(
             cmd.validate(),
             Err("Start time cannot be in the past".to_string())
+        );
+    }
+
+    #[test]
+    fn create_reservation_validate_fails_when_purpose_is_too_long() {
+        let future_start = Utc::now() + chrono::Duration::hours(1);
+        let future_end = future_start + chrono::Duration::hours(2);
+        let cmd = CreateReservation {
+            resource_type: ResourceType::Vehicle,
+            resource_id: Uuid::new_v4(),
+            site_id: None,
+            project_id: None,
+            start_time: future_start,
+            end_time: future_end,
+            purpose: Some("x".repeat(161)),
+            notes: None,
+        };
+
+        assert_eq!(
+            cmd.validate(),
+            Err("Purpose must be 160 characters or less".to_string())
         );
     }
 
@@ -313,6 +368,8 @@ mod tests {
             start_time: None,
             end_time: Some(new_end),
             site_id: None,
+            project_id: None,
+            purpose: None,
             notes: None,
             status: None,
         };
@@ -326,9 +383,30 @@ mod tests {
             start_time: None,
             end_time: None,
             site_id: None,
+            project_id: None,
+            purpose: None,
             notes: None,
             status: Some(ReservationStatus::InUse),
         };
         assert!(update.validate(&current).is_err());
+    }
+
+    #[test]
+    fn update_reservation_validate_fails_when_purpose_is_too_long() {
+        let current = test_reservation(10, 12, ReservationStatus::Pending);
+        let update = UpdateReservation {
+            start_time: None,
+            end_time: None,
+            site_id: None,
+            project_id: None,
+            purpose: Some("x".repeat(161)),
+            notes: None,
+            status: None,
+        };
+
+        assert_eq!(
+            update.validate(&current),
+            Err("Purpose must be 160 characters or less".to_string())
+        );
     }
 }

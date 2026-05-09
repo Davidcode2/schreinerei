@@ -47,6 +47,26 @@ impl FleetService {
         Ok(user.id)
     }
 
+    async fn validate_project_context(
+        &self,
+        project_id: Option<SiteId>,
+        ctx: &TenantContext,
+    ) -> Result<(), AppError> {
+        let Some(project_id) = project_id else {
+            return Ok(());
+        };
+
+        if self
+            .fleet_repo
+            .project_exists(ctx.tenant_id, project_id)
+            .await?
+        {
+            Ok(())
+        } else {
+            Err(AppError::NotFound("Project not found".to_string()))
+        }
+    }
+
     // === Vehicle operations ===
 
     pub async fn create_vehicle(
@@ -450,6 +470,8 @@ impl FleetService {
     ) -> Result<Reservation, AppError> {
         // Validate the reservation
         create.validate()?;
+        self.validate_project_context(create.project_id.or(create.site_id), ctx)
+            .await?;
 
         let resource = self
             .fleet_repo
@@ -552,6 +574,9 @@ impl FleetService {
             }
         }
 
+        self.validate_project_context(update.project_id.or(update.site_id), ctx)
+            .await?;
+
         // Track what changed
         let mut changes = Vec::new();
         if update.start_time.is_some() {
@@ -562,6 +587,12 @@ impl FleetService {
         }
         if update.site_id.is_some() {
             changes.push("site_id".to_string());
+        }
+        if update.project_id.is_some() {
+            changes.push("project_id".to_string());
+        }
+        if update.purpose.is_some() {
+            changes.push("purpose".to_string());
         }
         if update.notes.is_some() {
             changes.push("notes".to_string());
@@ -616,6 +647,8 @@ impl FleetService {
             start_time: None,
             end_time: None,
             site_id: None,
+            project_id: None,
+            purpose: None,
             notes: None,
             status: Some(ReservationStatus::Cancelled),
         };

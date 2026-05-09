@@ -24,6 +24,7 @@ interface ReservationConfirmationSheetProps {
   resourceName: string
   startDate: string
   endDate: string
+  projectId?: string | undefined
 }
 
 function formatDateRange(startDate: string, endDate: string): string {
@@ -84,6 +85,9 @@ export function buildDefaultTimes(startDate: string, endDate: string, now: Date)
   }
 }
 
+const formatSiteOption = (site: { name: string; project_type: "external_site" | "internal_workshop" }) =>
+  site.project_type === "internal_workshop" ? `${site.name} (Werkstatt)` : `${site.name} (Extern)`
+
 export function ReservationConfirmationSheet({
   open,
   onOpenChange,
@@ -92,6 +96,7 @@ export function ReservationConfirmationSheet({
   resourceName,
   startDate,
   endDate,
+  projectId,
 }: ReservationConfirmationSheetProps) {
   const { data: preferences } = usePreferences()
   const { data: sites } = useSites()
@@ -102,6 +107,7 @@ export function ReservationConfirmationSheet({
   )
 
   const [siteId, setSiteId] = useState(preferences?.active_site_id ?? "")
+  const [purpose, setPurpose] = useState("")
   const [useCustomTimes, setUseCustomTimes] = useState(false)
   const [startTime, setStartTime] = useState(defaultTimes.start)
   const [endTime, setEndTime] = useState(defaultTimes.end)
@@ -111,11 +117,15 @@ export function ReservationConfirmationSheet({
       return
     }
 
-    setSiteId(preferences?.active_site_id ?? "")
+    const defaultSiteId = projectId ?? preferences?.active_site_id ?? ""
+    const selectedSite = sites?.find((site) => site.id === defaultSiteId)
+
+    setSiteId(defaultSiteId)
+    setPurpose(selectedSite ? `Reservierung fuer ${selectedSite.name}` : "")
     setUseCustomTimes(false)
     setStartTime(defaultTimes.start)
     setEndTime(defaultTimes.end)
-  }, [open, preferences?.active_site_id, defaultTimes])
+  }, [open, projectId, preferences?.active_site_id, sites, defaultTimes])
 
   const handleConfirm = async () => {
     const resolvedStartTime = useCustomTimes ? startTime : defaultTimes.start
@@ -131,8 +141,10 @@ export function ReservationConfirmationSheet({
         resource_id: resourceId,
         resource_type: resourceType,
         site_id: siteId || null,
+        project_id: siteId || null,
         start_time: toRfc3339(resolvedStartTime),
         end_time: toRfc3339(resolvedEndTime),
+        purpose: purpose.trim() || null,
       })
       toast.success("Reservierung erstellt")
       onOpenChange(false)
@@ -181,6 +193,18 @@ export function ReservationConfirmationSheet({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="reservation-purpose">Zweck (optional)</Label>
+            <Input
+              id="reservation-purpose"
+              maxLength={160}
+              value={purpose}
+              onChange={(event) => setPurpose(event.target.value)}
+              placeholder="z.B. Montage vor Ort"
+              className="h-10"
+            />
           </div>
 
           <div className="space-y-3 rounded-xl border p-4">
@@ -234,5 +258,3 @@ export function ReservationConfirmationSheet({
     </Sheet>
   )
 }
-  const formatSiteOption = (site: { name: string; project_type: "external_site" | "internal_workshop" }) =>
-    site.project_type === "internal_workshop" ? `${site.name} (Werkstatt)` : `${site.name} (Extern)`

@@ -93,6 +93,7 @@ export function ReservationDialog({
   const [endTime, setEndTime] = useState(
     initialEndTime ?? formatDateTimeLocal(initialData?.end_time) ?? ""
   )
+  const [purpose, setPurpose] = useState(initialData?.purpose ?? "")
   const [notes, setNotes] = useState(initialData?.notes ?? "")
 
   const { data: vehicles } = useVehicles()
@@ -109,17 +110,20 @@ export function ReservationDialog({
 
   useEffect(() => {
     if (open) {
-        if (mode === "edit" && initialData) {
-          setSelectedResourceId(initialData.resource_id)
-          setSiteId(initialData.site_id ?? "")
-          setStartTime(formatDateTimeLocal(initialData.start_time))
-          setEndTime(formatDateTimeLocal(initialData.end_time))
-          setNotes(initialData.notes ?? "")
-        } else if (mode === "create") {
-          setSelectedResourceId(resourceId ?? "")
-          setSiteId(preferences?.active_site_id ?? "")
-          setStartTime(initialStartTime ?? "")
-          setEndTime(initialEndTime ?? "")
+      if (mode === "edit" && initialData) {
+        setSelectedResourceId(initialData.resource_id)
+        setSiteId(initialData.site_id ?? "")
+        setStartTime(formatDateTimeLocal(initialData.start_time))
+        setEndTime(formatDateTimeLocal(initialData.end_time))
+        setPurpose(initialData.purpose ?? "")
+        setNotes(initialData.notes ?? "")
+      } else if (mode === "create") {
+        setSelectedResourceId(resourceId ?? "")
+        setSiteId(preferences?.active_site_id ?? "")
+        setStartTime(initialStartTime ?? "")
+        setEndTime(initialEndTime ?? "")
+        const activeSite = sites?.find((site) => site.id === preferences?.active_site_id)
+        setPurpose(activeSite ? `Reservierung fuer ${activeSite.name}` : "")
         setNotes("")
       }
     }
@@ -131,6 +135,7 @@ export function ReservationDialog({
     initialStartTime,
     initialEndTime,
     preferences?.active_site_id,
+    sites,
   ])
 
   const { data: availability } = useAvailability(
@@ -162,8 +167,10 @@ export function ReservationDialog({
         await updateMutation.mutateAsync({
           id: initialData.id,
           site_id: siteId || null,
+          project_id: siteId || null,
           start_time: formatDateToRfc3339(startTime),
           end_time: formatDateToRfc3339(endTime),
+          purpose: purpose.trim() || null,
           ...(notes ? { notes } : {}),
         })
         toast.success("Reservierung aktualisiert")
@@ -172,8 +179,10 @@ export function ReservationDialog({
           resource_type: fixedResourceType,
           resource_id: selectedResourceId,
           site_id: siteId || null,
+          project_id: siteId || null,
           start_time: formatDateToRfc3339(startTime),
           end_time: formatDateToRfc3339(endTime),
+          purpose: purpose.trim() || null,
           ...(notes ? { notes } : {}),
         })
         toast.success("Reservierung erstellt")
@@ -241,7 +250,11 @@ export function ReservationDialog({
                 </div>
                 <div>
                   <p className="text-muted-foreground">Projekt</p>
-                  <p className="font-medium">{initialData.site_name || "Keine Zuordnung"}</p>
+                  <p className="font-medium">{initialData.project_name || initialData.site_name || "Keine Zuordnung"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Aktueller Nutzer</p>
+                  <p className="font-medium">{initialData.current_holder?.user_name || "Nicht aktuell in Nutzung"}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Erstellt</p>
@@ -320,26 +333,26 @@ export function ReservationDialog({
               </p>
             </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Von</Label>
-              <Input
-                type="datetime-local"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="h-11"
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Von</Label>
+                <Input
+                  type="datetime-local"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Bis</Label>
+                <Input
+                  type="datetime-local"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="h-11"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Bis</Label>
-              <Input
-                type="datetime-local"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="h-11"
-              />
-            </div>
-          </div>
           </div>
 
           {mode === "create" && startTime && endTime && !isAvailable && (
@@ -380,10 +393,21 @@ export function ReservationDialog({
           )}
 
           <div className="space-y-2 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
+            <Label>Zweck (optional)</Label>
+            <Input
+              maxLength={160}
+              placeholder="z.B. Montage vor Ort"
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
+              className="h-11"
+            />
+          </div>
+
+          <div className="space-y-2 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
             <Label>Notiz (optional)</Label>
             <Input
-                placeholder="z.B. Für Projekt Müller"
-                value={notes}
+              placeholder="z.B. Fuer Projekt Mueller"
+              value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="h-11"
             />

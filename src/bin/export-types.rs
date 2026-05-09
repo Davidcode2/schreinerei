@@ -79,6 +79,7 @@ fn collect_bindings(cfg: &Config, bindings: &mut Vec<Binding>) -> Result<()> {
     add_binding::<fleet::ListMaintenanceDueQuery>(cfg, bindings)?;
     add_binding::<fleet::ResolveMaintenanceDueRequest>(cfg, bindings)?;
     add_binding::<fleet::ReservationResponse>(cfg, bindings)?;
+    add_binding::<fleet::ReservationHolderResponse>(cfg, bindings)?;
     add_binding::<fleet::CreateReservationRequest>(cfg, bindings)?;
     add_binding::<fleet::UpdateReservationRequest>(cfg, bindings)?;
     add_binding::<fleet::ListReservationsQuery>(cfg, bindings)?;
