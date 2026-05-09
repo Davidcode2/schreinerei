@@ -1,7 +1,9 @@
 {
   "database": "dolt",
   "backend": "dolt",
-  "dolt_mode": "embedded",
-  "dolt_database": "schreinerei",
-  "project_id": "886b8668-3828-4f2f-90d6-4d1da3a81bfe"
+  "dolt_mode": "server",
+  "dolt_server_host": "127.0.0.1",
+  "dolt_server_port": 10309,
+  "dolt_database": "sc",
+  "project_id": "1682a085-efda-4bb2-bf26-4a57673e39ed"
 }

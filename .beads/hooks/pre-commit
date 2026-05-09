@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-backup_hook="/home/jakob/documents/code/schreinerei/.beads/hooks/pre-commit.beads"
-
-if [[ -x "$backup_hook" ]]; then
-  "$backup_hook" "$@"
-fi
-
-exec "/home/jakob/documents/code/schreinerei/.worktrees/schreinerei-3/.githooks/pre-commit" "$@"
