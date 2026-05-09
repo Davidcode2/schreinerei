@@ -218,6 +218,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [check-for-changes, backend-check, frontend-check, backend-image-check, frontend-image-check]
     if: >-
+      always() &&
       (needs.check-for-changes.outputs.app == 'true' || needs.check-for-changes.outputs.shared == 'true' || github.event_name == 'workflow_dispatch') &&
       (needs.backend-check.result == 'success' || needs.backend-check.result == 'skipped') &&
       (needs.frontend-check.result == 'success' || needs.frontend-check.result == 'skipped') &&
