@@ -32,6 +32,7 @@ interface ResourceDetailPageProps {
   reserveDisabled?: boolean
   editDialog: ReactNode
   reservationDialog: ReactNode
+  maintenanceSection?: ReactNode
 }
 
 export function ResourceDetailPage({
@@ -52,6 +53,7 @@ export function ResourceDetailPage({
   reserveDisabled = false,
   editDialog,
   reservationDialog,
+  maintenanceSection,
 }: ResourceDetailPageProps) {
   return (
     <div className="space-y-6">
@@ -149,6 +151,8 @@ export function ResourceDetailPage({
           </CardContent>
         </Card>
       </div>
+
+      {maintenanceSection}
 
       <Card>
         <CardHeader>

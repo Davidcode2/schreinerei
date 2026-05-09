@@ -21,6 +21,13 @@ import type {
   CalendarQuery,
   AvailabilityResponse,
   AvailabilityQuery,
+  CreateMaintenanceScheduleRequest,
+  CreateMaintenanceScheduleResponse,
+  ListMaintenanceDueQuery,
+  ListMaintenanceSchedulesQuery,
+  MaintenanceDue,
+  MaintenanceSchedule,
+  ResolveMaintenanceDueRequest,
 } from "@/types/fleet"
 
 // === Vehicles ===
@@ -206,6 +213,68 @@ export function useDeleteMachine() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["machines"] })
       queryClient.invalidateQueries({ queryKey: ["calendar"] })
+    },
+  })
+}
+
+// === Maintenance ===
+
+export function useMaintenanceSchedules(query?: ListMaintenanceSchedulesQuery) {
+  return useQuery({
+    queryKey: ["maintenance-schedules", query],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (query?.asset_id) params.set("asset_id", query.asset_id)
+      const queryString = params.toString()
+      return apiClient.get<MaintenanceSchedule[]>(
+        `/api/v1/fleet/maintenance/schedules${queryString ? `?${queryString}` : ""}`
+      )
+    },
+    staleTime: 30000,
+  })
+}
+
+export function useCreateMaintenanceSchedule() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: CreateMaintenanceScheduleRequest) =>
+      apiClient.post<CreateMaintenanceScheduleResponse>(
+        "/api/v1/fleet/maintenance/schedules",
+        data
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["maintenance-schedules"] })
+      queryClient.invalidateQueries({ queryKey: ["maintenance-due"] })
+    },
+  })
+}
+
+export function useMaintenanceDue(query?: ListMaintenanceDueQuery) {
+  return useQuery({
+    queryKey: ["maintenance-due", query],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (query?.asset_id) params.set("asset_id", query.asset_id)
+      if (query?.status) params.set("status", query.status)
+      const queryString = params.toString()
+      return apiClient.get<MaintenanceDue[]>(
+        `/api/v1/fleet/maintenance/due${queryString ? `?${queryString}` : ""}`
+      )
+    },
+    staleTime: 30000,
+  })
+}
+
+export function useResolveMaintenanceDue() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, ...data }: ResolveMaintenanceDueRequest & { id: string }) =>
+      apiClient.post<MaintenanceDue>(`/api/v1/fleet/maintenance/due/${id}/resolve`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["maintenance-due"] })
+      queryClient.invalidateQueries({ queryKey: ["maintenance-schedules"] })
     },
   })
 }

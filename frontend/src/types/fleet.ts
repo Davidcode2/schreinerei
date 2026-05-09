@@ -118,6 +118,63 @@ export interface ListMachinesQuery {
   status?: ResourceStatus
 }
 
+// === Maintenance ===
+
+export type MaintenanceDueStatus = 'open' | 'resolved'
+export type MaintenanceSeverity = 'due' | 'overdue'
+
+export interface MaintenanceSchedule {
+  id: string
+  asset_id: string
+  task_description: string
+  interval_days: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface MaintenanceDue {
+  id: string
+  schedule_id: string
+  asset_id: string
+  resource_type: ResourceType
+  resource_name: string
+  task_description: string
+  due_date: string
+  status: MaintenanceDueStatus
+  severity: MaintenanceSeverity
+  resolved_at: string | null
+  resolved_by: string | null
+  resolution_notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateMaintenanceScheduleRequest {
+  asset_id: string
+  task_description: string
+  interval_days: number
+  next_due_date: string
+}
+
+export interface CreateMaintenanceScheduleResponse {
+  schedule: MaintenanceSchedule
+  due: MaintenanceDue
+}
+
+export interface ListMaintenanceSchedulesQuery {
+  asset_id?: string
+}
+
+export interface ListMaintenanceDueQuery {
+  asset_id?: string
+  status?: MaintenanceDueStatus
+}
+
+export interface ResolveMaintenanceDueRequest {
+  resolution_notes?: string
+}
+
 // === Reservation ===
 
 export interface Reservation {

@@ -2,8 +2,11 @@ import { useState } from "react"
 import { useParams } from "react-router-dom"
 import { MapPin, QrCode, Wrench } from "lucide-react"
 import { LoadingSpinner, ErrorState } from "@/components/shared"
-import { useReservations, useTool } from "@/lib/api/hooks"
+import { useMaintenanceDue, useReservations, useTool } from "@/lib/api/hooks"
+import { useAuthStore } from "@/lib/auth/authStore"
 import { AddToolDialog } from "./AddToolDialog"
+import { MaintenancePanel } from "./MaintenancePanel"
+import { MaintenanceScheduleDialog } from "./MaintenanceScheduleDialog"
 import { ReservationDialog } from "./ReservationDialog"
 import { ResourceDetailPage } from "./ResourceDetailPage"
 
@@ -11,11 +14,18 @@ export default function ToolDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showReservationDialog, setShowReservationDialog] = useState(false)
+  const [showMaintenanceDialog, setShowMaintenanceDialog] = useState(false)
+  const user = useAuthStore((state) => state.user)
+  const isAdmin = user?.role === "admin"
 
   const { data: tool, isLoading, error, refetch } = useTool(id!)
   const { data: reservations = [] } = useReservations({
     resource_type: "tool",
     ...(id ? { resource_id: id } : {}),
+  })
+  const { data: maintenanceDue = [] } = useMaintenanceDue({
+    status: "open",
+    ...(id ? { asset_id: id } : {}),
   })
 
   if (isLoading) {
@@ -60,6 +70,13 @@ export default function ToolDetailPage() {
       onReserve={() => setShowReservationDialog(true)}
       onEdit={() => setShowEditDialog(true)}
       reserveDisabled={!isAvailable}
+      maintenanceSection={
+        <MaintenancePanel
+          dueRecords={maintenanceDue}
+          onAddSchedule={() => setShowMaintenanceDialog(true)}
+          canManage={isAdmin}
+        />
+      }
       editDialog={
         <AddToolDialog
           open={showEditDialog}
@@ -69,12 +86,19 @@ export default function ToolDetailPage() {
         />
       }
       reservationDialog={
-        <ReservationDialog
-          open={showReservationDialog}
-          onOpenChange={setShowReservationDialog}
-          resourceId={tool.id}
-          resourceType="tool"
-        />
+        <>
+          <ReservationDialog
+            open={showReservationDialog}
+            onOpenChange={setShowReservationDialog}
+            resourceId={tool.id}
+            resourceType="tool"
+          />
+          <MaintenanceScheduleDialog
+            open={showMaintenanceDialog}
+            onOpenChange={setShowMaintenanceDialog}
+            assetId={tool.id}
+          />
+        </>
       }
     />
   )

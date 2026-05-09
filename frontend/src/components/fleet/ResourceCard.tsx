@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, QrCode, Trash2, Car, Wrench } from "lucide-react"
+import { AlertTriangle, MapPin, QrCode, Trash2, Car, Wrench } from "lucide-react"
 import { Link } from "react-router-dom"
 import { StatusBadge } from "@/components/shared"
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
@@ -15,13 +15,21 @@ interface ResourceCardProps {
   resource: Vehicle | Tool
   type: "vehicle" | "tool"
   onReserve: (id: string, type: "vehicle" | "tool") => void
+  maintenanceDueCount?: number
+  hasOverdueMaintenance?: boolean
 }
 
 function isVehicle(resource: Vehicle | Tool): resource is Vehicle {
   return "vehicle_type" in resource
 }
 
-export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
+export function ResourceCard({
+  resource,
+  type,
+  onReserve,
+  maintenanceDueCount = 0,
+  hasOverdueMaintenance = false,
+}: ResourceCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const deleteVehicleMutation = useDeleteVehicle()
   const deleteToolMutation = useDeleteTool()
@@ -72,6 +80,21 @@ export function ResourceCard({ resource, type, onReserve }: ResourceCardProps) {
           </div>
 
           <Link to={detailPath} className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            {maintenanceDueCount > 0 ? (
+              <div
+                className={cn(
+                  "mb-3 flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
+                  hasOverdueMaintenance
+                    ? "border-destructive/40 bg-destructive/5 text-destructive"
+                    : "border-amber-500/30 bg-amber-500/5 text-amber-700"
+                )}
+              >
+                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                <span className="font-medium">
+                  {hasOverdueMaintenance ? "Wartung überfällig" : "Wartung fällig"}
+                </span>
+              </div>
+            ) : null}
             {resource.location && (
               <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
                 <div className="flex h-5 w-5 items-center justify-center">

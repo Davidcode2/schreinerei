@@ -1,13 +1,15 @@
 use crate::common::error::AppError;
 use crate::common::types::{
-    MachineId, ReservationId, ReservationStatus, ResourceType, Role, SiteId, ToolId, UserId,
-    VehicleId,
+    AssetId, MachineId, MaintenanceDueId, MaintenanceDueStatus, ReservationId, ReservationStatus,
+    ResourceType, Role, SiteId, ToolId, UserId, VehicleId,
 };
 use crate::modules::fleet::domain::{
-    CreateMachine, CreateReservation, CreateTool, CreateVehicle, Machine, MachineCreatedPayload,
-    Reservation, ReservationCancelledPayload, ReservationCreatedPayload, ReservationUpdatedPayload,
-    ReservationWithDetails, ResourceStatusChangedPayload, Tool, ToolCreatedPayload, UpdateMachine,
-    UpdateReservation, UpdateTool, UpdateVehicle, Vehicle, VehicleCreatedPayload,
+    CreateMachine, CreateMaintenanceSchedule, CreateReservation, CreateTool, CreateVehicle,
+    Machine, MachineCreatedPayload, MaintenanceDue, MaintenanceSchedule, Reservation,
+    ReservationCancelledPayload, ReservationCreatedPayload, ReservationUpdatedPayload,
+    ReservationWithDetails, ResolveMaintenanceDue, ResourceStatusChangedPayload, Tool,
+    ToolCreatedPayload, UpdateMachine, UpdateReservation, UpdateTool, UpdateVehicle, Vehicle,
+    VehicleCreatedPayload,
 };
 use crate::modules::fleet::infrastructure::fleet_repository::{
     CalendarEntry, FleetRepository, ResourceStatusInfo,
@@ -374,6 +376,67 @@ impl FleetService {
 
         self.fleet_repo
             .delete_machine(ctx.tenant_id, machine_id)
+            .await
+    }
+
+    // === Maintenance operations ===
+
+    pub async fn create_maintenance_schedule(
+        &self,
+        create: CreateMaintenanceSchedule,
+        ctx: &TenantContext,
+    ) -> Result<(MaintenanceSchedule, MaintenanceDue), AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+
+        create.validate()?;
+
+        self.fleet_repo
+            .find_asset_by_id(ctx.tenant_id, create.asset_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound("Asset not found".to_string()))?;
+
+        self.fleet_repo
+            .create_maintenance_schedule(&create, ctx.tenant_id)
+            .await
+    }
+
+    pub async fn list_maintenance_schedules(
+        &self,
+        asset_id: Option<AssetId>,
+        ctx: &TenantContext,
+    ) -> Result<Vec<MaintenanceSchedule>, AppError> {
+        self.fleet_repo
+            .list_maintenance_schedules(ctx.tenant_id, asset_id)
+            .await
+    }
+
+    pub async fn list_maintenance_due(
+        &self,
+        asset_id: Option<AssetId>,
+        status: Option<MaintenanceDueStatus>,
+        ctx: &TenantContext,
+    ) -> Result<Vec<MaintenanceDue>, AppError> {
+        self.fleet_repo
+            .list_maintenance_due(ctx.tenant_id, asset_id, status)
+            .await
+    }
+
+    pub async fn resolve_maintenance_due(
+        &self,
+        due_id: MaintenanceDueId,
+        resolve: ResolveMaintenanceDue,
+        ctx: &TenantContext,
+    ) -> Result<MaintenanceDue, AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+
+        self.fleet_repo
+            .resolve_maintenance_due(ctx.tenant_id, due_id, local_user_id, &resolve)
             .await
     }
 

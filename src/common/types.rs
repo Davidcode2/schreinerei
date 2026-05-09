@@ -620,6 +620,110 @@ impl fmt::Display for ReservationId {
     }
 }
 
+/// Maintenance schedule identifier - wraps UUID
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct MaintenanceScheduleId(pub Uuid);
+
+impl MaintenanceScheduleId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl Default for MaintenanceScheduleId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for MaintenanceScheduleId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+/// Maintenance due record identifier - wraps UUID
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct MaintenanceDueId(pub Uuid);
+
+impl MaintenanceDueId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl Default for MaintenanceDueId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for MaintenanceDueId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+/// Maintenance due status
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MaintenanceDueStatus {
+    Open,
+    Resolved,
+}
+
+impl MaintenanceDueStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            MaintenanceDueStatus::Open => "open",
+            MaintenanceDueStatus::Resolved => "resolved",
+        }
+    }
+}
+
+impl fmt::Display for MaintenanceDueStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl FromStr for MaintenanceDueStatus {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "open" => Ok(MaintenanceDueStatus::Open),
+            "resolved" => Ok(MaintenanceDueStatus::Resolved),
+            _ => Err(format!("Invalid maintenance due status: {}", s)),
+        }
+    }
+}
+
+/// Maintenance severity for open due records
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MaintenanceSeverity {
+    Due,
+    Overdue,
+}
+
+impl MaintenanceSeverity {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            MaintenanceSeverity::Due => "due",
+            MaintenanceSeverity::Overdue => "overdue",
+        }
+    }
+}
+
+impl fmt::Display for MaintenanceSeverity {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
 /// Asset kind for shared asset identity and type-specific details
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]

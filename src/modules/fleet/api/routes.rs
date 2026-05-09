@@ -12,13 +12,13 @@ use uuid::Uuid;
 
 use crate::common::error::AppError;
 use crate::common::types::{
-    MachineId, ReservationId, ReservationStatus, ResourceStatus, ResourceType, ToolId, VehicleId,
-    VehicleType,
+    AssetId, MachineId, MaintenanceDueId, MaintenanceDueStatus, ReservationId, ReservationStatus,
+    ResourceStatus, ResourceType, ToolId, VehicleId, VehicleType,
 };
 use crate::modules::fleet::application::fleet_service::FleetService;
 use crate::modules::fleet::domain::{
-    CreateMachine, CreateReservation, CreateTool, CreateVehicle, UpdateMachine, UpdateReservation,
-    UpdateTool, UpdateVehicle,
+    CreateMachine, CreateMaintenanceSchedule, CreateReservation, CreateTool, CreateVehicle,
+    ResolveMaintenanceDue, UpdateMachine, UpdateReservation, UpdateTool, UpdateVehicle,
 };
 use crate::modules::fleet::infrastructure::fleet_repository::{
     FleetRepository, ReservationSummary,
@@ -71,6 +71,16 @@ pub fn create_router() -> Router<AppState> {
         )
         // Calendar
         .route("/api/v1/fleet/calendar", get(get_calendar))
+        // Maintenance
+        .route(
+            "/api/v1/fleet/maintenance/schedules",
+            get(list_maintenance_schedules).post(create_maintenance_schedule),
+        )
+        .route("/api/v1/fleet/maintenance/due", get(list_maintenance_due))
+        .route(
+            "/api/v1/fleet/maintenance/due/{id}/resolve",
+            axum::routing::post(resolve_maintenance_due),
+        )
         // Availability
         .route("/api/v1/fleet/availability", get(check_availability))
         // QR Code
@@ -255,6 +265,112 @@ pub struct UpdateMachineRequest {
 #[ts(export, export_to = "generated.ts")]
 pub struct ListMachinesQuery {
     pub status: Option<String>,
+}
+
+// === Maintenance DTOs ===
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "generated.ts")]
+pub struct MaintenanceScheduleResponse {
+    pub id: String,
+    pub asset_id: String,
+    pub task_description: String,
+    pub interval_days: i32,
+    pub is_active: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+impl From<crate::modules::fleet::domain::MaintenanceSchedule> for MaintenanceScheduleResponse {
+    fn from(schedule: crate::modules::fleet::domain::MaintenanceSchedule) -> Self {
+        Self {
+            id: schedule.id.to_string(),
+            asset_id: schedule.asset_id.to_string(),
+            task_description: schedule.task_description,
+            interval_days: schedule.interval_days,
+            is_active: schedule.is_active,
+            created_at: schedule.created_at.to_rfc3339(),
+            updated_at: schedule.updated_at.to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "generated.ts")]
+pub struct MaintenanceDueResponse {
+    pub id: String,
+    pub schedule_id: String,
+    pub asset_id: String,
+    pub resource_type: String,
+    pub resource_name: String,
+    pub task_description: String,
+    pub due_date: String,
+    pub status: String,
+    pub severity: String,
+    pub resolved_at: Option<String>,
+    pub resolved_by: Option<String>,
+    pub resolution_notes: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+impl From<crate::modules::fleet::domain::MaintenanceDue> for MaintenanceDueResponse {
+    fn from(due: crate::modules::fleet::domain::MaintenanceDue) -> Self {
+        let today = Utc::now().date_naive();
+        let severity = due.severity(today).to_string();
+
+        Self {
+            id: due.id.to_string(),
+            schedule_id: due.schedule_id.to_string(),
+            asset_id: due.asset_id.to_string(),
+            resource_type: due.resource_type.to_string(),
+            resource_name: due.resource_name,
+            task_description: due.task_description,
+            due_date: due.due_date.to_string(),
+            status: due.status.to_string(),
+            severity,
+            resolved_at: due.resolved_at.map(|value| value.to_rfc3339()),
+            resolved_by: due.resolved_by.map(|value| value.to_string()),
+            resolution_notes: due.resolution_notes,
+            created_at: due.created_at.to_rfc3339(),
+            updated_at: due.updated_at.to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "generated.ts")]
+pub struct CreateMaintenanceScheduleResponse {
+    pub schedule: MaintenanceScheduleResponse,
+    pub due: MaintenanceDueResponse,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "generated.ts")]
+pub struct CreateMaintenanceScheduleRequest {
+    pub asset_id: String,
+    pub task_description: String,
+    pub interval_days: i32,
+    pub next_due_date: String,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "generated.ts")]
+pub struct ListMaintenanceSchedulesQuery {
+    pub asset_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "generated.ts")]
+pub struct ListMaintenanceDueQuery {
+    pub asset_id: Option<String>,
+    pub status: Option<String>,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "generated.ts")]
+pub struct ResolveMaintenanceDueRequest {
+    pub resolution_notes: Option<String>,
 }
 
 // === Reservation DTOs ===
@@ -767,6 +883,112 @@ pub async fn delete_machine(
     service.delete_machine(machine_id, &ctx).await?;
 
     Ok((StatusCode::OK, Json(serde_json::json!({ "success": true }))))
+}
+
+// === Maintenance Handlers ===
+
+pub async fn create_maintenance_schedule(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Json(request): Json<CreateMaintenanceScheduleRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = FleetService::new(FleetRepository::new(state.pool));
+
+    let asset_id = Uuid::parse_str(&request.asset_id)
+        .map(AssetId)
+        .map_err(|_| AppError::Validation("Invalid asset ID".to_string()))?;
+    let next_due_date = NaiveDate::parse_from_str(&request.next_due_date, "%Y-%m-%d")
+        .map_err(|_| AppError::Validation("Invalid due date format. Use YYYY-MM-DD".to_string()))?;
+
+    let create = CreateMaintenanceSchedule {
+        asset_id,
+        task_description: request.task_description,
+        interval_days: request.interval_days,
+        next_due_date,
+    };
+
+    let (schedule, due) = service.create_maintenance_schedule(create, &ctx).await?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(CreateMaintenanceScheduleResponse {
+            schedule: MaintenanceScheduleResponse::from(schedule),
+            due: MaintenanceDueResponse::from(due),
+        }),
+    ))
+}
+
+pub async fn list_maintenance_schedules(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Query(query): Query<ListMaintenanceSchedulesQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = FleetService::new(FleetRepository::new(state.pool));
+    let asset_id = query
+        .asset_id
+        .map(|value| Uuid::parse_str(&value))
+        .transpose()
+        .map_err(|_| AppError::Validation("Invalid asset ID".to_string()))?
+        .map(AssetId);
+
+    let schedules = service.list_maintenance_schedules(asset_id, &ctx).await?;
+    let response: Vec<MaintenanceScheduleResponse> = schedules
+        .into_iter()
+        .map(MaintenanceScheduleResponse::from)
+        .collect();
+
+    Ok(Json(response))
+}
+
+pub async fn list_maintenance_due(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Query(query): Query<ListMaintenanceDueQuery>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = FleetService::new(FleetRepository::new(state.pool));
+    let asset_id = query
+        .asset_id
+        .map(|value| Uuid::parse_str(&value))
+        .transpose()
+        .map_err(|_| AppError::Validation("Invalid asset ID".to_string()))?
+        .map(AssetId);
+    let status = query
+        .status
+        .map(|value| value.parse::<MaintenanceDueStatus>())
+        .transpose()
+        .map_err(|e: String| AppError::Validation(e))?;
+
+    let due_records = service.list_maintenance_due(asset_id, status, &ctx).await?;
+    let response: Vec<MaintenanceDueResponse> = due_records
+        .into_iter()
+        .map(MaintenanceDueResponse::from)
+        .collect();
+
+    Ok(Json(response))
+}
+
+pub async fn resolve_maintenance_due(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+    Json(request): Json<ResolveMaintenanceDueRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = FleetService::new(FleetRepository::new(state.pool));
+    let due_id = Uuid::parse_str(&id)
+        .map(MaintenanceDueId)
+        .map_err(|_| AppError::Validation("Invalid maintenance due ID".to_string()))?;
+
+    let due = service
+        .resolve_maintenance_due(
+            due_id,
+            ResolveMaintenanceDue {
+                resolution_notes: request.resolution_notes,
+            },
+            &ctx,
+        )
+        .await?;
+
+    Ok(Json(MaintenanceDueResponse::from(due)))
 }
 
 // === Reservation Handlers ===

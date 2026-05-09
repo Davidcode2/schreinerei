@@ -32,6 +32,10 @@ export type CreateCategoryRequest = { name: string, description: string | null, 
 
 export type CreateMachineRequest = { name: string, machine_type: string | null, description: string | null, location: string | null, qr_code: string | null, };
 
+export type CreateMaintenanceScheduleRequest = { asset_id: string, task_description: string, interval_days: number, next_due_date: string, };
+
+export type CreateMaintenanceScheduleResponse = { schedule: MaintenanceScheduleResponse, due: MaintenanceDueResponse, };
+
 export type CreateMaterialRequest = { category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, location: string | null, expires_on: string | null, batch_code: string | null, };
 
 export type CreateOrderRequestDto = { material_id: string, quantity: number, reason: string | null, };
@@ -68,6 +72,10 @@ export type InviteUserRequest = { email: string, name: string | null, role: stri
 
 export type ListMachinesQuery = { status: string | null, };
 
+export type ListMaintenanceDueQuery = { asset_id: string | null, status: string | null, };
+
+export type ListMaintenanceSchedulesQuery = { asset_id: string | null, };
+
 export type ListMaterialsQuery = { category_id: string | null, };
 
 export type ListReservationsQuery = { user_id: string | null, resource_type: string | null, resource_id: string | null, site_id: string | null, };
@@ -79,6 +87,10 @@ export type ListToolsQuery = { status: string | null, category: string | null, }
 export type ListVehiclesQuery = { status: string | null, };
 
 export type MachineResponse = { id: string, name: string, machine_type: string | null, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
+
+export type MaintenanceDueResponse = { id: string, schedule_id: string, asset_id: string, resource_type: string, resource_name: string, task_description: string, due_date: string, status: string, severity: string, resolved_at: string | null, resolved_by: string | null, resolution_notes: string | null, created_at: string, updated_at: string, };
+
+export type MaintenanceScheduleResponse = { id: string, asset_id: string, task_description: string, interval_days: number, is_active: boolean, created_at: string, updated_at: string, };
 
 export type MarkOrderedRequestDto = { notes: string | null, };
 
@@ -108,6 +120,8 @@ export type QrSvgResponse = { svg: string, qr_code: string, };
 export type ReservationResponse = { id: string, resource_type: string, resource_id: string, resource_name: string, user_id: string, user_name: string | null, site_id: string | null, site_name: string | null, start_time: string, end_time: string, status: string, notes: string | null, created_at: string, updated_at: string, };
 
 export type ReservationSummaryResponse = { id: string, start_time: string, end_time: string, user_name: string | null, site_id: string | null, site_name: string | null, status: string, };
+
+export type ResolveMaintenanceDueRequest = { resolution_notes: string | null, };
 
 export type SiteActivityAttachmentResponse = { attachment_id: string, filename: string, mime_type: string, url: string, thumbnail_url: string | null, };
 

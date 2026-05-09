@@ -6,12 +6,14 @@ use uuid::Uuid;
 use crate::common::error::AppError;
 use crate::common::events::{DomainEvent, EventBus};
 use crate::common::types::{
-    AssetId, AssetKind, MachineId, ReservationId, ReservationStatus, ResourceStatus, ResourceType,
-    SiteId, TenantId, ToolId, UserId, VehicleId, VehicleType,
+    AssetId, AssetKind, MachineId, MaintenanceDueId, MaintenanceDueStatus, MaintenanceScheduleId,
+    ReservationId, ReservationStatus, ResourceStatus, ResourceType, SiteId, TenantId, ToolId,
+    UserId, VehicleId, VehicleType,
 };
 use crate::modules::fleet::domain::{
-    Asset, CreateMachine, CreateReservation, CreateTool, CreateVehicle, Machine, Reservation,
-    ReservationWithDetails, Tool, UpdateMachine, UpdateReservation, UpdateTool, UpdateVehicle,
+    Asset, CreateMachine, CreateMaintenanceSchedule, CreateReservation, CreateTool, CreateVehicle,
+    Machine, MaintenanceDue, MaintenanceSchedule, Reservation, ReservationWithDetails,
+    ResolveMaintenanceDue, Tool, UpdateMachine, UpdateReservation, UpdateTool, UpdateVehicle,
     Vehicle,
 };
 
@@ -82,6 +84,239 @@ impl FleetRepository {
         } else {
             Ok(None)
         }
+    }
+
+    // === Maintenance operations ===
+
+    pub async fn create_maintenance_schedule(
+        &self,
+        create: &CreateMaintenanceSchedule,
+        tenant_id: TenantId,
+    ) -> Result<(MaintenanceSchedule, MaintenanceDue), AppError> {
+        let now = Utc::now();
+        let schedule_id = Uuid::new_v4();
+        let due_id = Uuid::new_v4();
+
+        let row = sqlx::query_as::<_, MaintenanceScheduleWithDueRow>(
+            r#"
+            WITH inserted_schedule AS (
+                INSERT INTO maintenance_schedules (
+                    id, tenant_id, asset_id, task_description, interval_days, is_active, created_at, updated_at
+                )
+                VALUES ($1, $2, $3, $4, $5, true, $6, $7)
+                RETURNING id, tenant_id, asset_id, task_description, interval_days, is_active, created_at, updated_at
+            ),
+            inserted_due AS (
+                INSERT INTO maintenance_due (
+                    id, tenant_id, schedule_id, asset_id, due_date, status, created_at, updated_at
+                )
+                SELECT $8, tenant_id, id, asset_id, $9, 'open', created_at, updated_at
+                FROM inserted_schedule
+                RETURNING id, tenant_id, schedule_id, asset_id, due_date, status, resolved_at, resolved_by, resolution_notes, created_at, updated_at
+            )
+            SELECT
+                s.id AS schedule_id,
+                s.tenant_id,
+                s.asset_id,
+                s.task_description,
+                s.interval_days,
+                s.is_active,
+                s.created_at AS schedule_created_at,
+                s.updated_at AS schedule_updated_at,
+                d.id AS due_id,
+                d.due_date,
+                d.status AS due_status,
+                d.resolved_at,
+                d.resolved_by,
+                d.resolution_notes,
+                d.created_at AS due_created_at,
+                d.updated_at AS due_updated_at,
+                a.asset_kind AS resource_type,
+                a.name AS resource_name
+            FROM inserted_schedule s
+            JOIN inserted_due d ON d.schedule_id = s.id
+            JOIN assets a ON a.id = s.asset_id AND a.tenant_id = s.tenant_id
+            "#
+        )
+        .bind(schedule_id)
+        .bind(tenant_id.0)
+        .bind(create.asset_id.0)
+        .bind(create.task_description.trim())
+        .bind(create.interval_days)
+        .bind(now)
+        .bind(now)
+        .bind(due_id)
+        .bind(create.next_due_date)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(row.into_schedule_and_due())
+    }
+
+    pub async fn list_maintenance_schedules(
+        &self,
+        tenant_id: TenantId,
+        asset_id: Option<AssetId>,
+    ) -> Result<Vec<MaintenanceSchedule>, AppError> {
+        let rows = sqlx::query_as::<_, MaintenanceScheduleRow>(
+            r#"
+            SELECT id, tenant_id, asset_id, task_description, interval_days, is_active, created_at, updated_at
+            FROM maintenance_schedules
+            WHERE tenant_id = $1
+              AND ($2::uuid IS NULL OR asset_id = $2)
+            ORDER BY is_active DESC, task_description
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(asset_id.map(|value| value.0))
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(rows.into_iter().map(|row| row.into_schedule()).collect())
+    }
+
+    pub async fn list_maintenance_due(
+        &self,
+        tenant_id: TenantId,
+        asset_id: Option<AssetId>,
+        status: Option<MaintenanceDueStatus>,
+    ) -> Result<Vec<MaintenanceDue>, AppError> {
+        let rows = sqlx::query_as::<_, MaintenanceDueRow>(
+            r#"
+            SELECT
+                d.id,
+                d.tenant_id,
+                d.schedule_id,
+                d.asset_id,
+                a.asset_kind AS resource_type,
+                a.name AS resource_name,
+                s.task_description,
+                d.due_date,
+                d.status,
+                d.resolved_at,
+                d.resolved_by,
+                d.resolution_notes,
+                d.created_at,
+                d.updated_at
+            FROM maintenance_due d
+            JOIN maintenance_schedules s ON s.id = d.schedule_id AND s.tenant_id = d.tenant_id
+            JOIN assets a ON a.id = d.asset_id AND a.tenant_id = d.tenant_id
+            WHERE d.tenant_id = $1
+              AND ($2::uuid IS NULL OR d.asset_id = $2)
+              AND ($3::text IS NULL OR d.status = $3)
+              AND a.deleted_at IS NULL
+            ORDER BY d.due_date ASC, a.name ASC
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(asset_id.map(|value| value.0))
+        .bind(status.as_ref().map(|value| value.as_str()))
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(rows.into_iter().map(|row| row.into_due()).collect())
+    }
+
+    pub async fn resolve_maintenance_due(
+        &self,
+        tenant_id: TenantId,
+        due_id: MaintenanceDueId,
+        resolved_by: UserId,
+        resolve: &ResolveMaintenanceDue,
+    ) -> Result<MaintenanceDue, AppError> {
+        let mut transaction = self
+            .pool
+            .begin()
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        let row = sqlx::query_as::<_, MaintenanceDueRow>(
+            r#"
+            WITH resolved_due AS (
+                UPDATE maintenance_due
+                SET
+                    status = 'resolved',
+                    resolved_at = NOW(),
+                    resolved_by = $3,
+                    resolution_notes = $4,
+                    updated_at = NOW()
+                WHERE id = $1
+                  AND tenant_id = $2
+                  AND status = 'open'
+                RETURNING id, tenant_id, schedule_id, asset_id, due_date, status, resolved_at, resolved_by, resolution_notes, created_at, updated_at
+            )
+            SELECT
+                d.id,
+                d.tenant_id,
+                d.schedule_id,
+                d.asset_id,
+                a.asset_kind AS resource_type,
+                a.name AS resource_name,
+                s.task_description,
+                d.due_date,
+                d.status,
+                d.resolved_at,
+                d.resolved_by,
+                d.resolution_notes,
+                d.created_at,
+                d.updated_at
+            FROM resolved_due d
+            JOIN maintenance_schedules s ON s.id = d.schedule_id AND s.tenant_id = d.tenant_id
+            JOIN assets a ON a.id = d.asset_id AND a.tenant_id = d.tenant_id
+            "#,
+        )
+        .bind(due_id.0)
+        .bind(tenant_id.0)
+        .bind(resolved_by.0)
+        .bind(&resolve.resolution_notes)
+        .fetch_optional(&mut *transaction)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Open maintenance reminder not found".to_string()))?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO maintenance_due (
+                id, tenant_id, schedule_id, asset_id, due_date, status, created_at, updated_at
+            )
+            SELECT
+                uuid_generate_v4(),
+                tenant_id,
+                id,
+                asset_id,
+                ($3::date + (interval_days || ' days')::interval)::date,
+                'open',
+                NOW(),
+                NOW()
+            FROM maintenance_schedules
+            WHERE tenant_id = $1
+              AND id = $2
+              AND is_active = true
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM maintenance_due
+                  WHERE tenant_id = $1
+                    AND schedule_id = $2
+                    AND status = 'open'
+              )
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(row.schedule_id)
+        .bind(row.due_date)
+        .execute(&mut *transaction)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        transaction
+            .commit()
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(row.into_due())
     }
 
     // === Vehicle operations ===
@@ -1384,6 +1619,131 @@ impl AssetRow {
             created_at: self.created_at,
             updated_at: self.updated_at,
         }
+    }
+}
+
+#[derive(Debug, FromRow)]
+struct MaintenanceScheduleRow {
+    id: Uuid,
+    tenant_id: Uuid,
+    asset_id: Uuid,
+    task_description: String,
+    interval_days: i32,
+    is_active: bool,
+    created_at: DateTime<Utc>,
+    updated_at: DateTime<Utc>,
+}
+
+impl MaintenanceScheduleRow {
+    fn into_schedule(self) -> MaintenanceSchedule {
+        MaintenanceSchedule {
+            id: MaintenanceScheduleId(self.id),
+            tenant_id: TenantId(self.tenant_id),
+            asset_id: AssetId(self.asset_id),
+            task_description: self.task_description,
+            interval_days: self.interval_days,
+            is_active: self.is_active,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+}
+
+#[derive(Debug, FromRow)]
+struct MaintenanceDueRow {
+    id: Uuid,
+    tenant_id: Uuid,
+    schedule_id: Uuid,
+    asset_id: Uuid,
+    resource_type: String,
+    resource_name: String,
+    task_description: String,
+    due_date: chrono::NaiveDate,
+    status: String,
+    resolved_at: Option<DateTime<Utc>>,
+    resolved_by: Option<Uuid>,
+    resolution_notes: Option<String>,
+    created_at: DateTime<Utc>,
+    updated_at: DateTime<Utc>,
+}
+
+impl MaintenanceDueRow {
+    fn into_due(self) -> MaintenanceDue {
+        MaintenanceDue {
+            id: MaintenanceDueId(self.id),
+            tenant_id: TenantId(self.tenant_id),
+            schedule_id: MaintenanceScheduleId(self.schedule_id),
+            asset_id: AssetId(self.asset_id),
+            resource_type: self.resource_type.parse().unwrap_or(ResourceType::Tool),
+            resource_name: self.resource_name,
+            task_description: self.task_description,
+            due_date: self.due_date,
+            status: self.status.parse().unwrap_or(MaintenanceDueStatus::Open),
+            resolved_at: self.resolved_at,
+            resolved_by: self.resolved_by.map(UserId),
+            resolution_notes: self.resolution_notes,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+}
+
+#[derive(Debug, FromRow)]
+struct MaintenanceScheduleWithDueRow {
+    schedule_id: Uuid,
+    tenant_id: Uuid,
+    asset_id: Uuid,
+    task_description: String,
+    interval_days: i32,
+    is_active: bool,
+    schedule_created_at: DateTime<Utc>,
+    schedule_updated_at: DateTime<Utc>,
+    due_id: Uuid,
+    due_date: chrono::NaiveDate,
+    due_status: String,
+    resolved_at: Option<DateTime<Utc>>,
+    resolved_by: Option<Uuid>,
+    resolution_notes: Option<String>,
+    due_created_at: DateTime<Utc>,
+    due_updated_at: DateTime<Utc>,
+    resource_type: String,
+    resource_name: String,
+}
+
+impl MaintenanceScheduleWithDueRow {
+    fn into_schedule_and_due(self) -> (MaintenanceSchedule, MaintenanceDue) {
+        let schedule = MaintenanceSchedule {
+            id: MaintenanceScheduleId(self.schedule_id),
+            tenant_id: TenantId(self.tenant_id),
+            asset_id: AssetId(self.asset_id),
+            task_description: self.task_description.clone(),
+            interval_days: self.interval_days,
+            is_active: self.is_active,
+            created_at: self.schedule_created_at,
+            updated_at: self.schedule_updated_at,
+        };
+
+        let due = MaintenanceDue {
+            id: MaintenanceDueId(self.due_id),
+            tenant_id: TenantId(self.tenant_id),
+            schedule_id: MaintenanceScheduleId(self.schedule_id),
+            asset_id: AssetId(self.asset_id),
+            resource_type: self.resource_type.parse().unwrap_or(ResourceType::Tool),
+            resource_name: self.resource_name,
+            task_description: self.task_description,
+            due_date: self.due_date,
+            status: self
+                .due_status
+                .parse()
+                .unwrap_or(MaintenanceDueStatus::Open),
+            resolved_at: self.resolved_at,
+            resolved_by: self.resolved_by.map(UserId),
+            resolution_notes: self.resolution_notes,
+            created_at: self.due_created_at,
+            updated_at: self.due_updated_at,
+        };
+
+        (schedule, due)
     }
 }
 

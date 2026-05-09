@@ -1,10 +1,10 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Search, Plus } from "lucide-react"
 import { EmptyState, ErrorState } from "@/components/shared"
 import { ResourceCard, ResourceCardSkeleton } from "@/components/fleet/ResourceCard"
-import { useCalendar, useVehicles } from "@/lib/api/hooks"
+import { useCalendar, useMaintenanceDue, useVehicles } from "@/lib/api/hooks"
 import { AddVehicleDialog } from "./AddVehicleDialog"
 import { buildEffectiveStatusMap, getEffectiveResourceStatus } from "./effectiveResourceStatus"
 import { cn } from "@/lib/utils"
@@ -16,6 +16,12 @@ const statusFilters: { value: ResourceStatus | undefined; label: string }[] = [
   { value: "in_use", label: "In Benutzung" },
   { value: "maintenance", label: "Wartung" },
 ]
+
+function isMaintenanceReminderVisible(dueDate: string) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return new Date(`${dueDate}T00:00:00`) <= today
+}
 
 interface VehiclesListProps {
   onReserve: (id: string, type: "vehicle" | "tool") => void
@@ -43,6 +49,23 @@ export function VehiclesList({ onReserve }: VehiclesListProps) {
     end_date: todayEnd.toISOString(),
     resource_type: "vehicle",
   })
+
+  const { data: openMaintenance = [] } = useMaintenanceDue({ status: "open" })
+  const maintenanceByAsset = useMemo(() => {
+    const records = new Map<string, { count: number; hasOverdue: boolean }>()
+
+    openMaintenance
+      .filter((due) => due.resource_type === "vehicle" && isMaintenanceReminderVisible(due.due_date))
+      .forEach((due) => {
+        const current = records.get(due.asset_id) ?? { count: 0, hasOverdue: false }
+        records.set(due.asset_id, {
+          count: current.count + 1,
+          hasOverdue: current.hasOverdue || due.severity === "overdue",
+        })
+      })
+
+    return records
+  }, [openMaintenance])
 
   const effectiveStatusMap = buildEffectiveStatusMap(todayCalendar?.resources, new Date())
 
@@ -126,6 +149,8 @@ export function VehiclesList({ onReserve }: VehiclesListProps) {
               resource={vehicle}
               type="vehicle"
               onReserve={onReserve}
+              maintenanceDueCount={maintenanceByAsset.get(vehicle.id)?.count ?? 0}
+              hasOverdueMaintenance={maintenanceByAsset.get(vehicle.id)?.hasOverdue ?? false}
             />
           ))}
         </div>
