@@ -61,3 +61,15 @@ tmp/
 .dolt/
 *.db
 .beads-credential-key
+
+# Gas City and local agent/runtime artifacts
+.beads/*
+!.beads/config.yaml
+!.beads/metadata.json
+.codex/
+.gc/
+.opencode/
+.runtime/
+.worktrees/
+beads-backup/
+scripts/restore-beads-backup.sh
