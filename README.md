@@ -69,6 +69,14 @@ Server starts at `http://localhost:3000`
 cargo test
 ```
 
+### Type Generation
+
+```bash
+cargo export-types
+```
+
+This writes the committed Rust-to-TypeScript contract file at `frontend/src/types/generated.ts`.
+
 ### Integration Tests
 
 Integration tests require a running PostgreSQL database. They use `sqlx::test` which creates isolated test databases.

@@ -107,7 +107,7 @@ pub fn create_router() -> Router<AppState> {
 // === DTOs ===
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CategoryResponse {
     pub id: String,
     pub name: String,
@@ -129,7 +129,7 @@ impl From<crate::modules::inventory::domain::Category> for CategoryResponse {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CreateCategoryRequest {
     pub name: String,
     pub description: Option<String>,
@@ -137,7 +137,7 @@ pub struct CreateCategoryRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct UpdateCategoryRequest {
     #[ts(optional)]
     pub name: Option<String>,
@@ -148,7 +148,7 @@ pub struct UpdateCategoryRequest {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ExpiryBatchResponse {
     pub id: String,
     pub batch_code: Option<String>,
@@ -160,7 +160,7 @@ pub struct ExpiryBatchResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct MaterialResponse {
     pub id: String,
     pub category_id: String,
@@ -210,7 +210,7 @@ impl From<crate::modules::inventory::domain::Material> for MaterialResponse {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CreateMaterialRequest {
     pub category_id: String,
     pub name: String,
@@ -224,7 +224,7 @@ pub struct CreateMaterialRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct UpdateMaterialRequest {
     #[ts(optional)]
     pub location: Option<String>,
@@ -235,7 +235,7 @@ pub struct UpdateMaterialRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct WithdrawRequest {
     pub quantity: i32,
     pub notes: Option<String>,
@@ -245,14 +245,14 @@ pub struct WithdrawRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct AdjustStockRequest {
     pub quantity: i32,
     pub reason: String,
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct StockInRequest {
     pub quantity: i32,
     pub notes: Option<String>,
@@ -289,13 +289,13 @@ fn normalize_optional_text(value: Option<String>) -> Option<String> {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ListMaterialsQuery {
     pub category_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct QrCodeResponse {
     pub qr_code: String,
     pub material_id: String,
@@ -303,14 +303,14 @@ pub struct QrCodeResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct QrSvgResponse {
     pub svg: String,
     pub qr_code: String,
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct OrderRequestResponse {
     pub id: String,
     pub material_id: String,
@@ -351,7 +351,7 @@ impl OrderRequestResponse {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CreateOrderRequestDto {
     pub material_id: String,
     pub quantity: i32,
@@ -359,19 +359,19 @@ pub struct CreateOrderRequestDto {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ApproveOrderRequestDto {
     pub notes: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct MarkOrderedRequestDto {
     pub notes: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct FulfillOrderRequestDto {
     pub actual_quantity: i32,
     pub notes: Option<String>,
@@ -379,7 +379,7 @@ pub struct FulfillOrderRequestDto {
 
 /// Response DTO for stock entry history
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct StockEntryResponse {
     pub id: String,
     pub quantity_change: i32,
@@ -391,7 +391,7 @@ pub struct StockEntryResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct SiteStockHistoryResponse {
     pub id: String,
     pub material_id: String,
@@ -407,7 +407,7 @@ pub struct SiteStockHistoryResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct EnrichedStockHistoryResponse {
     pub id: String,
     pub material_id: String,
@@ -475,7 +475,7 @@ impl From<StockEntryWithSite> for StockEntryResponse {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct OrderStatusQuery {
     pub status: Option<String>,
 }

@@ -107,7 +107,7 @@ pub fn create_router() -> Router<AppState> {
 // === DTOs ===
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct SiteResponse {
     pub id: String,
     pub project_type: String,
@@ -127,7 +127,7 @@ pub struct SiteResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ProjectMaterialUsageLineResponse {
     pub material_id: String,
     pub material_name: String,
@@ -139,7 +139,7 @@ pub struct ProjectMaterialUsageLineResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ProjectMaterialSummaryResponse {
     pub distinct_material_count: i64,
     pub withdrawal_count: i64,
@@ -147,7 +147,7 @@ pub struct ProjectMaterialSummaryResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ProjectLaborSummaryResponse {
     pub total_hours: f64,
     pub entry_count: i64,
@@ -157,14 +157,14 @@ pub struct ProjectLaborSummaryResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct SiteProjectSummaryResponse {
     pub labor: ProjectLaborSummaryResponse,
     pub materials: ProjectMaterialSummaryResponse,
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct SiteInvoiceProjectResponse {
     pub id: String,
     pub name: String,
@@ -178,7 +178,7 @@ pub struct SiteInvoiceProjectResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct SiteInvoiceBillingResponse {
     pub budget_amount_cents: Option<i64>,
     pub quote_reference: Option<String>,
@@ -187,7 +187,7 @@ pub struct SiteInvoiceBillingResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct SiteInvoiceSummaryResponse {
     pub export_version: String,
     pub generated_at: String,
@@ -353,7 +353,7 @@ impl From<crate::modules::sites::application::site_service::InvoiceSummary>
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CreateSiteRequest {
     pub project_type: String,
     pub name: String,
@@ -370,7 +370,7 @@ pub struct CreateSiteRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct UpdateSiteRequest {
     pub project_type: Option<String>,
     pub name: Option<String>,
@@ -392,13 +392,13 @@ pub struct UpdateSiteRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ListSitesQuery {
     pub status: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct SiteHistoryReportQuery {
     pub customer: Option<String>,
     pub project_type: Option<String>,
@@ -411,7 +411,7 @@ pub struct SiteHistoryReportQuery {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct SiteHistoryReportRowResponse {
     pub site_id: String,
     pub project_type: String,
@@ -432,7 +432,7 @@ pub struct SiteHistoryReportRowResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct AssignmentResponse {
     pub id: String,
     pub site_id: String,
@@ -454,14 +454,14 @@ impl From<crate::modules::sites::domain::SiteAssignment> for AssignmentResponse 
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct AssignUserRequest {
     pub user_id: String,
     pub role: Option<String>,
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct SiteAppointmentResponse {
     pub id: String,
     pub site_id: String,
@@ -497,14 +497,14 @@ impl From<crate::modules::sites::domain::SiteAppointment> for SiteAppointmentRes
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct SiteAppointmentsQuery {
     pub start_date: Option<String>,
     pub end_date: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CreateSiteAppointmentRequest {
     pub title: String,
     pub appointment_kind: String,
@@ -516,7 +516,7 @@ pub struct CreateSiteAppointmentRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct UpdateSiteAppointmentRequest {
     pub title: Option<String>,
     pub appointment_kind: Option<String>,
@@ -528,7 +528,7 @@ pub struct UpdateSiteAppointmentRequest {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct TimeEntryResponse {
     pub id: String,
     pub site_id: Option<String>,
@@ -544,7 +544,7 @@ pub struct TimeEntryResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct SiteActivityAttachmentResponse {
     pub attachment_id: String,
     pub filename: String,
@@ -554,7 +554,7 @@ pub struct SiteActivityAttachmentResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct UploadSiteAttachmentResponse {
     pub attachment_id: String,
     pub filename: String,
@@ -564,7 +564,7 @@ pub struct UploadSiteAttachmentResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct UploadPhotoAttachmentResponse {
     pub attachment_id: String,
     pub photo_url: String,
@@ -590,7 +590,7 @@ impl From<crate::modules::sites::domain::TimeEntry> for TimeEntryResponse {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CreateTimeEntryRequest {
     pub site_id: Option<String>,
     pub work_type: String,
@@ -600,7 +600,7 @@ pub struct CreateTimeEntryRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct UpdateTimeEntryRequest {
     pub site_id: Option<String>,
     pub work_type: Option<String>,
@@ -1221,7 +1221,7 @@ pub async fn delete_time_entry(
 // === Activity DTOs ===
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ActivityResponse {
     pub id: String,
     pub site_id: String,
@@ -1271,7 +1271,7 @@ impl From<crate::modules::sites::domain::ActivityAttachmentMetadata>
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CreateActivityRequest {
     pub activity_type: String, // "photo" or "note"
     pub content: Option<String>,
@@ -1281,7 +1281,7 @@ pub struct CreateActivityRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ActivityQuery {
     pub limit: Option<i32>,
 }
@@ -1289,7 +1289,7 @@ pub struct ActivityQuery {
 // === Dashboard DTOs ===
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct DashboardSiteResponse {
     pub id: String,
     pub project_type: String,

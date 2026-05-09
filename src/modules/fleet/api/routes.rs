@@ -80,7 +80,7 @@ pub fn create_router() -> Router<AppState> {
 // === DTOs ===
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct VehicleResponse {
     pub id: String,
     pub name: String,
@@ -112,7 +112,7 @@ impl From<crate::modules::fleet::domain::Vehicle> for VehicleResponse {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CreateVehicleRequest {
     pub name: String,
     pub license_plate: Option<String>,
@@ -123,7 +123,7 @@ pub struct CreateVehicleRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct UpdateVehicleRequest {
     pub name: Option<String>,
     pub license_plate: Option<String>,
@@ -135,13 +135,13 @@ pub struct UpdateVehicleRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ListVehiclesQuery {
     pub status: Option<String>,
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ToolResponse {
     pub id: String,
     pub name: String,
@@ -171,7 +171,7 @@ impl From<crate::modules::fleet::domain::Tool> for ToolResponse {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CreateToolRequest {
     pub name: String,
     pub category: Option<String>,
@@ -181,7 +181,7 @@ pub struct CreateToolRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct UpdateToolRequest {
     pub name: Option<String>,
     pub category: Option<String>,
@@ -192,7 +192,7 @@ pub struct UpdateToolRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ListToolsQuery {
     pub status: Option<String>,
     pub category: Option<String>,
@@ -201,7 +201,7 @@ pub struct ListToolsQuery {
 // === Machine DTOs ===
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct MachineResponse {
     pub id: String,
     pub name: String,
@@ -231,7 +231,7 @@ impl From<crate::modules::fleet::domain::Machine> for MachineResponse {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CreateMachineRequest {
     pub name: String,
     pub machine_type: Option<String>,
@@ -241,7 +241,7 @@ pub struct CreateMachineRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct UpdateMachineRequest {
     pub name: Option<String>,
     pub machine_type: Option<String>,
@@ -252,7 +252,7 @@ pub struct UpdateMachineRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ListMachinesQuery {
     pub status: Option<String>,
 }
@@ -260,7 +260,7 @@ pub struct ListMachinesQuery {
 // === Reservation DTOs ===
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ReservationResponse {
     pub id: String,
     pub resource_type: String,
@@ -300,7 +300,7 @@ impl From<crate::modules::fleet::domain::ReservationWithDetails> for Reservation
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CreateReservationRequest {
     pub resource_type: String,
     pub resource_id: String,
@@ -311,7 +311,7 @@ pub struct CreateReservationRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct UpdateReservationRequest {
     pub start_time: Option<String>,
     pub end_time: Option<String>,
@@ -321,7 +321,7 @@ pub struct UpdateReservationRequest {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ListReservationsQuery {
     pub user_id: Option<String>,
     pub resource_type: Option<String>,
@@ -330,13 +330,13 @@ pub struct ListReservationsQuery {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CalendarResponse {
     pub resources: Vec<CalendarEntryResponse>,
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CalendarEntryResponse {
     pub resource_type: String,
     pub resource_id: String,
@@ -362,7 +362,7 @@ impl From<crate::modules::fleet::infrastructure::fleet_repository::CalendarEntry
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ReservationSummaryResponse {
     pub id: String,
     pub start_time: String,
@@ -388,7 +388,7 @@ impl From<ReservationSummary> for ReservationSummaryResponse {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct CalendarQuery {
     pub start_date: String,
     pub end_date: String,
@@ -397,7 +397,7 @@ pub struct CalendarQuery {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct AvailabilityResponse {
     pub available: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -405,7 +405,7 @@ pub struct AvailabilityResponse {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct ConflictDetail {
     pub id: String,
     pub user_name: Option<String>,
@@ -415,7 +415,7 @@ pub struct ConflictDetail {
 }
 
 #[derive(Debug, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct AvailabilityQuery {
     pub resource_type: String,
     pub resource_id: String,
@@ -424,7 +424,7 @@ pub struct AvailabilityQuery {
 }
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct QrStatusResponse {
     pub resource_type: String,
     pub resource_id: String,

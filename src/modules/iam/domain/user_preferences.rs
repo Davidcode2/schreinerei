@@ -5,7 +5,7 @@ use ts_rs::TS;
 use crate::common::types::{TenantId, UserId};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct UserPreferences {
     pub active_site_id: Option<String>,
 }
@@ -21,7 +21,7 @@ pub struct UserPreferenceRecord {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub struct UpdatePreferences {
     pub active_site_id: Option<String>,
 }

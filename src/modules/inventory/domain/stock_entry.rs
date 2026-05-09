@@ -10,7 +10,7 @@ use crate::common::types::{MaterialId, SiteId, TenantId, UserId};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS, sqlx::Type)]
 #[sqlx(type_name = "VARCHAR", rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
-#[ts(export, export_to = "frontend/src/types/generated.ts")]
+#[ts(export, export_to = "generated.ts")]
 pub enum EntryType {
     Withdrawn,
     Disposed,

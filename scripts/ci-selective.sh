@@ -110,8 +110,9 @@ run_backend_full() {
   cargo fmt -- --check
   cargo clippy --all-targets --all-features -- -D warnings
   cargo test --all
+  cargo export-types
   if ! git diff --quiet -- frontend/src/types/generated.ts; then
-    printf 'Generated TypeScript types are out of date. Run cargo test --all and commit frontend/src/types/generated.ts.\n' >&2
+    printf 'Generated TypeScript types are out of date. Run cargo export-types and commit frontend/src/types/generated.ts.\n' >&2
     exit 1
   fi
 }

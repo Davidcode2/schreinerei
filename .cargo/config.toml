@@ -1,8 +1,8 @@
 # ts-rs type generation configuration
 [env]
-# Export TypeScript types directly to frontend/src/types/generated.ts
-TS_RS_EXPORT_DIR = { value = "", relative = true }
+# Keep ts-rs auto-export tests away from the committed generated file.
+TS_RS_EXPORT_DIR = { value = "target/ts-rs", relative = true }
 
 [alias]
-# Run the ts-rs-generated export tests that write frontend/src/types/generated.ts.
-export-types = "test export_bindings --lib"
+# Write frontend/src/types/generated.ts via the deterministic exporter.
+export-types = "run --bin export-types"

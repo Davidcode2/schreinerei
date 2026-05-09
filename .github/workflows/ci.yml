@@ -111,11 +111,14 @@ jobs:
       - name: Run tests
         run: cargo test --all
 
+      - name: Export TypeScript types
+        run: cargo export-types
+
       - name: Check generated TypeScript types
         run: |
           if ! git diff --exit-code frontend/src/types/generated.ts; then
             echo "ERROR: TypeScript types are out of date!"
-            echo "Run: cargo test"
+            echo "Run: cargo export-types"
             echo "Then commit the updated frontend/src/types/generated.ts"
             exit 1
           fi
