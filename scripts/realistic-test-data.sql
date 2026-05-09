@@ -19,6 +19,10 @@ DELETE FROM domain_events WHERE tenant_id = :'tenant_id'::uuid;
 DELETE FROM site_activity_attachments WHERE tenant_id = :'tenant_id'::uuid;
 DELETE FROM site_activities WHERE tenant_id = :'tenant_id'::uuid;
 DELETE FROM reservations WHERE tenant_id = :'tenant_id'::uuid;
+DELETE FROM machine_details WHERE tenant_id = :'tenant_id'::uuid;
+DELETE FROM tool_details WHERE tenant_id = :'tenant_id'::uuid;
+DELETE FROM vehicle_details WHERE tenant_id = :'tenant_id'::uuid;
+DELETE FROM assets WHERE tenant_id = :'tenant_id'::uuid;
 DELETE FROM time_entries WHERE tenant_id = :'tenant_id'::uuid;
 DELETE FROM site_assignments WHERE tenant_id = :'tenant_id'::uuid;
 DELETE FROM stock_entries WHERE tenant_id = :'tenant_id'::uuid;
@@ -122,14 +126,43 @@ VALUES
     ('00000000-0000-0000-0000-000000000605', :'tenant_id'::uuid, 'Festool CTL MIDI Absaugmobil', 'Absaugung', 'Mobiles Absauggeraet fuer Baustellenmontage und Zuschnitt.', 'available', 'Werkzeugausgabe', 'FLT-TL-605', NOW() - INTERVAL '200 days', NOW() - INTERVAL '5 days'),
     ('00000000-0000-0000-0000-000000000606', :'tenant_id'::uuid, 'Fein MultiMaster', 'Multifunktionswerkzeug', 'Oszillierendes Werkzeug fuer Nacharbeiten und Ausschnitte.', 'reserved', 'Montagewagen 1', 'FLT-TL-606', NOW() - INTERVAL '190 days', NOW() - INTERVAL '2 hours');
 
-INSERT INTO reservations (id, tenant_id, resource_type, resource_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at)
+INSERT INTO assets (id, tenant_id, asset_kind, name, description, status, location, qr_code, created_at, updated_at, deleted_at)
 VALUES
-    ('00000000-0000-0000-0000-000000000701', :'tenant_id'::uuid, 'tool', '00000000-0000-0000-0000-000000000602', '00000000-0000-0000-0000-000000000102', '00000000-0000-0000-0000-000000000401', date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '07:00', date_trunc('day', NOW()) + INTERVAL '18:00', 'in_use', 'Lamello fuer finale Passleisten und Sockelblenden.', NOW() - INTERVAL '2 days', NOW() - INTERVAL '3 hours'),
-    ('00000000-0000-0000-0000-000000000702', :'tenant_id'::uuid, 'vehicle', '00000000-0000-0000-0000-000000000502', '00000000-0000-0000-0000-000000000105', '00000000-0000-0000-0000-000000000402', date_trunc('day', NOW()) + INTERVAL '5 days 06:30', date_trunc('day', NOW()) + INTERVAL '6 days 17:30', 'confirmed', 'Montagebus fuer Praxiseinbau und HPL-Platten.', NOW() - INTERVAL '1 day', NOW() - INTERVAL '3 hours'),
-    ('00000000-0000-0000-0000-000000000703', :'tenant_id'::uuid, 'tool', '00000000-0000-0000-0000-000000000604', '00000000-0000-0000-0000-000000000105', '00000000-0000-0000-0000-000000000402', date_trunc('day', NOW()) + INTERVAL '5 days 06:30', date_trunc('day', NOW()) + INTERVAL '5 days 16:00', 'confirmed', 'Bohrhammer fuer Befestigung der Empfangsunterkonstruktion.', NOW() - INTERVAL '1 day', NOW() - INTERVAL '3 hours'),
-    ('00000000-0000-0000-0000-000000000704', :'tenant_id'::uuid, 'vehicle', '00000000-0000-0000-0000-000000000503', '00000000-0000-0000-0000-000000000104', '00000000-0000-0000-0000-000000000404', date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '06:00', date_trunc('day', NOW()) + INTERVAL '15:00', 'in_use', 'Material- und Werkzeugfahrt fuer Hofladen Braun.', NOW() - INTERVAL '2 days', NOW() - INTERVAL '5 hours'),
-    ('00000000-0000-0000-0000-000000000705', :'tenant_id'::uuid, 'tool', '00000000-0000-0000-0000-000000000606', '00000000-0000-0000-0000-000000000103', '00000000-0000-0000-0000-000000000401', date_trunc('day', NOW()) + INTERVAL '1 day 07:00', date_trunc('day', NOW()) + INTERVAL '1 day 16:00', 'pending', 'Nacharbeit an Sockelausschnitten und Blendrahmen.', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '2 hours'),
-    ('00000000-0000-0000-0000-000000000706', :'tenant_id'::uuid, 'tool', '00000000-0000-0000-0000-000000000605', '00000000-0000-0000-0000-000000000103', '00000000-0000-0000-0000-000000000403', date_trunc('day', NOW()) - INTERVAL '20 days' + INTERVAL '07:00', date_trunc('day', NOW()) - INTERVAL '20 days' + INTERVAL '15:30', 'completed', 'Absaugung fuer Endmontage im Kindergarten.', NOW() - INTERVAL '22 days', NOW() - INTERVAL '20 days');
+    ('00000000-0000-0000-0000-000000000501', :'tenant_id'::uuid, 'vehicle', 'VW Crafter Montage 1', 'Grosses Montagefahrzeug mit Regalsystem fuer Baustellenmaterial.', 'available', 'Hof 1', 'FLT-VEH-501', NOW() - INTERVAL '300 days', NOW() - INTERVAL '2 days', NULL),
+    ('00000000-0000-0000-0000-000000000502', :'tenant_id'::uuid, 'vehicle', 'Mercedes Sprinter Montage 2', 'Montagebus fuer Zweierkolonne mit Dachtraeger.', 'reserved', 'Hof 1', 'FLT-VEH-502', NOW() - INTERVAL '260 days', NOW() - INTERVAL '3 hours', NULL),
+    ('00000000-0000-0000-0000-000000000503', :'tenant_id'::uuid, 'vehicle', 'Ford Ranger Zugfahrzeug', 'Zugfahrzeug fuer Anhaenger und Materialfahrten.', 'in_use', 'Baustelle Hofladen Braun', 'FLT-VEH-503', NOW() - INTERVAL '220 days', NOW() - INTERVAL '5 hours', NULL),
+    ('00000000-0000-0000-0000-000000000504', :'tenant_id'::uuid, 'vehicle', 'Humbaur Kofferanhaenger', 'Geschlossener Anhaenger fuer lange Bauteile und Werkzeug.', 'maintenance', 'Werkstatt hinten', 'FLT-VEH-504', NOW() - INTERVAL '200 days', NOW() - INTERVAL '1 day', NULL),
+    ('00000000-0000-0000-0000-000000000601', :'tenant_id'::uuid, 'tool', 'Festool TS 55 Tauchsäge', 'Tauchsaege fuer passgenaue Zuschnitte auf der Baustelle.', 'available', 'Werkzeugausgabe', 'FLT-TL-601', NOW() - INTERVAL '240 days', NOW() - INTERVAL '2 days', NULL),
+    ('00000000-0000-0000-0000-000000000602', :'tenant_id'::uuid, 'tool', 'Lamello Zeta P2', 'Profilnut- und Verbinderfraese fuer Korpusmontage und Verkleidungen.', 'in_use', 'Baustelle Einbauschrank Dachgeschoss', 'FLT-TL-602', NOW() - INTERVAL '230 days', NOW() - INTERVAL '4 hours', NULL),
+    ('00000000-0000-0000-0000-000000000603', :'tenant_id'::uuid, 'tool', 'Mafell Erika 85', 'Mobile Unterflurzugsaege fuer praezise Zuschnitte im Ausbau.', 'maintenance', 'Serviceecke Werkstatt', 'FLT-TL-603', NOW() - INTERVAL '220 days', NOW() - INTERVAL '1 day', NULL),
+    ('00000000-0000-0000-0000-000000000604', :'tenant_id'::uuid, 'tool', 'Makita DHR243 Bohrhammer', 'Akkubohrhammer fuer Montage in Beton und Mauerwerk.', 'reserved', 'Montagewagen 2', 'FLT-TL-604', NOW() - INTERVAL '210 days', NOW() - INTERVAL '3 hours', NULL),
+    ('00000000-0000-0000-0000-000000000605', :'tenant_id'::uuid, 'tool', 'Festool CTL MIDI Absaugmobil', 'Mobiles Absauggeraet fuer Baustellenmontage und Zuschnitt.', 'available', 'Werkzeugausgabe', 'FLT-TL-605', NOW() - INTERVAL '200 days', NOW() - INTERVAL '5 days', NULL),
+    ('00000000-0000-0000-0000-000000000606', :'tenant_id'::uuid, 'tool', 'Fein MultiMaster', 'Oszillierendes Werkzeug fuer Nacharbeiten und Ausschnitte.', 'reserved', 'Montagewagen 1', 'FLT-TL-606', NOW() - INTERVAL '190 days', NOW() - INTERVAL '2 hours', NULL);
+
+INSERT INTO vehicle_details (asset_id, tenant_id, license_plate, vehicle_type, created_at, updated_at)
+VALUES
+    ('00000000-0000-0000-0000-000000000501', :'tenant_id'::uuid, 'AA-SA 241', 'van', NOW() - INTERVAL '300 days', NOW() - INTERVAL '2 days'),
+    ('00000000-0000-0000-0000-000000000502', :'tenant_id'::uuid, 'AA-SA 318', 'van', NOW() - INTERVAL '260 days', NOW() - INTERVAL '3 hours'),
+    ('00000000-0000-0000-0000-000000000503', :'tenant_id'::uuid, 'AA-SA 519', 'truck', NOW() - INTERVAL '220 days', NOW() - INTERVAL '5 hours'),
+    ('00000000-0000-0000-0000-000000000504', :'tenant_id'::uuid, 'AA-SA 904', 'trailer', NOW() - INTERVAL '200 days', NOW() - INTERVAL '1 day');
+
+INSERT INTO tool_details (asset_id, tenant_id, category, created_at, updated_at)
+VALUES
+    ('00000000-0000-0000-0000-000000000601', :'tenant_id'::uuid, 'Saegetechnik', NOW() - INTERVAL '240 days', NOW() - INTERVAL '2 days'),
+    ('00000000-0000-0000-0000-000000000602', :'tenant_id'::uuid, 'Verbindungstechnik', NOW() - INTERVAL '230 days', NOW() - INTERVAL '4 hours'),
+    ('00000000-0000-0000-0000-000000000603', :'tenant_id'::uuid, 'Maschinen', NOW() - INTERVAL '220 days', NOW() - INTERVAL '1 day'),
+    ('00000000-0000-0000-0000-000000000604', :'tenant_id'::uuid, 'Bohr- und Montagetechnik', NOW() - INTERVAL '210 days', NOW() - INTERVAL '3 hours'),
+    ('00000000-0000-0000-0000-000000000605', :'tenant_id'::uuid, 'Absaugung', NOW() - INTERVAL '200 days', NOW() - INTERVAL '5 days'),
+    ('00000000-0000-0000-0000-000000000606', :'tenant_id'::uuid, 'Multifunktionswerkzeug', NOW() - INTERVAL '190 days', NOW() - INTERVAL '2 hours');
+
+INSERT INTO reservations (id, tenant_id, resource_type, resource_id, asset_id, user_id, site_id, start_time, end_time, status, notes, created_at, updated_at)
+VALUES
+    ('00000000-0000-0000-0000-000000000701', :'tenant_id'::uuid, 'tool', '00000000-0000-0000-0000-000000000602', '00000000-0000-0000-0000-000000000602', '00000000-0000-0000-0000-000000000102', '00000000-0000-0000-0000-000000000401', date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '07:00', date_trunc('day', NOW()) + INTERVAL '18:00', 'in_use', 'Lamello fuer finale Passleisten und Sockelblenden.', NOW() - INTERVAL '2 days', NOW() - INTERVAL '3 hours'),
+    ('00000000-0000-0000-0000-000000000702', :'tenant_id'::uuid, 'vehicle', '00000000-0000-0000-0000-000000000502', '00000000-0000-0000-0000-000000000502', '00000000-0000-0000-0000-000000000105', '00000000-0000-0000-0000-000000000402', date_trunc('day', NOW()) + INTERVAL '5 days 06:30', date_trunc('day', NOW()) + INTERVAL '6 days 17:30', 'confirmed', 'Montagebus fuer Praxiseinbau und HPL-Platten.', NOW() - INTERVAL '1 day', NOW() - INTERVAL '3 hours'),
+    ('00000000-0000-0000-0000-000000000703', :'tenant_id'::uuid, 'tool', '00000000-0000-0000-0000-000000000604', '00000000-0000-0000-0000-000000000604', '00000000-0000-0000-0000-000000000105', '00000000-0000-0000-0000-000000000402', date_trunc('day', NOW()) + INTERVAL '5 days 06:30', date_trunc('day', NOW()) + INTERVAL '5 days 16:00', 'confirmed', 'Bohrhammer fuer Befestigung der Empfangsunterkonstruktion.', NOW() - INTERVAL '1 day', NOW() - INTERVAL '3 hours'),
+    ('00000000-0000-0000-0000-000000000704', :'tenant_id'::uuid, 'vehicle', '00000000-0000-0000-0000-000000000503', '00000000-0000-0000-0000-000000000503', '00000000-0000-0000-0000-000000000104', '00000000-0000-0000-0000-000000000404', date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '06:00', date_trunc('day', NOW()) + INTERVAL '15:00', 'in_use', 'Material- und Werkzeugfahrt fuer Hofladen Braun.', NOW() - INTERVAL '2 days', NOW() - INTERVAL '5 hours'),
+    ('00000000-0000-0000-0000-000000000705', :'tenant_id'::uuid, 'tool', '00000000-0000-0000-0000-000000000606', '00000000-0000-0000-0000-000000000606', '00000000-0000-0000-0000-000000000103', '00000000-0000-0000-0000-000000000401', date_trunc('day', NOW()) + INTERVAL '1 day 07:00', date_trunc('day', NOW()) + INTERVAL '1 day 16:00', 'pending', 'Nacharbeit an Sockelausschnitten und Blendrahmen.', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '2 hours'),
+    ('00000000-0000-0000-0000-000000000706', :'tenant_id'::uuid, 'tool', '00000000-0000-0000-0000-000000000605', '00000000-0000-0000-0000-000000000605', '00000000-0000-0000-0000-000000000103', '00000000-0000-0000-0000-000000000403', date_trunc('day', NOW()) - INTERVAL '20 days' + INTERVAL '07:00', date_trunc('day', NOW()) - INTERVAL '20 days' + INTERVAL '15:30', 'completed', 'Absaugung fuer Endmontage im Kindergarten.', NOW() - INTERVAL '22 days', NOW() - INTERVAL '20 days');
 
 INSERT INTO stock_entries (id, tenant_id, material_id, user_id, quantity_change, quantity_after, notes, site_id, entry_type, created_at)
 VALUES
