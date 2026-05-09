@@ -94,6 +94,7 @@ Last activity: 2026-05-08 -- Completed Phase 52
 - [Phase 50]: Export structured JSON first. — No PDF generation, pricing engine, or tax logic should be introduced in this phase.
 - [Phase 51]: Keep historical reporting on the projects surface. — Use read-only filtered report rows instead of broadening the dashboard into a manager KPI suite.
 - [Phase 52]: Reuse the fleet calendar with a `site_id` filter. — Project planning stays on the project detail page rather than becoming a second planner.
+- [2026-05-09]: Prefer a custom hour-grid site planner over third-party schedulers for follow-up appointment planning work. — `react-big-calendar` and TOAST UI Calendar remain acceptable fallbacks, but the repo already aligns with dedicated `site_appointments` plus a custom planner shell.
 - [Milestone v1.14]: Keep `RPT-11` out of scope for this shipped slice. — The broader manager dashboard split is captured separately as a future stub.
 
 ### Pending Todos

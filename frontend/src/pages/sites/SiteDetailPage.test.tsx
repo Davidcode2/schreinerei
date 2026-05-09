@@ -302,6 +302,9 @@ describe('SiteDetailPage', () => {
       </Routes>
     )
 
+    const planningCard = (await screen.findByText('Projektplanung')).closest('.rounded-xl')
+
+    expect(planningCard).toHaveClass('md:col-span-2')
     expect(await screen.findByText('Terminplan')).toBeInTheDocument()
     expect(await screen.findByText('Abnahme vor Ort')).toBeInTheDocument()
     expect(screen.queryByText('Reservierungen im Projektkontext')).not.toBeInTheDocument()

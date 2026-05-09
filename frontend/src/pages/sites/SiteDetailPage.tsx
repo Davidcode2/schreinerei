@@ -470,7 +470,7 @@ export default function SiteDetailPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="md:col-span-2">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold">Projektplanung</CardTitle>
           </CardHeader>
