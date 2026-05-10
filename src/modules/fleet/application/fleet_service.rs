@@ -4,9 +4,9 @@ use crate::common::types::{
     ResourceType, Role, SiteId, ToolId, UserId, VehicleId,
 };
 use crate::modules::fleet::domain::{
-    CreateMachine, CreateMaintenanceSchedule, CreateReservation, CreateTool, CreateVehicle,
-    Machine, MachineCreatedPayload, MaintenanceDue, MaintenanceSchedule, Reservation,
-    ReservationCancelledPayload, ReservationCreatedPayload, ReservationUpdatedPayload,
+    validate_display_color, CreateMachine, CreateMaintenanceSchedule, CreateReservation,
+    CreateTool, CreateVehicle, Machine, MachineCreatedPayload, MaintenanceDue, MaintenanceSchedule,
+    Reservation, ReservationCancelledPayload, ReservationCreatedPayload, ReservationUpdatedPayload,
     ReservationWithDetails, ResolveMaintenanceDue, ResourceStatusChangedPayload, Tool,
     ToolCreatedPayload, UpdateMachine, UpdateReservation, UpdateTool, UpdateVehicle, Vehicle,
     VehicleCreatedPayload,
@@ -105,6 +105,9 @@ impl FleetService {
     ) -> Result<Vehicle, AppError> {
         if !ctx.is_admin() {
             return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+        if let Some(color) = &update.display_color {
+            validate_display_color(color)?;
         }
 
         let old_vehicle = self

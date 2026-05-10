@@ -37,11 +37,48 @@ impl FleetRepository {
 
     fn map_asset_write_error(error: sqlx::Error, duplicate_message: &str) -> AppError {
         let message = error.to_string();
+        if message.contains("vehicle_display_colors_tenant_id_display_color_key") {
+            return AppError::Validation(
+                "Vehicle color is already used in this tenant".to_string(),
+            );
+        }
         if message.contains("unique") || message.contains("duplicate") {
             AppError::Validation(duplicate_message.to_string())
         } else {
             AppError::Database(message)
         }
+    }
+
+    async fn generate_unique_vehicle_display_color(
+        &self,
+        tenant_id: TenantId,
+        vehicle_id: Uuid,
+    ) -> Result<String, AppError> {
+        for attempt in 0..1024_u32 {
+            let color = vehicle_display_color_from_seed(vehicle_id, attempt);
+            let exists: bool = sqlx::query_scalar(
+                r#"
+                SELECT EXISTS(
+                    SELECT 1
+                    FROM vehicle_display_colors
+                    WHERE tenant_id = $1 AND display_color = $2
+                )
+                "#,
+            )
+            .bind(tenant_id.0)
+            .bind(&color)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+            if !exists {
+                return Ok(color);
+            }
+        }
+
+        Err(AppError::Internal(
+            "Could not allocate a unique vehicle color".to_string(),
+        ))
     }
 
     pub async fn find_asset_by_id(
@@ -353,6 +390,13 @@ impl FleetRepository {
     ) -> Result<Vehicle, AppError> {
         let now = Utc::now();
         let id = Uuid::new_v4();
+        let display_color = match &create.display_color {
+            Some(color) => color.to_ascii_lowercase(),
+            None => {
+                self.generate_unique_vehicle_display_color(tenant_id, id)
+                    .await?
+            }
+        };
 
         let vehicle = sqlx::query_as::<_, VehicleRow>(
             r#"
@@ -366,6 +410,12 @@ impl FleetRepository {
                 SELECT id, tenant_id, $10, $11, created_at, updated_at
                 FROM inserted_asset
                 RETURNING asset_id, license_plate, vehicle_type
+            ),
+            inserted_color AS (
+                INSERT INTO vehicle_display_colors (asset_id, tenant_id, display_color, created_at, updated_at)
+                SELECT id, tenant_id, $12, created_at, updated_at
+                FROM inserted_asset
+                RETURNING asset_id, display_color
             )
             SELECT
                 a.id,
@@ -377,10 +427,12 @@ impl FleetRepository {
                 a.status,
                 a.location,
                 a.qr_code,
+                c.display_color,
                 a.created_at,
                 a.updated_at
             FROM inserted_asset a
             JOIN inserted_detail d ON d.asset_id = a.id
+            JOIN inserted_color c ON c.asset_id = a.id
             "#
         )
         .bind(id)
@@ -394,6 +446,7 @@ impl FleetRepository {
         .bind(now)
         .bind(&create.license_plate)
         .bind(create.vehicle_type.as_str())
+        .bind(&display_color)
         .fetch_one(&self.pool)
         .await
         .map_err(|e| Self::map_asset_write_error(e, "Vehicle with this name already exists"))?;
@@ -408,9 +461,10 @@ impl FleetRepository {
     ) -> Result<Option<Vehicle>, AppError> {
         let vehicle = sqlx::query_as::<_, VehicleRow>(
             r#"
-            SELECT assets.id, assets.tenant_id, assets.name, vehicle_details.license_plate, vehicle_details.vehicle_type, assets.description, assets.status, assets.location, assets.qr_code, assets.created_at, assets.updated_at
+            SELECT assets.id, assets.tenant_id, assets.name, vehicle_details.license_plate, vehicle_details.vehicle_type, assets.description, assets.status, assets.location, assets.qr_code, vehicle_display_colors.display_color, assets.created_at, assets.updated_at
             FROM assets
             JOIN vehicle_details ON vehicle_details.asset_id = assets.id
+            JOIN vehicle_display_colors ON vehicle_display_colors.asset_id = assets.id
             WHERE assets.id = $1
               AND assets.tenant_id = $2
               AND assets.asset_kind = 'vehicle'
@@ -435,9 +489,10 @@ impl FleetRepository {
             Some(s) => {
                 sqlx::query_as::<_, VehicleRow>(
                     r#"
-                    SELECT assets.id, assets.tenant_id, assets.name, vehicle_details.license_plate, vehicle_details.vehicle_type, assets.description, assets.status, assets.location, assets.qr_code, assets.created_at, assets.updated_at
+                    SELECT assets.id, assets.tenant_id, assets.name, vehicle_details.license_plate, vehicle_details.vehicle_type, assets.description, assets.status, assets.location, assets.qr_code, vehicle_display_colors.display_color, assets.created_at, assets.updated_at
                     FROM assets
                     JOIN vehicle_details ON vehicle_details.asset_id = assets.id
+                    JOIN vehicle_display_colors ON vehicle_display_colors.asset_id = assets.id
                     WHERE assets.tenant_id = $1
                       AND assets.status = $2
                       AND assets.asset_kind = 'vehicle'
@@ -453,9 +508,10 @@ impl FleetRepository {
             None => {
                 sqlx::query_as::<_, VehicleRow>(
                     r#"
-                    SELECT assets.id, assets.tenant_id, assets.name, vehicle_details.license_plate, vehicle_details.vehicle_type, assets.description, assets.status, assets.location, assets.qr_code, assets.created_at, assets.updated_at
+                    SELECT assets.id, assets.tenant_id, assets.name, vehicle_details.license_plate, vehicle_details.vehicle_type, assets.description, assets.status, assets.location, assets.qr_code, vehicle_display_colors.display_color, assets.created_at, assets.updated_at
                     FROM assets
                     JOIN vehicle_details ON vehicle_details.asset_id = assets.id
+                    JOIN vehicle_display_colors ON vehicle_display_colors.asset_id = assets.id
                     WHERE assets.tenant_id = $1
                       AND assets.asset_kind = 'vehicle'
                       AND assets.deleted_at IS NULL
@@ -519,6 +575,14 @@ impl FleetRepository {
                     updated_at = NOW()
                 WHERE asset_id = $6 AND tenant_id = $7
                 RETURNING asset_id, license_plate, vehicle_type
+            ),
+            updated_color AS (
+                UPDATE vehicle_display_colors
+                SET
+                    display_color = COALESCE($10, display_color),
+                    updated_at = NOW()
+                WHERE asset_id = $6 AND tenant_id = $7
+                RETURNING asset_id, display_color
             )
             SELECT
                 a.id,
@@ -530,10 +594,12 @@ impl FleetRepository {
                 a.status,
                 a.location,
                 a.qr_code,
+                c.display_color,
                 a.created_at,
                 a.updated_at
             FROM updated_asset a
             JOIN updated_detail d ON d.asset_id = a.id
+            JOIN updated_color c ON c.asset_id = a.id
             "#
         )
         .bind(&update.name)
@@ -545,6 +611,7 @@ impl FleetRepository {
         .bind(tenant_id.0)
         .bind(&update.license_plate)
         .bind(update.vehicle_type.as_ref().map(|v| v.as_str()))
+        .bind(update.display_color.as_ref().map(|color| color.to_ascii_lowercase()))
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| Self::map_asset_write_error(e, "Vehicle with this name already exists"))?
@@ -608,9 +675,10 @@ impl FleetRepository {
     ) -> Result<Option<Vehicle>, AppError> {
         let vehicle = sqlx::query_as::<_, VehicleRow>(
             r#"
-            SELECT assets.id, assets.tenant_id, assets.name, vehicle_details.license_plate, vehicle_details.vehicle_type, assets.description, assets.status, assets.location, assets.qr_code, assets.created_at, assets.updated_at
+            SELECT assets.id, assets.tenant_id, assets.name, vehicle_details.license_plate, vehicle_details.vehicle_type, assets.description, assets.status, assets.location, assets.qr_code, vehicle_display_colors.display_color, assets.created_at, assets.updated_at
             FROM assets
             JOIN vehicle_details ON vehicle_details.asset_id = assets.id
+            JOIN vehicle_display_colors ON vehicle_display_colors.asset_id = assets.id
             WHERE assets.qr_code = $1
               AND assets.tenant_id = $2
               AND assets.asset_kind = 'vehicle'
@@ -1433,6 +1501,7 @@ impl FleetRepository {
                 a.asset_kind as resource_type,
                 a.id as resource_id,
                 a.name as resource_name,
+                vc.display_color as resource_display_color,
                 COALESCE(
                     json_agg(
                         json_build_object(
@@ -1448,6 +1517,7 @@ impl FleetRepository {
                     '[]'::json
                 ) as reservations
             FROM assets a
+            LEFT JOIN vehicle_display_colors vc ON vc.asset_id = a.id
             LEFT JOIN reservations res ON res.asset_id = a.id
                  AND res.tenant_id = $1 
                  AND res.status != 'cancelled'
@@ -1458,7 +1528,7 @@ impl FleetRepository {
              WHERE a.tenant_id = $1
                AND a.deleted_at IS NULL
                AND ($4::text IS NULL OR a.asset_kind = $4)
-            GROUP BY a.asset_kind, a.id, a.name
+            GROUP BY a.asset_kind, a.id, a.name, vc.display_color
             ORDER BY a.asset_kind, a.name
             "#,
         )
@@ -1805,6 +1875,7 @@ struct VehicleRow {
     status: String,
     location: Option<String>,
     qr_code: Option<String>,
+    display_color: String,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
 }
@@ -1821,6 +1892,7 @@ impl VehicleRow {
             status: self.status.parse().unwrap_or(ResourceStatus::Available),
             location: self.location,
             qr_code: self.qr_code,
+            display_color: self.display_color,
             created_at: self.created_at,
             updated_at: self.updated_at,
         }
@@ -1936,6 +2008,7 @@ pub struct CalendarEntry {
     pub resource_type: ResourceType,
     pub resource_id: Uuid,
     pub resource_name: String,
+    pub resource_display_color: Option<String>,
     pub reservations: Vec<ReservationSummary>,
 }
 
@@ -1963,6 +2036,7 @@ struct CalendarRow {
     resource_type: String,
     resource_id: Uuid,
     resource_name: String,
+    resource_display_color: Option<String>,
     reservations: serde_json::Value,
 }
 
@@ -1975,9 +2049,27 @@ impl CalendarRow {
             resource_type: self.resource_type.parse().unwrap_or(ResourceType::Vehicle),
             resource_id: self.resource_id,
             resource_name: self.resource_name,
+            resource_display_color: self.resource_display_color,
             reservations,
         }
     }
+}
+
+fn vehicle_display_color_from_seed(vehicle_id: Uuid, attempt: u32) -> String {
+    let mut hash = 2_166_136_261_u32;
+
+    for byte in vehicle_id.as_bytes() {
+        hash ^= u32::from(*byte);
+        hash = hash.wrapping_mul(16_777_619);
+    }
+
+    hash ^= attempt.wrapping_mul(2_654_435_761);
+
+    let red = 48 + ((hash >> 16) & 0x7f);
+    let green = 48 + ((hash >> 8) & 0x7f);
+    let blue = 48 + (hash & 0x7f);
+
+    format!("#{red:02x}{green:02x}{blue:02x}")
 }
 
 #[derive(Debug, FromRow)]

@@ -15,6 +15,7 @@ pub struct Vehicle {
     pub status: ResourceStatus,
     pub location: Option<String>,
     pub qr_code: Option<String>,
+    pub display_color: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -54,6 +55,7 @@ pub struct CreateVehicle {
     pub description: Option<String>,
     pub location: Option<String>,
     pub qr_code: Option<String>,
+    pub display_color: Option<String>,
 }
 
 impl CreateVehicle {
@@ -67,6 +69,9 @@ impl CreateVehicle {
             if plate.trim().is_empty() {
                 return Err("License plate cannot be empty if provided".to_string());
             }
+        }
+        if let Some(ref color) = self.display_color {
+            validate_display_color(color)?;
         }
         Ok(())
     }
@@ -82,6 +87,21 @@ pub struct UpdateVehicle {
     pub status: Option<ResourceStatus>,
     pub location: Option<String>,
     pub qr_code: Option<String>,
+    pub display_color: Option<String>,
+}
+
+pub fn validate_display_color(color: &str) -> Result<(), String> {
+    let is_valid = color.len() == 7
+        && color.starts_with('#')
+        && color[1..]
+            .chars()
+            .all(|character| character.is_ascii_hexdigit());
+
+    if is_valid {
+        Ok(())
+    } else {
+        Err("Display color must be a hex color like #2563eb".to_string())
+    }
 }
 
 #[cfg(test)]
@@ -99,6 +119,7 @@ mod tests {
             status,
             location: None,
             qr_code: None,
+            display_color: "#2563eb".to_string(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         }
@@ -169,6 +190,7 @@ mod tests {
             description: None,
             location: None,
             qr_code: None,
+            display_color: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -182,6 +204,7 @@ mod tests {
             description: None,
             location: None,
             qr_code: None,
+            display_color: None,
         };
         assert_eq!(cmd.validate(), Err("Vehicle name is required".to_string()));
     }
@@ -195,10 +218,29 @@ mod tests {
             description: None,
             location: None,
             qr_code: None,
+            display_color: None,
         };
         assert_eq!(
             cmd.validate(),
             Err("License plate cannot be empty if provided".to_string())
+        );
+    }
+
+    #[test]
+    fn create_vehicle_validate_fails_with_invalid_display_color() {
+        let cmd = CreateVehicle {
+            name: "Transporter".to_string(),
+            license_plate: None,
+            vehicle_type: VehicleType::Van,
+            description: None,
+            location: None,
+            qr_code: None,
+            display_color: Some("blue".to_string()),
+        };
+
+        assert_eq!(
+            cmd.validate(),
+            Err("Display color must be a hex color like #2563eb".to_string())
         );
     }
 }

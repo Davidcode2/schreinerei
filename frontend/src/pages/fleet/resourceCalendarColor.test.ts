@@ -37,11 +37,26 @@ describe("getResourceCalendarColor", () => {
   })
 
   it("maps different identities into the approved palette", () => {
-    const tokens = new Set(resourceCalendarColorPalette.map((color) => color.token))
+    const tokens = new Set<string>(resourceCalendarColorPalette.map((color) => color.token))
     const vehicleColor = getResourceCalendarColor("vehicle", "vehicle-1")
     const toolColor = getResourceCalendarColor("tool", "tool-99")
 
     expect(tokens.has(vehicleColor.token)).toBe(true)
     expect(tokens.has(toolColor.token)).toBe(true)
+  })
+
+  it("uses a persisted display color when the API provides a valid hex value", () => {
+    const color = getResourceCalendarColor("vehicle", "vehicle-1", "#2F6F8F")
+
+    expect(color.token).toBe("#2f6f8f")
+    expect(color.markerStyle).toEqual({ backgroundColor: "#2f6f8f" })
+    expect(color.labelStyle).toEqual({ color: "#2f6f8f" })
+  })
+
+  it("falls back to the palette when the API display color is invalid", () => {
+    const fallbackColor = getResourceCalendarColor("vehicle", "vehicle-1")
+    const invalidColor = getResourceCalendarColor("vehicle", "vehicle-1", "blue")
+
+    expect(invalidColor).toEqual(fallbackColor)
   })
 })

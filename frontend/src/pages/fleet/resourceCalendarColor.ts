@@ -1,4 +1,5 @@
 import type { ResourceType } from "@/types/fleet"
+import type { CSSProperties } from "react"
 
 const RESOURCE_COLOR_PALETTE = [
   {
@@ -52,12 +53,17 @@ const RESOURCE_COLOR_PALETTE = [
 ] as const
 
 export interface ResourceCalendarColor {
-  token: (typeof RESOURCE_COLOR_PALETTE)[number]["token"]
+  token: (typeof RESOURCE_COLOR_PALETTE)[number]["token"] | string
   labelClassName: string
   markerClassName: string
   borderClassName: string
   tintClassName: string
   softTintClassName: string
+  labelStyle?: CSSProperties
+  markerStyle?: CSSProperties
+  borderStyle?: CSSProperties
+  tintStyle?: CSSProperties
+  softTintStyle?: CSSProperties
 }
 
 function hashValue(input: string): number {
@@ -71,14 +77,42 @@ function hashValue(input: string): number {
   return Math.abs(hash)
 }
 
+function isHexDisplayColor(value: string | null | undefined): value is string {
+  return /^#[0-9a-f]{6}$/i.test(value ?? "")
+}
+
+function hexToRgba(hexColor: string, alpha: number): string {
+  const red = Number.parseInt(hexColor.slice(1, 3), 16)
+  const green = Number.parseInt(hexColor.slice(3, 5), 16)
+  const blue = Number.parseInt(hexColor.slice(5, 7), 16)
+
+  return `rgb(${red} ${green} ${blue} / ${alpha})`
+}
+
 export function getResourceCalendarColor(
   resourceType: ResourceType,
-  resourceId: string
+  resourceId: string,
+  displayColor?: string | null
 ): ResourceCalendarColor {
   const identity = `${resourceType}:${resourceId}`
   const paletteIndex = hashValue(identity) % RESOURCE_COLOR_PALETTE.length
+  const fallbackColor = RESOURCE_COLOR_PALETTE[paletteIndex] ?? RESOURCE_COLOR_PALETTE[0]
 
-  return RESOURCE_COLOR_PALETTE[paletteIndex] ?? RESOURCE_COLOR_PALETTE[0]
+  if (!isHexDisplayColor(displayColor)) {
+    return fallbackColor
+  }
+
+  const normalizedColor = displayColor.toLowerCase()
+
+  return {
+    ...fallbackColor,
+    token: normalizedColor,
+    labelStyle: { color: normalizedColor },
+    markerStyle: { backgroundColor: normalizedColor },
+    borderStyle: { borderColor: hexToRgba(normalizedColor, 0.35) },
+    tintStyle: { backgroundColor: hexToRgba(normalizedColor, 0.1) },
+    softTintStyle: { backgroundColor: hexToRgba(normalizedColor, 0.16) },
+  }
 }
 
 export const resourceCalendarColorPalette = RESOURCE_COLOR_PALETTE

@@ -13,6 +13,7 @@ export function createVehicle(overrides: Partial<Vehicle> = {}): Vehicle {
     status: 'available' as ResourceStatus,
     location: 'Hof',
     qr_code: null,
+    display_color: '#2563eb',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     ...overrides,

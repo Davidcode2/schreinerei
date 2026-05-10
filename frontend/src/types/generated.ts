@@ -16,7 +16,7 @@ export type AvailabilityQuery = { resource_type: string, resource_id: string, st
 
 export type AvailabilityResponse = { available: boolean, conflicts: Array<ConflictDetail> | null, };
 
-export type CalendarEntryResponse = { resource_type: string, resource_id: string, resource_name: string, reservations: Array<ReservationSummaryResponse>, };
+export type CalendarEntryResponse = { resource_type: string, resource_id: string, resource_name: string, resource_display_color: string | null, reservations: Array<ReservationSummaryResponse>, };
 
 export type CalendarQuery = { start_date: string, end_date: string, resource_type: string | null, site_id: string | null, };
 
@@ -50,7 +50,7 @@ export type CreateTimeEntryRequest = { site_id: string | null, work_type: string
 
 export type CreateToolRequest = { name: string, category: string | null, description: string | null, location: string | null, qr_code: string | null, };
 
-export type CreateVehicleRequest = { name: string, license_plate: string | null, vehicle_type: string, description: string | null, location: string | null, qr_code: string | null, };
+export type CreateVehicleRequest = { name: string, license_plate: string | null, vehicle_type: string, description: string | null, location: string | null, qr_code: string | null, display_color: string | null, };
 
 export type DashboardSiteResponse = { id: string, project_type: string, name: string, customer_name: string, location: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, assigned_users: bigint, total_hours: number, };
 
@@ -191,7 +191,7 @@ export type UpdateTimeEntryRequest = { site_id: string | null, work_type: string
 
 export type UpdateToolRequest = { name: string | null, category: string | null, description: string | null, status: string | null, location: string | null, qr_code: string | null, };
 
-export type UpdateVehicleRequest = { name: string | null, license_plate: string | null, vehicle_type: string | null, description: string | null, status: string | null, location: string | null, qr_code: string | null, };
+export type UpdateVehicleRequest = { name: string | null, license_plate: string | null, vehicle_type: string | null, description: string | null, status: string | null, location: string | null, qr_code: string | null, display_color: string | null, };
 
 export type UploadPhotoAttachmentResponse = { attachment_id: string, photo_url: string, thumbnail_url: string, };
 
@@ -204,6 +204,6 @@ export type UserPreferences = { active_site_id: string | null, };
  */
 export type UserResponse = { id: string, email: string, name: string | null, role: string, created_at: string, };
 
-export type VehicleResponse = { id: string, name: string, license_plate: string | null, vehicle_type: string, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
+export type VehicleResponse = { id: string, name: string, license_plate: string | null, vehicle_type: string, description: string | null, status: string, location: string | null, qr_code: string | null, display_color: string, created_at: string, updated_at: string, };
 
 export type WithdrawRequest = { quantity: number, notes: string | null, site_id: string | null, disposal: boolean | null, last_package_taken: boolean | null, };

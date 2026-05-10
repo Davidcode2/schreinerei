@@ -60,6 +60,7 @@ export function AddVehicleDialog({
   const [description, setDescription] = useState(initialData?.description ?? "")
   const [status, setStatus] = useState<ResourceStatus>(initialData?.status ?? "available")
   const [qrCode, setQrCode] = useState(initialData?.qr_code ?? "")
+  const [displayColor, setDisplayColor] = useState(initialData?.display_color ?? "#2563eb")
   const [currentStep, setCurrentStep] = useState(1)
 
   const createVehicle = useCreateVehicle()
@@ -74,6 +75,7 @@ export function AddVehicleDialog({
       setDescription(initialData.description ?? "")
       setStatus(initialData.status)
       setQrCode(initialData.qr_code ?? "")
+      setDisplayColor(initialData.display_color)
       setCurrentStep(1)
       return
     }
@@ -85,6 +87,7 @@ export function AddVehicleDialog({
     setDescription("")
     setStatus("available")
     setQrCode("")
+    setDisplayColor("#2563eb")
     setCurrentStep(1)
   }
 
@@ -108,6 +111,7 @@ export function AddVehicleDialog({
       location?: string
       description?: string
       qr_code?: string
+      display_color?: string
     } = {
       name,
       vehicle_type: vehicleType as VehicleType,
@@ -124,6 +128,9 @@ export function AddVehicleDialog({
     }
     if (qrCode) {
       payload.qr_code = qrCode
+    }
+    if (mode === "edit") {
+      payload.display_color = displayColor.toLowerCase()
     }
 
     if (mode === "edit" && initialData) {
@@ -281,23 +288,36 @@ export function AddVehicleDialog({
                 </div>
 
                 {mode === "edit" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="vehicleStatus">Status</Label>
-                    <Select
-                      value={status}
-                      onValueChange={(value) => setStatus(value as ResourceStatus)}
-                    >
-                      <SelectTrigger id="vehicleStatus" className="h-10">
-                        <SelectValue placeholder="Status wählen" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {RESOURCE_STATUS_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+                    <div className="space-y-2">
+                      <Label htmlFor="vehicleStatus">Status</Label>
+                      <Select
+                        value={status}
+                        onValueChange={(value) => setStatus(value as ResourceStatus)}
+                      >
+                        <SelectTrigger id="vehicleStatus" className="h-10">
+                          <SelectValue placeholder="Status wählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {RESOURCE_STATUS_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="displayColor">Kalenderfarbe</Label>
+                      <Input
+                        id="displayColor"
+                        type="color"
+                        value={displayColor}
+                        onChange={(event) => setDisplayColor(event.target.value)}
+                        className="h-10 w-full min-w-16 cursor-pointer p-1 sm:w-16"
+                      />
+                    </div>
                   </div>
                 )}
 

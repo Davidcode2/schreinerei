@@ -243,6 +243,7 @@ export const handlers = [
       status: 'available',
       location: null,
       qr_code: null,
+      display_color: '#2563eb',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       ...body,

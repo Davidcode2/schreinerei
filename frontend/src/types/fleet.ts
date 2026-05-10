@@ -20,6 +20,7 @@ export interface Vehicle {
   status: ResourceStatus
   location: string | null
   qr_code: string | null
+  display_color: string
   created_at: string
   updated_at: string
 }
@@ -31,6 +32,7 @@ export interface CreateVehicleRequest {
   description?: string
   location?: string
   qr_code?: string
+  display_color?: string
 }
 
 export interface UpdateVehicleRequest {
@@ -41,6 +43,7 @@ export interface UpdateVehicleRequest {
   status?: ResourceStatus
   location?: string
   qr_code?: string
+  display_color?: string
 }
 
 export interface ListVehiclesQuery {
@@ -247,6 +250,7 @@ export interface CalendarEntry {
   resource_type: ResourceType
   resource_id: string
   resource_name: string
+  resource_display_color: string | null
   reservations: ReservationSummary[]
 }
 

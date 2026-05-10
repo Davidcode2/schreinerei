@@ -100,6 +100,7 @@ pub struct VehicleResponse {
     pub status: String,
     pub location: Option<String>,
     pub qr_code: Option<String>,
+    pub display_color: String,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -115,6 +116,7 @@ impl From<crate::modules::fleet::domain::Vehicle> for VehicleResponse {
             status: vehicle.status.to_string(),
             location: vehicle.location,
             qr_code: vehicle.qr_code,
+            display_color: vehicle.display_color,
             created_at: vehicle.created_at.to_rfc3339(),
             updated_at: vehicle.updated_at.to_rfc3339(),
         }
@@ -130,6 +132,7 @@ pub struct CreateVehicleRequest {
     pub description: Option<String>,
     pub location: Option<String>,
     pub qr_code: Option<String>,
+    pub display_color: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -142,6 +145,7 @@ pub struct UpdateVehicleRequest {
     pub status: Option<String>,
     pub location: Option<String>,
     pub qr_code: Option<String>,
+    pub display_color: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -485,6 +489,7 @@ pub struct CalendarEntryResponse {
     pub resource_type: String,
     pub resource_id: String,
     pub resource_name: String,
+    pub resource_display_color: Option<String>,
     pub reservations: Vec<ReservationSummaryResponse>,
 }
 
@@ -496,6 +501,7 @@ impl From<crate::modules::fleet::infrastructure::fleet_repository::CalendarEntry
             resource_type: entry.resource_type.to_string(),
             resource_id: entry.resource_id.to_string(),
             resource_name: entry.resource_name,
+            resource_display_color: entry.resource_display_color,
             reservations: entry
                 .reservations
                 .into_iter()
@@ -635,6 +641,9 @@ pub async fn create_vehicle(
         description: request.description,
         location: request.location,
         qr_code: request.qr_code,
+        display_color: request
+            .display_color
+            .map(|color| color.to_ascii_lowercase()),
     };
 
     let vehicle = service.create_vehicle(create, &ctx).await?;
@@ -690,6 +699,9 @@ pub async fn update_vehicle(
         status,
         location: request.location,
         qr_code: request.qr_code,
+        display_color: request
+            .display_color
+            .map(|color| color.to_ascii_lowercase()),
     };
 
     let vehicle = service.update_vehicle(vehicle_id, update, &ctx).await?;

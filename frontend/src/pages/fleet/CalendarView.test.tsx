@@ -59,6 +59,7 @@ function setCalendarData(resources: Array<{
   resource_type: "vehicle" | "tool" | "machine"
   resource_id: string
   resource_name: string
+  resource_display_color?: string | null
   reservations: Array<{
     id: string
     start_time: string
@@ -69,7 +70,12 @@ function setCalendarData(resources: Array<{
   }>
 }>) {
   vi.mocked(useCalendar).mockReturnValue({
-    data: { resources },
+    data: {
+      resources: resources.map((resource) => ({
+        resource_display_color: null,
+        ...resource,
+      })),
+    },
     isLoading: false,
     error: null,
   } as never)
@@ -183,12 +189,13 @@ describe("CalendarView", () => {
     expect(screen.getByText("Alex")).toBeInTheDocument()
   })
 
-  it("keeps the same derived resource color markers across rerenders", () => {
+  it("keeps persisted vehicle color markers across rerenders", () => {
     setCalendarData([
       {
         resource_type: "vehicle",
         resource_id: "vehicle-1",
         resource_name: "Sprinter",
+        resource_display_color: "#2f6f8f",
         reservations: [
           {
             id: "existing-1",
@@ -202,7 +209,7 @@ describe("CalendarView", () => {
       },
     ])
 
-    const expectedColor = getResourceCalendarColor("vehicle", "vehicle-1").token
+    const expectedColor = getResourceCalendarColor("vehicle", "vehicle-1", "#2f6f8f").token
     const { rerender } = render(<CalendarView embedded />)
 
     const rowHeader = screen.getByText("Sprinter").closest("div[data-resource-color]")

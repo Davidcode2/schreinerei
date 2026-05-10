@@ -7,6 +7,7 @@ function resourceWithReservations(reservations: CalendarEntry["reservations"]): 
     resource_type: "vehicle",
     resource_id: "vehicle-1",
     resource_name: "Sprinter",
+    resource_display_color: "#2563eb",
     reservations,
   }
 }

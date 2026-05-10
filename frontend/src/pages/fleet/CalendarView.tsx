@@ -237,7 +237,8 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
             {calendarData.resources.map((entry: CalendarEntry) => {
               const resourceColor = getResourceCalendarColor(
                 entry.resource_type,
-                entry.resource_id
+                entry.resource_id,
+                entry.resource_display_color
               )
 
               return (
@@ -251,6 +252,7 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
                       "flex min-h-[88px] items-center px-4 py-3",
                       resourceColor.tintClassName
                     )}
+                    style={resourceColor.tintStyle}
                     data-resource-color={resourceColor.token}
                   >
                     <div className="min-w-0 space-y-2">
@@ -261,8 +263,12 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
                             "h-3 w-3 rounded-full ring-4 ring-background/80",
                             resourceColor.markerClassName
                           )}
+                          style={resourceColor.markerStyle}
                         />
-                        <p className={cn("line-clamp-1 text-sm font-semibold", resourceColor.labelClassName)}>
+                        <p
+                          className={cn("line-clamp-1 text-sm font-semibold", resourceColor.labelClassName)}
+                          style={resourceColor.labelStyle}
+                        >
                           {entry.resource_name}
                         </p>
                       </div>
@@ -338,6 +344,10 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
                                       resourceColor.borderClassName,
                                       resourceColor.softTintClassName
                                     )}
+                                    style={{
+                                      ...resourceColor.borderStyle,
+                                      ...resourceColor.softTintStyle,
+                                    }}
                                     data-resource-color={resourceColor.token}
                                     onClick={() => setSelectedReservationId(r.id)}
                                     onKeyDown={(event) => {
@@ -351,6 +361,7 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
                                       <span
                                         aria-hidden="true"
                                         className={cn("h-2 w-2 rounded-full", resourceColor.markerClassName)}
+                                        style={resourceColor.markerStyle}
                                       />
                                       <p className="truncate text-xs font-semibold text-foreground">
                                         {r.user_name}

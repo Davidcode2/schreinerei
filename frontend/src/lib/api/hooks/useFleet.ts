@@ -60,6 +60,7 @@ export function useCreateVehicle() {
       apiClient.post<Vehicle>("/api/v1/fleet/vehicles", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vehicles"] })
+      queryClient.invalidateQueries({ queryKey: ["calendar"] })
     },
   })
 }
@@ -73,6 +74,7 @@ export function useUpdateVehicle() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["vehicles"] })
       queryClient.invalidateQueries({ queryKey: ["vehicle", variables.id] })
+      queryClient.invalidateQueries({ queryKey: ["calendar"] })
     },
   })
 }

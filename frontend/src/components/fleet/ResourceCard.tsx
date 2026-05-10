@@ -36,7 +36,11 @@ export function ResourceCard({
 
   const isAvailable = resource.status === "available"
   const deleteMutation = type === "vehicle" ? deleteVehicleMutation : deleteToolMutation
-  const resourceColor = getResourceCalendarColor(type, resource.id)
+  const resourceColor = getResourceCalendarColor(
+    type,
+    resource.id,
+    isVehicle(resource) ? resource.display_color : null
+  )
   const IconComponent = type === "vehicle" ? Car : Wrench
   const detailPath = type === "vehicle" ? `/fleet/${resource.id}` : `/tools/${resource.id}`
 
@@ -54,13 +58,19 @@ export function ResourceCard({
 
   return (
     <>
-      <Card className={cn("overflow-hidden transition-colors hover:border-primary/30 hover:shadow-sm", resourceColor.borderClassName)}>
-        <div className={cn("h-1.5 w-full", resourceColor.markerClassName)} />
+      <Card
+        className={cn("overflow-hidden transition-colors hover:border-primary/30 hover:shadow-sm", resourceColor.borderClassName)}
+        style={resourceColor.borderStyle}
+      >
+        <div className={cn("h-1.5 w-full", resourceColor.markerClassName)} style={resourceColor.markerStyle} />
         <CardContent className="p-5">
           <div className="mb-3 flex items-start justify-between gap-3">
             <Link to={detailPath} className="flex min-w-0 items-start gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-              <div className={cn("flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl", resourceColor.tintClassName)}>
-                <IconComponent className={cn("h-5 w-5", resourceColor.labelClassName)} />
+              <div
+                className={cn("flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl", resourceColor.tintClassName)}
+                style={resourceColor.tintStyle}
+              >
+                <IconComponent className={cn("h-5 w-5", resourceColor.labelClassName)} style={resourceColor.labelStyle} />
               </div>
               <div className="min-w-0 space-y-0.5">
                 <h3 className="font-display font-normal truncate transition-colors hover:text-primary">{resource.name}</h3>
@@ -108,7 +118,13 @@ export function ResourceCard({
           <div className="flex items-center justify-between border-t border-border/60 pt-3">
             <div className="flex items-center gap-2">
               {resource.qr_code && (
-                <div className={cn("flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs", resourceColor.borderClassName, resourceColor.tintClassName)}>
+                <div
+                  className={cn("flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs", resourceColor.borderClassName, resourceColor.tintClassName)}
+                  style={{
+                    ...resourceColor.borderStyle,
+                    ...resourceColor.tintStyle,
+                  }}
+                >
                   <QrCode className="h-3 w-3" />
                   <span className="font-mono">{resource.qr_code}</span>
                 </div>
