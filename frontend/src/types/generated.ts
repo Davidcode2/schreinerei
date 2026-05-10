@@ -42,6 +42,8 @@ export type CreateOnboardingSessionRequest = { organization_name: string, admin_
 
 export type CreateOrderRequestDto = { material_id: string, quantity: number, reason: string | null, };
 
+export type CreateProjectInvoiceRequest = { sender_name: string | null, sender_address: string | null, };
+
 export type CreateReservationRequest = { resource_type: string, resource_id: string, site_id: string | null, project_id: string | null, start_time: string, end_time: string, purpose: string | null, notes: string | null, };
 
 export type CreateSiteAppointmentRequest = { title: string, appointment_kind: string, starts_at: string, ends_at: string, notes: string | null, assigned_user_ids: Array<string>, };
@@ -118,6 +120,10 @@ export type PdfArtifactResponse = { storage_path: string, sha256_hash: string, c
  * Response DTO for user preferences
  */
 export type PreferencesResponse = { active_site_id: string | null, };
+
+export type ProjectInvoiceDraftResponse = { invoice: InvoiceResponse, project: SiteInvoiceProjectResponse, billing: SiteInvoiceBillingResponse, labor: ProjectLaborSummaryResponse, materials: ProjectMaterialSummaryResponse, line_items: Array<ProjectInvoiceLineItemResponse>, };
+
+export type ProjectInvoiceLineItemResponse = { source: string, description: string, quantity: number, unit: string, source_count: bigint, priced: boolean, };
 
 export type ProjectLaborSummaryResponse = { total_hours: number, entry_count: bigint, site_hours: number, workshop_hours: number, last_work_date: string | null, };
 
