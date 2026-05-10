@@ -91,6 +91,14 @@ impl UserService {
             return Ok(user);
         }
 
+        if let Some(user) = self
+            .user_repo
+            .claim_pending_by_email(tenant_id, &ctx.email, &ctx.user_id.to_string())
+            .await?
+        {
+            return Ok(user);
+        }
+
         // Create new user from auth
         let create_user = CreateUser {
             keycloak_user_id: ctx.user_id.to_string(),

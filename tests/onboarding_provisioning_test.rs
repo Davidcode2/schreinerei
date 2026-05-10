@@ -1,5 +1,8 @@
 use async_trait::async_trait;
 use schreinerei::common::error::AppError;
+use schreinerei::common::types::{Role, TenantId, UserId};
+use schreinerei::modules::iam::application::user_service::{TenantContext, UserService};
+use schreinerei::modules::iam::infrastructure::user_repository::UserRepository;
 use schreinerei::modules::onboarding::application::{
     OrganizationProvisioner, TenantProvisioningService,
 };
@@ -64,6 +67,15 @@ async fn provisions_paid_session_once(pool: PgPool) {
         row.get::<String, _>("tenant_keycloak_organization_alias"),
         "schreinerei-beispiel"
     );
+
+    let admin_role: String = sqlx::query_scalar(
+        "SELECT role FROM users WHERE tenant_id = $1 AND email = 'admin@example.com'",
+    )
+    .bind(row.get::<Uuid, _>("tenant_id"))
+    .fetch_one(&pool)
+    .await
+    .expect("pending onboarding admin should be created");
+    assert_eq!(admin_role, "admin");
 }
 
 #[sqlx::test]
@@ -101,6 +113,47 @@ async fn keycloak_failure_keeps_tenant_for_retry(pool: PgPool) {
             .await
             .expect("tenant should still be attached");
     assert_eq!(retry_tenant_id, first_tenant_id);
+}
+
+#[sqlx::test]
+async fn first_login_claims_pending_onboarding_admin(pool: PgPool) {
+    let session_id = insert_confirmed_session(&pool, "tr_admin_claim").await;
+    let organization_id = Uuid::new_v4().to_string();
+    let keycloak = FakeKeycloak::succeeding(&organization_id, "schreinerei-beispiel");
+    let service = provisioning_service(pool.clone(), keycloak);
+    service
+        .provision_for_payment(PAYMENT_PROVIDER, "tr_admin_claim")
+        .await
+        .expect("provisioning should succeed");
+
+    let tenant_id: Uuid =
+        sqlx::query_scalar("SELECT tenant_id FROM onboarding_sessions WHERE id = $1")
+            .bind(session_id)
+            .fetch_one(&pool)
+            .await
+            .expect("tenant should be attached");
+    let keycloak_user_id = UserId(Uuid::new_v4());
+    let user_service = UserService::new(UserRepository::new(pool.clone()));
+    let ctx = TenantContext {
+        tenant_id: TenantId(tenant_id),
+        user_id: keycloak_user_id,
+        email: "ADMIN@example.com".to_string(),
+        roles: vec![Role::Employee],
+    };
+
+    let user = user_service
+        .get_or_create_from_ctx(&ctx)
+        .await
+        .expect("pending admin should be claimed");
+
+    assert_eq!(user.role, Role::Admin);
+    assert_eq!(user.keycloak_user_id, keycloak_user_id.to_string());
+    let user_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users WHERE tenant_id = $1")
+        .bind(tenant_id)
+        .fetch_one(&pool)
+        .await
+        .expect("users should be countable");
+    assert_eq!(user_count, 1);
 }
 
 fn provisioning_service(

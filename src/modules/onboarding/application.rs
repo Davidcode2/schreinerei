@@ -196,6 +196,8 @@ where
                         &self.keycloak_realm,
                         &session.organization_name,
                         &session.organization_slug,
+                        &session.admin_email,
+                        session.admin_name.as_deref(),
                     )
                     .await?
             }

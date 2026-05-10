@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde_json::Value;
-use sqlx::{PgPool, Row};
+use sqlx::{PgPool, Postgres, Row, Transaction};
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -230,6 +230,8 @@ impl OnboardingRepository {
         keycloak_realm: &str,
         organization_name: &str,
         organization_slug: &str,
+        admin_email: &str,
+        admin_name: Option<&str>,
     ) -> Result<TenantId, AppError> {
         let mut transaction = self.pool.begin().await.map_err(database_error)?;
 
@@ -249,6 +251,14 @@ impl OnboardingRepository {
 
         let tenant_id: Option<Uuid> = row.try_get("tenant_id").map_err(database_error)?;
         if let Some(tenant_id) = tenant_id {
+            ensure_pending_admin_user(
+                &mut transaction,
+                session_id,
+                TenantId(tenant_id),
+                admin_email,
+                admin_name,
+            )
+            .await?;
             transaction.commit().await.map_err(database_error)?;
             return Ok(TenantId(tenant_id));
         }
@@ -279,6 +289,15 @@ impl OnboardingRepository {
         .execute(&mut *transaction)
         .await
         .map_err(database_error)?;
+
+        ensure_pending_admin_user(
+            &mut transaction,
+            session_id,
+            TenantId(tenant_id),
+            admin_email,
+            admin_name,
+        )
+        .await?;
 
         transaction.commit().await.map_err(database_error)?;
         Ok(TenantId(tenant_id))
@@ -588,6 +607,38 @@ impl SessionPaymentUpdate {
 
 fn database_error(error: sqlx::Error) -> AppError {
     AppError::Database(format!("Onboarding database error: {error}"))
+}
+
+async fn ensure_pending_admin_user(
+    transaction: &mut Transaction<'_, Postgres>,
+    session_id: Uuid,
+    tenant_id: TenantId,
+    admin_email: &str,
+    admin_name: Option<&str>,
+) -> Result<(), AppError> {
+    let pending_keycloak_id = format!("pending-onboarding-admin-{session_id}");
+
+    sqlx::query(
+        r#"
+        INSERT INTO users (tenant_id, keycloak_user_id, email, name, role)
+        VALUES ($1, $2, $3, $4, 'admin')
+        ON CONFLICT (tenant_id, keycloak_user_id)
+        DO UPDATE SET
+            email = EXCLUDED.email,
+            name = COALESCE(users.name, EXCLUDED.name),
+            role = 'admin',
+            updated_at = NOW()
+        "#,
+    )
+    .bind(tenant_id.0)
+    .bind(pending_keycloak_id)
+    .bind(admin_email)
+    .bind(admin_name)
+    .execute(&mut **transaction)
+    .await
+    .map_err(database_error)?;
+
+    Ok(())
 }
 
 fn organization_invite_from_row(
