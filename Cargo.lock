@@ -2021,7 +2021,7 @@ dependencies = [
 
 [[package]]
 name = "schreinerei"
-version = "0.1.15"
+version = "0.1.16"
 dependencies = [
  "async-trait",
  "axum",
@@ -2029,6 +2029,7 @@ dependencies = [
  "chrono",
  "config",
  "dotenvy",
+ "hex",
  "http",
  "image",
  "jsonwebtoken",
@@ -2036,6 +2037,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "sha2",
  "sqlx",
  "thiserror",
  "tokio",

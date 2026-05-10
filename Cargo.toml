@@ -25,3 +25,5 @@ qrcode = "0.14"
 base64 = "0.22"
 ts-rs = { version = "12", features = ["serde-compat", "chrono-impl", "uuid-impl", "url-impl"] }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+sha2 = "0.10"
+hex = "0.4"

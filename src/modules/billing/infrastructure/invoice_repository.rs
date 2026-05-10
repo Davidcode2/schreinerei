@@ -4,7 +4,9 @@ use uuid::Uuid;
 
 use crate::common::error::AppError;
 use crate::common::types::{InvoiceId, SiteId, TenantId, UserId};
-use crate::modules::billing::domain::{AttachInvoicePdf, CreateInvoiceDraft, Invoice, PdfArtifact};
+use crate::modules::billing::domain::{
+    AttachInvoicePdf, CreateInvoiceDraft, Invoice, InvoiceSnapshot, PdfArtifact,
+};
 
 pub struct InvoiceRepository {
     pool: PgPool,
@@ -34,9 +36,9 @@ impl InvoiceRepository {
             r#"
             INSERT INTO invoices (
                 id, tenant_id, site_id, invoice_number, invoice_number_display, status,
-                sender_name, sender_address, created_by, created_at, updated_at
+                sender_name, sender_address, invoice_snapshot, created_by, created_at, updated_at
             )
-            SELECT $1, $2, $3, $4, $5, 'draft', $6, $7, $8, $9, $10
+            SELECT $1, $2, $3, $4, $5, 'draft', $6, $7, $8, $9, $10, $11
             WHERE EXISTS (
                 SELECT 1
                 FROM sites
@@ -45,6 +47,7 @@ impl InvoiceRepository {
             RETURNING
                 id, tenant_id, site_id, invoice_number, invoice_number_display, status,
                 sender_name, sender_address, issued_at, due_on, voided_at,
+                invoice_snapshot,
                 pdf_storage_path, pdf_sha256_hash, pdf_content_type, pdf_size_bytes,
                 pdf_created_at, created_by, created_at, updated_at
             "#,
@@ -56,6 +59,7 @@ impl InvoiceRepository {
         .bind(&invoice_number_display)
         .bind(normalize_optional_text(create.sender_name.as_deref()))
         .bind(normalize_optional_text(create.sender_address.as_deref()))
+        .bind(invoice_snapshot_value(&create.snapshot)?)
         .bind(create.created_by.map(|id| id.0))
         .bind(now)
         .bind(now)
@@ -81,6 +85,7 @@ impl InvoiceRepository {
             SELECT
                 id, tenant_id, site_id, invoice_number, invoice_number_display, status,
                 sender_name, sender_address, issued_at, due_on, voided_at,
+                invoice_snapshot,
                 pdf_storage_path, pdf_sha256_hash, pdf_content_type, pdf_size_bytes,
                 pdf_created_at, created_by, created_at, updated_at
             FROM invoices
@@ -108,6 +113,7 @@ impl InvoiceRepository {
             SELECT
                 id, tenant_id, site_id, invoice_number, invoice_number_display, status,
                 sender_name, sender_address, issued_at, due_on, voided_at,
+                invoice_snapshot,
                 pdf_storage_path, pdf_sha256_hash, pdf_content_type, pdf_size_bytes,
                 pdf_created_at, created_by, created_at, updated_at
             FROM invoices
@@ -173,6 +179,7 @@ impl InvoiceRepository {
             RETURNING
                 id, tenant_id, site_id, invoice_number, invoice_number_display, status,
                 sender_name, sender_address, issued_at, due_on, voided_at,
+                invoice_snapshot,
                 pdf_storage_path, pdf_sha256_hash, pdf_content_type, pdf_size_bytes,
                 pdf_created_at, created_by, created_at, updated_at
             "#,
@@ -257,6 +264,7 @@ struct InvoiceRow {
     issued_at: Option<DateTime<Utc>>,
     due_on: Option<NaiveDate>,
     voided_at: Option<DateTime<Utc>>,
+    invoice_snapshot: Option<serde_json::Value>,
     pdf_storage_path: Option<String>,
     pdf_sha256_hash: Option<String>,
     pdf_content_type: Option<String>,
@@ -270,6 +278,7 @@ struct InvoiceRow {
 impl InvoiceRow {
     fn try_into_invoice(self) -> Result<Invoice, AppError> {
         let status = self.status.parse().map_err(AppError::Database)?;
+        let snapshot = self.try_invoice_snapshot()?;
         let pdf_artifact = self.try_pdf_artifact()?;
 
         Ok(Invoice {
@@ -284,11 +293,20 @@ impl InvoiceRow {
             issued_at: self.issued_at,
             due_on: self.due_on,
             voided_at: self.voided_at,
+            snapshot,
             pdf_artifact,
             created_by: self.created_by.map(UserId),
             created_at: self.created_at,
             updated_at: self.updated_at,
         })
+    }
+
+    fn try_invoice_snapshot(&self) -> Result<Option<InvoiceSnapshot>, AppError> {
+        self.invoice_snapshot
+            .clone()
+            .map(serde_json::from_value)
+            .transpose()
+            .map_err(|error| AppError::Database(format!("Invalid invoice snapshot: {error}")))
     }
 
     fn try_pdf_artifact(&self) -> Result<Option<PdfArtifact>, AppError> {
@@ -318,6 +336,11 @@ impl InvoiceRow {
             )),
         }
     }
+}
+
+fn invoice_snapshot_value(snapshot: &InvoiceSnapshot) -> Result<serde_json::Value, AppError> {
+    serde_json::to_value(snapshot)
+        .map_err(|error| AppError::Database(format!("Invalid invoice snapshot: {error}")))
 }
 
 fn normalize_optional_text(value: Option<&str>) -> Option<String> {

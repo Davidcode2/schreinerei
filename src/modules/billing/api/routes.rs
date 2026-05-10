@@ -1,5 +1,7 @@
 use axum::{
     extract::{Path, State},
+    http::{header, HeaderValue, StatusCode},
+    response::IntoResponse,
     routing::get,
     Json, Router,
 };
@@ -11,8 +13,11 @@ use uuid::Uuid;
 use crate::common::error::AppError;
 use crate::common::types::{InvoiceId, SiteId};
 use crate::modules::billing::application::BillingService;
-use crate::modules::billing::domain::{Invoice, InvoiceStatus, PdfArtifact};
+use crate::modules::billing::domain::{
+    Invoice, InvoiceSnapshot, InvoiceSnapshotLineItem, InvoiceStatus, PdfArtifact,
+};
 use crate::modules::billing::infrastructure::InvoiceRepository;
+use crate::modules::billing::pdf::{generate_invoice_pdf, invoice_pdf_filename};
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::sites::api::routes::{
     ProjectLaborSummaryResponse, ProjectMaterialSummaryResponse, SiteInvoiceBillingResponse,
@@ -25,6 +30,10 @@ use crate::AppState;
 pub fn create_router() -> Router<AppState> {
     Router::new()
         .route("/api/v1/billing/invoices/{id}", get(get_invoice))
+        .route(
+            "/api/v1/billing/invoices/{id}/pdf",
+            get(download_invoice_pdf),
+        )
         .route(
             "/api/v1/billing/projects/{site_id}/invoices",
             get(list_project_invoices).post(create_project_invoice),
@@ -131,22 +140,68 @@ async fn create_project_invoice(
     let site_id = SiteId(site_id);
     let invoice_summary = load_invoice_summary(state.pool.clone(), site_id, &ctx).await?;
     let service = BillingService::new(InvoiceRepository::new(state.pool));
-    let invoice = service
+    let snapshot = invoice_snapshot(&invoice_summary);
+    let draft = service
         .create_draft_invoice(
             ctx.tenant_id,
             crate::modules::billing::domain::CreateInvoiceDraft {
                 site_id,
                 sender_name: request.sender_name,
                 sender_address: request.sender_address,
+                snapshot,
                 created_by: Some(ctx.user_id),
             },
         )
+        .await?;
+    let generated = generate_invoice_pdf(&draft).map_err(AppError::Internal)?;
+    let invoice = service
+        .attach_pdf(ctx.tenant_id, generated.metadata)
         .await?;
 
     Ok(Json(ProjectInvoiceDraftResponse::from_parts(
         invoice,
         invoice_summary,
     )))
+}
+
+async fn download_invoice_pdf(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    if !ctx.is_admin() {
+        return Err(AppError::Forbidden("Admin access required".to_string()));
+    }
+
+    let service = BillingService::new(InvoiceRepository::new(state.pool));
+    let invoice = service
+        .find_invoice(ctx.tenant_id, InvoiceId(id))
+        .await?
+        .ok_or_else(|| AppError::NotFound("Invoice not found".to_string()))?;
+    let generated = generate_invoice_pdf(&invoice).map_err(AppError::Internal)?;
+    let filename = invoice_pdf_filename(&invoice);
+
+    if invoice.pdf_artifact.is_none() {
+        service
+            .attach_pdf(ctx.tenant_id, generated.metadata.clone())
+            .await?;
+    }
+
+    let disposition = format!("attachment; filename=\"{filename}\"");
+    let disposition = HeaderValue::from_str(&disposition)
+        .map_err(|error| AppError::Internal(format!("Invalid PDF filename: {error}")))?;
+
+    Ok((
+        StatusCode::OK,
+        [
+            (
+                header::CONTENT_TYPE,
+                HeaderValue::from_static("application/pdf"),
+            ),
+            (header::CONTENT_DISPOSITION, disposition),
+        ],
+        generated.bytes,
+    ))
 }
 
 async fn load_invoice_summary(
@@ -158,6 +213,24 @@ async fn load_invoice_summary(
         SiteRepository::new(pool),
     );
     service.get_invoice_summary(site_id, ctx).await
+}
+
+fn invoice_snapshot(summary: &InvoiceSummary) -> InvoiceSnapshot {
+    InvoiceSnapshot {
+        project_name: summary.site.name.clone(),
+        customer_name: summary.site.customer_name.clone(),
+        project_location: summary.site.location.clone(),
+        billing_reference: summary.site.billing_reference.clone(),
+        billing_notes: summary.site.billing_notes.clone(),
+        quote_reference: summary.site.quote_reference.clone(),
+        budget_amount_cents: summary.site.budget_amount_cents,
+        labor_total_hours: summary.project.labor.total_hours,
+        material_withdrawal_count: summary.project.materials.withdrawal_count,
+        line_items: invoice_line_items(&summary.project)
+            .into_iter()
+            .map(InvoiceSnapshotLineItem::from)
+            .collect(),
+    }
 }
 
 impl From<Invoice> for InvoiceResponse {
@@ -177,6 +250,19 @@ impl From<Invoice> for InvoiceResponse {
             created_by: invoice.created_by.map(|id| id.0),
             created_at: invoice.created_at,
             updated_at: invoice.updated_at,
+        }
+    }
+}
+
+impl From<ProjectInvoiceLineItemResponse> for InvoiceSnapshotLineItem {
+    fn from(line: ProjectInvoiceLineItemResponse) -> Self {
+        Self {
+            source: line.source,
+            description: line.description,
+            quantity: line.quantity,
+            unit: line.unit,
+            source_count: line.source_count,
+            priced: line.priced,
         }
     }
 }
@@ -257,7 +343,9 @@ fn invoice_line_items(summary: &ProjectSummary) -> Vec<ProjectInvoiceLineItemRes
 
 #[cfg(test)]
 mod tests {
+    use axum::body::to_bytes;
     use chrono::NaiveDate;
+    use http::HeaderMap;
     use sqlx::PgPool;
     use uuid::Uuid;
 
@@ -340,6 +428,18 @@ mod tests {
             issued_at: None,
             due_on: None,
             voided_at: None,
+            snapshot: Some(InvoiceSnapshot {
+                project_name: site.name.clone(),
+                customer_name: site.customer_name.clone(),
+                project_location: site.location.clone(),
+                billing_reference: site.billing_reference.clone(),
+                billing_notes: site.billing_notes.clone(),
+                quote_reference: site.quote_reference.clone(),
+                budget_amount_cents: site.budget_amount_cents,
+                labor_total_hours: 0.0,
+                material_withdrawal_count: 0,
+                line_items: Vec::new(),
+            }),
             pdf_artifact: None,
             created_by: None,
             created_at: Utc::now(),
@@ -435,13 +535,119 @@ mod tests {
 
         assert_eq!(response.invoice.site_id, site_id.0);
         assert_eq!(response.invoice.invoice_number_display, "RE-00001");
-        assert_eq!(response.invoice.status, "draft");
+        assert_eq!(response.invoice.status, "generated");
         assert_eq!(response.invoice.created_by, Some(user_id.0));
+        assert!(response.invoice.pdf_artifact.is_some());
         assert_eq!(response.project.name, "Project A");
         assert_eq!(response.labor.total_hours, 5.5);
         assert_eq!(response.materials.withdrawal_count, 1);
         assert_eq!(response.line_items.len(), 3);
         assert!(response.line_items.iter().all(|line| !line.priced));
+    }
+
+    #[sqlx::test]
+    async fn download_invoice_pdf_returns_pdf_and_marks_generated(pool: PgPool) {
+        let tenant_id = create_tenant(&pool, "Tenant A").await;
+        let user_id = create_user(&pool, tenant_id, Role::Admin).await;
+        let site_id = create_site(&pool, tenant_id, "Project A").await;
+
+        let draft = create_project_invoice(
+            State(test_state(pool.clone())),
+            tenant_context(tenant_id, user_id, Role::Admin),
+            Path(site_id.0),
+            Json(empty_create_request()),
+        )
+        .await
+        .expect("admin should create invoice")
+        .0;
+
+        let response = download_invoice_pdf(
+            State(test_state(pool.clone())),
+            tenant_context(tenant_id, user_id, Role::Admin),
+            Path(draft.invoice.id),
+        )
+        .await
+        .expect("admin should download invoice pdf")
+        .into_response();
+        let headers = response.headers().clone();
+        let bytes = to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("pdf body should be readable");
+        let status: String = sqlx::query_scalar("SELECT status FROM invoices WHERE id = $1")
+            .bind(draft.invoice.id)
+            .fetch_one(&pool)
+            .await
+            .expect("invoice status should be readable");
+        let pdf_size: i64 = sqlx::query_scalar("SELECT pdf_size_bytes FROM invoices WHERE id = $1")
+            .bind(draft.invoice.id)
+            .fetch_one(&pool)
+            .await
+            .expect("pdf metadata should be readable");
+
+        assert!(bytes.starts_with(b"%PDF-1.4"));
+        assert_eq!(
+            header_value(&headers, header::CONTENT_TYPE),
+            "application/pdf"
+        );
+        assert_eq!(
+            header_value(&headers, header::CONTENT_DISPOSITION),
+            "attachment; filename=\"RE-00001.pdf\""
+        );
+        assert_eq!(status, "generated");
+        assert_eq!(pdf_size, bytes.len() as i64);
+    }
+
+    #[sqlx::test]
+    async fn download_invoice_pdf_rejects_non_admin(pool: PgPool) {
+        let tenant_id = create_tenant(&pool, "Tenant A").await;
+        let admin_id = create_user(&pool, tenant_id, Role::Admin).await;
+        let employee_id = create_user(&pool, tenant_id, Role::Employee).await;
+        let site_id = create_site(&pool, tenant_id, "Project A").await;
+        let draft = create_project_invoice(
+            State(test_state(pool.clone())),
+            tenant_context(tenant_id, admin_id, Role::Admin),
+            Path(site_id.0),
+            Json(empty_create_request()),
+        )
+        .await
+        .expect("admin should create invoice")
+        .0;
+
+        let result = download_invoice_pdf(
+            State(test_state(pool)),
+            tenant_context(tenant_id, employee_id, Role::Employee),
+            Path(draft.invoice.id),
+        )
+        .await;
+
+        assert!(matches!(result, Err(AppError::Forbidden(_))));
+    }
+
+    #[sqlx::test]
+    async fn download_invoice_pdf_rejects_cross_tenant_invoice(pool: PgPool) {
+        let tenant_a = create_tenant(&pool, "Tenant A").await;
+        let tenant_b = create_tenant(&pool, "Tenant B").await;
+        let admin_a = create_user(&pool, tenant_a, Role::Admin).await;
+        let admin_b = create_user(&pool, tenant_b, Role::Admin).await;
+        let site_a = create_site(&pool, tenant_a, "Project A").await;
+        let draft = create_project_invoice(
+            State(test_state(pool.clone())),
+            tenant_context(tenant_a, admin_a, Role::Admin),
+            Path(site_a.0),
+            Json(empty_create_request()),
+        )
+        .await
+        .expect("tenant a should create invoice")
+        .0;
+
+        let result = download_invoice_pdf(
+            State(test_state(pool)),
+            tenant_context(tenant_b, admin_b, Role::Admin),
+            Path(draft.invoice.id),
+        )
+        .await;
+
+        assert!(matches!(result, Err(AppError::NotFound(_))));
     }
 
     fn empty_create_request() -> CreateProjectInvoiceRequest {
@@ -484,6 +690,14 @@ mod tests {
             pool,
             jwks_client: JwksClient::new("http://localhost", "schreinerei"),
         }
+    }
+
+    fn header_value(headers: &HeaderMap, name: header::HeaderName) -> &str {
+        headers
+            .get(name)
+            .expect("header should exist")
+            .to_str()
+            .expect("header should be valid text")
     }
 
     async fn create_tenant(pool: &PgPool, name: &str) -> TenantId {

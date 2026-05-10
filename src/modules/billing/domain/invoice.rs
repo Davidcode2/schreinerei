@@ -51,7 +51,7 @@ pub struct PdfArtifact {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Invoice {
     pub id: InvoiceId,
     pub tenant_id: TenantId,
@@ -64,17 +64,19 @@ pub struct Invoice {
     pub issued_at: Option<DateTime<Utc>>,
     pub due_on: Option<NaiveDate>,
     pub voided_at: Option<DateTime<Utc>>,
+    pub snapshot: Option<InvoiceSnapshot>,
     pub pdf_artifact: Option<PdfArtifact>,
     pub created_by: Option<UserId>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CreateInvoiceDraft {
     pub site_id: SiteId,
     pub sender_name: Option<String>,
     pub sender_address: Option<String>,
+    pub snapshot: InvoiceSnapshot,
     pub created_by: Option<UserId>,
 }
 
@@ -85,4 +87,28 @@ pub struct AttachInvoicePdf {
     pub sha256_hash: String,
     pub content_type: String,
     pub size_bytes: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct InvoiceSnapshot {
+    pub project_name: String,
+    pub customer_name: String,
+    pub project_location: Option<String>,
+    pub billing_reference: Option<String>,
+    pub billing_notes: Option<String>,
+    pub quote_reference: Option<String>,
+    pub budget_amount_cents: Option<i64>,
+    pub labor_total_hours: f64,
+    pub material_withdrawal_count: i64,
+    pub line_items: Vec<InvoiceSnapshotLineItem>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct InvoiceSnapshotLineItem {
+    pub source: String,
+    pub description: String,
+    pub quantity: f64,
+    pub unit: String,
+    pub source_count: i64,
+    pub priced: bool,
 }

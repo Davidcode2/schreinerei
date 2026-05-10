@@ -1,6 +1,8 @@
 use schreinerei::common::error::AppError;
 use schreinerei::common::types::{SiteId, TenantId};
-use schreinerei::modules::billing::domain::{AttachInvoicePdf, CreateInvoiceDraft, InvoiceStatus};
+use schreinerei::modules::billing::domain::{
+    AttachInvoicePdf, CreateInvoiceDraft, InvoiceSnapshot, InvoiceStatus,
+};
 use schreinerei::modules::billing::infrastructure::InvoiceRepository;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -184,6 +186,18 @@ fn draft_for(site_id: SiteId) -> CreateInvoiceDraft {
         site_id,
         sender_name: Some("Schreinerei".to_string()),
         sender_address: Some("Werkstrasse 1".to_string()),
+        snapshot: InvoiceSnapshot {
+            project_name: "Project A".to_string(),
+            customer_name: "Customer".to_string(),
+            project_location: None,
+            billing_reference: None,
+            billing_notes: None,
+            quote_reference: None,
+            budget_amount_cents: None,
+            labor_total_hours: 0.0,
+            material_withdrawal_count: 0,
+            line_items: Vec::new(),
+        },
         created_by: None,
     }
 }
