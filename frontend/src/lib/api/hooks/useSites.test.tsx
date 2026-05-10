@@ -1,12 +1,22 @@
 import { describe, it, expect, vi, afterEach } from "vitest"
-import { renderHook } from "@testing-library/react"
+import { renderHook, waitFor } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { useCreateActivity, useDeleteActivity, useUploadSiteAttachment, useUploadSitePhoto } from "./useSites"
+import {
+  useCreateActivity,
+  useCreateSiteInvoice,
+  useDeleteActivity,
+  useDownloadSiteInvoicePdf,
+  useSiteInvoices,
+  useUploadSiteAttachment,
+  useUploadSitePhoto,
+} from "./useSites"
 import type { Activity } from "@/types/sites"
 import { apiClient } from "../client"
 
 vi.mock("../client", () => ({
   apiClient: {
+    get: vi.fn(),
+    getBlob: vi.fn(),
     post: vi.fn(),
     delete: vi.fn(),
   },
@@ -75,6 +85,86 @@ describe("useUploadSitePhoto", () => {
     await expect(
       result.current.mutateAsync({ siteId: "site-1", file })
     ).rejects.toThrow("Upload failed")
+  })
+})
+
+describe("site invoice hooks", () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("lists invoices for the site detail context", async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce([
+      {
+        id: "inv-1",
+        site_id: "site-1",
+        invoice_number: 1n,
+        invoice_number_display: "2026-00001",
+        status: "generated",
+        sender_name: null,
+        sender_address: null,
+        issued_at: "2026-05-10T08:00:00.000Z",
+        due_on: null,
+        voided_at: null,
+        pdf_artifact: null,
+        created_by: "user-1",
+        created_at: "2026-05-10T08:00:00.000Z",
+        updated_at: "2026-05-10T08:00:00.000Z",
+      },
+    ])
+
+    const queryClient = createQueryClient()
+    const { result } = renderHook(() => useSiteInvoices("site-1"), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(apiClient.get).toHaveBeenCalledWith("/api/v1/sites/site-1/invoices")
+    expect(result.current.data?.[0].invoice_number_display).toBe("2026-00001")
+  })
+
+  it("does not fetch invoices when disabled", () => {
+    const queryClient = createQueryClient()
+
+    renderHook(() => useSiteInvoices("site-1", false), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    expect(apiClient.get).not.toHaveBeenCalled()
+  })
+
+  it("creates a site invoice and refreshes invoice-related queries", async () => {
+    vi.mocked(apiClient.post).mockResolvedValueOnce({ id: "inv-1" })
+    const queryClient = createQueryClient()
+    const invalidateQueriesSpy = vi.spyOn(queryClient, "invalidateQueries")
+
+    const { result } = renderHook(() => useCreateSiteInvoice(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    await result.current.mutateAsync("site-1")
+
+    expect(apiClient.post).toHaveBeenCalledWith("/api/v1/sites/site-1/invoices")
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+      queryKey: ["site-invoices", "site-1"],
+    })
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+      queryKey: ["site-summary", "site-1"],
+    })
+  })
+
+  it("downloads invoice PDFs through the authenticated billing endpoint", async () => {
+    const pdf = new Blob(["pdf"], { type: "application/pdf" })
+    vi.mocked(apiClient.getBlob).mockResolvedValueOnce(pdf)
+    const queryClient = createQueryClient()
+
+    const { result } = renderHook(() => useDownloadSiteInvoicePdf(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    await expect(result.current.mutateAsync("inv-1")).resolves.toBe(pdf)
+    expect(apiClient.getBlob).toHaveBeenCalledWith("/api/v1/billing/invoices/inv-1/pdf")
   })
 })
 

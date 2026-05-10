@@ -1,5 +1,6 @@
 import type {
   CreateSiteAppointmentRequest as GeneratedCreateSiteAppointmentRequest,
+  InvoiceResponse as GeneratedInvoiceResponse,
   SiteHistoryReportQuery as GeneratedSiteHistoryReportQuery,
   SiteHistoryReportRowResponse as GeneratedSiteHistoryReportRowResponse,
   SiteAppointmentResponse as GeneratedSiteAppointmentResponse,
@@ -202,6 +203,8 @@ export interface DashboardSite {
 export type SiteProjectSummary = GeneratedSiteProjectSummaryResponse
 
 export type SiteInvoiceSummary = GeneratedSiteInvoiceSummaryResponse
+
+export type SiteInvoice = GeneratedInvoiceResponse
 
 export type SiteHistoryReportRow = GeneratedSiteHistoryReportRowResponse
 

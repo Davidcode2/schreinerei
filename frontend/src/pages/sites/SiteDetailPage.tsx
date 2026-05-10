@@ -22,10 +22,19 @@ import {
   ErrorState,
   StatusBadge,
 } from "@/components/shared"
-import { useSite, useSiteSummary, useSiteInvoiceSummary, useActivities, useTimeEntries, useSiteAssignments } from "@/lib/api/hooks"
+import {
+  useSite,
+  useSiteSummary,
+  useActivities,
+  useTimeEntries,
+  useSiteAssignments,
+  useSiteInvoices,
+  useCreateSiteInvoice,
+  useDownloadSiteInvoicePdf,
+} from "@/lib/api/hooks"
 import { useAuthStore } from "@/lib/auth/authStore"
 import { toast } from 'sonner'
-import type { TimeEntry, WorkType } from "@/types/sites"
+import type { SiteInvoice, TimeEntry, WorkType } from "@/types/sites"
 import { TimeEntryDialog } from "./TimeEntryDialog"
 import { ActivityFeed } from "./ActivityFeed"
 import { StatusChangeModal } from "./StatusChangeModal"
@@ -58,9 +67,28 @@ function formatCurrency(cents: number | null): string {
   }).format(cents / 100)
 }
 
-function buildInvoiceSummaryFilename(siteName: string): string {
-  const slug = siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-  return `${slug || 'projekt'}-projektuebersicht.json`
+function formatInvoiceDate(date: string | null): string {
+  if (!date) return "-"
+  return new Date(date).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+}
+
+function getInvoiceStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    draft: "Entwurf",
+    generated: "Erstellt",
+    void: "Storniert",
+  }
+
+  return labels[status] ?? status
+}
+
+function buildInvoicePdfFilename(invoice: SiteInvoice): string {
+  const number = invoice.invoice_number_display || invoice.id
+  return `rechnung-${number}.pdf`
 }
 
 function getWorkTypeLabel(workType: WorkType): string {
@@ -92,16 +120,23 @@ export default function SiteDetailPage() {
 
   const { data: site, isLoading, error, refetch } = useSite(id!)
   const { data: siteSummary } = useSiteSummary(id!)
-  const { refetch: refetchInvoiceSummary } = useSiteInvoiceSummary(id!, false)
   const { data: activities, refetch: refetchActivities } = useActivities(id!)
   const { data: timeEntries } = useTimeEntries(id!)
   const { data: assignments } = useSiteAssignments(id!)
+  const isAdmin = user?.role === 'admin'
+  const {
+    data: invoices,
+    isLoading: invoicesLoading,
+    error: invoicesError,
+  } = useSiteInvoices(id!, isAdmin)
+  const createInvoice = useCreateSiteInvoice()
+  const downloadInvoicePdf = useDownloadSiteInvoicePdf()
 
   const viewerTarget = useMemo(
     () => resolveMediaViewerTarget(activities || [], activityId, attachmentId),
     [activities, activityId, attachmentId]
   )
-  const isAdmin = user?.role === 'admin'
+  const invoiceRows = invoices ?? []
 
   if (isLoading) {
     return <LoadingSpinner className="min-h-[400px]" size="lg" />
@@ -123,29 +158,29 @@ export default function SiteDetailPage() {
   const totalHours = siteSummary?.labor.total_hours ?? 0
   const materialSummary = siteSummary?.materials
 
-  async function handleExportInvoiceSummary() {
+  async function handleCreateInvoice() {
     try {
-      if (!site) {
-        throw new Error('missing site')
-      }
+      await createInvoice.mutateAsync(site.id)
+      toast.success('Rechnung erstellt')
+    } catch {
+      toast.error('Rechnung konnte nicht erstellt werden')
+    }
+  }
 
-      const response = await refetchInvoiceSummary()
-      if (!response.data) {
-        throw new Error('missing summary')
-      }
-
-      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' })
+  async function handleDownloadInvoice(invoice: SiteInvoice) {
+    try {
+      const blob = await downloadInvoicePdf.mutateAsync(invoice.id)
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = buildInvoiceSummaryFilename(site.name)
+      link.download = buildInvoicePdfFilename(invoice)
       document.body.appendChild(link)
       link.click()
       link.remove()
       URL.revokeObjectURL(url)
-      toast.success('Projektübersicht exportiert')
+      toast.success('Rechnung heruntergeladen')
     } catch {
-      toast.error('Projektübersicht konnte nicht exportiert werden')
+      toast.error('Rechnung konnte nicht heruntergeladen werden')
     }
   }
 
@@ -157,16 +192,6 @@ export default function SiteDetailPage() {
         backTo="/sites"
         action={
           <div className="flex gap-2">
-            {isAdmin && (
-              <Button
-                variant="outline"
-                onClick={handleExportInvoiceSummary}
-                className="gap-2 h-10"
-              >
-                <Download className="h-4 w-4" />
-                Projektübersicht exportieren
-              </Button>
-            )}
             <Button
               variant="outline"
               onClick={() => setShowPlanningSheet(true)}
@@ -305,6 +330,87 @@ export default function SiteDetailPage() {
                         <p className="text-sm leading-relaxed">{site.billing_notes}</p>
                       </div>
                     )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {isAdmin && (
+              <>
+                <Separator />
+                <div>
+                  <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Rechnungen</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        PDFs aus den gebuchten Projektzeiten und Materialentnahmen.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handleCreateInvoice}
+                      disabled={createInvoice.isPending}
+                      className="h-10 w-full gap-2 sm:w-auto"
+                    >
+                      <FileText className="h-4 w-4" />
+                      {createInvoice.isPending ? "Wird erstellt..." : "Rechnung erstellen"}
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {invoicesLoading && (
+                      <div className="rounded-lg bg-accent/25 p-3 text-sm text-muted-foreground">
+                        Rechnungen werden geladen...
+                      </div>
+                    )}
+
+                    {invoicesError && (
+                      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                        Rechnungen konnten nicht geladen werden.
+                      </div>
+                    )}
+
+                    {!invoicesLoading && !invoicesError && invoiceRows.length === 0 && (
+                      <div className="rounded-lg bg-accent/25 p-3 text-sm text-muted-foreground">
+                        Noch keine Rechnungen für dieses Projekt.
+                      </div>
+                    )}
+
+                    {invoiceRows.map((invoice) => {
+                      const canDownload = invoice.pdf_artifact != null
+                      const date = invoice.issued_at ?? invoice.created_at
+
+                      return (
+                        <div
+                          key={invoice.id}
+                          className="flex flex-col gap-3 rounded-lg bg-accent/25 p-3 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="break-all text-sm font-medium">
+                                {invoice.invoice_number_display || invoice.id}
+                              </p>
+                              <Badge variant="outline" className="text-xs font-normal">
+                                {getInvoiceStatusLabel(invoice.status)}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {formatInvoiceDate(date)}
+                              {!canDownload ? " · PDF noch nicht verfügbar" : ""}
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadInvoice(invoice)}
+                            disabled={!canDownload || downloadInvoicePdf.isPending}
+                            className="h-9 w-full gap-2 sm:w-auto"
+                          >
+                            <Download className="h-4 w-4" />
+                            PDF
+                          </Button>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               </>

@@ -20,6 +20,7 @@ import type {
   DashboardSite,
   SiteHistoryReportQuery,
   SiteHistoryReportRow,
+  SiteInvoice,
   SiteInvoiceSummary,
   SiteProjectSummary,
 } from "@/types/sites"
@@ -86,6 +87,37 @@ export function useSiteInvoiceSummary(id: string, enabled: boolean = true) {
     queryFn: () => apiClient.get<SiteInvoiceSummary>(`/api/v1/sites/${id}/invoice-summary`),
     enabled: !!id && enabled,
     staleTime: 30000,
+  })
+}
+
+export function useSiteInvoices(siteId: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: ["site-invoices", siteId],
+    queryFn: () =>
+      apiClient.get<SiteInvoice[]>(`/api/v1/sites/${siteId}/invoices`),
+    enabled: !!siteId && enabled,
+    staleTime: 30000,
+  })
+}
+
+export function useCreateSiteInvoice() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (siteId: string) =>
+      apiClient.post<SiteInvoice>(`/api/v1/sites/${siteId}/invoices`),
+    onSuccess: (_, siteId) => {
+      queryClient.invalidateQueries({ queryKey: ["site-invoices", siteId] })
+      queryClient.invalidateQueries({ queryKey: ["site-summary", siteId] })
+      queryClient.invalidateQueries({ queryKey: ["site-invoice-summary", siteId] })
+    },
+  })
+}
+
+export function useDownloadSiteInvoicePdf() {
+  return useMutation({
+    mutationFn: (invoiceId: string) =>
+      apiClient.getBlob(`/api/v1/billing/invoices/${invoiceId}/pdf`),
   })
 }
 

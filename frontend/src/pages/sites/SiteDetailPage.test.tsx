@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import userEvent from '@testing-library/user-event'
 import { screen, waitFor, within } from '@testing-library/react'
 import { Route, Routes } from 'react-router-dom'
@@ -31,6 +31,26 @@ function emptyAppointmentsResponse() {
 }
 
 describe('SiteDetailPage', () => {
+  beforeEach(() => {
+    useAuthStore.setState({
+      user: {
+        id: 'user-2',
+        tenant_id: 'tenant-1',
+        email: 'employee@example.com',
+        name: 'Employee',
+        role: 'employee',
+        created_at: new Date().toISOString(),
+      },
+      tokens: null,
+      isAuthenticated: true,
+      isLoading: false,
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   function setAdminUser() {
     useAuthStore.setState({
       user: {
@@ -186,12 +206,13 @@ describe('SiteDetailPage', () => {
     expect(screen.getByText('ANG-2026-09')).toBeInTheDocument()
   })
 
-  it('lets admins export the invoice-ready project summary', async () => {
+  it('shows existing invoices to admins and downloads the PDF through the authenticated endpoint', async () => {
     window.history.pushState({}, '', '/sites/site-1')
     setAdminUser()
 
-    const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:invoice-summary')
+    const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:invoice-pdf')
     const revokeObjectUrlSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+    let pdfRequested = false
 
     server.use(
       http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
@@ -199,29 +220,36 @@ describe('SiteDetailPage', () => {
         labor: { total_hours: 12.5, entry_count: 4, site_hours: 7.5, workshop_hours: 5, last_work_date: '2026-05-08' },
         materials: { distinct_material_count: 2, withdrawal_count: 3, lines: [] },
       })),
-      http.get('*/api/v1/sites/site-1/invoice-summary', () => HttpResponse.json({
-        export_version: 'v1',
-        generated_at: new Date().toISOString(),
-        project: {
-          id: 'site-1',
-          name: 'CNC Vorbereitung',
-          project_type: 'internal_workshop',
-          customer_name: '',
-          location: 'Werkstatt',
-          status: 'planned',
-          start_date: null,
-          end_date: null,
-          estimated_days: 2,
+      http.get('*/api/v1/sites/site-1/invoices', () => HttpResponse.json([
+        {
+          id: 'inv-1',
+          site_id: 'site-1',
+          invoice_number: 1,
+          invoice_number_display: '2026-00001',
+          status: 'generated',
+          sender_name: null,
+          sender_address: null,
+          issued_at: '2026-05-10T08:00:00.000Z',
+          due_on: null,
+          voided_at: null,
+          pdf_artifact: {
+            storage_path: 'invoices/tenant/inv-1.pdf',
+            sha256_hash: 'hash',
+            content_type: 'application/pdf',
+            size_bytes: 12,
+            created_at: '2026-05-10T08:01:00.000Z',
+          },
+          created_by: 'user-1',
+          created_at: '2026-05-10T08:00:00.000Z',
+          updated_at: '2026-05-10T08:01:00.000Z',
         },
-        billing: {
-          budget_amount_cents: 320000,
-          quote_reference: 'ANG-2026-09',
-          billing_reference: 'BR-2',
-          billing_notes: 'Schlussrechnung nach Abnahme',
-        },
-        labor: { total_hours: 12.5, entry_count: 4, site_hours: 7.5, workshop_hours: 5, last_work_date: '2026-05-08' },
-        materials: { distinct_material_count: 2, withdrawal_count: 3, lines: [] },
-      })),
+      ])),
+      http.get('*/api/v1/billing/invoices/inv-1/pdf', () => {
+        pdfRequested = true
+        return new HttpResponse(new Blob(['pdf'], { type: 'application/pdf' }), {
+          headers: { 'Content-Type': 'application/pdf' },
+        })
+      }),
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
       http.get('*/api/v1/users', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
@@ -237,12 +265,148 @@ describe('SiteDetailPage', () => {
     )
 
     const user = userEvent.setup()
-    await user.click(await screen.findByRole('button', { name: /projektübersicht exportieren/i }))
+    expect(await screen.findByText('Rechnungen')).toBeInTheDocument()
+    expect(await screen.findByText('2026-00001')).toBeInTheDocument()
+    expect(screen.getByText('Erstellt')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /pdf/i }))
 
     await waitFor(() => {
       expect(createObjectUrlSpy).toHaveBeenCalled()
-      expect(revokeObjectUrlSpy).toHaveBeenCalledWith('blob:invoice-summary')
+      expect(revokeObjectUrlSpy).toHaveBeenCalledWith('blob:invoice-pdf')
+      expect(pdfRequested).toBe(true)
     })
+  })
+
+  it('lets admins create an invoice from the site detail page', async () => {
+    window.history.pushState({}, '', '/sites/site-1')
+    setAdminUser()
+    let createRequested = false
+    let invoiceListCalls = 0
+
+    server.use(
+      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
+      http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
+        labor: { total_hours: 12.5, entry_count: 4, site_hours: 7.5, workshop_hours: 5, last_work_date: '2026-05-08' },
+        materials: { distinct_material_count: 2, withdrawal_count: 3, lines: [] },
+      })),
+      http.get('*/api/v1/sites/site-1/invoices', () => {
+        invoiceListCalls += 1
+        return HttpResponse.json(invoiceListCalls > 1 ? [
+          {
+            id: 'inv-2',
+            site_id: 'site-1',
+            invoice_number: 2,
+            invoice_number_display: '2026-00002',
+            status: 'draft',
+            sender_name: null,
+            sender_address: null,
+            issued_at: null,
+            due_on: null,
+            voided_at: null,
+            pdf_artifact: null,
+            created_by: 'user-1',
+            created_at: '2026-05-10T09:00:00.000Z',
+            updated_at: '2026-05-10T09:00:00.000Z',
+          },
+        ] : [])
+      }),
+      http.post('*/api/v1/sites/site-1/invoices', () => {
+        createRequested = true
+        return HttpResponse.json({ id: 'inv-2' })
+      }),
+      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/users', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
+      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
+    )
+
+    render(
+      <Routes>
+        <Route path="/sites/:id" element={<SiteDetailPage />} />
+      </Routes>
+    )
+
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: /rechnung erstellen/i }))
+
+    await waitFor(() => expect(createRequested).toBe(true))
+    expect(await screen.findByText('2026-00002')).toBeInTheDocument()
+    expect(screen.getByText(/PDF noch nicht verfügbar/i)).toBeInTheDocument()
+  })
+
+  it('keeps the invoice action usable when invoice creation fails', async () => {
+    window.history.pushState({}, '', '/sites/site-1')
+    setAdminUser()
+    let createAttempts = 0
+
+    server.use(
+      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
+      http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
+        labor: { total_hours: 12.5, entry_count: 4, site_hours: 7.5, workshop_hours: 5, last_work_date: '2026-05-08' },
+        materials: { distinct_material_count: 2, withdrawal_count: 3, lines: [] },
+      })),
+      http.get('*/api/v1/sites/site-1/invoices', () => HttpResponse.json([])),
+      http.post('*/api/v1/sites/site-1/invoices', () => {
+        createAttempts += 1
+        return HttpResponse.json({ error: 'invoice failed' }, { status: 500 })
+      }),
+      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/users', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
+      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
+    )
+
+    render(
+      <Routes>
+        <Route path="/sites/:id" element={<SiteDetailPage />} />
+      </Routes>
+    )
+
+    const user = userEvent.setup()
+    const createButton = await screen.findByRole('button', { name: /rechnung erstellen/i })
+    await user.click(createButton)
+
+    await waitFor(() => expect(createAttempts).toBe(1))
+    expect(await screen.findByRole('button', { name: /rechnung erstellen/i })).toBeEnabled()
+  })
+
+  it('keeps invoice creation controls hidden for non-admins', async () => {
+    window.history.pushState({}, '', '/sites/site-1')
+    let invoiceListRequested = false
+
+    server.use(
+      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
+      http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
+        labor: { total_hours: 0, entry_count: 0, site_hours: 0, workshop_hours: 0, last_work_date: null },
+        materials: { distinct_material_count: 0, withdrawal_count: 0, lines: [] },
+      })),
+      http.get('*/api/v1/sites/site-1/invoices', () => {
+        invoiceListRequested = true
+        return HttpResponse.json([])
+      }),
+      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
+      http.get('*/api/v1/users', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
+      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
+      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
+      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
+    )
+
+    render(
+      <Routes>
+        <Route path="/sites/:id" element={<SiteDetailPage />} />
+      </Routes>
+    )
+
+    expect(await screen.findByText('Budget & Abrechnung')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /rechnung erstellen/i })).not.toBeInTheDocument()
+    expect(screen.queryByText('Rechnungen')).not.toBeInTheDocument()
+    expect(invoiceListRequested).toBe(false)
   })
 
   it('shows the dedicated appointment planner instead of the fleet reservation calendar', async () => {
@@ -320,6 +484,7 @@ describe('SiteDetailPage', () => {
         labor: { total_hours: 6.5, entry_count: 2, site_hours: 6.5, workshop_hours: 0, last_work_date: '2026-05-08' },
         materials: { distinct_material_count: 0, withdrawal_count: 0, lines: [] },
       })),
+      http.get('*/api/v1/sites/site-1/invoices', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
       http.get('*/api/v1/users', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
@@ -377,6 +542,7 @@ describe('SiteDetailPage', () => {
         labor: { total_hours: 4, entry_count: 1, site_hours: 4, workshop_hours: 0, last_work_date: '2026-05-08' },
         materials: { distinct_material_count: 0, withdrawal_count: 0, lines: [] },
       })),
+      http.get('*/api/v1/sites/site-1/invoices', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
       http.get('*/api/v1/users', () => HttpResponse.json([])),
       http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
