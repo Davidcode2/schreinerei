@@ -87,7 +87,7 @@ export function WithdrawDialog({
       setDisposal(initialDisposal)
       setLastPackageTaken(false)
     }
-  }, [initialDisposal, open])
+  }, [initialDisposal, initialSiteId, open])
 
   useEffect(() => {
     if (open && !siteId && initialSiteId) {

@@ -2,14 +2,9 @@ import { test, expect } from '@playwright/test';
 import { login } from './helpers/auth';
 import {
   createSite,
-  getSite,
   createMaterial,
-  getMaterial,
   createVehicle,
-  getVehicle,
   createTool,
-  listTools,
-  deleteTool,
   listCategories,
   createCategory,
   createTimeEntry,

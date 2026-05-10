@@ -283,7 +283,7 @@ export function useResolveMaintenanceDue() {
 
 // === Reservations ===
 
-export function useReservations(query?: ListReservationsQuery) {
+export function useReservations(query?: ListReservationsQuery, enabled = true) {
   return useQuery({
     queryKey: ["reservations", query],
     queryFn: () => {
@@ -297,14 +297,16 @@ export function useReservations(query?: ListReservationsQuery) {
         `/api/v1/fleet/reservations${queryString ? `?${queryString}` : ""}`
       )
     },
+    enabled,
     staleTime: 30000,
   })
 }
 
-export function useMyReservations() {
+export function useMyReservations(enabled = true) {
   return useQuery({
     queryKey: ["reservations", "my"],
     queryFn: () => apiClient.get<Reservation[]>("/api/v1/fleet/reservations/my"),
+    enabled,
     staleTime: 30000,
   })
 }

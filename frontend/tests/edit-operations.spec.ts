@@ -9,7 +9,6 @@ import {
   getReservation,
   updateReservation,
   createVehicle,
-  createSite,
 } from './helpers/api';
 import { useCleanup, uniqueName } from './helpers/data';
 
@@ -167,7 +166,7 @@ test.describe('Reservation Edit Operations', () => {
     const newStartTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000); // 2 hours later
     const newEndTime = new Date(newStartTime.getTime() + 8 * 60 * 60 * 1000); // 8 hours
 
-    const updated = await updateReservation(page, reservation.id, {
+    await updateReservation(page, reservation.id, {
       start_time: newStartTime.toISOString(),
       end_time: newEndTime.toISOString(),
     });

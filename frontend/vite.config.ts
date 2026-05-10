@@ -51,7 +51,7 @@ export default defineConfig(({ mode }) => {
           // API calls - NetworkFirst with offline fallback
           // Exclude localhost (let Vite proxy handle them)
           {
-            urlPattern: /^https:\/\/(?!localhost)[^\/]+\/api\/v1\/.*/i,
+            urlPattern: /^https:\/\/(?!localhost)[^/]+\/api\/v1\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',

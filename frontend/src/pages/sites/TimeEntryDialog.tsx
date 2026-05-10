@@ -116,7 +116,8 @@ export function TimeEntryDialog({
 			setErrors((prev) => ({ ...prev, hours: error }));
 		} else {
 			setErrors((prev) => {
-				const { hours: _, ...rest } = prev;
+				const rest = { ...prev };
+				delete rest.hours;
 				return rest;
 			});
 		}

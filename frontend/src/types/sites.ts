@@ -177,7 +177,7 @@ export interface UploadPhotoAttachmentResponse {
   thumbnail_url: string
 }
 
-export interface UploadSiteAttachmentResponse extends ActivityAttachment {}
+export type UploadSiteAttachmentResponse = ActivityAttachment
 
 export interface ActivityQuery {
   limit?: number

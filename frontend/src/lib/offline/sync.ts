@@ -90,7 +90,7 @@ export async function fullSync(): Promise<void> {
   try {
     await syncPendingActions()
     await syncFromServer()
-  } catch (error) {
+  } catch {
     // Error already toasted in syncFromServer
   } finally {
     isSyncing = false

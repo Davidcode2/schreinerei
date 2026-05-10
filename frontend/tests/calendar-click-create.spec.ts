@@ -4,7 +4,6 @@ import {
   createVehicle,
   createReservation,
   getReservation,
-  listReservations,
 } from './helpers/api';
 import { useCleanup, uniqueName } from './helpers/data';
 

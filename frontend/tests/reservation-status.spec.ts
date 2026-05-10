@@ -5,7 +5,6 @@ import {
   getReservation,
   updateReservation,
   createVehicle,
-  createSite,
 } from './helpers/api';
 import { useCleanup, uniqueName } from './helpers/data';
 import type { ReservationStatus } from './helpers/api';

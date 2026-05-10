@@ -20,9 +20,9 @@ function formatDateTime(dateString: string): string {
 }
 
 export function ReservationsList({ showOnlyMine = false }: ReservationsListProps) {
-  const reservationsQuery = showOnlyMine
-    ? useMyReservations()
-    : useReservations()
+  const allReservationsQuery = useReservations(undefined, !showOnlyMine)
+  const myReservationsQuery = useMyReservations(showOnlyMine)
+  const reservationsQuery = showOnlyMine ? myReservationsQuery : allReservationsQuery
 
   const {
     data: reservations,
