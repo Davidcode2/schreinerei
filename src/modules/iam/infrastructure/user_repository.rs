@@ -79,7 +79,12 @@ impl UserRepository {
                 WHERE tenant_id = $1
                   AND lower(email) = lower($2)
                   AND keycloak_user_id LIKE 'pending-%'
-                ORDER BY created_at ASC
+                ORDER BY
+                    CASE
+                        WHEN keycloak_user_id LIKE 'pending-onboarding-admin-%' THEN 0
+                        ELSE 1
+                    END,
+                    created_at ASC
                 LIMIT 1
             )
             RETURNING id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at

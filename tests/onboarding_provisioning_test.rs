@@ -132,6 +132,26 @@ async fn first_login_claims_pending_onboarding_admin(pool: PgPool) {
             .fetch_one(&pool)
             .await
             .expect("tenant should be attached");
+
+    sqlx::query(
+        r#"
+        INSERT INTO users (tenant_id, keycloak_user_id, email, name, role, created_at, updated_at)
+        VALUES (
+            $1,
+            'pending-invite-same-email',
+            'admin@example.com',
+            'Pending Employee',
+            'employee',
+            NOW() - INTERVAL '1 hour',
+            NOW() - INTERVAL '1 hour'
+        )
+        "#,
+    )
+    .bind(tenant_id)
+    .execute(&pool)
+    .await
+    .expect("older same-email pending invite should be insertable");
+
     let keycloak_user_id = UserId(Uuid::new_v4());
     let user_service = UserService::new(UserRepository::new(pool.clone()));
     let ctx = TenantContext {
@@ -148,12 +168,24 @@ async fn first_login_claims_pending_onboarding_admin(pool: PgPool) {
 
     assert_eq!(user.role, Role::Admin);
     assert_eq!(user.keycloak_user_id, keycloak_user_id.to_string());
-    let user_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users WHERE tenant_id = $1")
+    let user_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM users WHERE tenant_id = $1 AND keycloak_user_id = $2",
+    )
+    .bind(tenant_id)
+    .bind(keycloak_user_id.to_string())
+    .fetch_one(&pool)
+    .await
+    .expect("claimed user should be countable");
+    assert_eq!(user_count, 1);
+
+    let pending_invite_role: String = sqlx::query_scalar(
+        "SELECT role FROM users WHERE tenant_id = $1 AND keycloak_user_id = 'pending-invite-same-email'",
+    )
         .bind(tenant_id)
         .fetch_one(&pool)
         .await
-        .expect("users should be countable");
-    assert_eq!(user_count, 1);
+        .expect("non-onboarding pending invite should remain unclaimed");
+    assert_eq!(pending_invite_role, "employee");
 }
 
 fn provisioning_service(
