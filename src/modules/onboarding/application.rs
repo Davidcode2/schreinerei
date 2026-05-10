@@ -6,8 +6,8 @@ use uuid::Uuid;
 use crate::common::error::AppError;
 use crate::common::types::{Role, TenantId};
 use crate::modules::onboarding::domain::{
-    organization_slug, CreateOnboardingSession, InviteStatus, OnboardingSession, OnboardingStatus,
-    ProviderPaymentStatus,
+    organization_slug, CreateOnboardingSession, InviteStatus, KeycloakOrganization,
+    OnboardingSession, OnboardingStatus, ProviderPaymentStatus,
 };
 use crate::modules::onboarding::infrastructure::keycloak_admin_client::{
     KeycloakAdminClient, KeycloakOrganizationInvite,
@@ -67,6 +67,41 @@ impl OrganizationInviter for KeycloakAdminClient {
     }
 }
 
+#[async_trait]
+pub trait OrganizationProvisioner: Send + Sync {
+    async fn create_organization(
+        &self,
+        name: &str,
+        alias: &str,
+    ) -> Result<KeycloakOrganization, AppError>;
+
+    async fn invite_user_to_organization(
+        &self,
+        organization_id: &str,
+        invite: &KeycloakOrganizationInvite,
+    ) -> Result<(), AppError>;
+}
+
+#[async_trait]
+impl OrganizationProvisioner for KeycloakAdminClient {
+    async fn create_organization(
+        &self,
+        name: &str,
+        alias: &str,
+    ) -> Result<KeycloakOrganization, AppError> {
+        self.create_organization(name, alias).await
+    }
+
+    async fn invite_user_to_organization(
+        &self,
+        organization_id: &str,
+        invite: &KeycloakOrganizationInvite,
+    ) -> Result<(), AppError> {
+        self.invite_user_to_organization(organization_id, invite)
+            .await
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CreateSessionOptions {
     pub amount_value: String,
@@ -102,19 +137,29 @@ pub struct PublicInvite {
     pub expires_at: chrono::DateTime<Utc>,
 }
 
-pub struct OnboardingService<P> {
+pub struct OnboardingService<P, K> {
     repository: OnboardingRepository,
     payment_provider: P,
+    organization_provisioner: K,
+    keycloak_realm: String,
 }
 
-impl<P> OnboardingService<P>
+impl<P, K> OnboardingService<P, K>
 where
     P: PaymentProvider,
+    K: OrganizationProvisioner,
 {
-    pub fn new(repository: OnboardingRepository, payment_provider: P) -> Self {
+    pub fn new(
+        repository: OnboardingRepository,
+        payment_provider: P,
+        organization_provisioner: K,
+        keycloak_realm: String,
+    ) -> Self {
         Self {
             repository,
             payment_provider,
+            organization_provisioner,
+            keycloak_realm,
         }
     }
 
@@ -191,9 +236,12 @@ where
             .await?;
 
         let payment_status = payment.payment_status();
-        let session_status = self
+        let mut session_status = self
             .update_session_from_payment(&payment, payment_status)
             .await?;
+        if payment_status.should_confirm_payment() {
+            session_status = self.provision_paid_session(&payment.id).await?;
+        }
 
         Ok(WebhookProcessingResult {
             payment_id: payment.id,
@@ -222,6 +270,84 @@ where
         self.repository
             .update_session_payment_status(MOLLIE_PROVIDER, &payment.id, update)
             .await
+    }
+
+    async fn provision_paid_session(&self, payment_id: &str) -> Result<Option<String>, AppError> {
+        let Some(session) = self
+            .repository
+            .claim_session_for_provisioning(MOLLIE_PROVIDER, payment_id)
+            .await?
+        else {
+            return self
+                .repository
+                .find_session_status_by_payment(MOLLIE_PROVIDER, payment_id)
+                .await;
+        };
+
+        let organization = match self
+            .organization_provisioner
+            .create_organization(&session.organization_name, &session.organization_slug)
+            .await
+        {
+            Ok(organization) => organization,
+            Err(error) => {
+                self.repository
+                    .mark_keycloak_failed(
+                        session.id,
+                        None,
+                        Some(&session.organization_slug),
+                        "organization_create_failed",
+                        &error.to_string(),
+                    )
+                    .await?;
+                return Err(error);
+            }
+        };
+
+        let invite = KeycloakOrganizationInvite::new(
+            session.admin_email.clone(),
+            session.admin_name.clone(),
+        );
+        if let Err(error) = self
+            .organization_provisioner
+            .invite_user_to_organization(&organization.id.to_string(), &invite)
+            .await
+        {
+            self.repository
+                .mark_keycloak_failed(
+                    session.id,
+                    Some(organization.id),
+                    Some(&organization.alias),
+                    "admin_invite_failed",
+                    &error.to_string(),
+                )
+                .await?;
+            return Err(error);
+        }
+
+        if let Err(error) = self
+            .repository
+            .complete_provisioning(
+                &session,
+                organization.id,
+                &organization.alias,
+                &self.keycloak_realm,
+            )
+            .await
+        {
+            self.repository
+                .mark_keycloak_failed(
+                    session.id,
+                    Some(organization.id),
+                    Some(&organization.alias),
+                    "local_completion_failed",
+                    &error.to_string(),
+                )
+                .await?;
+            return Err(error);
+        }
+
+        Ok(Some(OnboardingStatus::Completed.to_string()))
     }
 }
 

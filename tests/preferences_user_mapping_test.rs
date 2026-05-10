@@ -36,6 +36,25 @@ fn auth_user(keycloak_subject: Uuid, tenant_id: Uuid, email: &str) -> Authentica
     }
 }
 
+async fn create_pending_admin(pool: &PgPool, tenant_id: Uuid, email: &str) -> Uuid {
+    let id = Uuid::new_v4();
+    sqlx::query(
+        r#"
+        INSERT INTO users (id, tenant_id, keycloak_user_id, email, role)
+        VALUES ($1, $2, $3, $4, 'admin')
+        "#,
+    )
+    .bind(id)
+    .bind(tenant_id)
+    .bind(format!("pending-admin-{id}"))
+    .bind(email)
+    .execute(pool)
+    .await
+    .expect("create pending admin");
+
+    id
+}
+
 #[sqlx::test]
 async fn preferences_mapping_uses_tenant_local_user_id(pool: PgPool) {
     // Regression for Phase 23 UAT gap: preferences writes must target local users.id.
@@ -144,4 +163,55 @@ async fn same_keycloak_subject_stays_tenant_isolated(pool: PgPool) {
 
     assert_eq!(count_a, 1);
     assert_eq!(count_b, 1);
+}
+
+#[sqlx::test]
+async fn first_login_claims_tenant_local_pending_admin_by_email(pool: PgPool) {
+    let tenant_id = create_test_tenant(&pool, "Onboarding Tenant").await;
+    let pending_id = create_pending_admin(&pool, tenant_id, "admin@test.invalid").await;
+    let subject = Uuid::new_v4();
+    let auth = auth_user(subject, tenant_id, "ADMIN@test.invalid");
+
+    let service = UserService::new(UserRepository::new(pool.clone()));
+    let user = service
+        .get_or_create_from_auth(&auth)
+        .await
+        .expect("claim pending admin");
+
+    assert_eq!(user.id.0, pending_id);
+    assert_eq!(user.role, Role::Admin);
+    assert_eq!(user.keycloak_user_id, subject.to_string());
+
+    let user_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users WHERE tenant_id = $1")
+        .bind(tenant_id)
+        .fetch_one(&pool)
+        .await
+        .expect("count users");
+    assert_eq!(user_count, 1);
+}
+
+#[sqlx::test]
+async fn pending_admin_email_claim_is_tenant_scoped(pool: PgPool) {
+    let tenant_a = create_test_tenant(&pool, "Tenant Pending A").await;
+    let tenant_b = create_test_tenant(&pool, "Tenant Pending B").await;
+    let pending_a = create_pending_admin(&pool, tenant_a, "shared@test.invalid").await;
+    let subject = Uuid::new_v4();
+    let auth = auth_user(subject, tenant_b, "shared@test.invalid");
+
+    let service = UserService::new(UserRepository::new(pool.clone()));
+    let user_b = service
+        .get_or_create_from_auth(&auth)
+        .await
+        .expect("create tenant B user");
+
+    assert_ne!(user_b.id.0, pending_a);
+    assert_eq!(user_b.role, Role::Employee);
+
+    let pending_keycloak_id: String =
+        sqlx::query_scalar("SELECT keycloak_user_id FROM users WHERE id = $1")
+            .bind(pending_a)
+            .fetch_one(&pool)
+            .await
+            .expect("load pending user");
+    assert!(pending_keycloak_id.starts_with("pending-admin-"));
 }

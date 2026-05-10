@@ -91,6 +91,19 @@ impl UserService {
             return Ok(user);
         }
 
+        if let Some(user) = self
+            .user_repo
+            .find_by_email(&ctx.email, tenant_id)
+            .await?
+            .filter(|user| user.keycloak_user_id.starts_with("pending-"))
+        {
+            return self
+                .user_repo
+                .claim_pending_user_by_email(&user.email, &ctx.user_id.to_string(), tenant_id)
+                .await?
+                .ok_or_else(|| AppError::Conflict("Pending user could not be claimed".into()));
+        }
+
         // Create new user from auth
         let create_user = CreateUser {
             keycloak_user_id: ctx.user_id.to_string(),

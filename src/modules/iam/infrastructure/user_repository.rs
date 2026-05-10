@@ -61,6 +61,55 @@ impl UserRepository {
         Ok(user.map(|row| row.into_user()))
     }
 
+    pub async fn find_by_email(
+        &self,
+        email: &str,
+        tenant_id: TenantId,
+    ) -> Result<Option<User>, AppError> {
+        let user = sqlx::query_as::<_, UserRow>(
+            r#"
+            SELECT id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at
+            FROM users
+            WHERE tenant_id = $1
+              AND lower(email) = lower($2)
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(email)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(user.map(|row| row.into_user()))
+    }
+
+    pub async fn claim_pending_user_by_email(
+        &self,
+        email: &str,
+        keycloak_user_id: &str,
+        tenant_id: TenantId,
+    ) -> Result<Option<User>, AppError> {
+        let user = sqlx::query_as::<_, UserRow>(
+            r#"
+            UPDATE users
+            SET keycloak_user_id = $3,
+                updated_at = NOW()
+            WHERE tenant_id = $1
+              AND lower(email) = lower($2)
+              AND keycloak_user_id LIKE 'pending-%'
+            RETURNING id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(email)
+        .bind(keycloak_user_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(user.map(|row| row.into_user()))
+    }
+
     /// List all users in a tenant
     pub async fn list(&self, tenant_id: TenantId) -> Result<Vec<User>, AppError> {
         let users = sqlx::query_as::<_, UserRow>(

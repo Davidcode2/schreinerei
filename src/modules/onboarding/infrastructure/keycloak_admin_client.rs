@@ -1,8 +1,10 @@
-use reqwest::Client;
-use serde::Deserialize;
+use reqwest::{header::LOCATION, Client, StatusCode};
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::common::error::AppError;
 use crate::config::AppConfig;
+use crate::modules::onboarding::domain::KeycloakOrganization;
 
 #[derive(Clone)]
 pub struct KeycloakAdminClient {
@@ -41,6 +43,114 @@ impl KeycloakAdminClient {
         })
     }
 
+    pub async fn create_organization(
+        &self,
+        name: &str,
+        alias: &str,
+    ) -> Result<KeycloakOrganization, AppError> {
+        let token = self.admin_access_token().await?;
+        let url = format!(
+            "{}/admin/realms/{}/organizations",
+            self.base_url, self.realm
+        );
+        let response = self
+            .client
+            .post(url)
+            .bearer_auth(token)
+            .json(&CreateOrganizationRequest { name, alias })
+            .send()
+            .await
+            .map_err(|error| {
+                AppError::Internal(format!("Keycloak organization create failed: {error}"))
+            })?;
+
+        if response.status() == StatusCode::CONFLICT {
+            return self
+                .find_organization_by_alias(alias)
+                .await?
+                .ok_or_else(|| {
+                    AppError::Conflict(
+                        "Keycloak organization alias already exists but could not be loaded"
+                            .to_string(),
+                    )
+                });
+        }
+
+        if !response.status().is_success() {
+            return Err(AppError::Validation(format!(
+                "Keycloak organization create failed with status {}",
+                response.status()
+            )));
+        }
+
+        let location_id = organization_id_from_location(&response);
+        let body = response
+            .json::<Option<KeycloakOrganizationResponse>>()
+            .await
+            .ok()
+            .flatten();
+
+        if let Some(organization) = body.and_then(|body| body.into_domain().ok()) {
+            return Ok(organization);
+        }
+
+        if let Some(id) = location_id {
+            return Ok(KeycloakOrganization {
+                id,
+                alias: alias.to_string(),
+            });
+        }
+
+        self.find_organization_by_alias(alias)
+            .await?
+            .ok_or_else(|| {
+                AppError::Internal(
+                    "Keycloak organization was created but could not be resolved".into(),
+                )
+            })
+    }
+
+    pub async fn find_organization_by_alias(
+        &self,
+        alias: &str,
+    ) -> Result<Option<KeycloakOrganization>, AppError> {
+        let token = self.admin_access_token().await?;
+        let url = format!(
+            "{}/admin/realms/{}/organizations",
+            self.base_url, self.realm
+        );
+        let response = self
+            .client
+            .get(url)
+            .bearer_auth(token)
+            .query(&[("search", alias)])
+            .send()
+            .await
+            .map_err(|error| {
+                AppError::Internal(format!("Keycloak organization lookup failed: {error}"))
+            })?;
+
+        if !response.status().is_success() {
+            return Err(AppError::Validation(format!(
+                "Keycloak organization lookup failed with status {}",
+                response.status()
+            )));
+        }
+
+        let organizations = response
+            .json::<Vec<KeycloakOrganizationResponse>>()
+            .await
+            .map_err(|error| {
+                AppError::Internal(format!("Failed to parse Keycloak organizations: {error}"))
+            })?;
+
+        organizations
+            .into_iter()
+            .find(|organization| organization.alias == alias)
+            .map(KeycloakOrganizationResponse::into_domain)
+            .transpose()
+    }
+
     pub async fn invite_user_to_organization(
         &self,
         organization_id: &str,
@@ -69,7 +179,7 @@ impl KeycloakAdminClient {
             .await
             .map_err(|error| AppError::Internal(format!("Keycloak invite failed: {error}")))?;
 
-        if response.status().is_success() {
+        if response.status().is_success() || response.status() == StatusCode::CONFLICT {
             return Ok(());
         }
 
@@ -112,6 +222,31 @@ impl KeycloakAdminClient {
             .map_err(|error| {
                 AppError::Internal(format!("Failed to parse Keycloak admin token: {error}"))
             })
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct CreateOrganizationRequest<'a> {
+    name: &'a str,
+    alias: &'a str,
+}
+
+#[derive(Debug, Deserialize)]
+struct KeycloakOrganizationResponse {
+    id: String,
+    alias: String,
+}
+
+impl KeycloakOrganizationResponse {
+    fn into_domain(self) -> Result<KeycloakOrganization, AppError> {
+        let id = Uuid::parse_str(&self.id).map_err(|error| {
+            AppError::Validation(format!("Keycloak organization id is not a UUID: {error}"))
+        })?;
+
+        Ok(KeycloakOrganization {
+            id,
+            alias: self.alias,
+        })
     }
 }
 
@@ -162,6 +297,12 @@ fn split_name(name: Option<String>) -> (Option<String>, Option<String>) {
         .map(str::to_string);
 
     (first_name, last_name)
+}
+
+fn organization_id_from_location(response: &reqwest::Response) -> Option<Uuid> {
+    let location = response.headers().get(LOCATION)?.to_str().ok()?;
+    let id = location.rsplit('/').next()?;
+    Uuid::parse_str(id).ok()
 }
 
 #[cfg(test)]

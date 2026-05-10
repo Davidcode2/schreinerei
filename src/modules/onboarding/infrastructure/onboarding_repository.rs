@@ -8,6 +8,7 @@ use crate::common::error::AppError;
 use crate::common::types::TenantId;
 use crate::modules::onboarding::domain::{
     CreateOnboardingSession, InviteStatus, OnboardingSession, OnboardingStatus, OrganizationInvite,
+    ProvisioningSession,
 };
 
 #[derive(Clone)]
@@ -148,15 +149,11 @@ impl OnboardingRepository {
             SET
                 status = $3,
                 error_code = $4,
-                error_message = $5,
-                completed_at = CASE
-                    WHEN $3 = 'payment_confirmed' AND completed_at IS NULL THEN NOW()
-                    ELSE completed_at
-                END
+                error_message = $5
             WHERE payment_provider = $1
               AND payment_id = $2
               AND tenant_id IS NULL
-              AND status IN ('pending_payment', 'payment_failed', 'payment_confirmed')
+              AND status IN ('pending_payment', 'payment_failed', 'payment_confirmed', 'keycloak_failed')
             RETURNING status
             "#,
         )
@@ -175,6 +172,97 @@ impl OnboardingRepository {
 
         self.find_session_status_by_payment(provider, payment_id)
             .await
+    }
+
+    pub async fn claim_session_for_provisioning(
+        &self,
+        provider: &str,
+        payment_id: &str,
+    ) -> Result<Option<ProvisioningSession>, AppError> {
+        let row = sqlx::query(
+            r#"
+            UPDATE onboarding_sessions
+            SET status = 'provisioning',
+                error_code = NULL,
+                error_message = NULL
+            WHERE payment_provider = $1
+              AND payment_id = $2
+              AND tenant_id IS NULL
+              AND status IN ('payment_confirmed', 'keycloak_failed')
+            RETURNING id, organization_name, organization_slug, admin_email, admin_name
+            "#,
+        )
+        .bind(provider)
+        .bind(payment_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(database_error)?;
+
+        row.map(provisioning_session_from_row).transpose()
+    }
+
+    pub async fn mark_keycloak_failed(
+        &self,
+        session_id: Uuid,
+        organization_id: Option<Uuid>,
+        organization_alias: Option<&str>,
+        error_code: &str,
+        error_message: &str,
+    ) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+            UPDATE onboarding_sessions
+            SET status = 'keycloak_failed',
+                keycloak_organization_id = COALESCE($2, keycloak_organization_id),
+                keycloak_organization_alias = COALESCE($3, keycloak_organization_alias),
+                error_code = $4,
+                error_message = $5
+            WHERE id = $1
+              AND status = 'provisioning'
+            "#,
+        )
+        .bind(session_id)
+        .bind(organization_id.map(|id| id.to_string()))
+        .bind(organization_alias)
+        .bind(error_code)
+        .bind(error_message)
+        .execute(&self.pool)
+        .await
+        .map_err(database_error)?;
+
+        Ok(())
+    }
+
+    pub async fn complete_provisioning(
+        &self,
+        session: &ProvisioningSession,
+        organization_id: Uuid,
+        organization_alias: &str,
+        keycloak_realm: &str,
+    ) -> Result<TenantId, AppError> {
+        let mut tx = self.pool.begin().await.map_err(database_error)?;
+
+        let tenant_id = upsert_tenant(
+            &mut tx,
+            session,
+            organization_id,
+            organization_alias,
+            keycloak_realm,
+        )
+        .await?;
+        let admin_id = upsert_pending_admin(&mut tx, session, tenant_id).await?;
+        upsert_default_preferences(&mut tx, tenant_id, admin_id).await?;
+        mark_session_completed(
+            &mut tx,
+            session.id,
+            tenant_id,
+            organization_id,
+            organization_alias,
+        )
+        .await?;
+
+        tx.commit().await.map_err(database_error)?;
+        Ok(TenantId(tenant_id))
     }
 
     pub async fn find_session_status_by_payment(
@@ -368,6 +456,131 @@ fn session_from_row(row: sqlx::postgres::PgRow) -> Result<OnboardingSession, App
         payment_id: row.try_get("payment_id").map_err(database_error)?,
         checkout_url: row.try_get("checkout_url").map_err(database_error)?,
     })
+}
+
+fn provisioning_session_from_row(
+    row: sqlx::postgres::PgRow,
+) -> Result<ProvisioningSession, AppError> {
+    Ok(ProvisioningSession {
+        id: row.try_get("id").map_err(database_error)?,
+        organization_name: row.try_get("organization_name").map_err(database_error)?,
+        organization_slug: row.try_get("organization_slug").map_err(database_error)?,
+        admin_email: row.try_get("admin_email").map_err(database_error)?,
+        admin_name: row.try_get("admin_name").map_err(database_error)?,
+    })
+}
+
+async fn upsert_tenant(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    session: &ProvisioningSession,
+    organization_id: Uuid,
+    organization_alias: &str,
+    keycloak_realm: &str,
+) -> Result<Uuid, AppError> {
+    sqlx::query_scalar(
+        r#"
+        INSERT INTO tenants (
+            keycloak_realm,
+            name,
+            slug,
+            keycloak_organization_id,
+            keycloak_organization_alias
+        )
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (slug) DO UPDATE SET
+            keycloak_organization_id = EXCLUDED.keycloak_organization_id,
+            keycloak_organization_alias = EXCLUDED.keycloak_organization_alias
+        WHERE tenants.keycloak_organization_alias IS NULL
+           OR tenants.keycloak_organization_alias = EXCLUDED.keycloak_organization_alias
+        RETURNING id
+        "#,
+    )
+    .bind(keycloak_realm)
+    .bind(&session.organization_name)
+    .bind(&session.organization_slug)
+    .bind(organization_id)
+    .bind(organization_alias)
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(database_error)
+}
+
+async fn upsert_pending_admin(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    session: &ProvisioningSession,
+    tenant_id: Uuid,
+) -> Result<Uuid, AppError> {
+    sqlx::query_scalar(
+        r#"
+        INSERT INTO users (tenant_id, keycloak_user_id, email, name, role)
+        VALUES ($1, $2, $3, $4, 'admin')
+        ON CONFLICT (tenant_id, keycloak_user_id) DO UPDATE SET
+            email = EXCLUDED.email,
+            name = COALESCE(EXCLUDED.name, users.name),
+            role = 'admin',
+            updated_at = NOW()
+        RETURNING id
+        "#,
+    )
+    .bind(tenant_id)
+    .bind(format!("pending-admin-{}", session.id))
+    .bind(&session.admin_email)
+    .bind(&session.admin_name)
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(database_error)
+}
+
+async fn upsert_default_preferences(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    tenant_id: Uuid,
+    user_id: Uuid,
+) -> Result<(), AppError> {
+    sqlx::query(
+        r#"
+        INSERT INTO user_preferences (tenant_id, user_id, preferences)
+        VALUES ($1, $2, '{}')
+        ON CONFLICT (tenant_id, user_id) DO NOTHING
+        "#,
+    )
+    .bind(tenant_id)
+    .bind(user_id)
+    .execute(&mut **tx)
+    .await
+    .map_err(database_error)?;
+
+    Ok(())
+}
+
+async fn mark_session_completed(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    session_id: Uuid,
+    tenant_id: Uuid,
+    organization_id: Uuid,
+    organization_alias: &str,
+) -> Result<(), AppError> {
+    sqlx::query(
+        r#"
+        UPDATE onboarding_sessions
+        SET status = 'completed',
+            tenant_id = $2,
+            keycloak_organization_id = $3,
+            keycloak_organization_alias = $4,
+            error_code = NULL,
+            error_message = NULL,
+            completed_at = NOW()
+        WHERE id = $1
+        "#,
+    )
+    .bind(session_id)
+    .bind(tenant_id)
+    .bind(organization_id.to_string())
+    .bind(organization_alias)
+    .execute(&mut **tx)
+    .await
+    .map_err(database_error)?;
+
+    Ok(())
 }
 
 pub struct SessionPaymentUpdate {

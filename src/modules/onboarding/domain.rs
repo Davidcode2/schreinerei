@@ -68,6 +68,21 @@ pub struct OnboardingSession {
     pub checkout_url: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProvisioningSession {
+    pub id: Uuid,
+    pub organization_name: String,
+    pub organization_slug: String,
+    pub admin_email: String,
+    pub admin_name: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KeycloakOrganization {
+    pub id: Uuid,
+    pub alias: String,
+}
+
 pub fn organization_slug(name: &str) -> String {
     let mut slug = String::with_capacity(name.len());
     let mut previous_was_separator = false;

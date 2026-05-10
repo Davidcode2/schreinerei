@@ -15,6 +15,7 @@ use crate::modules::onboarding::application::{
     CreateSessionOptions, OnboardingService, PublicInviteService,
 };
 use crate::modules::onboarding::domain::CreateOnboardingSession;
+use crate::modules::onboarding::infrastructure::keycloak_admin_client::KeycloakAdminClient;
 use crate::modules::onboarding::infrastructure::onboarding_repository::OnboardingRepository;
 use crate::modules::onboarding::infrastructure::payment_provider::MolliePaymentProvider;
 use crate::AppState;
@@ -85,6 +86,8 @@ async fn create_onboarding_session(
     let service = OnboardingService::new(
         OnboardingRepository::new(state.pool.clone()),
         MolliePaymentProvider::new(api_key, state.config.mollie_api_base_url.clone()),
+        KeycloakAdminClient::from_config(&state.config)?,
+        state.config.keycloak_realm.clone(),
     );
 
     let session = service
@@ -132,6 +135,8 @@ async fn mollie_webhook(
     let service = OnboardingService::new(
         OnboardingRepository::new(state.pool.clone()),
         MolliePaymentProvider::new(api_key, state.config.mollie_api_base_url.clone()),
+        KeycloakAdminClient::from_config(&state.config)?,
+        state.config.keycloak_realm.clone(),
     );
 
     let raw_payload = json!({ "id": payload.id });
