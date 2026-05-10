@@ -1,3 +1,4 @@
+use schreinerei::common::error::AppError;
 use schreinerei::common::types::{SiteId, TenantId};
 use schreinerei::modules::billing::domain::{AttachInvoicePdf, CreateInvoiceDraft, InvoiceStatus};
 use schreinerei::modules::billing::infrastructure::InvoiceRepository;
@@ -60,13 +61,52 @@ async fn find_and_list_are_tenant_scoped(pool: PgPool) {
         .list_for_site(tenant_a, site_a)
         .await
         .expect("tenant scoped list should work");
+    assert_eq!(visible.len(), 1);
+}
+
+#[sqlx::test]
+async fn list_for_site_requires_tenant_owned_site(pool: PgPool) {
+    let tenant_a = create_tenant(&pool, "Tenant A").await;
+    let tenant_b = create_tenant(&pool, "Tenant B").await;
+    let site_a = create_site(&pool, tenant_a, "Project A").await;
+    let repo = InvoiceRepository::new(pool);
+
     let cross_tenant = repo
         .list_for_site(tenant_b, site_a)
         .await
-        .expect("cross tenant list should be empty");
+        .expect_err("cross tenant site should be rejected");
+    let missing_site = repo
+        .list_for_site(tenant_a, SiteId(Uuid::new_v4()))
+        .await
+        .expect_err("missing site should be rejected");
 
-    assert_eq!(visible.len(), 1);
-    assert!(cross_tenant.is_empty());
+    assert_not_found(cross_tenant, "Project not found");
+    assert_not_found(missing_site, "Project not found");
+}
+
+#[sqlx::test]
+async fn list_for_site_returns_newest_first(pool: PgPool) {
+    let tenant = create_tenant(&pool, "Tenant A").await;
+    let site = create_site(&pool, tenant, "Project A").await;
+    let repo = InvoiceRepository::new(pool);
+
+    let first = repo
+        .create_draft(tenant, draft_for(site))
+        .await
+        .expect("first invoice should be created");
+    let second = repo
+        .create_draft(tenant, draft_for(site))
+        .await
+        .expect("second invoice should be created");
+
+    let visible = repo
+        .list_for_site(tenant, site)
+        .await
+        .expect("tenant scoped list should work");
+
+    assert_eq!(visible.len(), 2);
+    assert_eq!(visible[0].id, second.id);
+    assert_eq!(visible[1].id, first.id);
 }
 
 #[sqlx::test]
@@ -145,5 +185,12 @@ fn draft_for(site_id: SiteId) -> CreateInvoiceDraft {
         sender_name: Some("Schreinerei".to_string()),
         sender_address: Some("Werkstrasse 1".to_string()),
         created_by: None,
+    }
+}
+
+fn assert_not_found(error: AppError, expected: &str) {
+    match error {
+        AppError::NotFound(message) => assert_eq!(message, expected),
+        other => panic!("expected not found error, got {other:?}"),
     }
 }

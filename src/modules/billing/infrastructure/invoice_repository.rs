@@ -101,6 +101,8 @@ impl InvoiceRepository {
         tenant_id: TenantId,
         site_id: SiteId,
     ) -> Result<Vec<Invoice>, AppError> {
+        self.ensure_site_exists(tenant_id, site_id).await?;
+
         let rows = sqlx::query_as::<_, InvoiceRow>(
             r#"
             SELECT
@@ -110,7 +112,7 @@ impl InvoiceRepository {
                 pdf_created_at, created_by, created_at, updated_at
             FROM invoices
             WHERE tenant_id = $1 AND site_id = $2
-            ORDER BY invoice_number DESC
+            ORDER BY created_at DESC, invoice_number DESC
             "#,
         )
         .bind(tenant_id.0)
@@ -120,6 +122,33 @@ impl InvoiceRepository {
         .map_err(|error| AppError::Database(error.to_string()))?;
 
         rows.into_iter().map(InvoiceRow::try_into_invoice).collect()
+    }
+
+    async fn ensure_site_exists(
+        &self,
+        tenant_id: TenantId,
+        site_id: SiteId,
+    ) -> Result<(), AppError> {
+        let exists: bool = sqlx::query_scalar(
+            r#"
+            SELECT EXISTS (
+                SELECT 1
+                FROM sites
+                WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL
+            )
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|error| AppError::Database(error.to_string()))?;
+
+        if exists {
+            Ok(())
+        } else {
+            Err(AppError::NotFound("Project not found".to_string()))
+        }
     }
 
     pub async fn attach_pdf(
