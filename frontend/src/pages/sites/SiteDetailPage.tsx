@@ -95,6 +95,8 @@ function getWorkTypeLabel(workType: WorkType): string {
   return labels[workType]
 }
 
+const WRAP_VALUE_CLASS = "break-words [overflow-wrap:anywhere]"
+
 export default function SiteDetailPage() {
   const { id, activityId, attachmentId } = useParams<{
     id: string
@@ -264,46 +266,46 @@ export default function SiteDetailPage() {
             {site.description && (
               <div className="min-w-0">
                 <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-1">Beschreibung</p>
-                <p className="break-words text-sm leading-relaxed">{site.description}</p>
+                <p className={`${WRAP_VALUE_CLASS} text-sm leading-relaxed`}>{site.description}</p>
               </div>
             )}
 
             {(site.budget_amount_cents != null || site.quote_reference || site.billing_reference || site.billing_notes) && (
               <>
                 <Separator />
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">Budget & Abrechnung</p>
                   <div className="min-w-0 space-y-3 rounded-lg bg-accent/25 p-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid min-w-0 gap-4 sm:grid-cols-2">
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Budget</p>
-                        <p className="break-words text-sm font-medium">{formatCurrency(site.budget_amount_cents)}</p>
+                        <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{formatCurrency(site.budget_amount_cents)}</p>
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Gebuchte Stunden</p>
-                        <p className="break-words text-sm font-medium">{siteSummary ? `${siteSummary.labor.total_hours.toFixed(1)}h` : '-'}</p>
+                        <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{siteSummary ? `${siteSummary.labor.total_hours.toFixed(1)}h` : '-'}</p>
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Angebotsreferenz</p>
-                        <p className="break-words text-sm font-medium">{site.quote_reference || '-'}</p>
+                        <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{site.quote_reference || '-'}</p>
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Materialentnahmen</p>
-                        <p className="break-words text-sm font-medium">{siteSummary ? siteSummary.materials.withdrawal_count : 0}</p>
+                        <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{siteSummary ? siteSummary.materials.withdrawal_count : 0}</p>
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Abrechnungsreferenz</p>
-                        <p className="break-words text-sm font-medium">{site.billing_reference || '-'}</p>
+                        <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{site.billing_reference || '-'}</p>
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Verbrauchte Materialien</p>
-                        <p className="break-words text-sm font-medium">{siteSummary ? siteSummary.materials.distinct_material_count : 0}</p>
+                        <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{siteSummary ? siteSummary.materials.distinct_material_count : 0}</p>
                       </div>
                     </div>
                     {site.billing_notes && (
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground mb-1">Abrechnungshinweise</p>
-                        <p className="break-words text-sm leading-relaxed">{site.billing_notes}</p>
+                        <p className={`${WRAP_VALUE_CLASS} text-sm leading-relaxed`}>{site.billing_notes}</p>
                       </div>
                     )}
                   </div>
@@ -314,9 +316,9 @@ export default function SiteDetailPage() {
             {isAdmin && (
               <>
                 <Separator />
-                <div>
+                <div className="min-w-0">
                   <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Rechnungen</p>
                       <p className="mt-1 text-sm text-muted-foreground">
                         PDFs aus den gebuchten Projektzeiten und Materialentnahmen.
@@ -360,8 +362,8 @@ export default function SiteDetailPage() {
                           className="flex flex-col gap-3 rounded-lg bg-accent/25 p-3 sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="min-w-0 flex-1 space-y-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="break-all text-sm font-medium">
+                            <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+                              <p className={`${WRAP_VALUE_CLASS} min-w-0 max-w-full basis-full break-all text-sm font-medium sm:basis-auto`}>
                                 {invoice.invoice_number_display || invoice.id}
                               </p>
                               <Badge variant="outline" className="text-xs font-normal">
@@ -388,24 +390,24 @@ export default function SiteDetailPage() {
 
             {siteSummary && (
               <>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">Projektkennzahlen</p>
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid min-w-0 gap-4 sm:grid-cols-2">
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Materialien</p>
-                      <p className="break-words text-sm font-medium">{materialSummary?.distinct_material_count || 0}</p>
+                      <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{materialSummary?.distinct_material_count || 0}</p>
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Entnahmen</p>
-                      <p className="break-words text-sm font-medium">{materialSummary?.withdrawal_count || 0}</p>
+                      <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{materialSummary?.withdrawal_count || 0}</p>
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Baustelle-Stunden</p>
-                      <p className="break-words text-sm font-medium">{siteSummary.labor.site_hours.toFixed(1)}h</p>
+                      <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{siteSummary.labor.site_hours.toFixed(1)}h</p>
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Werkstatt-Stunden</p>
-                      <p className="break-words text-sm font-medium">{siteSummary.labor.workshop_hours.toFixed(1)}h</p>
+                      <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{siteSummary.labor.workshop_hours.toFixed(1)}h</p>
                     </div>
                   </div>
                 </div>
@@ -413,14 +415,14 @@ export default function SiteDetailPage() {
                 {materialSummary && materialSummary.lines.length > 0 && (
                   <>
                     <Separator />
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">Materialverbrauch</p>
                       <div className="space-y-3">
                         {materialSummary.lines.slice(0, 4).map((line) => (
                           <div key={line.material_id} className="flex flex-col gap-3 rounded-lg bg-accent/25 p-3 sm:flex-row sm:items-start sm:justify-between">
                             <div className="min-w-0">
-                              <p className="break-words text-sm font-medium">{line.material_name}</p>
-                              <p className="break-words text-xs text-muted-foreground">{line.category_name}</p>
+                              <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{line.material_name}</p>
+                              <p className={`${WRAP_VALUE_CLASS} text-xs text-muted-foreground`}>{line.category_name}</p>
                             </div>
                             <div className="shrink-0 sm:text-right">
                               <p className="text-sm font-medium">{line.total_withdrawn} {line.unit}</p>
@@ -435,41 +437,41 @@ export default function SiteDetailPage() {
               </>
             )}
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex items-start gap-2.5">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+              <div className="flex min-w-0 items-start gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent flex-shrink-0">
                   <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">{site.project_type === "internal_workshop" ? "Bezug" : "Kunde"}</p>
-                  <p className="break-words text-sm font-medium">{site.customer_name || "-"}</p>
+                  <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{site.customer_name || "-"}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-2.5">
+              <div className="flex min-w-0 items-start gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent flex-shrink-0">
                   <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Geplante Tage</p>
-                  <p className="break-words text-sm font-medium">{site.estimated_days || "-"}</p>
+                  <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{site.estimated_days || "-"}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-2.5">
+              <div className="flex min-w-0 items-start gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent flex-shrink-0">
                   <Timer className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Gebuchte Stunden</p>
-                  <p className="break-words text-sm font-medium">{totalHours.toFixed(1)}h</p>
+                  <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{totalHours.toFixed(1)}h</p>
                 </div>
               </div>
-              <div className="flex items-start gap-2.5">
+              <div className="flex min-w-0 items-start gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent flex-shrink-0">
                   <Users className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Zugewiesen</p>
-                  <p className="break-words text-sm font-medium">{assignments?.length || 0} Mitarbeiter</p>
+                  <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{assignments?.length || 0} Mitarbeiter</p>
                 </div>
               </div>
             </div>
