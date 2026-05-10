@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 import { LoginPage } from "@/components/auth/LoginPage"
+import { SignupPage } from "@/components/auth/SignupPage"
 import { AuthCallback } from "@/components/auth/AuthCallback"
 import { useAuth } from "@/hooks/useAuth"
 import { initSync } from "@/lib/offline/sync"
@@ -50,6 +51,7 @@ function AppRoutes() {
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
 
       {/* Protected routes */}

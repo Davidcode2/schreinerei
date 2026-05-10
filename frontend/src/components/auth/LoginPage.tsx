@@ -1,4 +1,5 @@
 import { startLogin } from '../../lib/auth/keycloak'
+import { Link } from 'react-router-dom'
 
 export function LoginPage() {
   return (
@@ -17,6 +18,12 @@ export function LoginPage() {
         >
           Mit Keycloak anmelden
         </button>
+        <Link
+          to="/signup"
+          className="mt-3 block w-full rounded-xl border border-border px-4 py-3 text-center text-sm font-medium transition-all hover:bg-accent active:scale-[0.98]"
+        >
+          Neue Organisation erstellen
+        </Link>
       </div>
     </div>
   )
