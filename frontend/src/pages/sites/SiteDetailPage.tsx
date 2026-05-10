@@ -13,6 +13,7 @@ import {
   Users,
   Timer,
   PencilRuler,
+  Download,
 } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
 import {
@@ -29,10 +30,11 @@ import {
   useSiteAssignments,
   useSiteInvoices,
   useCreateSiteInvoice,
+  downloadSiteInvoicePdf,
 } from "@/lib/api/hooks"
 import { useAuthStore } from "@/lib/auth/authStore"
 import { toast } from 'sonner'
-import type { TimeEntry, WorkType } from "@/types/sites"
+import type { SiteInvoice, TimeEntry, WorkType } from "@/types/sites"
 import { TimeEntryDialog } from "./TimeEntryDialog"
 import { ActivityFeed } from "./ActivityFeed"
 import { StatusChangeModal } from "./StatusChangeModal"
@@ -112,6 +114,7 @@ export default function SiteDetailPage() {
   const [showCameraFlow, setShowCameraFlow] = useState(false)
   const [showPlanningSheet, setShowPlanningSheet] = useState(false)
   const [selectedTimeEntry, setSelectedTimeEntry] = useState<TimeEntry | null>(null)
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null)
 
   const { data: site, isLoading, error, refetch } = useSite(id!)
   const { data: siteSummary } = useSiteSummary(id!)
@@ -159,6 +162,24 @@ export default function SiteDetailPage() {
       toast.success('Rechnung erstellt')
     } catch {
       toast.error('Rechnung konnte nicht erstellt werden')
+    }
+  }
+
+  async function handleDownloadInvoice(invoice: SiteInvoice) {
+    setDownloadingInvoiceId(invoice.id)
+    try {
+      const blob = await downloadSiteInvoicePdf(invoice.id)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `${invoice.invoice_number_display || "rechnung"}.pdf`
+      link.click()
+      URL.revokeObjectURL(url)
+      toast.success("PDF heruntergeladen")
+    } catch {
+      toast.error("PDF konnte nicht geladen werden")
+    } finally {
+      setDownloadingInvoiceId(null)
     }
   }
 
@@ -355,6 +376,8 @@ export default function SiteDetailPage() {
 
                     {invoiceRows.map((invoice) => {
                       const date = invoice.issued_at ?? invoice.created_at
+                      const hasPdf = invoice.pdf_artifact != null
+                      const isDownloading = downloadingInvoiceId === invoice.id
 
                       return (
                         <div
@@ -372,12 +395,25 @@ export default function SiteDetailPage() {
                             </div>
                             <p className="text-xs text-muted-foreground">
                               {formatInvoiceDate(date)}
-                              {" · PDF noch nicht verfügbar"}
+                              {hasPdf ? " · PDF verfügbar" : " · PDF noch nicht verfügbar"}
                             </p>
                           </div>
-                          <Badge variant="outline" className="w-fit text-xs font-normal">
-                            PDF folgt
-                          </Badge>
+                          {hasPdf ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownloadInvoice(invoice)}
+                              disabled={isDownloading}
+                              className="h-9 w-full gap-2 sm:w-auto"
+                            >
+                              <Download className="h-4 w-4" />
+                              {isDownloading ? "Lädt..." : "PDF"}
+                            </Button>
+                          ) : (
+                            <Badge variant="outline" className="w-fit text-xs font-normal">
+                              PDF folgt
+                            </Badge>
+                          )}
                         </div>
                       )
                     })}

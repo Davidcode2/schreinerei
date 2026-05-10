@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest"
 import { renderHook, waitFor } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import {
+  downloadSiteInvoicePdf,
   useCreateActivity,
   useCreateSiteInvoice,
   useDeleteActivity,
@@ -154,6 +155,15 @@ describe("site invoice hooks", () => {
     expect(invalidateQueriesSpy).toHaveBeenCalledWith({
       queryKey: ["site-summary", "site-1"],
     })
+  })
+
+  it("downloads invoice PDFs through the billing endpoint", async () => {
+    const pdf = new Blob(["pdf"], { type: "application/pdf" })
+    vi.mocked(apiClient.getBlob).mockResolvedValueOnce(pdf)
+
+    await expect(downloadSiteInvoicePdf("inv-1")).resolves.toBe(pdf)
+
+    expect(apiClient.getBlob).toHaveBeenCalledWith("/api/v1/billing/invoices/inv-1/pdf")
   })
 })
 

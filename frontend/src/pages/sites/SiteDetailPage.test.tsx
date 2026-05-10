@@ -206,11 +206,20 @@ describe('SiteDetailPage', () => {
     expect(screen.getByText('ANG-2026-09')).toBeInTheDocument()
   })
 
-  it('shows existing invoices to admins without exposing a missing PDF download route', async () => {
+  it('lets admins download existing invoice PDFs', async () => {
     window.history.pushState({}, '', '/sites/site-1')
     setAdminUser()
 
     let pdfRequested = false
+    const createObjectUrl = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:invoice-pdf')
+    const revokeObjectUrl = vi
+      .spyOn(URL, 'revokeObjectURL')
+      .mockImplementation(() => undefined)
+    const clickDownload = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined)
 
     server.use(
       http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
@@ -265,9 +274,14 @@ describe('SiteDetailPage', () => {
     expect(await screen.findByText('Rechnungen')).toBeInTheDocument()
     expect(await screen.findByText('2026-00001')).toBeInTheDocument()
     expect(screen.getByText('Erstellt')).toBeInTheDocument()
-    expect(screen.getByText(/PDF noch nicht verfügbar/i)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /pdf/i })).not.toBeInTheDocument()
-    expect(pdfRequested).toBe(false)
+    expect(screen.getByText(/PDF verfügbar/i)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /pdf/i }))
+
+    await waitFor(() => expect(pdfRequested).toBe(true))
+    expect(createObjectUrl).toHaveBeenCalled()
+    expect(clickDownload).toHaveBeenCalled()
+    expect(revokeObjectUrl).toHaveBeenCalledWith('blob:invoice-pdf')
   })
 
   it('lets admins create an invoice from the site detail page', async () => {

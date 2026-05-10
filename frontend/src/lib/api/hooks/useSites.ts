@@ -117,6 +117,10 @@ export function useCreateSiteInvoice() {
   })
 }
 
+export function downloadSiteInvoicePdf(invoiceId: string): Promise<Blob> {
+  return apiClient.getBlob(`/api/v1/billing/invoices/${invoiceId}/pdf`)
+}
+
 export function useCreateSite() {
   const queryClient = useQueryClient()
 
