@@ -25,6 +25,7 @@ import type {
   SiteProjectSummary,
 } from "@/types/sites"
 import type {
+  ProjectInvoiceDraftResponse,
   UploadPhotoAttachmentResponse,
   UploadSiteAttachmentResponse,
 } from "@/types/generated"
@@ -105,19 +106,14 @@ export function useCreateSiteInvoice() {
 
   return useMutation({
     mutationFn: (siteId: string) =>
-      apiClient.post<SiteInvoice>(`/api/v1/sites/${siteId}/invoices`),
+      apiClient
+        .post<ProjectInvoiceDraftResponse>(`/api/v1/billing/projects/${siteId}/invoices`, {})
+        .then((draft) => draft.invoice),
     onSuccess: (_, siteId) => {
       queryClient.invalidateQueries({ queryKey: ["site-invoices", siteId] })
       queryClient.invalidateQueries({ queryKey: ["site-summary", siteId] })
       queryClient.invalidateQueries({ queryKey: ["site-invoice-summary", siteId] })
     },
-  })
-}
-
-export function useDownloadSiteInvoicePdf() {
-  return useMutation({
-    mutationFn: (invoiceId: string) =>
-      apiClient.getBlob(`/api/v1/billing/invoices/${invoiceId}/pdf`),
   })
 }
 

@@ -325,7 +325,7 @@ export function SitePlanningCalendar({
             Geplante Kundentermine und Vor-Ort-Einsätze. Zeiterfassung bleibt separat.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="icon"
@@ -338,7 +338,7 @@ export function SitePlanningCalendar({
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="min-w-[190px] text-center text-sm font-medium">
+          <div className="min-w-0 flex-1 basis-[160px] text-center text-sm font-medium">
             {formatWeekHeader(start)}
           </div>
           <Button

@@ -5,7 +5,6 @@ import {
   useCreateActivity,
   useCreateSiteInvoice,
   useDeleteActivity,
-  useDownloadSiteInvoicePdf,
   useSiteInvoices,
   useUploadSiteAttachment,
   useUploadSitePhoto,
@@ -121,7 +120,7 @@ describe("site invoice hooks", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(apiClient.get).toHaveBeenCalledWith("/api/v1/sites/site-1/invoices")
-    expect(result.current.data?.[0].invoice_number_display).toBe("2026-00001")
+    expect(result.current.data?.[0]?.invoice_number_display).toBe("2026-00001")
   })
 
   it("does not fetch invoices when disabled", () => {
@@ -135,7 +134,9 @@ describe("site invoice hooks", () => {
   })
 
   it("creates a site invoice and refreshes invoice-related queries", async () => {
-    vi.mocked(apiClient.post).mockResolvedValueOnce({ id: "inv-1" })
+    vi.mocked(apiClient.post).mockResolvedValueOnce({
+      invoice: { id: "inv-1", invoice_number_display: "2026-00001" },
+    })
     const queryClient = createQueryClient()
     const invalidateQueriesSpy = vi.spyOn(queryClient, "invalidateQueries")
 
@@ -143,28 +144,16 @@ describe("site invoice hooks", () => {
       wrapper: createWrapper(queryClient),
     })
 
-    await result.current.mutateAsync("site-1")
+    const invoice = await result.current.mutateAsync("site-1")
 
-    expect(apiClient.post).toHaveBeenCalledWith("/api/v1/sites/site-1/invoices")
+    expect(apiClient.post).toHaveBeenCalledWith("/api/v1/billing/projects/site-1/invoices", {})
+    expect(invoice).toEqual({ id: "inv-1", invoice_number_display: "2026-00001" })
     expect(invalidateQueriesSpy).toHaveBeenCalledWith({
       queryKey: ["site-invoices", "site-1"],
     })
     expect(invalidateQueriesSpy).toHaveBeenCalledWith({
       queryKey: ["site-summary", "site-1"],
     })
-  })
-
-  it("downloads invoice PDFs through the authenticated billing endpoint", async () => {
-    const pdf = new Blob(["pdf"], { type: "application/pdf" })
-    vi.mocked(apiClient.getBlob).mockResolvedValueOnce(pdf)
-    const queryClient = createQueryClient()
-
-    const { result } = renderHook(() => useDownloadSiteInvoicePdf(), {
-      wrapper: createWrapper(queryClient),
-    })
-
-    await expect(result.current.mutateAsync("inv-1")).resolves.toBe(pdf)
-    expect(apiClient.getBlob).toHaveBeenCalledWith("/api/v1/billing/invoices/inv-1/pdf")
   })
 })
 

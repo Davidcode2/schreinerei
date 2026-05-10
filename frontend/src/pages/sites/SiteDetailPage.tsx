@@ -9,7 +9,6 @@ import {
   Clock,
   Camera,
   FileText,
-  Download,
   Building2,
   Users,
   Timer,
@@ -30,11 +29,10 @@ import {
   useSiteAssignments,
   useSiteInvoices,
   useCreateSiteInvoice,
-  useDownloadSiteInvoicePdf,
 } from "@/lib/api/hooks"
 import { useAuthStore } from "@/lib/auth/authStore"
 import { toast } from 'sonner'
-import type { SiteInvoice, TimeEntry, WorkType } from "@/types/sites"
+import type { TimeEntry, WorkType } from "@/types/sites"
 import { TimeEntryDialog } from "./TimeEntryDialog"
 import { ActivityFeed } from "./ActivityFeed"
 import { StatusChangeModal } from "./StatusChangeModal"
@@ -86,11 +84,6 @@ function getInvoiceStatusLabel(status: string): string {
   return labels[status] ?? status
 }
 
-function buildInvoicePdfFilename(invoice: SiteInvoice): string {
-  const number = invoice.invoice_number_display || invoice.id
-  return `rechnung-${number}.pdf`
-}
-
 function getWorkTypeLabel(workType: WorkType): string {
   const labels: Record<WorkType, string> = {
     site: "Baustelle",
@@ -130,7 +123,6 @@ export default function SiteDetailPage() {
     error: invoicesError,
   } = useSiteInvoices(id!, isAdmin)
   const createInvoice = useCreateSiteInvoice()
-  const downloadInvoicePdf = useDownloadSiteInvoicePdf()
 
   const viewerTarget = useMemo(
     () => resolveMediaViewerTarget(activities || [], activityId, attachmentId),
@@ -151,6 +143,7 @@ export default function SiteDetailPage() {
     )
   }
 
+  const currentSite = site
   const viewerPath = viewerTarget
     ? buildMediaViewerPath(site.id, viewerTarget.activity.id, viewerTarget.attachment.attachment_id, viewerTarget.title)
     : buildSiteDetailPath(id || "")
@@ -160,27 +153,10 @@ export default function SiteDetailPage() {
 
   async function handleCreateInvoice() {
     try {
-      await createInvoice.mutateAsync(site.id)
+      await createInvoice.mutateAsync(currentSite.id)
       toast.success('Rechnung erstellt')
     } catch {
       toast.error('Rechnung konnte nicht erstellt werden')
-    }
-  }
-
-  async function handleDownloadInvoice(invoice: SiteInvoice) {
-    try {
-      const blob = await downloadInvoicePdf.mutateAsync(invoice.id)
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = buildInvoicePdfFilename(invoice)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      URL.revokeObjectURL(url)
-      toast.success('Rechnung heruntergeladen')
-    } catch {
-      toast.error('Rechnung konnte nicht heruntergeladen werden')
     }
   }
 
@@ -280,15 +256,15 @@ export default function SiteDetailPage() {
       </Card>
 
       <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-        <Card>
+        <Card className="min-w-0">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold">Projektdetails</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="min-w-0 space-y-4">
             {site.description && (
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-1">Beschreibung</p>
-                <p className="text-sm leading-relaxed">{site.description}</p>
+                <p className="break-words text-sm leading-relaxed">{site.description}</p>
               </div>
             )}
 
@@ -297,37 +273,37 @@ export default function SiteDetailPage() {
                 <Separator />
                 <div>
                   <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">Budget & Abrechnung</p>
-                  <div className="space-y-3 rounded-lg bg-accent/25 p-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
+                  <div className="min-w-0 space-y-3 rounded-lg bg-accent/25 p-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Budget</p>
-                        <p className="text-sm font-medium">{formatCurrency(site.budget_amount_cents)}</p>
+                        <p className="break-words text-sm font-medium">{formatCurrency(site.budget_amount_cents)}</p>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Gebuchte Stunden</p>
-                        <p className="text-sm font-medium">{siteSummary ? `${siteSummary.labor.total_hours.toFixed(1)}h` : '-'}</p>
+                        <p className="break-words text-sm font-medium">{siteSummary ? `${siteSummary.labor.total_hours.toFixed(1)}h` : '-'}</p>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Angebotsreferenz</p>
-                        <p className="text-sm font-medium">{site.quote_reference || '-'}</p>
+                        <p className="break-words text-sm font-medium">{site.quote_reference || '-'}</p>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Materialentnahmen</p>
-                        <p className="text-sm font-medium">{siteSummary ? siteSummary.materials.withdrawal_count : 0}</p>
+                        <p className="break-words text-sm font-medium">{siteSummary ? siteSummary.materials.withdrawal_count : 0}</p>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Abrechnungsreferenz</p>
-                        <p className="text-sm font-medium">{site.billing_reference || '-'}</p>
+                        <p className="break-words text-sm font-medium">{site.billing_reference || '-'}</p>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Verbrauchte Materialien</p>
-                        <p className="text-sm font-medium">{siteSummary ? siteSummary.materials.distinct_material_count : 0}</p>
+                        <p className="break-words text-sm font-medium">{siteSummary ? siteSummary.materials.distinct_material_count : 0}</p>
                       </div>
                     </div>
                     {site.billing_notes && (
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs text-muted-foreground mb-1">Abrechnungshinweise</p>
-                        <p className="text-sm leading-relaxed">{site.billing_notes}</p>
+                        <p className="break-words text-sm leading-relaxed">{site.billing_notes}</p>
                       </div>
                     )}
                   </div>
@@ -376,7 +352,6 @@ export default function SiteDetailPage() {
                     )}
 
                     {invoiceRows.map((invoice) => {
-                      const canDownload = invoice.pdf_artifact != null
                       const date = invoice.issued_at ?? invoice.created_at
 
                       return (
@@ -384,7 +359,7 @@ export default function SiteDetailPage() {
                           key={invoice.id}
                           className="flex flex-col gap-3 rounded-lg bg-accent/25 p-3 sm:flex-row sm:items-center sm:justify-between"
                         >
-                          <div className="min-w-0 space-y-1">
+                          <div className="min-w-0 flex-1 space-y-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="break-all text-sm font-medium">
                                 {invoice.invoice_number_display || invoice.id}
@@ -395,19 +370,12 @@ export default function SiteDetailPage() {
                             </div>
                             <p className="text-xs text-muted-foreground">
                               {formatInvoiceDate(date)}
-                              {!canDownload ? " · PDF noch nicht verfügbar" : ""}
+                              {" · PDF noch nicht verfügbar"}
                             </p>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDownloadInvoice(invoice)}
-                            disabled={!canDownload || downloadInvoicePdf.isPending}
-                            className="h-9 w-full gap-2 sm:w-auto"
-                          >
-                            <Download className="h-4 w-4" />
-                            PDF
-                          </Button>
+                          <Badge variant="outline" className="w-fit text-xs font-normal">
+                            PDF folgt
+                          </Badge>
                         </div>
                       )
                     })}
@@ -422,22 +390,22 @@ export default function SiteDetailPage() {
               <>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">Projektkennzahlen</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Materialien</p>
-                      <p className="text-sm font-medium">{materialSummary?.distinct_material_count || 0}</p>
+                      <p className="break-words text-sm font-medium">{materialSummary?.distinct_material_count || 0}</p>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Entnahmen</p>
-                      <p className="text-sm font-medium">{materialSummary?.withdrawal_count || 0}</p>
+                      <p className="break-words text-sm font-medium">{materialSummary?.withdrawal_count || 0}</p>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Baustelle-Stunden</p>
-                      <p className="text-sm font-medium">{siteSummary.labor.site_hours.toFixed(1)}h</p>
+                      <p className="break-words text-sm font-medium">{siteSummary.labor.site_hours.toFixed(1)}h</p>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Werkstatt-Stunden</p>
-                      <p className="text-sm font-medium">{siteSummary.labor.workshop_hours.toFixed(1)}h</p>
+                      <p className="break-words text-sm font-medium">{siteSummary.labor.workshop_hours.toFixed(1)}h</p>
                     </div>
                   </div>
                 </div>
@@ -449,12 +417,12 @@ export default function SiteDetailPage() {
                       <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">Materialverbrauch</p>
                       <div className="space-y-3">
                         {materialSummary.lines.slice(0, 4).map((line) => (
-                          <div key={line.material_id} className="flex items-start justify-between gap-3 rounded-lg bg-accent/25 p-3">
-                            <div>
-                              <p className="text-sm font-medium">{line.material_name}</p>
-                              <p className="text-xs text-muted-foreground">{line.category_name}</p>
+                          <div key={line.material_id} className="flex flex-col gap-3 rounded-lg bg-accent/25 p-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <p className="break-words text-sm font-medium">{line.material_name}</p>
+                              <p className="break-words text-xs text-muted-foreground">{line.category_name}</p>
                             </div>
-                            <div className="text-right">
+                            <div className="shrink-0 sm:text-right">
                               <p className="text-sm font-medium">{line.total_withdrawn} {line.unit}</p>
                               <p className="text-xs text-muted-foreground">{line.withdrawal_count} Entnahmen</p>
                             </div>
@@ -467,48 +435,48 @@ export default function SiteDetailPage() {
               </>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex items-start gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent flex-shrink-0">
                   <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">{site.project_type === "internal_workshop" ? "Bezug" : "Kunde"}</p>
-                  <p className="text-sm font-medium">{site.customer_name || "-"}</p>
+                  <p className="break-words text-sm font-medium">{site.customer_name || "-"}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent flex-shrink-0">
                   <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Geplante Tage</p>
-                  <p className="text-sm font-medium">{site.estimated_days || "-"}</p>
+                  <p className="break-words text-sm font-medium">{site.estimated_days || "-"}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent flex-shrink-0">
                   <Timer className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Gebuchte Stunden</p>
-                  <p className="text-sm font-medium">{totalHours.toFixed(1)}h</p>
+                  <p className="break-words text-sm font-medium">{totalHours.toFixed(1)}h</p>
                 </div>
               </div>
               <div className="flex items-start gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent flex-shrink-0">
                   <Users className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Zugewiesen</p>
-                  <p className="text-sm font-medium">{assignments?.length || 0} Mitarbeiter</p>
+                  <p className="break-words text-sm font-medium">{assignments?.length || 0} Mitarbeiter</p>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="min-w-0">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-base font-semibold">Zeiterfassung</CardTitle>
             <Badge variant="outline" className="text-xs font-normal">{totalHours.toFixed(1)}h gesamt</Badge>
@@ -576,7 +544,7 @@ export default function SiteDetailPage() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2">
+        <Card className="min-w-0 md:col-span-2">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold">Projektplanung</CardTitle>
           </CardHeader>

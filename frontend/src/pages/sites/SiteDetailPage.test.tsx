@@ -38,7 +38,7 @@ describe('SiteDetailPage', () => {
         tenant_id: 'tenant-1',
         email: 'employee@example.com',
         name: 'Employee',
-        role: 'employee',
+        role: 'mitarbeiter',
         created_at: new Date().toISOString(),
       },
       tokens: null,
@@ -206,12 +206,10 @@ describe('SiteDetailPage', () => {
     expect(screen.getByText('ANG-2026-09')).toBeInTheDocument()
   })
 
-  it('shows existing invoices to admins and downloads the PDF through the authenticated endpoint', async () => {
+  it('shows existing invoices to admins without exposing a missing PDF download route', async () => {
     window.history.pushState({}, '', '/sites/site-1')
     setAdminUser()
 
-    const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:invoice-pdf')
-    const revokeObjectUrlSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
     let pdfRequested = false
 
     server.use(
@@ -264,18 +262,12 @@ describe('SiteDetailPage', () => {
       </Routes>
     )
 
-    const user = userEvent.setup()
     expect(await screen.findByText('Rechnungen')).toBeInTheDocument()
     expect(await screen.findByText('2026-00001')).toBeInTheDocument()
     expect(screen.getByText('Erstellt')).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: /pdf/i }))
-
-    await waitFor(() => {
-      expect(createObjectUrlSpy).toHaveBeenCalled()
-      expect(revokeObjectUrlSpy).toHaveBeenCalledWith('blob:invoice-pdf')
-      expect(pdfRequested).toBe(true)
-    })
+    expect(screen.getByText(/PDF noch nicht verfügbar/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /pdf/i })).not.toBeInTheDocument()
+    expect(pdfRequested).toBe(false)
   })
 
   it('lets admins create an invoice from the site detail page', async () => {
@@ -311,9 +303,31 @@ describe('SiteDetailPage', () => {
           },
         ] : [])
       }),
-      http.post('*/api/v1/sites/site-1/invoices', () => {
+      http.post('*/api/v1/billing/projects/site-1/invoices', () => {
         createRequested = true
-        return HttpResponse.json({ id: 'inv-2' })
+        return HttpResponse.json({
+          invoice: {
+            id: 'inv-2',
+            site_id: 'site-1',
+            invoice_number: 2,
+            invoice_number_display: '2026-00002',
+            status: 'draft',
+            sender_name: null,
+            sender_address: null,
+            issued_at: null,
+            due_on: null,
+            voided_at: null,
+            pdf_artifact: null,
+            created_by: 'user-1',
+            created_at: '2026-05-10T09:00:00.000Z',
+            updated_at: '2026-05-10T09:00:00.000Z',
+          },
+          project: {},
+          billing: {},
+          labor: {},
+          materials: {},
+          line_items: [],
+        })
       }),
       http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
       http.get('*/api/v1/users', () => HttpResponse.json([])),
@@ -349,7 +363,7 @@ describe('SiteDetailPage', () => {
         materials: { distinct_material_count: 2, withdrawal_count: 3, lines: [] },
       })),
       http.get('*/api/v1/sites/site-1/invoices', () => HttpResponse.json([])),
-      http.post('*/api/v1/sites/site-1/invoices', () => {
+      http.post('*/api/v1/billing/projects/site-1/invoices', () => {
         createAttempts += 1
         return HttpResponse.json({ error: 'invoice failed' }, { status: 500 })
       }),
