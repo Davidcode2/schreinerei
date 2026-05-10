@@ -1,3 +1,4 @@
+pub mod billing;
 pub mod fleet;
 pub mod iam;
 pub mod inventory;

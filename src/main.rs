@@ -8,6 +8,7 @@ use schreinerei::{
     auth::middleware::{auth_middleware, AuthState},
     common::db::{create_pool, run_migrations},
     config::AppConfig,
+    modules::billing::api::routes::create_router as billing_router,
     modules::fleet::api::routes::create_router as fleet_router,
     modules::iam::api::routes::create_router as iam_router,
     modules::inventory::api::routes::create_router as inventory_router,
@@ -91,6 +92,7 @@ async fn main() {
         .merge(onboarding_router())
         .merge(projects_router())
         .merge(fleet_router())
+        .merge(billing_router())
         .layer(middleware::from_fn_with_state(auth_state, auth_middleware))
         .layer(TraceLayer::new_for_http())
         .layer(CorsLayer::permissive())

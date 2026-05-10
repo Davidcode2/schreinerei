@@ -74,6 +74,8 @@ export type InviteUserRequest = { email: string, name: string | null, role: stri
 
 export type InviteUserResponse = { id: string, email: string, role: string, status: string, invite_url: string, organization_alias: string, expires_at: string, };
 
+export type InvoiceResponse = { id: string, site_id: string, invoice_number: bigint, invoice_number_display: string, status: string, sender_name: string | null, sender_address: string | null, issued_at: string | null, due_on: string | null, voided_at: string | null, pdf_artifact: PdfArtifactResponse | null, created_by: string | null, created_at: string, updated_at: string, };
+
 export type ListMachinesQuery = { status: string | null, };
 
 export type ListMaintenanceDueQuery = { asset_id: string | null, status: string | null, };
@@ -109,6 +111,8 @@ export type OnboardingSessionResponse = { session_id: string, organization_slug:
 export type OrderRequestResponse = { id: string, material_id: string, material_name: string, quantity: number, requested_by: string, status: string, request_kind: string, reason: string | null, approved_by: string | null, approved_at: string | null, fulfilled_at: string | null, notes: string | null, created_at: string, };
 
 export type OrderStatusQuery = { status: string | null, };
+
+export type PdfArtifactResponse = { storage_path: string, sha256_hash: string, content_type: string, size_bytes: bigint, created_at: string, };
 
 /**
  * Response DTO for user preferences

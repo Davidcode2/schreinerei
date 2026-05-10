@@ -3,6 +3,7 @@ use std::error::Error;
 use std::fs;
 use std::io;
 
+use schreinerei::modules::billing::api::routes as billing;
 use schreinerei::modules::fleet::api::routes as fleet;
 use schreinerei::modules::iam::api::routes as iam_api;
 use schreinerei::modules::iam::domain::user_preferences as iam_preferences;
@@ -60,6 +61,9 @@ fn generate_typescript() -> Result<String> {
 }
 
 fn collect_bindings(cfg: &Config, bindings: &mut Vec<Binding>) -> Result<()> {
+    add_binding::<billing::InvoiceResponse>(cfg, bindings)?;
+    add_binding::<billing::PdfArtifactResponse>(cfg, bindings)?;
+
     add_binding::<fleet::VehicleResponse>(cfg, bindings)?;
     add_binding::<fleet::CreateVehicleRequest>(cfg, bindings)?;
     add_binding::<fleet::UpdateVehicleRequest>(cfg, bindings)?;
