@@ -16,6 +16,9 @@ use crate::common::types::{
     AssignmentRole, ProjectType, SiteAppointmentId, SiteId, SiteStatus, TimeEntryId, UserId,
     WorkType,
 };
+use crate::modules::billing::api::routes::InvoiceResponse;
+use crate::modules::billing::application::BillingService;
+use crate::modules::billing::infrastructure::InvoiceRepository;
 use crate::modules::iam::application::user_service::TenantContext;
 use crate::modules::sites::application::site_service::SiteService;
 use crate::modules::sites::domain::{
@@ -45,6 +48,7 @@ pub fn create_router() -> Router<AppState> {
             "/api/v1/sites/{id}/invoice-summary",
             get(get_site_invoice_summary),
         )
+        .route("/api/v1/sites/{id}/invoices", get(list_site_invoices))
         .route(
             "/api/v1/sites/{id}/appointments",
             get(list_site_appointments).post(create_site_appointment),
@@ -755,6 +759,24 @@ pub async fn get_site_invoice_summary(
     let summary = service.get_invoice_summary(site_id, &ctx).await?;
 
     Ok(Json(SiteInvoiceSummaryResponse::from(summary)))
+}
+
+pub async fn list_site_invoices(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let service = BillingService::new(InvoiceRepository::new(state.pool));
+    let site_id = Uuid::parse_str(&id)
+        .map(SiteId)
+        .map_err(|_| AppError::Validation("Invalid site ID".to_string()))?;
+
+    let invoices = service
+        .list_project_invoices(ctx.tenant_id, site_id)
+        .await?;
+    let response: Vec<InvoiceResponse> = invoices.into_iter().map(InvoiceResponse::from).collect();
+
+    Ok(Json(response))
 }
 
 pub async fn update_site(
