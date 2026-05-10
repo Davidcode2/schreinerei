@@ -10,12 +10,15 @@ use ts_rs::TS;
 use uuid::Uuid;
 
 use crate::common::error::AppError;
-use crate::common::types::{SiteId, UserId};
+use crate::common::types::{Role, SiteId, UserId};
 use crate::modules::iam::application::user_preferences_service::UserPreferencesService;
 use crate::modules::iam::application::user_service::{TenantContext, UserService};
-use crate::modules::iam::domain::user::{InviteUser, UpdateProfile};
+use crate::modules::iam::domain::user::UpdateProfile;
 use crate::modules::iam::domain::user_preferences::UserPreferenceRecord;
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
+use crate::modules::onboarding::application::OrganizationInviteService;
+use crate::modules::onboarding::infrastructure::keycloak_admin_client::KeycloakAdminClient;
+use crate::modules::onboarding::infrastructure::onboarding_repository::OnboardingRepository;
 use crate::AppState;
 
 /// Create the IAM API router
@@ -66,6 +69,18 @@ pub struct InviteUserRequest {
     pub email: String,
     pub name: Option<String>,
     pub role: String,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "generated.ts")]
+pub struct InviteUserResponse {
+    pub id: String,
+    pub email: String,
+    pub role: String,
+    pub status: String,
+    pub invite_url: String,
+    pub organization_alias: String,
+    pub expires_at: String,
 }
 
 /// Request DTO for updating role
@@ -157,24 +172,35 @@ pub async fn invite_user(
     ctx: TenantContext,
     Json(request): Json<InviteUserRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    let service = UserService::new(
-        crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
+    if !ctx.is_admin() {
+        return Err(AppError::Forbidden("Admin access required".to_string()));
+    }
+
+    let role: Role = request.role.parse().map_err(AppError::Validation)?;
+    let keycloak = KeycloakAdminClient::from_config(&state.config)?;
+    let service = OrganizationInviteService::new(
+        OnboardingRepository::new(state.pool),
+        keycloak,
+        state.config.frontend_public_url,
+        state.config.keycloak_organization_invite_ttl_seconds,
     );
 
-    let role = request
-        .role
-        .parse()
-        .map_err(|e: String| AppError::Validation(e))?;
+    let invite = service
+        .generate_invite(ctx.tenant_id, request.email, request.name, role)
+        .await?;
 
-    let invite = InviteUser {
-        email: request.email,
-        name: request.name,
-        role,
-    };
-
-    let user = service.invite_user(invite, &ctx).await?;
-
-    Ok((StatusCode::CREATED, Json(UserResponse::from(user))))
+    Ok((
+        StatusCode::CREATED,
+        Json(InviteUserResponse {
+            id: invite.id.to_string(),
+            email: invite.email,
+            role: invite.role,
+            status: invite.status.to_string(),
+            invite_url: invite.invite_url,
+            organization_alias: invite.organization_alias,
+            expires_at: invite.expires_at.to_rfc3339(),
+        }),
+    ))
 }
 
 /// PATCH /api/v1/users/{id}/role - Update user role (admin only)

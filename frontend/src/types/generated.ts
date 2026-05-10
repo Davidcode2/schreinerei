@@ -38,6 +38,8 @@ export type CreateMaintenanceScheduleResponse = { schedule: MaintenanceScheduleR
 
 export type CreateMaterialRequest = { category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, location: string | null, expires_on: string | null, batch_code: string | null, };
 
+export type CreateOnboardingSessionRequest = { organization_name: string, admin_email: string, admin_name: string | null, selected_plan: string, };
+
 export type CreateOrderRequestDto = { material_id: string, quantity: number, reason: string | null, };
 
 export type CreateReservationRequest = { resource_type: string, resource_id: string, site_id: string | null, project_id: string | null, start_time: string, end_time: string, purpose: string | null, notes: string | null, };
@@ -70,6 +72,8 @@ export type FulfillOrderRequestDto = { actual_quantity: number, notes: string | 
  */
 export type InviteUserRequest = { email: string, name: string | null, role: string, };
 
+export type InviteUserResponse = { id: string, email: string, role: string, status: string, invite_url: string, organization_alias: string, expires_at: string, };
+
 export type ListMachinesQuery = { status: string | null, };
 
 export type ListMaintenanceDueQuery = { asset_id: string | null, status: string | null, };
@@ -96,6 +100,12 @@ export type MarkOrderedRequestDto = { notes: string | null, };
 
 export type MaterialResponse = { id: string, category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, can_expire: boolean, legacy_quantity: number, expired_quantity: number, expiring_soon_quantity: number, next_expiry_on: string | null, expiry_batches: Array<ExpiryBatchResponse>, location: string | null, qr_code: string | null, is_low_stock: boolean, created_at: string, };
 
+export type MollieWebhookRequest = { id: string, };
+
+export type MollieWebhookResponse = { status: string, payment_id: string, event_inserted: boolean, provider_status: string, session_status: string | null, };
+
+export type OnboardingSessionResponse = { session_id: string, organization_slug: string, status: string, payment_provider: string | null, payment_id: string | null, checkout_url: string, };
+
 export type OrderRequestResponse = { id: string, material_id: string, material_name: string, quantity: number, requested_by: string, status: string, request_kind: string, reason: string | null, approved_by: string | null, approved_at: string | null, fulfilled_at: string | null, notes: string | null, created_at: string, };
 
 export type OrderStatusQuery = { status: string | null, };
@@ -110,6 +120,8 @@ export type ProjectLaborSummaryResponse = { total_hours: number, entry_count: bi
 export type ProjectMaterialSummaryResponse = { distinct_material_count: bigint, withdrawal_count: bigint, lines: Array<ProjectMaterialUsageLineResponse>, };
 
 export type ProjectMaterialUsageLineResponse = { material_id: string, material_name: string, category_name: string, unit: string, total_withdrawn: number, withdrawal_count: bigint, last_withdrawn_at: string, };
+
+export type PublicInviteResponse = { email: string, role: string, status: string, expires_at: string, };
 
 export type QrCodeResponse = { qr_code: string, material_id: string, material_name: string, };
 

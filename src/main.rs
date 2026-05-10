@@ -11,6 +11,7 @@ use schreinerei::{
     modules::fleet::api::routes::create_router as fleet_router,
     modules::iam::api::routes::create_router as iam_router,
     modules::inventory::api::routes::create_router as inventory_router,
+    modules::onboarding::api::routes::create_router as onboarding_router,
     modules::projects::api::routes::create_router as projects_router,
     AppState,
 };
@@ -87,6 +88,7 @@ async fn main() {
         .route("/health", get(health_handler))
         .merge(iam_router())
         .merge(inventory_router())
+        .merge(onboarding_router())
         .merge(projects_router())
         .merge(fleet_router())
         .layer(middleware::from_fn_with_state(auth_state, auth_middleware))

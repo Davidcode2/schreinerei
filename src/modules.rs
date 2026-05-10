@@ -1,6 +1,7 @@
 pub mod fleet;
 pub mod iam;
 pub mod inventory;
+pub mod onboarding;
 pub mod sites;
 
 /// Transitional alias while `sites` evolves into the broader project context.

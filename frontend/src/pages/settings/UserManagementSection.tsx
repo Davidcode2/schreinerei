@@ -4,19 +4,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { Input } from "@/components/ui/input"
-import { Users, UserPlus, Shield, Copy, Link2, Loader2 } from "lucide-react"
+import { Users, UserPlus, Shield, Loader2 } from "lucide-react"
 import { useUsers } from "@/lib/api/hooks"
 import { useAuthStore } from "@/lib/auth/authStore"
-import { toast } from "sonner"
 import { InviteUserDialog } from "@/components/settings/InviteUserDialog"
 
 interface UserManagementSectionProps {
   isAdmin: boolean
 }
-
-const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL || 'https://auth.jakob-lingel.dev'
-const REALM = import.meta.env.VITE_KEYCLOAK_REALM || 'schreinerei'
 
 function getInitials(name: string | null): string {
   if (!name) return "??"
@@ -45,23 +40,11 @@ function getDisplayName(user: { name: string | null; email: string }): string {
 
 export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
   const { data: users, isLoading, error } = useUsers()
-  const { user, isAuthenticated } = useAuthStore((state) => state)
+  const { isAuthenticated } = useAuthStore((state) => state)
   const [showInviteDialog, setShowInviteDialog] = useState(false)
 
   if (!isAdmin) {
     return null
-  }
-
-  const orgId = user?.tenant_id || ""
-  const inviteUrl = `${KEYCLOAK_URL}/realms/${REALM}/org/${orgId}/inviting`
-
-  const copyInviteUrl = async () => {
-    try {
-      await navigator.clipboard.writeText(inviteUrl)
-      toast.success("Einladungslink kopiert")
-    } catch {
-      toast.error("Link konnte nicht kopiert werden")
-    }
   }
 
   return (
@@ -88,33 +71,6 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="rounded-xl bg-accent/50 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Link2 className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Organisation beitreten</span>
-          </div>
-          <p className="text-sm text-muted-foreground mb-3">
-            Teilen Sie diesen Link, um neue Mitarbeiter einzuladen
-          </p>
-          <div className="flex gap-2">
-            <Input
-              value={inviteUrl}
-              readOnly
-              className="text-sm bg-background"
-            />
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={copyInviteUrl}
-              className="shadow-sm active:scale-[0.97] transition-transform"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        <Separator />
-
         {isLoading && isAuthenticated && (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -166,7 +122,6 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
         <InviteUserDialog
           open={showInviteDialog}
           onOpenChange={setShowInviteDialog}
-          inviteUrl={inviteUrl}
         />
       </CardContent>
     </Card>

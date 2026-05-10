@@ -45,8 +45,8 @@ pub async fn auth_middleware(
     mut request: Request<Body>,
     next: Next,
 ) -> Result<Response, AppError> {
-    // Skip auth for health endpoint
-    if request.uri().path() == "/health" {
+    // Skip auth for public endpoints
+    if is_public_endpoint(request.uri().path()) {
         return Ok(next.run(request).await);
     }
 
@@ -100,6 +100,13 @@ pub async fn auth_middleware(
     request.extensions_mut().insert(auth_user);
 
     Ok(next.run(request).await)
+}
+
+fn is_public_endpoint(path: &str) -> bool {
+    path == "/health"
+        || path == "/api/v1/onboarding/sessions"
+        || path == "/api/v1/onboarding/webhooks/mollie"
+        || path.starts_with("/api/v1/onboarding/invites/")
 }
 
 /// Optional authentication - doesn't fail if no token present

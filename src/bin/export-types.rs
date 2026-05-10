@@ -8,6 +8,7 @@ use schreinerei::modules::iam::api::routes as iam_api;
 use schreinerei::modules::iam::domain::user_preferences as iam_preferences;
 use schreinerei::modules::inventory::api::routes as inventory;
 use schreinerei::modules::inventory::domain::stock_entry;
+use schreinerei::modules::onboarding::api::routes as onboarding;
 use schreinerei::modules::sites::api::routes as sites;
 use ts_rs::{Config, TS};
 
@@ -94,6 +95,7 @@ fn collect_bindings(cfg: &Config, bindings: &mut Vec<Binding>) -> Result<()> {
 
     add_binding::<iam_api::UserResponse>(cfg, bindings)?;
     add_binding::<iam_api::InviteUserRequest>(cfg, bindings)?;
+    add_binding::<iam_api::InviteUserResponse>(cfg, bindings)?;
     add_binding::<iam_api::UpdateRoleRequest>(cfg, bindings)?;
     add_binding::<iam_api::UpdateProfileRequest>(cfg, bindings)?;
     add_binding::<iam_api::PreferencesResponse>(cfg, bindings)?;
@@ -124,6 +126,12 @@ fn collect_bindings(cfg: &Config, bindings: &mut Vec<Binding>) -> Result<()> {
     add_binding::<inventory::EnrichedStockHistoryResponse>(cfg, bindings)?;
     add_binding::<inventory::OrderStatusQuery>(cfg, bindings)?;
     add_binding::<stock_entry::EntryType>(cfg, bindings)?;
+
+    add_binding::<onboarding::MollieWebhookRequest>(cfg, bindings)?;
+    add_binding::<onboarding::MollieWebhookResponse>(cfg, bindings)?;
+    add_binding::<onboarding::CreateOnboardingSessionRequest>(cfg, bindings)?;
+    add_binding::<onboarding::OnboardingSessionResponse>(cfg, bindings)?;
+    add_binding::<onboarding::PublicInviteResponse>(cfg, bindings)?;
 
     add_binding::<sites::SiteResponse>(cfg, bindings)?;
     add_binding::<sites::ProjectMaterialUsageLineResponse>(cfg, bindings)?;
