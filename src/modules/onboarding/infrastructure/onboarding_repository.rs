@@ -197,13 +197,193 @@ impl OnboardingRepository {
         .map_err(database_error)
     }
 
+    pub async fn claim_session_for_provisioning(
+        &self,
+        provider: &str,
+        payment_id: &str,
+    ) -> Result<Option<ProvisioningSession>, AppError> {
+        let row = sqlx::query(
+            r#"
+            UPDATE onboarding_sessions
+            SET status = 'provisioning',
+                error_code = NULL,
+                error_message = NULL
+            WHERE payment_provider = $1
+              AND payment_id = $2
+              AND status IN ('payment_confirmed', 'keycloak_failed')
+            RETURNING id, organization_name, organization_slug, admin_email, admin_name,
+                      tenant_id, keycloak_organization_id, keycloak_organization_alias
+            "#,
+        )
+        .bind(provider)
+        .bind(payment_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(database_error)?;
+
+        row.map(provisioning_session_from_row).transpose()
+    }
+
+    pub async fn ensure_tenant_for_session(
+        &self,
+        session_id: Uuid,
+        keycloak_realm: &str,
+        organization_name: &str,
+        organization_slug: &str,
+    ) -> Result<TenantId, AppError> {
+        let mut transaction = self.pool.begin().await.map_err(database_error)?;
+
+        let row = sqlx::query(
+            r#"
+            SELECT tenant_id
+            FROM onboarding_sessions
+            WHERE id = $1
+            FOR UPDATE
+            "#,
+        )
+        .bind(session_id)
+        .fetch_optional(&mut *transaction)
+        .await
+        .map_err(database_error)?
+        .ok_or_else(|| AppError::NotFound("Onboarding session not found".to_string()))?;
+
+        let tenant_id: Option<Uuid> = row.try_get("tenant_id").map_err(database_error)?;
+        if let Some(tenant_id) = tenant_id {
+            transaction.commit().await.map_err(database_error)?;
+            return Ok(TenantId(tenant_id));
+        }
+
+        let tenant_id: Uuid = sqlx::query_scalar(
+            r#"
+            INSERT INTO tenants (keycloak_realm, name, slug)
+            VALUES ($1, $2, $3)
+            RETURNING id
+            "#,
+        )
+        .bind(keycloak_realm)
+        .bind(organization_name)
+        .bind(organization_slug)
+        .fetch_one(&mut *transaction)
+        .await
+        .map_err(database_error)?;
+
+        sqlx::query(
+            r#"
+            UPDATE onboarding_sessions
+            SET tenant_id = $2
+            WHERE id = $1
+            "#,
+        )
+        .bind(session_id)
+        .bind(tenant_id)
+        .execute(&mut *transaction)
+        .await
+        .map_err(database_error)?;
+
+        transaction.commit().await.map_err(database_error)?;
+        Ok(TenantId(tenant_id))
+    }
+
+    pub async fn save_keycloak_organization(
+        &self,
+        session_id: Uuid,
+        tenant_id: TenantId,
+        organization_id: &str,
+        organization_alias: &str,
+    ) -> Result<(), AppError> {
+        let organization_uuid = Uuid::parse_str(organization_id).map_err(|_| {
+            AppError::Validation("Keycloak organization ID must be a UUID".to_string())
+        })?;
+        let mut transaction = self.pool.begin().await.map_err(database_error)?;
+
+        sqlx::query(
+            r#"
+            UPDATE tenants
+            SET keycloak_organization_id = $2,
+                keycloak_organization_alias = $3
+            WHERE id = $1
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(organization_uuid)
+        .bind(organization_alias)
+        .execute(&mut *transaction)
+        .await
+        .map_err(database_error)?;
+
+        sqlx::query(
+            r#"
+            UPDATE onboarding_sessions
+            SET keycloak_organization_id = $2,
+                keycloak_organization_alias = $3
+            WHERE id = $1
+            "#,
+        )
+        .bind(session_id)
+        .bind(organization_id)
+        .bind(organization_alias)
+        .execute(&mut *transaction)
+        .await
+        .map_err(database_error)?;
+
+        transaction.commit().await.map_err(database_error)?;
+        Ok(())
+    }
+
+    pub async fn complete_provisioning(&self, session_id: Uuid) -> Result<String, AppError> {
+        sqlx::query_scalar(
+            r#"
+            UPDATE onboarding_sessions
+            SET status = 'completed',
+                error_code = NULL,
+                error_message = NULL,
+                completed_at = COALESCE(completed_at, NOW())
+            WHERE id = $1
+              AND tenant_id IS NOT NULL
+              AND keycloak_organization_id IS NOT NULL
+              AND keycloak_organization_alias IS NOT NULL
+            RETURNING status
+            "#,
+        )
+        .bind(session_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(database_error)?
+        .ok_or_else(|| AppError::Conflict("Onboarding session cannot be completed".to_string()))
+    }
+
+    pub async fn mark_keycloak_failed(
+        &self,
+        session_id: Uuid,
+        error_code: &str,
+        error_message: &str,
+    ) -> Result<String, AppError> {
+        sqlx::query_scalar(
+            r#"
+            UPDATE onboarding_sessions
+            SET status = 'keycloak_failed',
+                error_code = $2,
+                error_message = $3
+            WHERE id = $1
+            RETURNING status
+            "#,
+        )
+        .bind(session_id)
+        .bind(error_code)
+        .bind(error_message)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(database_error)
+    }
+
     pub async fn find_tenant_invite_context(
         &self,
         tenant_id: TenantId,
     ) -> Result<TenantInviteContext, AppError> {
         let row = sqlx::query(
             r#"
-            SELECT keycloak_organization_id, keycloak_organization_alias
+            SELECT keycloak_organization_id::text AS keycloak_organization_id,
+                   keycloak_organization_alias
             FROM tenants
             WHERE id = $1
             "#,
@@ -354,6 +534,18 @@ pub struct TenantInviteContext {
     pub keycloak_organization_alias: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct ProvisioningSession {
+    pub id: Uuid,
+    pub organization_name: String,
+    pub organization_slug: String,
+    pub admin_email: String,
+    pub admin_name: Option<String>,
+    pub tenant_id: Option<TenantId>,
+    pub keycloak_organization_id: Option<String>,
+    pub keycloak_organization_alias: Option<String>,
+}
+
 fn session_from_row(row: sqlx::postgres::PgRow) -> Result<OnboardingSession, AppError> {
     let status: String = row.try_get("status").map_err(database_error)?;
     let status = OnboardingStatus::from_str(&status).map_err(AppError::Database)?;
@@ -412,5 +604,26 @@ fn organization_invite_from_row(
         status: InviteStatus::from_str(&status).map_err(AppError::Database)?,
         expires_at: row.try_get("expires_at").map_err(database_error)?,
         created_at: row.try_get("created_at").map_err(database_error)?,
+    })
+}
+
+fn provisioning_session_from_row(
+    row: sqlx::postgres::PgRow,
+) -> Result<ProvisioningSession, AppError> {
+    let tenant_id: Option<Uuid> = row.try_get("tenant_id").map_err(database_error)?;
+
+    Ok(ProvisioningSession {
+        id: row.try_get("id").map_err(database_error)?,
+        organization_name: row.try_get("organization_name").map_err(database_error)?,
+        organization_slug: row.try_get("organization_slug").map_err(database_error)?,
+        admin_email: row.try_get("admin_email").map_err(database_error)?,
+        admin_name: row.try_get("admin_name").map_err(database_error)?,
+        tenant_id: tenant_id.map(TenantId),
+        keycloak_organization_id: row
+            .try_get("keycloak_organization_id")
+            .map_err(database_error)?,
+        keycloak_organization_alias: row
+            .try_get("keycloak_organization_alias")
+            .map_err(database_error)?,
     })
 }

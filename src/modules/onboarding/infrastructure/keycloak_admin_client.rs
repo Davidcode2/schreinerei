@@ -1,5 +1,5 @@
-use reqwest::Client;
-use serde::Deserialize;
+use reqwest::{header, Client, StatusCode};
+use serde::{Deserialize, Serialize};
 
 use crate::common::error::AppError;
 use crate::config::AppConfig;
@@ -79,6 +79,106 @@ impl KeycloakAdminClient {
         )))
     }
 
+    pub async fn create_organization(
+        &self,
+        name: &str,
+        alias: &str,
+    ) -> Result<KeycloakOrganization, AppError> {
+        let token = self.admin_access_token().await?;
+        let url = format!(
+            "{}/admin/realms/{}/organizations",
+            self.base_url, self.realm
+        );
+        let request = KeycloakOrganizationRequest {
+            name,
+            alias,
+            enabled: true,
+        };
+
+        let response = self
+            .client
+            .post(url)
+            .bearer_auth(token.as_str())
+            .json(&request)
+            .send()
+            .await
+            .map_err(|error| {
+                AppError::Internal(format!("Keycloak organization creation failed: {error}"))
+            })?;
+
+        if response.status() == StatusCode::CONFLICT {
+            return self.find_organization_by_alias(alias, token.as_str()).await;
+        }
+
+        if !response.status().is_success() {
+            return Err(AppError::Validation(format!(
+                "Keycloak organization creation failed with status {}",
+                response.status()
+            )));
+        }
+
+        let created_id = response
+            .headers()
+            .get(header::LOCATION)
+            .and_then(|value| value.to_str().ok())
+            .and_then(location_id);
+
+        if let Some(id) = created_id {
+            return Ok(KeycloakOrganization {
+                id,
+                alias: alias.to_string(),
+            });
+        }
+
+        self.find_organization_by_alias(alias, token.as_str()).await
+    }
+
+    async fn find_organization_by_alias(
+        &self,
+        alias: &str,
+        token: &str,
+    ) -> Result<KeycloakOrganization, AppError> {
+        let url = format!(
+            "{}/admin/realms/{}/organizations",
+            self.base_url, self.realm
+        );
+        let organizations = self
+            .client
+            .get(url)
+            .bearer_auth(token)
+            .query(&[
+                ("search", alias),
+                ("exact", "true"),
+                ("briefRepresentation", "true"),
+                ("max", "20"),
+            ])
+            .send()
+            .await
+            .map_err(|error| {
+                AppError::Internal(format!("Keycloak organization lookup failed: {error}"))
+            })?;
+
+        if !organizations.status().is_success() {
+            return Err(AppError::Validation(format!(
+                "Keycloak organization lookup failed with status {}",
+                organizations.status()
+            )));
+        }
+
+        organizations
+            .json::<Vec<KeycloakOrganizationResponse>>()
+            .await
+            .map_err(|error| {
+                AppError::Internal(format!("Failed to parse Keycloak organizations: {error}"))
+            })?
+            .into_iter()
+            .find(|organization| organization.alias.as_deref() == Some(alias))
+            .and_then(|organization| organization.into_domain())
+            .ok_or_else(|| {
+                AppError::NotFound(format!("Keycloak organization alias not found: {alias}"))
+            })
+    }
+
     async fn admin_access_token(&self) -> Result<String, AppError> {
         let url = format!(
             "{}/realms/{}/protocol/openid-connect/token",
@@ -120,6 +220,35 @@ pub struct KeycloakOrganizationInvite {
     pub email: String,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KeycloakOrganization {
+    pub id: String,
+    pub alias: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct KeycloakOrganizationRequest<'a> {
+    name: &'a str,
+    alias: &'a str,
+    enabled: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct KeycloakOrganizationResponse {
+    id: Option<String>,
+    alias: Option<String>,
+}
+
+impl KeycloakOrganizationResponse {
+    fn into_domain(self) -> Option<KeycloakOrganization> {
+        Some(KeycloakOrganization {
+            id: self.id?,
+            alias: self.alias?,
+        })
+    }
 }
 
 impl KeycloakOrganizationInvite {
@@ -164,9 +293,18 @@ fn split_name(name: Option<String>) -> (Option<String>, Option<String>) {
     (first_name, last_name)
 }
 
+fn location_id(location: &str) -> Option<String> {
+    location
+        .trim_end_matches('/')
+        .rsplit('/')
+        .next()
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{split_name, KeycloakOrganizationInvite};
+    use super::{location_id, split_name, KeycloakOrganizationInvite};
 
     #[test]
     fn keycloak_invite_splits_optional_display_name() {
@@ -182,5 +320,13 @@ mod tests {
     #[test]
     fn split_name_ignores_blank_values() {
         assert_eq!(split_name(Some("   ".to_string())), (None, None));
+    }
+
+    #[test]
+    fn location_id_uses_last_path_segment() {
+        assert_eq!(
+            location_id("https://auth.example/admin/realms/demo/organizations/org-123").as_deref(),
+            Some("org-123")
+        );
     }
 }

@@ -12,9 +12,10 @@ use uuid::Uuid;
 
 use crate::common::error::AppError;
 use crate::modules::onboarding::application::{
-    CreateSessionOptions, OnboardingService, PublicInviteService,
+    CreateSessionOptions, OnboardingService, PublicInviteService, TenantProvisioningService,
 };
 use crate::modules::onboarding::domain::CreateOnboardingSession;
+use crate::modules::onboarding::infrastructure::keycloak_admin_client::KeycloakAdminClient;
 use crate::modules::onboarding::infrastructure::onboarding_repository::OnboardingRepository;
 use crate::modules::onboarding::infrastructure::payment_provider::MolliePaymentProvider;
 use crate::AppState;
@@ -138,6 +139,20 @@ async fn mollie_webhook(
     let result = service
         .process_mollie_webhook(payload.id, raw_payload)
         .await?;
+    let session_status = if result.session_status.as_deref() == Some("payment_confirmed") {
+        let keycloak = KeycloakAdminClient::from_config(&state.config)?;
+        let provisioning = TenantProvisioningService::new(
+            OnboardingRepository::new(state.pool.clone()),
+            keycloak,
+            state.config.keycloak_realm.clone(),
+        );
+
+        provisioning
+            .provision_for_payment("mollie", &result.payment_id)
+            .await?
+    } else {
+        result.session_status.clone()
+    };
 
     Ok((
         StatusCode::OK,
@@ -146,7 +161,7 @@ async fn mollie_webhook(
             payment_id: result.payment_id,
             event_inserted: result.event_inserted,
             provider_status: result.provider_status,
-            session_status: result.session_status,
+            session_status,
         }),
     ))
 }
