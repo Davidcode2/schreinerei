@@ -110,6 +110,8 @@ export type MollieWebhookResponse = { status: string, payment_id: string, event_
 
 export type OnboardingSessionResponse = { session_id: string, organization_slug: string, status: string, payment_provider: string | null, payment_id: string | null, checkout_url: string, };
 
+export type OnboardingSessionStatusResponse = { session_id: string, organization_slug: string, status: string, error_message: string | null, };
+
 export type OrderRequestResponse = { id: string, material_id: string, material_name: string, quantity: number, requested_by: string, status: string, request_kind: string, reason: string | null, approved_by: string | null, approved_at: string | null, fulfilled_at: string | null, notes: string | null, created_at: string, };
 
 export type OrderStatusQuery = { status: string | null, };

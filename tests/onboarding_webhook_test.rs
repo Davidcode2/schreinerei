@@ -87,6 +87,44 @@ async fn paid_webhook_replay_does_not_reopen_completed_tenant_session(pool: PgPo
     assert_eq!(session_tenant_id(&pool, payment_id).await, Some(tenant_id));
 }
 
+#[sqlx::test]
+async fn public_session_lookup_returns_status_and_error_message(pool: PgPool) {
+    let payment_id = "tr_lookup_state";
+    insert_onboarding_session(&pool, payment_id, "keycloak_failed", None).await;
+    sqlx::query(
+        r#"
+        UPDATE onboarding_sessions
+        SET error_message = 'Provisioning failed in Keycloak'
+        WHERE payment_provider = 'mollie' AND payment_id = $1
+        "#,
+    )
+    .bind(payment_id)
+    .execute(&pool)
+    .await
+    .expect("session error message should be updated");
+
+    let session_id: Uuid = sqlx::query_scalar(
+        "SELECT id FROM onboarding_sessions WHERE payment_provider = 'mollie' AND payment_id = $1",
+    )
+    .bind(payment_id)
+    .fetch_one(&pool)
+    .await
+    .expect("session id should be fetched");
+
+    let session = OnboardingRepository::new(pool)
+        .find_public_session(session_id)
+        .await
+        .expect("public session lookup should succeed")
+        .expect("session should exist");
+
+    assert_eq!(session.id, session_id);
+    assert_eq!(session.status.as_str(), "keycloak_failed");
+    assert_eq!(
+        session.error_message.as_deref(),
+        Some("Provisioning failed in Keycloak")
+    );
+}
+
 fn webhook_service(
     pool: PgPool,
     expected_payment_id: &str,

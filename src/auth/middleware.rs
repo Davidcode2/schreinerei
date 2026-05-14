@@ -105,6 +105,7 @@ pub async fn auth_middleware(
 fn is_public_endpoint(path: &str) -> bool {
     path == "/health"
         || path == "/api/v1/onboarding/sessions"
+        || path.starts_with("/api/v1/onboarding/sessions/")
         || path == "/api/v1/onboarding/webhooks/mollie"
         || path.starts_with("/api/v1/onboarding/invites/")
 }

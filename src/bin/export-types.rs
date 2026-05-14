@@ -138,6 +138,7 @@ fn collect_bindings(cfg: &Config, bindings: &mut Vec<Binding>) -> Result<()> {
     add_binding::<onboarding::MollieWebhookResponse>(cfg, bindings)?;
     add_binding::<onboarding::CreateOnboardingSessionRequest>(cfg, bindings)?;
     add_binding::<onboarding::OnboardingSessionResponse>(cfg, bindings)?;
+    add_binding::<onboarding::OnboardingSessionStatusResponse>(cfg, bindings)?;
     add_binding::<onboarding::PublicInviteResponse>(cfg, bindings)?;
 
     add_binding::<sites::SiteResponse>(cfg, bindings)?;

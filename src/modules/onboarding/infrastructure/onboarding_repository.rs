@@ -15,6 +15,14 @@ pub struct OnboardingRepository {
     pool: PgPool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PublicOnboardingSession {
+    pub id: Uuid,
+    pub organization_slug: String,
+    pub status: OnboardingStatus,
+    pub error_message: Option<String>,
+}
+
 impl OnboardingRepository {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
@@ -32,6 +40,25 @@ impl OnboardingRepository {
             "#,
         )
         .bind(organization_slug)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(database_error)?;
+
+        row.map(session_from_row).transpose()
+    }
+
+    pub async fn find_session(
+        &self,
+        session_id: Uuid,
+    ) -> Result<Option<OnboardingSession>, AppError> {
+        let row = sqlx::query(
+            r#"
+            SELECT id, organization_slug, admin_email, selected_plan, status, payment_provider, payment_id, checkout_url
+            FROM onboarding_sessions
+            WHERE id = $1
+            "#,
+        )
+        .bind(session_id)
         .fetch_optional(&self.pool)
         .await
         .map_err(database_error)?;
@@ -68,6 +95,25 @@ impl OnboardingRepository {
         .map_err(database_error)?;
 
         session_from_row(row)
+    }
+
+    pub async fn find_public_session(
+        &self,
+        session_id: Uuid,
+    ) -> Result<Option<PublicOnboardingSession>, AppError> {
+        let row = sqlx::query(
+            r#"
+            SELECT id, organization_slug, status, error_message
+            FROM onboarding_sessions
+            WHERE id = $1
+            "#,
+        )
+        .bind(session_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(database_error)?;
+
+        row.map(public_session_from_row).transpose()
     }
 
     pub async fn update_session_checkout(
@@ -578,6 +624,20 @@ fn session_from_row(row: sqlx::postgres::PgRow) -> Result<OnboardingSession, App
         payment_provider: row.try_get("payment_provider").map_err(database_error)?,
         payment_id: row.try_get("payment_id").map_err(database_error)?,
         checkout_url: row.try_get("checkout_url").map_err(database_error)?,
+    })
+}
+
+fn public_session_from_row(
+    row: sqlx::postgres::PgRow,
+) -> Result<PublicOnboardingSession, AppError> {
+    let status: String = row.try_get("status").map_err(database_error)?;
+    let status = OnboardingStatus::from_str(&status).map_err(AppError::Database)?;
+
+    Ok(PublicOnboardingSession {
+        id: row.try_get("id").map_err(database_error)?,
+        organization_slug: row.try_get("organization_slug").map_err(database_error)?,
+        status,
+        error_message: row.try_get("error_message").map_err(database_error)?,
     })
 }
 
