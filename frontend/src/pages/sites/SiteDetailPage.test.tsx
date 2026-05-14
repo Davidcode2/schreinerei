@@ -253,7 +253,7 @@ describe('SiteDetailPage', () => {
       ])),
       http.get('*/api/v1/billing/invoices/inv-1/pdf', () => {
         pdfRequested = true
-        return new HttpResponse(new Blob(['pdf'], { type: 'application/pdf' }), {
+        return new HttpResponse('pdf', {
           headers: { 'Content-Type': 'application/pdf' },
         })
       }),
