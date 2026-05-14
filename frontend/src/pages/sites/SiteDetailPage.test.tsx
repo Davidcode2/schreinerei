@@ -439,6 +439,10 @@ describe('SiteDetailPage', () => {
 
   it('shows the dedicated appointment planner instead of the fleet reservation calendar', async () => {
     window.history.pushState({}, '', '/sites/site-1')
+    const appointmentStart = new Date()
+    appointmentStart.setHours(8, 30, 0, 0)
+    const appointmentEnd = new Date(appointmentStart)
+    appointmentEnd.setHours(10, 0, 0, 0)
 
     server.use(
       http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
@@ -474,8 +478,8 @@ describe('SiteDetailPage', () => {
             site_id: 'site-1',
             title: 'Abnahme vor Ort',
             appointment_kind: 'customer_appointment',
-            starts_at: '2026-05-06T08:30:00.000Z',
-            ends_at: '2026-05-06T10:00:00.000Z',
+            starts_at: appointmentStart.toISOString(),
+            ends_at: appointmentEnd.toISOString(),
             notes: 'Mit Bauherr',
             assigned_user_ids: ['user-1'],
             created_at: new Date().toISOString(),
