@@ -46,6 +46,8 @@ const startHour = 6
 const endHour = 20
 const hourSlotHeight = 56
 const totalVisibleHours = endHour - startHour
+const mobilePlannerGridColumns = "grid-cols-[44px_repeat(7,minmax(0,1fr))]"
+const desktopPlannerGridColumns = "sm:grid-cols-[72px_repeat(7,minmax(112px,1fr))]"
 
 const appointmentKindMeta: Record<
   SiteAppointmentKind,
@@ -379,10 +381,13 @@ export function SitePlanningCalendar({
           Projektplanung konnte nicht geladen werden.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border bg-card/70 shadow-sm">
-          <div className="min-w-[880px]">
-            <div className="grid grid-cols-[72px_repeat(7,minmax(112px,1fr))] border-b bg-muted/30">
-              <div className="px-3 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <div
+          data-testid="site-planning-calendar"
+          className="-mx-6 overflow-hidden border-y bg-card/70 shadow-sm sm:mx-0 sm:rounded-2xl sm:border"
+        >
+          <div className="sm:min-w-[880px]">
+            <div className={cn("grid border-b bg-muted/30", mobilePlannerGridColumns, desktopPlannerGridColumns)}>
+              <div className="px-1 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground sm:px-3 sm:py-3 sm:text-xs">
                 Zeit
               </div>
               {days.map((day, index) => {
@@ -392,14 +397,14 @@ export function SitePlanningCalendar({
                     key={day.toISOString()}
                     type="button"
                     className={cn(
-                      "border-l px-3 py-3 text-left transition-colors",
+                      "border-l px-1 py-2 text-center transition-colors sm:px-3 sm:py-3 sm:text-left",
                       canEdit && "hover:bg-accent/40",
                       isToday && "bg-primary/10"
                     )}
                     onClick={() => canEdit && openCreateDialog(day)}
                   >
-                    <div className="text-xs text-muted-foreground">{dayNames[index]}</div>
-                    <div className="text-sm font-semibold">
+                    <div className="text-[10px] text-muted-foreground sm:text-xs">{dayNames[index]}</div>
+                    <div className="text-xs font-semibold sm:text-sm">
                       {day.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
                     </div>
                   </button>
@@ -407,12 +412,12 @@ export function SitePlanningCalendar({
               })}
             </div>
 
-            <div className="grid grid-cols-[72px_repeat(7,minmax(112px,1fr))]">
+            <div className={cn("grid", mobilePlannerGridColumns, desktopPlannerGridColumns)}>
               <div className="border-r">
                 {Array.from({ length: totalVisibleHours }).map((_, index) => (
                   <div
                     key={index}
-                    className="relative border-b px-3 text-xs text-muted-foreground"
+                    className="relative border-b px-1 text-[10px] text-muted-foreground sm:px-3 sm:text-xs"
                     style={{ height: hourSlotHeight }}
                   >
                     <span className="-translate-y-2 inline-block bg-background pr-1">
@@ -469,7 +474,7 @@ export function SitePlanningCalendar({
                           key={`${appointment.id}-${dateKey}`}
                           type="button"
                           className={cn(
-                            "absolute left-2 right-2 rounded-xl border px-3 py-2 text-left shadow-sm",
+                            "absolute left-0.5 right-0.5 rounded-lg border px-1 py-1 text-left shadow-sm sm:left-2 sm:right-2 sm:rounded-xl sm:px-3 sm:py-2",
                             meta.cardClassName
                           )}
                           style={{
@@ -478,17 +483,17 @@ export function SitePlanningCalendar({
                           }}
                           onClick={() => canEdit && openEditDialog(appointment)}
                         >
-                          <div className="line-clamp-1 text-xs font-semibold uppercase tracking-wide opacity-80">
+                          <div className="line-clamp-1 text-[10px] font-semibold uppercase tracking-wide opacity-80 sm:text-xs">
                             {meta.label}
                           </div>
-                          <div className="line-clamp-2 text-sm font-semibold">
+                          <div className="line-clamp-2 text-[11px] font-semibold leading-tight sm:text-sm">
                             {appointment.title}
                           </div>
-                          <div className="mt-1 text-xs opacity-80">
+                          <div className="mt-1 text-[10px] opacity-80 sm:text-xs">
                             {formatTimeRange(appointment.starts_at, appointment.ends_at)}
                           </div>
                           {assignedLabels.length > 0 && (
-                            <div className="mt-2 line-clamp-2 text-xs opacity-80">
+                            <div className="mt-2 hidden line-clamp-2 text-xs opacity-80 sm:block">
                               {assignedLabels.join(", ")}
                             </div>
                           )}

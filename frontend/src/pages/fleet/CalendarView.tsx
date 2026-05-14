@@ -49,7 +49,8 @@ function formatWeekHeader(startDate: Date): string {
 }
 
 const dayNames = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
-const calendarGridColumns = "minmax(220px, 1.25fr) repeat(7, minmax(96px, 1fr))"
+const mobileCalendarGridColumns = "grid-cols-[88px_repeat(7,minmax(0,1fr))]"
+const desktopCalendarGridColumns = "sm:grid-cols-[minmax(220px,1.25fr)_repeat(7,minmax(96px,1fr))]"
 
 const reservationStatusStyles = {
   confirmed: {
@@ -201,13 +202,24 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
           description="Es sind keine Ressourcen für die Kalenderansicht verfügbar."
         />
       ) : (
-        <div className="overflow-x-auto rounded-2xl border bg-card/70 shadow-sm">
-          <div className="min-w-[980px]">
+        <div
+          data-testid="calendar"
+          className={cn(
+            "overflow-hidden bg-card/70 shadow-sm",
+            embedded
+              ? "-mx-4 border-y sm:mx-0 sm:rounded-2xl sm:border"
+              : "rounded-2xl border"
+          )}
+        >
+          <div className="sm:min-w-[980px]">
             <div
-              className="grid gap-px border-b bg-border/60"
-              style={{ gridTemplateColumns: calendarGridColumns }}
+              className={cn(
+                "grid gap-px border-b bg-border/60",
+                mobileCalendarGridColumns,
+                desktopCalendarGridColumns
+              )}
             >
-              <div className="bg-muted/40 px-4 py-3 text-sm font-semibold text-muted-foreground">
+              <div className="bg-muted/40 px-2 py-2 text-[11px] font-semibold text-muted-foreground sm:px-4 sm:py-3 sm:text-sm">
                 Ressource
               </div>
               {Array.from({ length: 7 }).map((_, i) => {
@@ -219,14 +231,14 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
                   <div
                     key={i}
                     className={cn(
-                      "px-3 py-3 text-center text-sm",
+                      "px-1 py-2 text-center text-[11px] sm:px-3 sm:py-3 sm:text-sm",
                       isToday
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted/30 text-muted-foreground"
                     )}
                   >
                     <div className="font-medium">{dayNames[i]}</div>
-                    <div className={isToday ? "text-primary-foreground" : "text-foreground"}>
+                    <div className={cn("text-xs sm:text-sm", isToday ? "text-primary-foreground" : "text-foreground")}>
                       {date.getDate()}
                     </div>
                   </div>
@@ -244,12 +256,15 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
               return (
                 <div
                   key={`${entry.resource_type}-${entry.resource_id}`}
-                  className="grid gap-px border-b bg-border/60 last:border-b-0"
-                  style={{ gridTemplateColumns: calendarGridColumns }}
+                  className={cn(
+                    "grid gap-px border-b bg-border/60 last:border-b-0",
+                    mobileCalendarGridColumns,
+                    desktopCalendarGridColumns
+                  )}
                 >
                   <div
                     className={cn(
-                      "flex min-h-[88px] items-center px-4 py-3",
+                      "flex min-h-[72px] items-center px-2 py-2 sm:min-h-[88px] sm:px-4 sm:py-3",
                       resourceColor.tintClassName
                     )}
                     style={resourceColor.tintStyle}
@@ -260,22 +275,22 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
                         <span
                           aria-hidden="true"
                           className={cn(
-                            "h-3 w-3 rounded-full ring-4 ring-background/80",
+                            "h-2.5 w-2.5 rounded-full ring-2 ring-background/80 sm:h-3 sm:w-3 sm:ring-4",
                             resourceColor.markerClassName
                           )}
                           style={resourceColor.markerStyle}
                         />
-                        <p
-                          className={cn("line-clamp-1 text-sm font-semibold", resourceColor.labelClassName)}
-                          style={resourceColor.labelStyle}
-                        >
-                          {entry.resource_name}
-                        </p>
+                          <p
+                            className={cn("line-clamp-2 text-xs font-semibold leading-tight sm:line-clamp-1 sm:text-sm", resourceColor.labelClassName)}
+                            style={resourceColor.labelStyle}
+                          >
+                            {entry.resource_name}
+                          </p>
+                        </div>
+                        <div className="hidden items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground sm:flex">
+                          <span>{resourceTypeLabels[entry.resource_type]}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                        <span>{resourceTypeLabels[entry.resource_type]}</span>
-                      </div>
-                    </div>
                   </div>
 
                   {Array.from({ length: 7 }).map((_, i) => {
@@ -314,7 +329,7 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
                           <button
                             type="button"
                             className={cn(
-                              "h-full min-h-[88px] w-full p-2 text-left transition hover:bg-muted/40",
+                              "h-full min-h-[72px] w-full p-1 transition hover:bg-muted/40 sm:min-h-[88px] sm:p-2",
                               selectionClassName
                             )}
                             aria-label={`${entry.resource_name} am ${formatDateLabel(dateStr)} auswaehlen`}
@@ -329,7 +344,7 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
                             onClick={() => handleSlotClick(entry, dateStr)}
                           />
                         ) : (
-                          <div className={cn("min-h-[88px] p-2", selectionClassName)}>
+                          <div className={cn("min-h-[72px] p-1 sm:min-h-[88px] sm:p-2", selectionClassName)}>
                             <div className="space-y-2">
                               {dayReservations.map((r: ReservationSummary) => {
                                 const reservationStatus = reservationStatusStyles[r.status]
@@ -340,7 +355,7 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
                                     role="button"
                                     tabIndex={0}
                                     className={cn(
-                                      "rounded-xl border px-2.5 py-2 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                                      "rounded-lg border px-1.5 py-1.5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 sm:rounded-xl sm:px-2.5 sm:py-2",
                                       resourceColor.borderClassName,
                                       resourceColor.softTintClassName
                                     )}
@@ -357,30 +372,30 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
                                       }
                                     }}
                                   >
-                                    <div className="flex items-center gap-2">
-                                      <span
-                                        aria-hidden="true"
-                                        className={cn("h-2 w-2 rounded-full", resourceColor.markerClassName)}
-                                        style={resourceColor.markerStyle}
-                                      />
-                                      <p className="truncate text-xs font-semibold text-foreground">
-                                        {r.user_name}
-                                      </p>
-                                    </div>
-                                    <div className="mt-2 flex items-center gap-2 text-[11px]">
-                                      <span
-                                        className={cn(
-                                          "inline-flex rounded-full px-2 py-0.5 font-medium border",
-                                          reservationStatus.badgeClassName
-                                        )}
-                                      >
-                                        {reservationStatus.label}
-                                      </span>
-                                      {r.site_name ? (
-                                        <span className="truncate text-muted-foreground">
-                                          {r.site_name}
-                                        </span>
-                                      ) : null}
+                                     <div className="flex items-center gap-1.5 sm:gap-2">
+                                       <span
+                                         aria-hidden="true"
+                                         className={cn("h-2 w-2 rounded-full", resourceColor.markerClassName)}
+                                         style={resourceColor.markerStyle}
+                                       />
+                                       <p className="truncate text-[11px] font-semibold text-foreground sm:text-xs">
+                                         {r.user_name}
+                                       </p>
+                                     </div>
+                                     <div className="mt-1 flex items-center gap-1 text-[10px] sm:mt-2 sm:gap-2 sm:text-[11px]">
+                                       <span
+                                         className={cn(
+                                           "inline-flex rounded-full px-2 py-0.5 font-medium border",
+                                           reservationStatus.badgeClassName
+                                         )}
+                                       >
+                                         {reservationStatus.label}
+                                       </span>
+                                       {r.site_name ? (
+                                         <span className="hidden truncate text-muted-foreground sm:inline">
+                                           {r.site_name}
+                                         </span>
+                                       ) : null}
                                     </div>
                                   </div>
                                 )

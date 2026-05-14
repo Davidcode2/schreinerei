@@ -49,4 +49,17 @@ describe('SitePlanningCalendar', () => {
       })
     })
   })
+
+  it('uses a compact seven-day mobile grid', async () => {
+    server.use(
+      http.get('*/api/v1/sites/site-1/appointments*', () => HttpResponse.json([]))
+    )
+
+    render(<SitePlanningCalendar siteId="site-1" assignments={[]} canEdit />)
+
+    expect(await screen.findByTestId('site-planning-calendar')).toHaveClass('-mx-6')
+    expect(screen.getByText('Zeit').parentElement).toHaveClass(
+      'grid-cols-[44px_repeat(7,minmax(0,1fr))]'
+    )
+  })
 })

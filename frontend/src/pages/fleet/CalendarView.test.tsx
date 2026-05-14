@@ -227,6 +227,15 @@ describe("CalendarView", () => {
     expect(rerenderedReservationChip).toHaveAttribute("data-resource-color", expectedColor)
   })
 
+  it("uses the compact seven-day mobile grid without horizontal overflow classes", () => {
+    render(<CalendarView embedded />)
+
+    expect(screen.getByTestId("calendar")).toHaveClass("-mx-4")
+    expect(screen.getByText("Ressource").parentElement).toHaveClass(
+      "grid-cols-[88px_repeat(7,minmax(0,1fr))]"
+    )
+  })
+
   it("opens reservation details when clicking an existing booking", async () => {
     const user = userEvent.setup()
     vi.mocked(useReservation).mockImplementation((id) => ({
