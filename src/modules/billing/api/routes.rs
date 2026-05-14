@@ -18,7 +18,8 @@ use crate::modules::billing::domain::{
 };
 use crate::modules::billing::infrastructure::InvoiceRepository;
 use crate::modules::billing::pdf::{generate_invoice_pdf, invoice_pdf_filename};
-use crate::modules::iam::application::user_service::TenantContext;
+use crate::modules::iam::application::user_service::{TenantContext, UserService};
+use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::sites::api::routes::{
     ProjectLaborSummaryResponse, ProjectMaterialSummaryResponse, SiteInvoiceBillingResponse,
     SiteInvoiceProjectResponse,
@@ -139,6 +140,8 @@ async fn create_project_invoice(
 
     let site_id = SiteId(site_id);
     let invoice_summary = load_invoice_summary(state.pool.clone(), site_id, &ctx).await?;
+    let user_service = UserService::new(UserRepository::new(state.pool.clone()));
+    let created_by = user_service.get_or_create_user_id_from_ctx(&ctx).await?;
     let service = BillingService::new(InvoiceRepository::new(state.pool));
     let snapshot = invoice_snapshot(&invoice_summary);
     let draft = service
@@ -149,7 +152,7 @@ async fn create_project_invoice(
                 sender_name: request.sender_name,
                 sender_address: request.sender_address,
                 snapshot,
-                created_by: Some(ctx.user_id),
+                created_by: Some(created_by),
             },
         )
         .await?;
@@ -474,12 +477,12 @@ mod tests {
     #[sqlx::test]
     async fn create_project_invoice_rejects_non_admin(pool: PgPool) {
         let tenant_id = create_tenant(&pool, "Tenant A").await;
-        let user_id = create_user(&pool, tenant_id, Role::Employee).await;
+        let user = create_user(&pool, tenant_id, Role::Employee).await;
         let site_id = create_site(&pool, tenant_id, "Project A").await;
 
         let result = create_project_invoice(
             State(test_state(pool)),
-            tenant_context(tenant_id, user_id, Role::Employee),
+            tenant_context(tenant_id, user.auth_user_id, &user.email, Role::Employee),
             Path(site_id.0),
             Json(empty_create_request()),
         )
@@ -492,12 +495,12 @@ mod tests {
     async fn create_project_invoice_rejects_cross_tenant_site(pool: PgPool) {
         let tenant_a = create_tenant(&pool, "Tenant A").await;
         let tenant_b = create_tenant(&pool, "Tenant B").await;
-        let user_id = create_user(&pool, tenant_a, Role::Admin).await;
+        let user = create_user(&pool, tenant_a, Role::Admin).await;
         let other_site_id = create_site(&pool, tenant_b, "Other Project").await;
 
         let result = create_project_invoice(
             State(test_state(pool.clone())),
-            tenant_context(tenant_a, user_id, Role::Admin),
+            tenant_context(tenant_a, user.auth_user_id, &user.email, Role::Admin),
             Path(other_site_id.0),
             Json(empty_create_request()),
         )
@@ -514,15 +517,15 @@ mod tests {
     #[sqlx::test]
     async fn create_project_invoice_returns_draft_with_actual_lines(pool: PgPool) {
         let tenant_id = create_tenant(&pool, "Tenant A").await;
-        let user_id = create_user(&pool, tenant_id, Role::Admin).await;
+        let user = create_user(&pool, tenant_id, Role::Admin).await;
         let site_id = create_site(&pool, tenant_id, "Project A").await;
-        create_time_entry(&pool, tenant_id, site_id, user_id, "site", 3.5).await;
-        create_time_entry(&pool, tenant_id, site_id, user_id, "workshop", 2.0).await;
-        create_material_withdrawal(&pool, tenant_id, site_id, user_id).await;
+        create_time_entry(&pool, tenant_id, site_id, user.local_id, "site", 3.5).await;
+        create_time_entry(&pool, tenant_id, site_id, user.local_id, "workshop", 2.0).await;
+        create_material_withdrawal(&pool, tenant_id, site_id, user.local_id).await;
 
         let response = create_project_invoice(
             State(test_state(pool)),
-            tenant_context(tenant_id, user_id, Role::Admin),
+            tenant_context(tenant_id, user.auth_user_id, &user.email, Role::Admin),
             Path(site_id.0),
             Json(CreateProjectInvoiceRequest {
                 sender_name: Some(" Schreinerei ".to_string()),
@@ -536,7 +539,7 @@ mod tests {
         assert_eq!(response.invoice.site_id, site_id.0);
         assert_eq!(response.invoice.invoice_number_display, "RE-00001");
         assert_eq!(response.invoice.status, "generated");
-        assert_eq!(response.invoice.created_by, Some(user_id.0));
+        assert_eq!(response.invoice.created_by, Some(user.local_id.0));
         assert!(response.invoice.pdf_artifact.is_some());
         assert_eq!(response.project.name, "Project A");
         assert_eq!(response.labor.total_hours, 5.5);
@@ -548,12 +551,12 @@ mod tests {
     #[sqlx::test]
     async fn download_invoice_pdf_returns_pdf_and_marks_generated(pool: PgPool) {
         let tenant_id = create_tenant(&pool, "Tenant A").await;
-        let user_id = create_user(&pool, tenant_id, Role::Admin).await;
+        let user = create_user(&pool, tenant_id, Role::Admin).await;
         let site_id = create_site(&pool, tenant_id, "Project A").await;
 
         let draft = create_project_invoice(
             State(test_state(pool.clone())),
-            tenant_context(tenant_id, user_id, Role::Admin),
+            tenant_context(tenant_id, user.auth_user_id, &user.email, Role::Admin),
             Path(site_id.0),
             Json(empty_create_request()),
         )
@@ -563,7 +566,7 @@ mod tests {
 
         let response = download_invoice_pdf(
             State(test_state(pool.clone())),
-            tenant_context(tenant_id, user_id, Role::Admin),
+            tenant_context(tenant_id, user.auth_user_id, &user.email, Role::Admin),
             Path(draft.invoice.id),
         )
         .await
@@ -600,12 +603,12 @@ mod tests {
     #[sqlx::test]
     async fn download_invoice_pdf_rejects_non_admin(pool: PgPool) {
         let tenant_id = create_tenant(&pool, "Tenant A").await;
-        let admin_id = create_user(&pool, tenant_id, Role::Admin).await;
-        let employee_id = create_user(&pool, tenant_id, Role::Employee).await;
+        let admin = create_user(&pool, tenant_id, Role::Admin).await;
+        let employee = create_user(&pool, tenant_id, Role::Employee).await;
         let site_id = create_site(&pool, tenant_id, "Project A").await;
         let draft = create_project_invoice(
             State(test_state(pool.clone())),
-            tenant_context(tenant_id, admin_id, Role::Admin),
+            tenant_context(tenant_id, admin.auth_user_id, &admin.email, Role::Admin),
             Path(site_id.0),
             Json(empty_create_request()),
         )
@@ -615,7 +618,12 @@ mod tests {
 
         let result = download_invoice_pdf(
             State(test_state(pool)),
-            tenant_context(tenant_id, employee_id, Role::Employee),
+            tenant_context(
+                tenant_id,
+                employee.auth_user_id,
+                &employee.email,
+                Role::Employee,
+            ),
             Path(draft.invoice.id),
         )
         .await;
@@ -632,7 +640,7 @@ mod tests {
         let site_a = create_site(&pool, tenant_a, "Project A").await;
         let draft = create_project_invoice(
             State(test_state(pool.clone())),
-            tenant_context(tenant_a, admin_a, Role::Admin),
+            tenant_context(tenant_a, admin_a.auth_user_id, &admin_a.email, Role::Admin),
             Path(site_a.0),
             Json(empty_create_request()),
         )
@@ -642,7 +650,7 @@ mod tests {
 
         let result = download_invoice_pdf(
             State(test_state(pool)),
-            tenant_context(tenant_b, admin_b, Role::Admin),
+            tenant_context(tenant_b, admin_b.auth_user_id, &admin_b.email, Role::Admin),
             Path(draft.invoice.id),
         )
         .await;
@@ -657,13 +665,24 @@ mod tests {
         }
     }
 
-    fn tenant_context(tenant_id: TenantId, user_id: UserId, role: Role) -> TenantContext {
+    fn tenant_context(
+        tenant_id: TenantId,
+        user_id: UserId,
+        email: &str,
+        role: Role,
+    ) -> TenantContext {
         TenantContext {
             tenant_id,
             user_id,
-            email: "user@example.test".to_string(),
+            email: email.to_string(),
             roles: vec![role],
         }
+    }
+
+    struct TestUser {
+        local_id: UserId,
+        auth_user_id: UserId,
+        email: String,
     }
 
     fn test_state(pool: PgPool) -> AppState {
@@ -720,24 +739,30 @@ mod tests {
         TenantId(id)
     }
 
-    async fn create_user(pool: &PgPool, tenant_id: TenantId, role: Role) -> UserId {
-        let id = Uuid::new_v4();
+    async fn create_user(pool: &PgPool, tenant_id: TenantId, role: Role) -> TestUser {
+        let local_id = UserId(Uuid::new_v4());
+        let auth_user_id = UserId(Uuid::new_v4());
+        let email = format!("{auth_user_id}@example.test");
         sqlx::query(
             r#"
             INSERT INTO users (id, tenant_id, keycloak_user_id, email, role)
             VALUES ($1, $2, $3, $4, $5)
             "#,
         )
-        .bind(id)
+        .bind(local_id.0)
         .bind(tenant_id.0)
-        .bind(format!("keycloak-{id}"))
-        .bind(format!("{id}@example.test"))
+        .bind(auth_user_id.to_string())
+        .bind(&email)
         .bind(role.to_string())
         .execute(pool)
         .await
         .expect("user should be inserted");
 
-        UserId(id)
+        TestUser {
+            local_id,
+            auth_user_id,
+            email,
+        }
     }
 
     async fn create_site(pool: &PgPool, tenant_id: TenantId, name: &str) -> SiteId {
