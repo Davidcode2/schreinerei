@@ -92,7 +92,7 @@ export function SiteCard({
             disabled={isToggling}
           >
             <Star className={isActive ? "h-3.5 w-3.5 fill-current" : "h-3.5 w-3.5"} />
-            {isActive ? "Aktive Baustelle" : "Als aktiv setzen"}
+            {isActive ? "Aktives Projekt" : "Als aktives Projekt setzen"}
           </Button>
         </div>
       </CardContent>

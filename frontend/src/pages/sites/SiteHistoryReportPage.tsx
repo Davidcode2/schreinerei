@@ -33,14 +33,14 @@ export default function SiteHistoryReportPage() {
 
   const query = useMemo(
     (): SiteHistoryReportQuery => ({
-      ...(customer ? { customer } : {}),
-      ...(projectType ? { project_type: projectType } : {}),
-      ...(workerId ? { worker_id: workerId } : {}),
-      ...(dateFrom ? { date_from: dateFrom } : {}),
-      ...(dateTo ? { date_to: dateTo } : {}),
-      ...(durationMinHours ? { duration_min_hours: Number(durationMinHours) } : {}),
-      ...(durationMaxHours ? { duration_max_hours: Number(durationMaxHours) } : {}),
-      ...(costBasis ? { cost_basis: costBasis } : {}),
+      customer: customer || null,
+      project_type: projectType || null,
+      worker_id: workerId || null,
+      date_from: dateFrom || null,
+      date_to: dateTo || null,
+      duration_min_hours: durationMinHours ? Number(durationMinHours) : null,
+      duration_max_hours: durationMaxHours ? Number(durationMaxHours) : null,
+      cost_basis: costBasis || null,
     }),
     [costBasis, customer, dateFrom, dateTo, durationMaxHours, durationMinHours, projectType, workerId]
   )

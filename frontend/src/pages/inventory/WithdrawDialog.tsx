@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Package, Minus, Plus } from "lucide-react"
 import type { Material } from "@/types/inventory"
+import type { ProjectType } from "@/types/sites"
 
 function formatExpiryDate(date: string) {
   const [year, month, day] = date.split("-")
@@ -27,13 +28,11 @@ interface WithdrawDialogProps {
     quantity: number,
     notes?: string,
     siteId?: string | null,
-    disposal?: boolean,
-    lastPackageTaken?: boolean
+    disposal?: boolean
   ) => void
   isLoading: boolean
-  sites: Array<{ id: string; name: string }>
+  sites: Array<{ id: string; name: string; project_type?: ProjectType }>
   initialSiteId?: string | null
-  initialDisposal?: boolean
 }
 
 export function WithdrawDialog({
@@ -44,17 +43,16 @@ export function WithdrawDialog({
   isLoading,
   sites,
   initialSiteId,
-  initialDisposal = false,
 }: WithdrawDialogProps) {
   const [quantity, setQuantity] = useState(1)
   const [notes, setNotes] = useState("")
   const [siteId, setSiteId] = useState(initialSiteId ?? "")
   const [disposal, setDisposal] = useState(false)
-  const [lastPackageTaken, setLastPackageTaken] = useState(false)
+
+  const requiresProject = !disposal
+  const canSubmit = !requiresProject || Boolean(siteId)
 
   const maxQuantity = disposal ? Math.max(1, material.expired_quantity) : material.quantity
-  const requiresProjectLink = !disposal
-  const canSubmit = quantity > 0 && (!requiresProjectLink || Boolean(siteId))
 
   const handleQuantityChange = (value: number) => {
     const newQuantity = Math.max(1, Math.min(value, maxQuantity))
@@ -65,18 +63,10 @@ export function WithdrawDialog({
     if (!canSubmit) {
       return
     }
-
-    onConfirm(
-      quantity,
-      notes || undefined,
-      disposal ? null : siteId || null,
-      disposal,
-      disposal ? false : lastPackageTaken
-    )
+    onConfirm(quantity, notes || undefined, disposal ? null : siteId || null, disposal)
     setQuantity(1)
     setNotes("")
     setDisposal(false)
-    setLastPackageTaken(false)
   }
 
   const quickAmounts = [1, 2, 5, 10].filter((n) => n <= maxQuantity)
@@ -84,16 +74,9 @@ export function WithdrawDialog({
   useEffect(() => {
     if (open) {
       setSiteId(initialSiteId ?? "")
-      setDisposal(initialDisposal)
-      setLastPackageTaken(false)
+      setDisposal(false)
     }
-  }, [initialDisposal, initialSiteId, open])
-
-  useEffect(() => {
-    if (open && !siteId && initialSiteId) {
-      setSiteId(initialSiteId)
-    }
-  }, [initialSiteId, open, siteId])
+  }, [open, initialSiteId])
 
   useEffect(() => {
     setQuantity((current) => Math.max(1, Math.min(current, maxQuantity)))
@@ -101,6 +84,8 @@ export function WithdrawDialog({
 
   const canDispose = material.expired_quantity > 0
   const oldestExpiryLabel = material.next_expiry_on ? formatExpiryDate(material.next_expiry_on) : null
+  const formatSiteOption = (site: { id: string; name: string; project_type?: ProjectType }) =>
+    site.project_type === "internal_workshop" ? `${site.name} (Werkstatt)` : `${site.name} (Extern)`
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-md">
@@ -150,13 +135,8 @@ export function WithdrawDialog({
                   <p className="font-medium">Erfasste MHD-Chargen</p>
                   <div className="max-h-40 space-y-1 overflow-y-auto pr-1">
                     {material.expiry_batches.map((batch) => (
-                      <div key={batch.id} className="flex items-start justify-between gap-3">
-                        <div>
-                          <span>{formatExpiryDate(batch.expires_on)}</span>
-                          {batch.batch_code && (
-                            <p className="text-xs text-muted-foreground">Charge: {batch.batch_code}</p>
-                          )}
-                        </div>
+                      <div key={`${batch.expires_on}-${batch.quantity}`} className="flex justify-between">
+                        <span>{formatExpiryDate(batch.expires_on)}</span>
                         <span className="text-muted-foreground">{batch.quantity} {material.unit}</span>
                       </div>
                     ))}
@@ -167,11 +147,11 @@ export function WithdrawDialog({
           )}
 
           {canDispose && (
-          <label className="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
+          <label className="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm cursor-pointer">
             <input
               type="checkbox"
               checked={disposal}
-              onChange={(event) => setDisposal(event.target.checked)}
+              onClick={() => setDisposal((current) => !current)}
               className="h-4 w-4 rounded border-input"
             />
             <span>Entsorgung</span>
@@ -230,36 +210,25 @@ export function WithdrawDialog({
 
           {!disposal && (
             <div className="space-y-2 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
-                <Label htmlFor="site">Projekt</Label>
+                <Label htmlFor="site">Projekt *</Label>
                 <select
                   id="site"
                   className="h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={siteId}
                   onChange={(event) => setSiteId(event.target.value)}
                 >
-                <option value="">Projekt auswählen</option>
+                <option value="">Projekt wählen</option>
                 {sites.map((site) => (
                   <option key={site.id} value={site.id}>
-                    {site.name}
+                    {formatSiteOption(site)}
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-muted-foreground">
-                Reale Materialentnahmen werden immer einem Projekt zugeordnet.
-              </p>
-
-              <Button
-                type="button"
-                variant={lastPackageTaken ? "default" : "outline"}
-                className="mt-3 h-10 w-full justify-start"
-                aria-pressed={lastPackageTaken}
-                onClick={() => setLastPackageTaken((current) => !current)}
-              >
-                Letzte Packung entnommen
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                Löst ein persistentes Nachbestell-Signal aus, auch wenn rechnerisch noch Restbestand vorhanden ist.
-              </p>
+              {!siteId && (
+                <p className="text-xs text-muted-foreground">
+                  Reale Materialentnahmen müssen einem Projekt zugeordnet sein.
+                </p>
+              )}
             </div>
           )}
 

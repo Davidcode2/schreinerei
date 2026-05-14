@@ -21,54 +21,19 @@ import {
   StatusBadge,
 } from "@/components/shared"
 import {
-  useApproveOrderRequest,
-  useCancelOrderRequest,
   useCreateOrderRequest,
   useEnrichedMaterialHistory,
-  useMarkOrderRequestOrdered,
   useMaterial,
-  useOrderRequests,
   usePreferences,
   useSites,
   useStockInMaterial,
   useWithdrawMaterial,
 } from "@/lib/api/hooks"
-import { useAuthStore } from "@/lib/auth/authStore"
 import { MaterialEditDialog } from "./MaterialEditDialog"
 import { MaterialHistoryFeed } from "./MaterialHistoryFeed"
 import { StockInDialog } from "./StockInDialog"
 import { WithdrawDialog } from "./WithdrawDialog"
 import { toast } from "sonner"
-
-const ACTIVE_SIGNAL_STATUSES = ["pending", "approved", "ordered"] as const
-
-function getSignalKindLabel(kind: string): string {
-  switch (kind) {
-    case "last_package":
-      return "Letzte Packung"
-    case "minimum_breach":
-      return "Mindestbestand"
-    default:
-      return "Manuell"
-  }
-}
-
-function getSignalStatusLabel(status: string): string {
-  switch (status) {
-    case "pending":
-      return "Offen"
-    case "approved":
-      return "Bestatigt"
-    case "ordered":
-      return "Bestellt"
-    case "fulfilled":
-      return "Erledigt"
-    case "cancelled":
-      return "Geschlossen"
-    default:
-      return status
-  }
-}
 
 export default function InventoryDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -76,9 +41,6 @@ export default function InventoryDetailPage() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showStockInDialog, setShowStockInDialog] = useState(false)
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false)
-  const [withdrawDisposalMode, setWithdrawDisposalMode] = useState(false)
-  const user = useAuthStore((state) => state.user)
-  const isAdmin = user?.role === "admin"
 
   const { data: material, isLoading, error, refetch } = useMaterial(id!)
   const {
@@ -89,16 +51,13 @@ export default function InventoryDetailPage() {
   } = useEnrichedMaterialHistory(id!)
   const { data: preferences } = usePreferences()
   const { data: sites } = useSites()
-  const { data: orderRequests = [] } = useOrderRequests(undefined, isAdmin)
   const stockInMutation = useStockInMaterial()
   const withdrawMutation = useWithdrawMaterial()
   const orderMutation = useCreateOrderRequest()
-  const approveOrderMutation = useApproveOrderRequest()
-  const markOrderedMutation = useMarkOrderRequestOrdered()
-  const cancelOrderMutation = useCancelOrderRequest()
 
   const withdrawSiteIdFromQuery = searchParams.get("siteId")
   const shouldOpenWithdrawDialog = searchParams.get("action") === "withdraw"
+  const resolvedInitialSiteId = withdrawSiteIdFromQuery ?? preferences?.active_site_id ?? null
 
   useEffect(() => {
     if (shouldOpenWithdrawDialog) {
@@ -108,7 +67,6 @@ export default function InventoryDetailPage() {
 
   const closeWithdrawDialog = () => {
     setShowWithdrawDialog(false)
-    setWithdrawDisposalMode(false)
 
     if (shouldOpenWithdrawDialog) {
       const nextParams = new URLSearchParams(searchParams)
@@ -195,42 +153,6 @@ export default function InventoryDetailPage() {
       toast.success("Bestellanforderung erstellt")
     } catch {
       toast.error("Bestellanforderung fehlgeschlagen")
-    }
-  }
-
-  const activeSignal = orderRequests.find(
-    (order) =>
-      order.material_id === material.id &&
-      ACTIVE_SIGNAL_STATUSES.includes(order.status as (typeof ACTIVE_SIGNAL_STATUSES)[number])
-  )
-
-  const handleApproveSignal = async () => {
-    if (!activeSignal) return
-    try {
-      await approveOrderMutation.mutateAsync({ id: activeSignal.id, data: { notes: null } })
-      toast.success("Nachbestell-Signal bestatigt")
-    } catch {
-      toast.error("Signal konnte nicht bestatigt werden")
-    }
-  }
-
-  const handleMarkOrdered = async () => {
-    if (!activeSignal) return
-    try {
-      await markOrderedMutation.mutateAsync({ id: activeSignal.id, data: { notes: null } })
-      toast.success("Signal als bestellt markiert")
-    } catch {
-      toast.error("Signal konnte nicht aktualisiert werden")
-    }
-  }
-
-  const handleCloseSignal = async () => {
-    if (!activeSignal) return
-    try {
-      await cancelOrderMutation.mutateAsync({ id: activeSignal.id, data: { notes: null } })
-      toast.success("Signal geschlossen")
-    } catch {
-      toast.error("Signal konnte nicht geschlossen werden")
     }
   }
 
@@ -352,8 +274,8 @@ export default function InventoryDetailPage() {
               <Plus className="h-4 w-4" />
               Material einlagern
             </Button>
-             {material.is_low_stock && !activeSignal && (
-               <Button
+            {material.is_low_stock && (
+              <Button
                 variant="outline"
                 className="w-full justify-start gap-2 h-10 active:scale-[0.97] transition-transform"
                 onClick={handleOrderRequest}
@@ -364,50 +286,8 @@ export default function InventoryDetailPage() {
               </Button>
             )}
           </CardContent>
-       </Card>
-      </div>
-
-      {activeSignal && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <ShoppingCart className="h-4 w-4 text-primary" />
-                  <h3 className="text-sm font-semibold">Nachbestell-Signal aktiv</h3>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {getSignalKindLabel(activeSignal.request_kind)} · {getSignalStatusLabel(activeSignal.status)}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Vorgeschlagene Menge: {activeSignal.quantity} {material.unit}
-                </p>
-                {activeSignal.reason && (
-                  <p className="text-xs text-muted-foreground">{activeSignal.reason}</p>
-                )}
-              </div>
-
-              {isAdmin && (
-                <div className="flex flex-wrap gap-2">
-                  {activeSignal.status === "pending" && (
-                    <Button variant="outline" size="sm" onClick={handleApproveSignal} disabled={approveOrderMutation.isPending}>
-                      Bestatigen
-                    </Button>
-                  )}
-                  {activeSignal.status === "approved" && (
-                    <Button variant="outline" size="sm" onClick={handleMarkOrdered} disabled={markOrderedMutation.isPending}>
-                      Als bestellt markieren
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm" onClick={handleCloseSignal} disabled={cancelOrderMutation.isPending}>
-                    Schliessen
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
         </Card>
-      )}
+      </div>
 
       {material.is_low_stock && (
         <Card className="border-warning/30 bg-warning/5">
@@ -441,17 +321,6 @@ export default function InventoryDetailPage() {
                 <p className="text-sm text-muted-foreground">
                   Es sind {material.expired_quantity} {material.unit} abgelaufen.
                 </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-3"
-                  onClick={() => {
-                    setWithdrawDisposalMode(true)
-                    setShowWithdrawDialog(true)
-                  }}
-                >
-                  Abgelaufenen Bestand entsorgen
-                </Button>
               </div>
             </div>
           </CardContent>
@@ -528,9 +397,8 @@ export default function InventoryDetailPage() {
         material={material}
         onConfirm={handleWithdraw}
         isLoading={withdrawMutation.isPending}
-        sites={(sites ?? []).map((site) => ({ id: site.id, name: site.name }))}
-        initialSiteId={withdrawSiteIdFromQuery ?? preferences?.active_site_id ?? null}
-        initialDisposal={withdrawDisposalMode}
+        sites={(sites ?? []).map((site) => ({ id: site.id, name: site.name, project_type: site.project_type }))}
+        initialSiteId={resolvedInitialSiteId}
       />
 
       <StockInDialog

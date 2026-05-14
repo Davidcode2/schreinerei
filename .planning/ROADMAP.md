@@ -15,8 +15,7 @@
 - ✅ **v1.10 Baustelle Activity Stream Features** — Phases 34-37 (shipped 2026-05-01) — [Archive](milestones/v1.10-ROADMAP.md)
 - ✅ **v1.11 Fleet Calendar on Fleet Page** — Phases 38-40 (shipped 2026-05-01) — [Archive](milestones/v1.11-ROADMAP.md)
 - ✅ **v1.12 Architecture Guardrails** — Phases 41-43 (shipped 2026-05-04) — [Archive](milestones/v1.12-ROADMAP.md)
-- ✅ **v1.13 Project Workflow Foundation** — Phases 44-47 (shipped 2026-05-07)
-- ✅ **v1.14 Project Costing, Planning & Billing Basis** — Phases 48-52 (shipped 2026-05-08)
+- **v1.13 Project Workflow Foundation** — Phases 44-47 (planned)
 
 ### v1.12 Mobile Modal Improvements (In Progress)
 
@@ -88,14 +87,14 @@ Plans:
 **Milestone Goal:** Turn the current Baustelle surface into a clearer project workflow so workers capture context once, book productive work/material against the right project with less friction, and managers see all relevant projects without hidden defaults.
 
 - [x] **Phase 44: Project Model Foundation** — Broaden the current site model into a project execution surface that supports both external Baustellen and internal workshop projects
-- [x] **Phase 45: Unified Project Timeline** — Make the project timeline the canonical context channel and unify note/photo/document entry creation (completed 2026-05-07)
+- [x] **Phase 45: Unified Project Timeline** — Make the project timeline the canonical context channel and unify note/photo/document entry creation
 - [x] **Phase 46: Project-Linked Execution Capture** — Require and default project linkage for real material and productive time capture where that reduces manual input
 - [x] **Phase 47: Project Dashboard Visibility** — Show relevant projects regardless of status and make filtering explicit in the dashboard experience
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40 → 41 → 42 → 43 → 44 → 45 → 46 → 47 → 48 → 49 → 50 → 51 → 52
+Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40 → 41 → 42 → 43 → 44 → 45 → 46 → 47
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -114,14 +113,9 @@ Phases execute in numeric order: 30 → 31 → 32 → 33 → 34 → 35 → 36 �
 | 42. Request Context Extractor | v1.12 | 1/1 | Complete | 2026-05-04 |
 | 43. Mobile-First Guardrails | v1.12 | 1/1 | Complete | 2026-05-04 |
 | 44. Project Model Foundation | v1.13 | 3/3 | Complete | 2026-05-05 |
-| 45. Unified Project Timeline | v1.13 | 2/2 | Complete   | 2026-05-07 |
-| 46. Project-Linked Execution Capture | v1.13 | 1/1 | Complete | 2026-05-07 |
+| 45. Unified Project Timeline | v1.13 | 2/2 | Complete | 2026-05-07 |
+| 46. Project-Linked Execution Capture | v1.13 | 2/2 | Complete | 2026-05-07 |
 | 47. Project Dashboard Visibility | v1.13 | 1/1 | Complete | 2026-05-07 |
-| 48. Project Costing Aggregates | v1.14 | 1/1 | Complete | 2026-05-08 |
-| 49. Project Budget & Billing Metadata | v1.14 | 1/1 | Complete | 2026-05-08 |
-| 50. Invoice-Ready Project Summary | v1.14 | 1/1 | Complete | 2026-05-08 |
-| 51. Historical Project Reporting | v1.14 | 1/1 | Complete | 2026-05-08 |
-| 52. Project Planning View | v1.14 | 1/1 | Complete | 2026-05-08 |
 
 ## Next Planning Inputs
 
@@ -166,6 +160,20 @@ Success criteria:
 3. Timeline entries render timestamps and attachment previews consistently.
 4. Existing camera/document capabilities remain usable while converging on the unified flow.
 
+**Plans:** 2 plans
+
+Plans:
+
+**Wave 1**
+- [x] 45-01-PLAN.md — Build one shared project timeline composer and route the existing note/camera entrypoints through it.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 45-02-PLAN.md — Make the project detail page timeline-first and standardize timeline timestamps/previews.
+
+Cross-cutting constraints:
+- The project timeline becomes the canonical project context channel rather than a secondary widget.
+- Existing camera/media capabilities stay usable while the UI converges on the unified timeline flow.
+
 ### Phase 46: Project-Linked Execution Capture
 Goal: Reduce office follow-up by ensuring real productive material/time capture is attributable to a project with minimal extra input.
 Requirements: `PROJ-13`, `PROJ-14`
@@ -175,6 +183,19 @@ Success criteria:
 3. Active project context pre-fills the most common capture flows.
 4. Users are not forced through extra manual steps when the active project is already known.
 
+**Plans:** 2 plans
+
+Plans:
+
+**Wave 1**
+- [x] 46-01-PLAN.md — Require project linkage for real material withdrawals while keeping disposal and active-project defaults fast.
+- [x] 46-02-PLAN.md — Require productive time bookings to stay project-linked for both site and workshop work while preserving overhead exceptions.
+
+Cross-cutting constraints:
+- Normal material withdrawals and productive time bookings must remain project-attributable for billing/reporting quality.
+- Active-project context should remove manual selection wherever the current workflow already knows the project.
+- Disposal, travel, and other true overhead/correction paths remain the explicit null-project exceptions.
+
 ### Phase 47: Project Dashboard Visibility
 Goal: Let managers see relevant projects regardless of status and apply filters explicitly instead of relying on hidden defaults.
 Requirements: `PROJ-12`
@@ -183,17 +204,12 @@ Success criteria:
 2. Status filtering is explicit and user-controlled.
 3. The new behavior does not regress the current dashboard’s speed or readability.
 
-### ✅ v1.14 Project Costing, Planning & Billing Basis (Planned)
+**Plans:** 1 plan
 
-**Milestone Goal:** Turn disciplined project-linked time and material capture into reusable project aggregates, billing metadata, invoice-ready summaries, project planning views, and historical reporting.
-
-- [x] **Phase 48: Project Costing Aggregates** — Add canonical per-project labor and material aggregates on project detail
-- [x] **Phase 49: Project Budget & Billing Metadata** — Add budget and billing metadata on the project and show budget-vs-actual
-- [x] **Phase 50: Invoice-Ready Project Summary** — Add structured invoice-ready summaries sourced from project aggregates and billing metadata
-- [x] **Phase 51: Historical Project Reporting** — Add read-only reporting filters for managers over historical projects
-- [x] **Phase 52: Project Planning View** — Show workers, reservations, and project timing together from a project-centric planning surface
+Plans:
+- [x] 47-01-PLAN.md — Broaden the dashboard dataset to planned/active/completed by default and add explicit status filters in the manager overview.
 
 ---
 
-*Roadmap last updated: 2026-05-08*
-*Next: choose and activate the next milestone seed*
+*Roadmap last updated: 2026-05-07*
+*Next: `/gsd-new-milestone`*

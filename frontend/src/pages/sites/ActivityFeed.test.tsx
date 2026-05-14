@@ -199,8 +199,10 @@ describe("ActivityFeed document entries", () => {
       />
     )
 
+    expect(screen.getByRole("tab", { name: "Timeline" })).toBeInTheDocument()
     expect(screen.getByText("Dokument hinzugefügt")).toBeInTheDocument()
     expect(screen.getByText("Montage abgeschlossen")).toBeInTheDocument()
+    expect(screen.getByText(/Anna Tischler ·/)).toBeInTheDocument()
 
     await waitFor(() => {
       expect(getBlobMock).toHaveBeenCalledWith("/api/v1/attachments/att-1")
@@ -302,6 +304,13 @@ describe("ActivityFeed document entries", () => {
       "href",
       "/sites/site-1/media/activity-4/legacy-photo-id/aktivitatsfoto"
     )
+  })
+
+  it("shows timeline empty-state wording", () => {
+    render(<ActivityFeed activities={[]} siteId="site-1" />)
+
+    expect(screen.getByRole("tab", { name: "Timeline" })).toBeInTheDocument()
+    expect(screen.getByText("Noch keine Timeline-Einträge")).toBeInTheDocument()
   })
 
   it("keeps status-change entries with attachments non-interactive", () => {

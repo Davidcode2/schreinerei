@@ -1,15 +1,12 @@
 use crate::common::error::AppError;
 use crate::common::types::{
-    AssetId, MachineId, MaintenanceDueId, MaintenanceDueStatus, ReservationId, ReservationStatus,
-    ResourceType, Role, SiteId, ToolId, UserId, VehicleId,
+    ReservationId, ReservationStatus, ResourceType, Role, SiteId, ToolId, UserId, VehicleId,
 };
 use crate::modules::fleet::domain::{
-    validate_display_color, CreateMachine, CreateMaintenanceSchedule, CreateReservation,
-    CreateTool, CreateVehicle, Machine, MachineCreatedPayload, MaintenanceDue, MaintenanceSchedule,
-    Reservation, ReservationCancelledPayload, ReservationCreatedPayload, ReservationUpdatedPayload,
-    ReservationWithDetails, ResolveMaintenanceDue, ResourceStatusChangedPayload, Tool,
-    ToolCreatedPayload, UpdateMachine, UpdateReservation, UpdateTool, UpdateVehicle, Vehicle,
-    VehicleCreatedPayload,
+    CreateReservation, CreateTool, CreateVehicle, Reservation, ReservationCancelledPayload,
+    ReservationCreatedPayload, ReservationUpdatedPayload, ReservationWithDetails,
+    ResourceStatusChangedPayload, Tool, ToolCreatedPayload, UpdateReservation, UpdateTool,
+    UpdateVehicle, Vehicle, VehicleCreatedPayload,
 };
 use crate::modules::fleet::infrastructure::fleet_repository::{
     CalendarEntry, FleetRepository, ResourceStatusInfo,
@@ -45,26 +42,6 @@ impl FleetService {
             )
             .await?;
         Ok(user.id)
-    }
-
-    async fn validate_project_context(
-        &self,
-        project_id: Option<SiteId>,
-        ctx: &TenantContext,
-    ) -> Result<(), AppError> {
-        let Some(project_id) = project_id else {
-            return Ok(());
-        };
-
-        if self
-            .fleet_repo
-            .project_exists(ctx.tenant_id, project_id)
-            .await?
-        {
-            Ok(())
-        } else {
-            Err(AppError::NotFound("Project not found".to_string()))
-        }
     }
 
     // === Vehicle operations ===
@@ -105,9 +82,6 @@ impl FleetService {
     ) -> Result<Vehicle, AppError> {
         if !ctx.is_admin() {
             return Err(AppError::Forbidden("Admin access required".to_string()));
-        }
-        if let Some(color) = &update.display_color {
-            validate_display_color(color)?;
         }
 
         let old_vehicle = self
@@ -170,7 +144,7 @@ impl FleetService {
         // Check for active reservations
         let active_count = self
             .fleet_repo
-            .count_active_reservations(ctx.tenant_id, vehicle_id.0)
+            .count_active_reservations(ctx.tenant_id, ResourceType::Vehicle, vehicle_id.0)
             .await?;
 
         if active_count > 0 {
@@ -277,7 +251,7 @@ impl FleetService {
         // Check for active reservations
         let active_count = self
             .fleet_repo
-            .count_active_reservations(ctx.tenant_id, tool_id.0)
+            .count_active_reservations(ctx.tenant_id, ResourceType::Tool, tool_id.0)
             .await?;
 
         if active_count > 0 {
@@ -290,179 +264,6 @@ impl FleetService {
         self.fleet_repo.delete_tool(ctx.tenant_id, tool_id).await
     }
 
-    // === Machine operations ===
-
-    pub async fn create_machine(
-        &self,
-        create: CreateMachine,
-        ctx: &TenantContext,
-    ) -> Result<Machine, AppError> {
-        if !ctx.is_admin() {
-            return Err(AppError::Forbidden("Admin access required".to_string()));
-        }
-        create.validate()?;
-
-        let machine = self
-            .fleet_repo
-            .create_machine(&create, ctx.tenant_id)
-            .await?;
-
-        let event = MachineCreatedPayload {
-            machine_id: machine.id,
-            name: machine.name.clone(),
-            machine_type: machine.machine_type.clone(),
-        }
-        .into_event(ctx.tenant_id);
-
-        self.fleet_repo.publish_event(&event).await?;
-
-        Ok(machine)
-    }
-
-    pub async fn update_machine(
-        &self,
-        machine_id: MachineId,
-        update: UpdateMachine,
-        ctx: &TenantContext,
-    ) -> Result<Machine, AppError> {
-        if !ctx.is_admin() {
-            return Err(AppError::Forbidden("Admin access required".to_string()));
-        }
-
-        let old_machine = self
-            .fleet_repo
-            .find_machine_by_id(ctx.tenant_id, machine_id)
-            .await?
-            .ok_or_else(|| AppError::NotFound("Machine not found".to_string()))?;
-
-        let machine = self
-            .fleet_repo
-            .update_machine(ctx.tenant_id, machine_id, &update)
-            .await?;
-
-        if let Some(new_status) = &update.status {
-            if old_machine.status != *new_status {
-                let event = ResourceStatusChangedPayload {
-                    resource_type: ResourceType::Machine,
-                    resource_id: machine.id.to_string(),
-                    old_status: old_machine.status.to_string(),
-                    new_status: new_status.to_string(),
-                }
-                .into_event(ctx.tenant_id);
-
-                self.fleet_repo.publish_event(&event).await?;
-            }
-        }
-
-        Ok(machine)
-    }
-
-    pub async fn get_machine(
-        &self,
-        machine_id: MachineId,
-        ctx: &TenantContext,
-    ) -> Result<Machine, AppError> {
-        self.fleet_repo
-            .find_machine_by_id(ctx.tenant_id, machine_id)
-            .await?
-            .ok_or_else(|| AppError::NotFound("Machine not found".to_string()))
-    }
-
-    pub async fn list_machines(
-        &self,
-        status: Option<String>,
-        ctx: &TenantContext,
-    ) -> Result<Vec<Machine>, AppError> {
-        self.fleet_repo.list_machines(ctx.tenant_id, status).await
-    }
-
-    pub async fn delete_machine(
-        &self,
-        machine_id: MachineId,
-        ctx: &TenantContext,
-    ) -> Result<(), AppError> {
-        if !ctx.is_admin() {
-            return Err(AppError::Forbidden("Admin access required".to_string()));
-        }
-
-        let active_count = self
-            .fleet_repo
-            .count_active_reservations(ctx.tenant_id, machine_id.0)
-            .await?;
-
-        if active_count > 0 {
-            return Err(AppError::Conflict(format!(
-                "Cannot delete: {} active reservation(s) exist",
-                active_count
-            )));
-        }
-
-        self.fleet_repo
-            .delete_machine(ctx.tenant_id, machine_id)
-            .await
-    }
-
-    // === Maintenance operations ===
-
-    pub async fn create_maintenance_schedule(
-        &self,
-        create: CreateMaintenanceSchedule,
-        ctx: &TenantContext,
-    ) -> Result<(MaintenanceSchedule, MaintenanceDue), AppError> {
-        if !ctx.is_admin() {
-            return Err(AppError::Forbidden("Admin access required".to_string()));
-        }
-
-        create.validate()?;
-
-        self.fleet_repo
-            .find_asset_by_id(ctx.tenant_id, create.asset_id)
-            .await?
-            .ok_or_else(|| AppError::NotFound("Asset not found".to_string()))?;
-
-        self.fleet_repo
-            .create_maintenance_schedule(&create, ctx.tenant_id)
-            .await
-    }
-
-    pub async fn list_maintenance_schedules(
-        &self,
-        asset_id: Option<AssetId>,
-        ctx: &TenantContext,
-    ) -> Result<Vec<MaintenanceSchedule>, AppError> {
-        self.fleet_repo
-            .list_maintenance_schedules(ctx.tenant_id, asset_id)
-            .await
-    }
-
-    pub async fn list_maintenance_due(
-        &self,
-        asset_id: Option<AssetId>,
-        status: Option<MaintenanceDueStatus>,
-        ctx: &TenantContext,
-    ) -> Result<Vec<MaintenanceDue>, AppError> {
-        self.fleet_repo
-            .list_maintenance_due(ctx.tenant_id, asset_id, status)
-            .await
-    }
-
-    pub async fn resolve_maintenance_due(
-        &self,
-        due_id: MaintenanceDueId,
-        resolve: ResolveMaintenanceDue,
-        ctx: &TenantContext,
-    ) -> Result<MaintenanceDue, AppError> {
-        if !ctx.is_admin() {
-            return Err(AppError::Forbidden("Admin access required".to_string()));
-        }
-
-        let local_user_id = self.resolve_local_user_id(ctx).await?;
-
-        self.fleet_repo
-            .resolve_maintenance_due(ctx.tenant_id, due_id, local_user_id, &resolve)
-            .await
-    }
-
     // === Reservation operations ===
 
     /// Create a new reservation (any authenticated user can create)
@@ -473,15 +274,23 @@ impl FleetService {
     ) -> Result<Reservation, AppError> {
         // Validate the reservation
         create.validate()?;
-        self.validate_project_context(create.project_id.or(create.site_id), ctx)
-            .await?;
 
-        let resource = self
-            .fleet_repo
-            .find_reservable_asset(ctx.tenant_id, create.resource_type, create.resource_id)
-            .await?;
+        // Check that the resource exists
+        let resource_exists = match create.resource_type {
+            ResourceType::Vehicle => self
+                .fleet_repo
+                .find_vehicle_by_id(ctx.tenant_id, VehicleId(create.resource_id))
+                .await?
+                .is_some(),
+            ResourceType::Tool => self
+                .fleet_repo
+                .find_tool_by_id(ctx.tenant_id, ToolId(create.resource_id))
+                .await?
+                .is_some(),
+            ResourceType::Machine => false,
+        };
 
-        if resource.is_none() {
+        if !resource_exists {
             return Err(AppError::NotFound(format!(
                 "{} not found",
                 create.resource_type
@@ -493,6 +302,7 @@ impl FleetService {
             .fleet_repo
             .check_availability(
                 ctx.tenant_id,
+                create.resource_type,
                 create.resource_id,
                 create.start_time,
                 create.end_time,
@@ -563,6 +373,7 @@ impl FleetService {
                 .fleet_repo
                 .check_availability(
                     ctx.tenant_id,
+                    current.resource_type,
                     current.resource_id,
                     *new_start,
                     *new_end,
@@ -577,9 +388,6 @@ impl FleetService {
             }
         }
 
-        self.validate_project_context(update.project_id.or(update.site_id), ctx)
-            .await?;
-
         // Track what changed
         let mut changes = Vec::new();
         if update.start_time.is_some() {
@@ -590,12 +398,6 @@ impl FleetService {
         }
         if update.site_id.is_some() {
             changes.push("site_id".to_string());
-        }
-        if update.project_id.is_some() {
-            changes.push("project_id".to_string());
-        }
-        if update.purpose.is_some() {
-            changes.push("purpose".to_string());
         }
         if update.notes.is_some() {
             changes.push("notes".to_string());
@@ -650,8 +452,6 @@ impl FleetService {
             start_time: None,
             end_time: None,
             site_id: None,
-            project_id: None,
-            purpose: None,
             notes: None,
             status: Some(ReservationStatus::Cancelled),
         };
@@ -775,12 +575,14 @@ impl FleetService {
         }
 
         self.fleet_repo
-            .find_reservable_asset(ctx.tenant_id, resource_type, resource_id)
-            .await?
-            .ok_or_else(|| AppError::NotFound(format!("{} not found", resource_type)))?;
-
-        self.fleet_repo
-            .check_availability(ctx.tenant_id, resource_id, start_time, end_time, None)
+            .check_availability(
+                ctx.tenant_id,
+                resource_type,
+                resource_id,
+                start_time,
+                end_time,
+                None,
+            )
             .await
     }
 
@@ -801,14 +603,15 @@ impl FleetService {
             ));
         }
 
-        self.fleet_repo
-            .find_reservable_asset(ctx.tenant_id, resource_type, resource_id)
-            .await?
-            .ok_or_else(|| AppError::NotFound(format!("{} not found", resource_type)))?;
-
         let conflicts = self
             .fleet_repo
-            .find_conflicts(ctx.tenant_id, resource_id, start_time, end_time)
+            .find_conflicts(
+                ctx.tenant_id,
+                resource_type,
+                resource_id,
+                start_time,
+                end_time,
+            )
             .await?;
 
         Ok(
