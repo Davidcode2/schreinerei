@@ -6,6 +6,7 @@ use axum::{
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use ts_rs::TS;
 use uuid::Uuid;
 
@@ -37,6 +38,14 @@ pub fn create_router() -> Router<AppState> {
         .route("/api/v1/users/invite", post(invite_user))
         .route("/api/v1/users/{id}/role", patch(update_user_role))
         .route("/api/v1/users/{id}", get(get_user))
+}
+
+fn user_service(state: &AppState) -> UserService {
+    let repository = UserRepository::new(state.pool.clone());
+    match KeycloakAdminClient::from_config(&state.config) {
+        Ok(client) => UserService::new_with_role_assigner(repository, Arc::new(client)),
+        Err(_) => UserService::new(repository),
+    }
 }
 
 /// Response DTO for user data
@@ -124,9 +133,7 @@ pub async fn get_current_user(
     State(state): State<AppState>,
     ctx: TenantContext,
 ) -> Result<impl IntoResponse, AppError> {
-    let service = UserService::new(
-        crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
-    );
+    let service = user_service(&state);
     let user = service.get_or_create_from_ctx(&ctx).await?;
 
     Ok(Json(UserResponse::from(user)))
@@ -137,9 +144,7 @@ pub async fn list_users(
     State(state): State<AppState>,
     ctx: TenantContext,
 ) -> Result<impl IntoResponse, AppError> {
-    let service = UserService::new(
-        crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
-    );
+    let service = user_service(&state);
 
     let users = service.list_users(&ctx).await?;
     let response: Vec<UserResponse> = users.into_iter().map(UserResponse::from).collect();
@@ -153,9 +158,7 @@ pub async fn get_user(
     ctx: TenantContext,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
-    let service = UserService::new(
-        crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
-    );
+    let service = user_service(&state);
 
     let user_id = Uuid::parse_str(&id)
         .map(UserId)
@@ -210,9 +213,7 @@ pub async fn update_user_role(
     Path(id): Path<String>,
     Json(request): Json<UpdateRoleRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    let service = UserService::new(
-        crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
-    );
+    let service = user_service(&state);
 
     let user_id = Uuid::parse_str(&id)
         .map(UserId)
@@ -234,9 +235,7 @@ pub async fn update_own_profile(
     ctx: TenantContext,
     Json(request): Json<UpdateProfileRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    let service = UserService::new(
-        crate::modules::iam::infrastructure::user_repository::UserRepository::new(state.pool),
-    );
+    let service = user_service(&state);
 
     let update = UpdateProfile { name: request.name };
 
@@ -251,7 +250,7 @@ pub async fn get_preferences(
     ctx: TenantContext,
 ) -> Result<impl IntoResponse, AppError> {
     let service = UserPreferencesService::new(state.pool.clone());
-    let user_service = UserService::new(UserRepository::new(state.pool));
+    let user_service = user_service(&state);
 
     let user_id = user_service.get_or_create_user_id_from_ctx(&ctx).await?;
     let preferences = service
@@ -268,7 +267,7 @@ pub async fn update_preferences(
     Json(request): Json<UpdatePreferencesRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = UserPreferencesService::new(state.pool.clone());
-    let user_service = UserService::new(UserRepository::new(state.pool));
+    let user_service = user_service(&state);
 
     let user_id = user_service.get_or_create_user_id_from_ctx(&ctx).await?;
 

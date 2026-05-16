@@ -1,7 +1,9 @@
 use async_trait::async_trait;
 use schreinerei::common::error::AppError;
 use schreinerei::common::types::{Role, TenantId, UserId};
-use schreinerei::modules::iam::application::user_service::{TenantContext, UserService};
+use schreinerei::modules::iam::application::user_service::{
+    RealmRoleAssigner, TenantContext, UserService,
+};
 use schreinerei::modules::iam::infrastructure::user_repository::UserRepository;
 use schreinerei::modules::onboarding::application::{
     OrganizationProvisioner, TenantProvisioningService,
@@ -188,6 +190,44 @@ async fn first_login_claims_pending_onboarding_admin(pool: PgPool) {
     assert_eq!(pending_invite_role, "employee");
 }
 
+#[sqlx::test]
+async fn first_login_assigns_keycloak_admin_role_for_claimed_onboarding_admin(pool: PgPool) {
+    let session_id = insert_confirmed_session(&pool, "tr_admin_role_sync").await;
+    let organization_id = Uuid::new_v4().to_string();
+    let keycloak = FakeKeycloak::succeeding(&organization_id, "schreinerei-beispiel");
+    let service = provisioning_service(pool.clone(), keycloak);
+    service
+        .provision_for_payment(PAYMENT_PROVIDER, "tr_admin_role_sync")
+        .await
+        .expect("provisioning should succeed");
+
+    let tenant_id: Uuid =
+        sqlx::query_scalar("SELECT tenant_id FROM onboarding_sessions WHERE id = $1")
+            .bind(session_id)
+            .fetch_one(&pool)
+            .await
+            .expect("tenant should be attached");
+
+    let keycloak_user_id = UserId(Uuid::new_v4());
+    let assigner = Arc::new(FakeRealmRoleAssigner::default());
+    let user_service =
+        UserService::new_with_role_assigner(UserRepository::new(pool.clone()), assigner.clone());
+    let ctx = TenantContext {
+        tenant_id: TenantId(tenant_id),
+        user_id: keycloak_user_id,
+        email: "admin@example.com".to_string(),
+        roles: vec![Role::Employee],
+    };
+
+    let user = user_service
+        .get_or_create_from_ctx(&ctx)
+        .await
+        .expect("pending admin should be claimed");
+
+    assert_eq!(user.role, Role::Admin);
+    assert!(assigner.called.load(Ordering::SeqCst));
+}
+
 fn provisioning_service(
     pool: PgPool,
     keycloak: FakeKeycloak,
@@ -237,6 +277,20 @@ struct FakeKeycloak {
     organization_id: String,
     organization_alias: String,
     fail_create: Arc<AtomicBool>,
+}
+
+#[derive(Default)]
+struct FakeRealmRoleAssigner {
+    called: AtomicBool,
+}
+
+#[async_trait]
+impl RealmRoleAssigner for FakeRealmRoleAssigner {
+    async fn assign_realm_role(&self, _user_id: &str, role: Role) -> Result<(), AppError> {
+        assert_eq!(role, Role::Admin);
+        self.called.store(true, Ordering::SeqCst);
+        Ok(())
+    }
 }
 
 impl FakeKeycloak {

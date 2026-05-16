@@ -7,6 +7,7 @@ use axum::{
 };
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use ts_rs::TS;
 use uuid::Uuid;
 
@@ -20,6 +21,7 @@ use crate::modules::billing::infrastructure::InvoiceRepository;
 use crate::modules::billing::pdf::{generate_invoice_pdf, invoice_pdf_filename};
 use crate::modules::iam::application::user_service::{TenantContext, UserService};
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
+use crate::modules::onboarding::infrastructure::keycloak_admin_client::KeycloakAdminClient;
 use crate::modules::sites::api::routes::{
     ProjectLaborSummaryResponse, ProjectMaterialSummaryResponse, SiteInvoiceBillingResponse,
     SiteInvoiceProjectResponse,
@@ -140,7 +142,13 @@ async fn create_project_invoice(
 
     let site_id = SiteId(site_id);
     let invoice_summary = load_invoice_summary(state.pool.clone(), site_id, &ctx).await?;
-    let user_service = UserService::new(UserRepository::new(state.pool.clone()));
+    let user_service = match KeycloakAdminClient::from_config(&state.config) {
+        Ok(client) => UserService::new_with_role_assigner(
+            UserRepository::new(state.pool.clone()),
+            Arc::new(client),
+        ),
+        Err(_) => UserService::new(UserRepository::new(state.pool.clone())),
+    };
     let created_by = user_service.get_or_create_user_id_from_ctx(&ctx).await?;
     let service = BillingService::new(InvoiceRepository::new(state.pool));
     let snapshot = invoice_snapshot(&invoice_summary);

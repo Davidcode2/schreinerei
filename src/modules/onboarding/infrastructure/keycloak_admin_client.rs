@@ -2,6 +2,7 @@ use reqwest::{header, Client, StatusCode};
 use serde::{Deserialize, Serialize};
 
 use crate::common::error::AppError;
+use crate::common::types::Role;
 use crate::config::AppConfig;
 
 #[derive(Clone)]
@@ -133,6 +134,62 @@ impl KeycloakAdminClient {
         self.find_organization_by_alias(alias, token.as_str()).await
     }
 
+    pub async fn assign_realm_role(&self, user_id: &str, role: Role) -> Result<(), AppError> {
+        let token = self.admin_access_token().await?;
+        let role_name = role.to_string();
+        let role_url = format!(
+            "{}/admin/realms/{}/roles/{}",
+            self.base_url, self.realm, role_name
+        );
+
+        let role_response = self
+            .client
+            .get(role_url)
+            .bearer_auth(token.as_str())
+            .send()
+            .await
+            .map_err(|error| AppError::Internal(format!("Keycloak role lookup failed: {error}")))?;
+
+        if !role_response.status().is_success() {
+            return Err(AppError::Validation(format!(
+                "Keycloak role lookup failed with status {}",
+                role_response.status()
+            )));
+        }
+
+        let role_representation = role_response
+            .json::<KeycloakRoleRepresentation>()
+            .await
+            .map_err(|error| {
+                AppError::Internal(format!("Failed to parse Keycloak role: {error}"))
+            })?;
+
+        let mapping_url = format!(
+            "{}/admin/realms/{}/users/{}/role-mappings/realm",
+            self.base_url, self.realm, user_id
+        );
+
+        let mapping_response = self
+            .client
+            .post(mapping_url)
+            .bearer_auth(token)
+            .json(&vec![role_representation])
+            .send()
+            .await
+            .map_err(|error| {
+                AppError::Internal(format!("Keycloak role assignment failed: {error}"))
+            })?;
+
+        if mapping_response.status().is_success() {
+            return Ok(());
+        }
+
+        Err(AppError::Validation(format!(
+            "Keycloak role assignment failed with status {}",
+            mapping_response.status()
+        )))
+    }
+
     async fn find_organization_by_alias(
         &self,
         alias: &str,
@@ -240,6 +297,12 @@ struct KeycloakOrganizationRequest<'a> {
 struct KeycloakOrganizationResponse {
     id: Option<String>,
     alias: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct KeycloakRoleRepresentation {
+    id: String,
+    name: String,
 }
 
 impl KeycloakOrganizationResponse {

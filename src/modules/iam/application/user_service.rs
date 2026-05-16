@@ -1,9 +1,26 @@
+use std::sync::Arc;
+
+use async_trait::async_trait;
+
 use crate::auth::extractor::AuthenticatedUser;
 use crate::common::error::AppError;
 use crate::common::types::{Role, TenantId, UserId};
 use crate::modules::iam::domain::user::{CreateUser, InviteUser, UpdateProfile, User};
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
+use crate::modules::onboarding::infrastructure::keycloak_admin_client::KeycloakAdminClient;
 use axum::{extract::FromRequestParts, http::request::Parts};
+
+#[async_trait]
+pub trait RealmRoleAssigner: Send + Sync {
+    async fn assign_realm_role(&self, user_id: &str, role: Role) -> Result<(), AppError>;
+}
+
+#[async_trait]
+impl RealmRoleAssigner for KeycloakAdminClient {
+    async fn assign_realm_role(&self, user_id: &str, role: Role) -> Result<(), AppError> {
+        self.assign_realm_role(user_id, role).await
+    }
+}
 
 /// Context for tenant-scoped operations
 #[derive(Debug, Clone)]
@@ -61,11 +78,25 @@ where
 /// Service for user management operations
 pub struct UserService {
     user_repo: UserRepository,
+    role_assigner: Option<Arc<dyn RealmRoleAssigner>>,
 }
 
 impl UserService {
     pub fn new(user_repo: UserRepository) -> Self {
-        Self { user_repo }
+        Self {
+            user_repo,
+            role_assigner: None,
+        }
+    }
+
+    pub fn new_with_role_assigner(
+        user_repo: UserRepository,
+        role_assigner: Arc<dyn RealmRoleAssigner>,
+    ) -> Self {
+        Self {
+            user_repo,
+            role_assigner: Some(role_assigner),
+        }
     }
 
     /// Get or create user from Keycloak JWT authentication
@@ -88,6 +119,7 @@ impl UserService {
             .find_by_keycloak_id(&ctx.user_id.to_string(), tenant_id)
             .await?
         {
+            self.sync_realm_role_if_needed(&user, ctx).await?;
             return Ok(user);
         }
 
@@ -96,6 +128,7 @@ impl UserService {
             .claim_pending_by_email(tenant_id, &ctx.email, &ctx.user_id.to_string())
             .await?
         {
+            self.sync_realm_role_if_needed(&user, ctx).await?;
             return Ok(user);
         }
 
@@ -111,7 +144,27 @@ impl UserService {
             },
         };
 
-        self.user_repo.create(&create_user, tenant_id).await
+        let user = self.user_repo.create(&create_user, tenant_id).await?;
+        self.sync_realm_role_if_needed(&user, ctx).await?;
+        Ok(user)
+    }
+
+    async fn sync_realm_role_if_needed(
+        &self,
+        user: &User,
+        ctx: &TenantContext,
+    ) -> Result<(), AppError> {
+        if !user.is_admin() || ctx.is_admin() || user.keycloak_user_id != ctx.user_id.to_string() {
+            return Ok(());
+        }
+
+        let Some(role_assigner) = &self.role_assigner else {
+            return Ok(());
+        };
+
+        role_assigner
+            .assign_realm_role(&user.keycloak_user_id, Role::Admin)
+            .await
     }
 
     /// Resolve tenant-local user id from authenticated identity.
