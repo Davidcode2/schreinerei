@@ -1,15 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
-import userEvent from "@testing-library/user-event"
+import { describe, expect, it, vi } from "vitest"
 import { render, screen } from "@/test/utils"
 import { OnboardingCompletePage } from "./OnboardingCompletePage"
-
-const { startLogin } = vi.hoisted(() => ({
-  startLogin: vi.fn(),
-}))
-
-vi.mock("@/lib/auth/keycloak", () => ({
-  startLogin,
-}))
 
 vi.mock("@/lib/api/hooks", () => ({
   useOnboardingSession: vi.fn((sessionId: string | null) => ({
@@ -27,10 +18,6 @@ vi.mock("@/lib/api/hooks", () => ({
 }))
 
 describe("OnboardingCompletePage", () => {
-  beforeEach(() => {
-    startLogin.mockReset()
-  })
-
   it("shows a missing session message when the query param is absent", () => {
     window.history.pushState({}, "", "/onboarding/complete")
 
@@ -39,15 +26,15 @@ describe("OnboardingCompletePage", () => {
     expect(screen.getByText(/session-id fehlt/i)).toBeInTheDocument()
   })
 
-  it("lets the user continue to login after provisioning completed", async () => {
+  it("explains that the user should finish signup via the email after provisioning completed", () => {
     window.history.pushState({}, "", "/onboarding/complete?session=session-1")
 
-    const user = userEvent.setup()
     render(<OnboardingCompletePage />)
 
     expect(screen.getByText(/ihre organisation ist bereit/i)).toBeInTheDocument()
-    await user.click(screen.getByRole("button", { name: /weiter zur anmeldung/i }))
-
-    expect(startLogin).toHaveBeenCalledOnce()
+    expect(
+      screen.getByText(/sie erhalten in kuerze eine einladung per e-mail/i)
+    ).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /weiter zur anmeldung/i })).not.toBeInTheDocument()
   })
 })

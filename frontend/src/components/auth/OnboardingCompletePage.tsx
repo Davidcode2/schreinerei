@@ -3,7 +3,6 @@ import { AlertTriangle, Building2, CheckCircle2, ChevronLeft, Loader2, Mail } fr
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useOnboardingSession } from "@/lib/api/hooks"
-import { startLogin } from "@/lib/auth/keycloak"
 
 const STATUS_COPY: Record<string, string> = {
   pending_payment: "Zahlung wird bestaetigt.",
@@ -86,16 +85,26 @@ export function OnboardingCompletePage() {
                   <div className="mt-1 text-sm text-muted-foreground">
                     Organisation: {data.organization_slug}
                   </div>
+                  {isCompleted && (
+                    <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                      Sie erhalten in Kuerze eine Einladung per E-Mail. Oeffnen Sie den Link in
+                      dieser Nachricht, um Ihre Registrierung abzuschliessen und Ihr Passwort zu
+                      setzen.
+                    </div>
+                  )}
                   {data.error_message && (
                     <div className="mt-2 text-sm text-destructive">{data.error_message}</div>
                   )}
                 </div>
 
                 {isCompleted ? (
-                  <Button className="w-full gap-2" onClick={() => void startLogin()}>
-                    <Mail className="h-4 w-4" />
-                    Weiter zur Anmeldung
-                  </Button>
+                  <div className="flex items-start gap-3 rounded-lg border bg-muted/20 p-4 text-sm text-muted-foreground">
+                    <Mail className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      Falls die E-Mail nicht innerhalb weniger Minuten ankommt, pruefen Sie bitte
+                      auch Ihren Spam-Ordner.
+                    </span>
+                  </div>
                 ) : isFailed ? (
                   <Link to="/signup" className="block">
                     <Button className="w-full" variant="outline">

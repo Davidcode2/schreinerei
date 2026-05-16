@@ -65,6 +65,8 @@ impl KeycloakAdminClient {
             .client
             .post(url)
             .bearer_auth(token)
+            // Invitations are sent before the user has a preferred locale, so prefer German here.
+            .header(header::ACCEPT_LANGUAGE, "de")
             .form(&form)
             .send()
             .await
