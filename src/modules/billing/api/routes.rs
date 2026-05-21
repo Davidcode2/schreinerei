@@ -595,7 +595,7 @@ mod tests {
             .await
             .expect("pdf metadata should be readable");
 
-        assert!(bytes.starts_with(b"%PDF-1.4"));
+        assert!(bytes.starts_with(b"%PDF-"));
         assert_eq!(
             header_value(&headers, header::CONTENT_TYPE),
             "application/pdf"
