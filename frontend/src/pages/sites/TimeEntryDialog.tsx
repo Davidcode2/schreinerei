@@ -176,7 +176,7 @@ export function TimeEntryDialog({
 	return (
 		<>
 			<Dialog open={open} onOpenChange={onOpenChange}>
-				<DialogContent className="sm:max-w-md">
+				<DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-md">
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2.5 font-display">
 							<div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
@@ -191,7 +191,7 @@ export function TimeEntryDialog({
 						</DialogDescription>
 					</DialogHeader>
 
-					<div className="space-y-5 py-4">
+					<div className="min-h-0 space-y-5 overflow-y-auto py-4 pr-1">
 						<div className="space-y-2">
 							<Label>Art der Arbeit</Label>
 							<div className="flex flex-wrap gap-2">
@@ -299,7 +299,7 @@ export function TimeEntryDialog({
 						</div>
 					</div>
 
-					<DialogFooter className="flex-col gap-2 sm:flex-row">
+					<DialogFooter className="flex-col gap-2 border-t border-border/70 pt-4 sm:flex-row">
 						{canDeleteEntry && (
 							<Button
 								variant="destructive"
