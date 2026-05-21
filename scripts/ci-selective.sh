@@ -20,6 +20,16 @@ EOF
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 
+clippy_lints=(
+  -W clippy::cognitive_complexity
+  -W clippy::too_many_arguments
+  -W clippy::type_complexity
+  -W clippy::large_enum_variant
+  -W clippy::await_holding_lock
+  -W clippy::dbg_macro
+  -W clippy::todo
+)
+
 mode="branch"
 fast=false
 dry_run=false
@@ -98,17 +108,22 @@ source_backend_env() {
   fi
 }
 
+run_backend_clippy() {
+  cargo clippy --all-targets --all-features -- -D warnings "${clippy_lints[@]}"
+}
+
 run_backend_fast() {
   printf 'Running backend fast checks...\n'
   source_backend_env
   cargo fmt -- --check
+  run_backend_clippy
 }
 
 run_backend_full() {
   printf 'Running backend CI-equivalent checks...\n'
   source_backend_env
   cargo fmt -- --check
-  cargo clippy --all-targets --all-features -- -D warnings
+  run_backend_clippy
   cargo test --all
   cargo export-types
   if ! git diff --quiet -- frontend/src/types/generated.ts; then
@@ -157,7 +172,7 @@ else
       frontend/*|dockerfile.frontend|nginx.conf)
         run_frontend=true
         ;;
-      src/*|migrations/*|Cargo.toml|Cargo.lock|dockerfile.backend)
+      src/*|migrations/*|Cargo.toml|Cargo.lock|clippy.toml|dockerfile.backend|scripts/ci-selective.sh|.githooks/*)
         run_backend=true
         ;;
       .github/workflows/*|.dockerignore)

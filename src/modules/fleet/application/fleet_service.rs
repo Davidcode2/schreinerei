@@ -67,6 +67,83 @@ impl FleetService {
         }
     }
 
+    fn ensure_reservation_access(
+        &self,
+        reservation: &Reservation,
+        local_user_id: UserId,
+        ctx: &TenantContext,
+        action: &str,
+    ) -> Result<(), AppError> {
+        if reservation.user_id == local_user_id || ctx.is_admin() {
+            Ok(())
+        } else {
+            Err(AppError::Forbidden(format!(
+                "You can only {action} your own reservations"
+            )))
+        }
+    }
+
+    async fn validate_updated_reservation_availability(
+        &self,
+        reservation_id: ReservationId,
+        current: &Reservation,
+        update: &UpdateReservation,
+        ctx: &TenantContext,
+    ) -> Result<(), AppError> {
+        if update.start_time.is_none() && update.end_time.is_none() {
+            return Ok(());
+        }
+
+        let new_start = update.start_time.unwrap_or(current.start_time);
+        let new_end = update.end_time.unwrap_or(current.end_time);
+        let is_available = self
+            .fleet_repo
+            .check_availability(
+                ctx.tenant_id,
+                current.resource_id,
+                new_start,
+                new_end,
+                Some(reservation_id),
+            )
+            .await?;
+
+        if is_available {
+            Ok(())
+        } else {
+            Err(AppError::Validation(
+                "Resource is not available for the requested time period".to_string(),
+            ))
+        }
+    }
+
+    fn reservation_changes(update: &UpdateReservation) -> Vec<String> {
+        let mut changes = Vec::new();
+
+        if update.start_time.is_some() {
+            changes.push("start_time".to_string());
+        }
+        if update.end_time.is_some() {
+            changes.push("end_time".to_string());
+        }
+        if update.site_id.is_some() {
+            changes.push("site_id".to_string());
+        }
+        if update.project_id.is_some() {
+            changes.push("project_id".to_string());
+        }
+        if update.purpose.is_some() {
+            changes.push("purpose".to_string());
+        }
+        if update.notes.is_some() {
+            changes.push("notes".to_string());
+        }
+        if update.status.is_some() {
+            changes.push("status".to_string());
+        }
+
+        changes
+    }
+
     // === Vehicle operations ===
 
     pub async fn create_vehicle(
@@ -548,61 +625,17 @@ impl FleetService {
         let local_user_id = self.resolve_local_user_id(ctx).await?;
 
         // Check ownership or admin role
-        if current.user_id != local_user_id && !ctx.is_admin() {
-            return Err(AppError::Forbidden(
-                "You can only update your own reservations".to_string(),
-            ));
-        }
+        self.ensure_reservation_access(&current, local_user_id, ctx, "update")?;
 
         // If time range changed, check availability
-        if update.start_time.is_some() || update.end_time.is_some() {
-            let new_start = update.start_time.as_ref().unwrap_or(&current.start_time);
-            let new_end = update.end_time.as_ref().unwrap_or(&current.end_time);
-
-            let is_available = self
-                .fleet_repo
-                .check_availability(
-                    ctx.tenant_id,
-                    current.resource_id,
-                    *new_start,
-                    *new_end,
-                    Some(reservation_id), // Exclude current reservation
-                )
-                .await?;
-
-            if !is_available {
-                return Err(AppError::Validation(
-                    "Resource is not available for the requested time period".to_string(),
-                ));
-            }
-        }
+        self.validate_updated_reservation_availability(reservation_id, &current, &update, ctx)
+            .await?;
 
         self.validate_project_context(update.project_id.or(update.site_id), ctx)
             .await?;
 
         // Track what changed
-        let mut changes = Vec::new();
-        if update.start_time.is_some() {
-            changes.push("start_time".to_string());
-        }
-        if update.end_time.is_some() {
-            changes.push("end_time".to_string());
-        }
-        if update.site_id.is_some() {
-            changes.push("site_id".to_string());
-        }
-        if update.project_id.is_some() {
-            changes.push("project_id".to_string());
-        }
-        if update.purpose.is_some() {
-            changes.push("purpose".to_string());
-        }
-        if update.notes.is_some() {
-            changes.push("notes".to_string());
-        }
-        if update.status.is_some() {
-            changes.push("status".to_string());
-        }
+        let changes = Self::reservation_changes(&update);
 
         let reservation = self
             .fleet_repo

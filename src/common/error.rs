@@ -39,30 +39,50 @@ impl From<String> for AppError {
     }
 }
 
+impl AppError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            AppError::Database(_) | AppError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::Auth(_) | AppError::Unauthorized(_) => StatusCode::UNAUTHORIZED,
+            AppError::NotFound(_) => StatusCode::NOT_FOUND,
+            AppError::Validation(_) => StatusCode::BAD_REQUEST,
+            AppError::Forbidden(_) => StatusCode::FORBIDDEN,
+            AppError::Conflict(_) => StatusCode::CONFLICT,
+        }
+    }
+
+    fn log_database_error(&self) {
+        if let AppError::Database(msg) = self {
+            tracing::error!("Database error: {}", msg);
+        }
+    }
+
+    fn log_internal_error(&self) {
+        if let AppError::Internal(msg) = self {
+            tracing::error!("Internal error: {}", msg);
+        }
+    }
+
+    fn response_message(self) -> String {
+        match self {
+            AppError::Database(_) => "Database error".to_string(),
+            AppError::Internal(_) => "Internal server error".to_string(),
+            AppError::Auth(msg)
+            | AppError::NotFound(msg)
+            | AppError::Validation(msg)
+            | AppError::Forbidden(msg)
+            | AppError::Unauthorized(msg)
+            | AppError::Conflict(msg) => msg,
+        }
+    }
+}
+
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        let (status, message) = match self {
-            AppError::Database(msg) => {
-                tracing::error!("Database error: {}", msg);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Database error".to_string(),
-                )
-            }
-            AppError::Auth(msg) => (StatusCode::UNAUTHORIZED, msg),
-            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
-            AppError::Validation(msg) => (StatusCode::BAD_REQUEST, msg),
-            AppError::Internal(msg) => {
-                tracing::error!("Internal error: {}", msg);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Internal server error".to_string(),
-                )
-            }
-            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
-            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
-            AppError::Conflict(msg) => (StatusCode::CONFLICT, msg),
-        };
+        self.log_database_error();
+        self.log_internal_error();
+        let status = self.status_code();
+        let message = self.response_message();
 
         let body = Json(json!({
             "error": message,
