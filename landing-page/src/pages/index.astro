@@ -8,80 +8,80 @@ const signupUrl = `${appUrl}/signup`
 
 const features = [
   {
-    title: "Baustellen im Blick",
-    copy: "Verfolge Projekte, Stunden, Budget und Fortschritt an einem Ort statt in verstreuten Listen, Fotos und Telefonnotizen.",
+    title: "Weniger hinterhertelefonieren",
+    copy: "Baustellen, Werkstattaufträge und offene Punkte stehen an einem Ort. So muss niemand morgens erst fragen, was heute dran ist.",
   },
   {
-    title: "Material ohne Sucherei",
-    copy: "Bestände, Entnahmen und Kategorien bleiben nachvollziehbar. Das hilft besonders kleinen Werkstätten, die pragmatisch arbeiten wollen.",
+    title: "Material im Blick",
+    copy: "Du siehst, was da ist, was fehlt und was entnommen wurde. Das spart Sucherei im Lager und teure spontane Nachkäufe.",
   },
   {
-    title: "Werkzeuge und Fahrzeuge organisiert",
-    copy: "Behalte im Alltag im Blick, wer was nutzt, was reserviert ist und welches Fahrzeug oder Werkzeug gerade verfügbar bleibt.",
+    title: "Maschinen und Fahrzeuge nicht vergessen",
+    copy: "Reservierungen, Verfügbarkeit und anstehende Wartungen bleiben sichtbar, damit wichtige Dinge nicht erst auffallen, wenn es zu spät ist.",
   },
   {
-    title: "Mobile Zeiterfassung",
-    copy: "Zeiten landen direkt im System und nicht erst abends auf Zetteln. Das spart Rückfragen im Büro und Nacharbeit auf der Baustelle.",
+    title: "Stunden direkt erfassen",
+    copy: "Arbeitszeiten landen sofort im System statt abends auf Zetteln. Das spart Rückfragen und macht die Abrechnung am Ende einfacher.",
   },
   {
-    title: "Einfaches Onboarding",
-    copy: "Klare Oberfläche, klare Wege, keine Tariflogik. Teams können schnell starten, ohne sich durch ein großes Generalistenprodukt zu kämpfen.",
+    title: "Schnell verstanden",
+    copy: "Die Schreinerei-App ist für kleine Handwerksbetriebe gemacht, die arbeiten wollen und nicht erst lange eine Software lernen möchten.",
   },
   {
-    title: "Gebaut für deutsche Schreinerbetriebe",
-    copy: "Die Sprache, Abläufe und Prioritäten passen zu kleinen Schreinereien und Tischlereien in Deutschland statt zu allen Gewerken gleichzeitig.",
+    title: "Passt zu Tischlern und Schreinern",
+    copy: "Die Sprache, die Abläufe und die Prioritäten passen zu Betrieben, die mit Holz arbeiten und ihren Alltag sauber organisieren wollen.",
   },
 ]
 
 const faqs = [
   {
-    question: "Für wen ist Schreinerei gedacht?",
-    answer: "Für kleine Schreinereien und Tischlereien in Deutschland, die ihre Büroarbeit, Baustellenorganisation und Teamabläufe sauber digitalisieren wollen, ohne ein überladenes System einzuführen.",
+    question: "Für wen ist die Schreinerei-App gedacht?",
+    answer: "Für kleine Handwerksbetriebe aus dem Tischler- und Schreinerhandwerk, die weniger Zeit mit Papierkram, Nachfragen und Erinnerungschaos verbringen wollen.",
   },
   {
-    question: "Was kostet das Tool?",
-    answer: "30 Euro pro Monat. Es gibt bewusst nur einen Tarif: alles inklusive, ohne Add-ons und ohne komplizierte Paketlogik.",
+    question: "Was kostet die Schreinerei-App?",
+    answer: "30 Euro pro Monat. Ein Tarif, alle Kernfunktionen drin. Kein Rechnen, kein Paketvergleich, kein Zusatzmodul für jeden nächsten Schritt.",
   },
   {
     question: "Kann ich direkt loslegen?",
-    answer: "Ja. Die Landingpage führt direkt zur Anmeldung oder zur Organisationserstellung im bestehenden Frontend. Der Einstieg ist auf einen klaren Pfad reduziert.",
+    answer: "Ja. Du kommst direkt in den Login oder zur Organisationserstellung. Der Einstieg ist bewusst kurz gehalten, damit du nicht erst durch einen langen Vertriebsprozess musst.",
   },
   {
     question: "Warum nicht einfach Plancraft oder HERO?",
-    answer: "Diese Produkte sind starke Generalisten. Schreinerei positioniert sich bewusst schmaler: fokussierter auf kleine Holzbetriebe, klarer im Pricing und leichter im Einstieg.",
+    answer: "Plancraft und HERO sind starke Lösungen für viele Gewerke und viele Prozesse. Die Schreinerei-App ist die bewusst einfachere Wahl für kleine Tischler- und Schreinerbetriebe, die vor allem weniger Verwaltungsaufwand wollen.",
   },
 ]
 
 const comparisonRows = [
   {
     label: "Fokus auf kleine Schreinereien & Tischlereien",
-    schreinerei: "Konsequent",
-    plancraft: "Teilweise",
-    hero: "Teilweise",
+    schreinerei: "Klarer Schwerpunkt",
+    plancraft: "Breiter aufgestellt",
+    hero: "Breiter aufgestellt",
   },
   {
-    label: "Einfaches Pricing",
+    label: "Preismodell",
     schreinerei: "1 Tarif, 30 EUR",
-    plancraft: "Mehrstufig",
-    hero: "Beratungsintensiver",
+    plancraft: "Mehrere Pakete",
+    hero: "Breiteres Setup",
   },
   {
-    label: "Produktpositionierung",
-    schreinerei: "Spezialisiert",
-    plancraft: "Breit im Handwerk",
-    hero: "Sehr breit im Handwerk",
+    label: "Produktansatz",
+    schreinerei: "Schlank und alltagsnah",
+    plancraft: "Breite Handwerkerplattform",
+    hero: "Umfangreiches Betriebssystem",
   },
   {
-    label: "Einstieg ohne Produktballast",
-    schreinerei: "Sehr hoch",
-    plancraft: "Mittel",
-    hero: "Mittel",
+    label: "Einstieg für kleine Teams",
+    schreinerei: "Direkt und übersichtlich",
+    plancraft: "Mehr Funktionen, mehr Auswahl",
+    hero: "Mehr Funktionen, mehr Komplexität",
   },
   {
-    label: "Alles in einem Tarif",
-    schreinerei: "Ja",
-    plancraft: "Nicht im Fokus",
-    hero: "Nicht im Fokus",
+    label: "Geeignet für",
+    schreinerei: "Kleine Tischler- und Schreinerbetriebe",
+    plancraft: "Viele Gewerke und Betriebsgrößen",
+    hero: "Viele Gewerke und wachsende Betriebe",
   },
 ]
 
@@ -89,7 +89,7 @@ const screenshotCards = [
   {
     eyebrow: "Dashboard",
     title: "Tageslage auf einen Blick",
-    description: "Der Startbildschirm verbindet Projektstatus, Materialwarnungen und Tagesstunden in einer ruhigen Uebersicht fuer Inhaber und Buero.",
+    description: "Der Startbildschirm zeigt Projektstatus, Materialwarnungen und erfasste Stunden in einer klaren Übersicht für Inhaber und Büro.",
     desktopImage: "/screenshots/dashboard-desktop.png",
     desktopAlt: "Desktop-Screenshot des Schreinerei-Dashboards",
     mobileImage: "/screenshots/dashboard-mobile.png",
@@ -98,7 +98,7 @@ const screenshotCards = [
   {
     eyebrow: "Projekte",
     title: "Baustellen und Werkstattprojekte im Raster",
-    description: "Die Projektliste zeigt Suche, Statusfilter und Kartenlayout fuer externe Baustellen und interne Werkstattauftraege in einer Ansicht.",
+    description: "Die Projektliste verbindet Suche, Statusfilter und Kartenansicht für externe Baustellen und interne Werkstattaufträge in einer Oberfläche.",
     desktopImage: "/screenshots/sites-desktop.png",
     desktopAlt: "Desktop-Screenshot der Projekte-Seite in Schreinerei",
     mobileImage: "/screenshots/sites-mobile.png",
@@ -107,7 +107,7 @@ const screenshotCards = [
   {
     eyebrow: "Fuhrpark",
     title: "Fahrzeuge mit Reservierungen im Griff",
-    description: "Der Fuhrparkbereich zeigt Fahrzeuge, Status und Reservierungskontext so, dass schnell klar wird, was verfuegbar ist und was schon eingeplant wurde.",
+    description: "Der Fuhrparkbereich zeigt Fahrzeuge, Status und Reservierungen so, dass dein Team sofort sieht, was verfügbar und was schon eingeplant ist.",
     desktopImage: "/screenshots/fleet-desktop.png",
     desktopAlt: "Desktop-Screenshot der Fuhrpark-Seite in Schreinerei",
     mobileImage: "/screenshots/fleet-mobile.png",
@@ -116,7 +116,7 @@ const screenshotCards = [
   {
     eyebrow: "Werkzeuge",
     title: "Werkzeugbestand separat und sauber organisiert",
-    description: "Werkzeuge bekommen ihre eigene klare Oberflaeche statt in einer allgemeinen Ressourcenansicht unterzugehen. Das passt zum Alltag kleiner Teams.",
+    description: "Werkzeuge bekommen ihre eigene klare Oberfläche statt in einer allgemeinen Ressourcenansicht unterzugehen. Das passt zum Alltag kleiner Teams.",
     desktopImage: "/screenshots/tools-desktop.png",
     desktopAlt: "Desktop-Screenshot der Werkzeuge-Seite in Schreinerei",
     mobileImage: "/screenshots/tools-mobile.png",
@@ -125,7 +125,7 @@ const screenshotCards = [
   {
     eyebrow: "Inventar",
     title: "Materialsuche, Kategorien und Warnungen an einem Ort",
-    description: "Das Inventar verbindet Suchfeld, Kategorien und Ablaufwarnungen, damit Materialfragen nicht erst zwischen Lagerregal und Telefon geklaert werden muessen.",
+    description: "Das Inventar verbindet Suche, Kategorien und Ablaufwarnungen, damit Materialfragen nicht erst zwischen Lagerregal und Telefon geklärt werden müssen.",
     desktopImage: "/screenshots/inventory-desktop.png",
     desktopAlt: "Desktop-Screenshot der Inventar-Seite in Schreinerei",
     mobileImage: "/screenshots/inventory-mobile.png",
@@ -134,7 +134,7 @@ const screenshotCards = [
   {
     eyebrow: "Einstellungen",
     title: "Profil, Abrechnung und Teamverwaltung ohne Umwege",
-    description: "Auch die Verwaltungsbereiche bleiben in derselben ruhigen Sprache: klar gegliederte Karten fuer Profil, Rechnungsdaten und Benutzerverwaltung.",
+    description: "Auch die Verwaltungsbereiche bleiben in derselben klaren Sprache: sauber gegliederte Karten für Profil, Rechnungsdaten und Benutzerverwaltung.",
     desktopImage: "/screenshots/settings-desktop.png",
     desktopAlt: "Desktop-Screenshot der Einstellungen-Seite in Schreinerei",
     mobileImage: "/screenshots/settings-mobile.png",
@@ -144,16 +144,16 @@ const screenshotCards = [
 ---
 
 <BaseLayout
-  title="Schreinerei | Die Software für kleine Schreinereien und Tischlereien"
-  description="Kundenorientierte Landingpage für Schreinerei: Baustellen, Material, Zeiten und Betrieb im Griff. Ein Tarif, alles inklusive, 30 Euro pro Monat."
+  title="Schreinerei-App | Weniger Papierkram für Tischler und Schreiner"
+  description="Die Schreinerei-App hilft kleinen Tischler- und Schreinerbetrieben, Projekte, Material, Werkzeuge, Fahrzeuge und Zeiten ohne Verwaltungschaos zu organisieren."
 >
   <header class="shell pt-6">
     <div class="glass-card flex items-center justify-between gap-4 px-5 py-4 sm:px-6">
       <a href="#top" class="flex items-center gap-3">
         <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground shadow-lg shadow-primary/20">S</span>
         <span>
-          <span class="block font-display text-2xl leading-none text-foreground">Schreinerei</span>
-          <span class="block pt-1 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Software für Holzbetriebe</span>
+          <span class="block font-display text-2xl leading-none text-foreground">Schreinerei-App</span>
+          <span class="block pt-1 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Für Tischler- und Schreinerbetriebe</span>
         </span>
       </a>
 
@@ -178,18 +178,18 @@ const screenshotCards = [
 
       <div class="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
         <div>
-          <span class="eyebrow">Fokussiert auf kleine Schreinereien in Deutschland</span>
+          <span class="eyebrow">Für kleine Handwerksbetriebe im Tischler- und Schreinerhandwerk</span>
           <h1 class="mt-6 max-w-4xl text-5xl leading-[0.95] text-foreground sm:text-6xl lg:text-7xl">
-            Weniger Bueroabende. Mehr Zeit fuer Werkstatt, Baustelle und Kunden.
+            Weniger Papierkram. Weniger Nachdenken über Orga. Mehr Zeit fürs eigentliche Handwerk.
           </h1>
           <p class="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground md:text-xl">
-            Schreinerei ist die klare Betriebssoftware fuer kleine Schreinereien und Tischlereien. Projekte,
-            Material, Zeiten und Teamablaeufe landen in einem ruhigen System statt in Zetteln, WhatsApp und
-            Tabellen.
+            Die Schreinerei-App nimmt kleinen Tischler- und Schreinerbetrieben Verwaltungsarbeit ab. Damit Rechnungen,
+            Material, Maschinen, Fahrzeuge und Arbeitszeiten nicht mehr im Kopf, auf Zetteln oder zwischen Telefonaten
+            hängen bleiben.
           </p>
 
           <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a class="primary-button" href={signupUrl}>Kostenpflichtig, aber simpel starten</a>
+            <a class="primary-button" href={signupUrl}>Jetzt einfacher organisieren</a>
             <a class="secondary-button" href={loginUrl}>Zum Login</a>
           </div>
 
@@ -197,17 +197,17 @@ const screenshotCards = [
             <div class="glass-card px-5 py-4">
               <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Preis</p>
               <p class="mt-2 text-3xl font-bold text-foreground">30 EUR</p>
-              <p class="mt-1 text-sm text-muted-foreground">pro Monat, alles drin</p>
+              <p class="mt-1 text-sm text-muted-foreground">pro Monat, ohne Tariflogik</p>
             </div>
             <div class="glass-card px-5 py-4">
               <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Ausrichtung</p>
-              <p class="mt-2 text-3xl font-bold text-foreground">1 Fokus</p>
-              <p class="mt-1 text-sm text-muted-foreground">kleine Holzbetriebe</p>
+              <p class="mt-2 text-3xl font-bold text-foreground">1 Ziel</p>
+              <p class="mt-1 text-sm text-muted-foreground">weniger Verwaltungsaufwand</p>
             </div>
             <div class="glass-card px-5 py-4">
               <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Einrichtung</p>
               <p class="mt-2 text-3xl font-bold text-foreground">Schnell</p>
-              <p class="mt-1 text-sm text-muted-foreground">ohne Tarifchaos</p>
+              <p class="mt-1 text-sm text-muted-foreground">im Alltag verstanden</p>
             </div>
           </div>
         </div>
@@ -217,8 +217,8 @@ const screenshotCards = [
           <div class="relative rounded-[1.6rem] border border-white/70 bg-[linear-gradient(160deg,rgba(134,59,255,0.13),rgba(255,255,255,0.95)_42%,rgba(237,230,255,0.75))] p-5 shadow-[0_30px_80px_rgba(106,45,204,0.16)]">
             <div class="flex items-center justify-between gap-4 border-b border-white/70 pb-4">
               <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-primary">Schreinerei Cockpit</p>
-                <h2 class="mt-2 text-3xl text-foreground">Ein ruhiger Blick auf den ganzen Betrieb</h2>
+                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-primary">Schreinerei-App</p>
+                <h2 class="mt-2 text-3xl text-foreground">Damit weniger liegen bleibt</h2>
               </div>
               <span class="rounded-full border border-primary/15 bg-white px-3 py-1 text-xs font-semibold text-primary">PWA</span>
             </div>
@@ -231,17 +231,17 @@ const screenshotCards = [
                 </div>
                 <div class="mt-4 grid gap-3 sm:grid-cols-2">
                   <div class="rounded-2xl bg-secondary/80 p-4">
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Baustellen</p>
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Projekte</p>
                     <p class="mt-2 text-3xl font-bold text-foreground">8</p>
                     <p class="mt-1 text-sm text-muted-foreground">2 kritisch, 6 im Plan</p>
                   </div>
                   <div class="rounded-2xl bg-secondary/80 p-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Material</p>
                     <p class="mt-2 text-3xl font-bold text-foreground">24</p>
-                    <p class="mt-1 text-sm text-muted-foreground">Bestandsaenderungen diese Woche</p>
+                    <p class="mt-1 text-sm text-muted-foreground">Bestandsänderungen diese Woche</p>
                   </div>
                   <div class="rounded-2xl bg-secondary/80 p-4 sm:col-span-2">
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Heute offen</p>
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Heute wichtig</p>
                     <div class="mt-3 space-y-3">
                       <div class="flex items-center justify-between rounded-xl border border-border/70 px-3 py-2">
                         <span class="text-sm font-medium text-foreground">Fensterbau Schubert</span>
@@ -258,17 +258,17 @@ const screenshotCards = [
 
               <div class="space-y-4">
                 <div class="rounded-[1.4rem] border border-white/80 bg-white/90 p-4 shadow-sm">
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Warum es passt</p>
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Warum das für den Alltag zählt</p>
                   <ul class="mt-3 space-y-3 text-sm leading-6 text-foreground">
-                    <li>Eine Sprache, die in der Werkstatt verstanden wird.</li>
-                    <li>Keine unnoetigen Produktmodule fuer zehn andere Gewerke.</li>
-                    <li>Ein Tarif statt Angebotsgespraech und Add-on-Liste.</li>
+                    <li>Weniger Dinge im Kopf behalten müssen.</li>
+                    <li>Weniger Rückfragen zwischen Baustelle, Werkstatt und Büro.</li>
+                    <li>Weniger Zeit für Organisation, mehr Zeit für saubere Arbeit.</li>
                   </ul>
                 </div>
                 <div class="rounded-[1.4rem] bg-primary p-5 text-primary-foreground shadow-lg shadow-primary/20">
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">Klares Angebot</p>
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">Für kleine Betriebe gemacht</p>
                   <p class="mt-2 text-3xl font-bold">30 EUR monatlich</p>
-                  <p class="mt-2 text-sm leading-6 text-primary-foreground/85">Ein Tarif. Alle Kernfunktionen. Keine Paketlogik zwischen Baustelle und Buero.</p>
+                  <p class="mt-2 text-sm leading-6 text-primary-foreground/85">Ein Tarif. Klare Funktionen. Kein unnötiger Ballast für Betriebe, die einfach besser organisiert arbeiten wollen.</p>
                 </div>
               </div>
             </div>
@@ -280,34 +280,33 @@ const screenshotCards = [
     <section class="shell pb-12 md:pb-20">
       <div class="glass-card grid gap-5 px-6 py-6 md:grid-cols-4 md:px-8">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Inspiriert von guten Handwerksseiten</p>
-          <p class="mt-2 text-sm leading-6 text-muted-foreground">Die Struktur orientiert sich an bewaehrten Mustern von Plancraft und HERO: klare Nutzenargumente, Produktbilder, Vergleich und direkte CTA.</p>
+          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Weniger Verwaltungsaufwand</p>
+          <p class="mt-2 text-sm leading-6 text-muted-foreground">Die Schreinerei-App richtet sich an Betriebe, die nicht von Software träumen, sondern von einem ruhigeren Arbeitstag ohne ständiges Hinterherorganisieren.</p>
         </div>
         <div>
           <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Fokus</p>
-          <p class="mt-2 text-lg font-semibold text-foreground">Schreiner und Tischler</p>
+          <p class="mt-2 text-lg font-semibold text-foreground">Tischler und Schreiner</p>
         </div>
         <div>
           <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Positionierung</p>
-          <p class="mt-2 text-lg font-semibold text-foreground">Spezialisiert statt generalistisch</p>
+          <p class="mt-2 text-lg font-semibold text-foreground">Praktisch statt aufgeblasen</p>
         </div>
         <div>
           <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">CTA</p>
-          <p class="mt-2 text-lg font-semibold text-foreground">Direkt zu Login und Signup</p>
+          <p class="mt-2 text-lg font-semibold text-foreground">Schnell verstehen, schnell nutzen</p>
         </div>
       </div>
     </section>
 
     <section id="funktionen" class="shell py-14 md:py-20">
-      <span class="eyebrow">Was Kunden sofort verstehen sollen</span>
+      <span class="eyebrow">Worum es im Alltag wirklich geht</span>
       <div class="mt-5 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 class="max-w-3xl text-4xl leading-tight text-foreground sm:text-5xl">Alles, was kleine Holzbetriebe taeglich brauchen. Nichts, was sie ablenkt.</h2>
+          <h2 class="max-w-3xl text-4xl leading-tight text-foreground sm:text-5xl">Du willst arbeiten, nicht ständig Zettel suchen, Material prüfen oder Termine im Kopf behalten.</h2>
         </div>
         <p class="section-copy">
-          Die Copy folgt dem Muster erfolgreicher Handwerkerseiten: zuerst das Problem, dann der konkrete Nutzen,
-          dann der einfache Einstieg. Hier steht nicht Software um der Software willen im Mittelpunkt, sondern ein
-          entspannterer Betriebsalltag.
+          Genau dafür ist die Schreinerei-App da: Sie nimmt kleinen Handwerksbetrieben die organisatorischen Dinge ab,
+          die Zeit, Nerven und Konzentration kosten, obwohl sie nichts mit guter handwerklicher Arbeit zu tun haben.
         </p>
       </div>
 
@@ -328,16 +327,16 @@ const screenshotCards = [
       <div class="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
         <div>
           <span class="eyebrow">Produkt-Einblicke</span>
-          <h2 class="mt-5 text-4xl leading-tight text-foreground sm:text-5xl">Zeige das Produkt, nicht nur Versprechen.</h2>
+          <h2 class="mt-5 text-4xl leading-tight text-foreground sm:text-5xl">Zeige, wie weniger Orga-Stress im Alltag aussieht.</h2>
           <p class="mt-4 section-copy">
             Die Einblicke unten sind direkt aus dem laufenden Frontend aufgenommen. Jede Karte kombiniert Desktop-
-            und Mobile-Ansicht derselben Route, damit Interessenten sofort sehen, wie ruhig und alltagstauglich die
-            Anwendung auf Baustelle, im Buero und unterwegs wirkt.
+            und Mobile-Ansicht derselben Route, damit sofort klar wird: Hier geht es nicht um schöne Software, sondern
+            darum, dass wichtige Dinge im Betrieb nicht untergehen.
           </p>
         </div>
         <div class="glass-card px-5 py-4 text-sm leading-6 text-muted-foreground">
-          Gezeigt werden zuerst die Kernrouten fuer den taeglichen Betrieb: Dashboard, Projekte, Fuhrpark,
-          Werkzeuge, Inventar und Einstellungen.
+          Gezeigt werden die Kernrouten für den täglichen Betrieb: Projekte, Material, Werkzeuge,
+          Fahrzeuge, Zeiten und Einstellungen immer dort, wo sie gebraucht werden.
         </div>
       </div>
 
@@ -361,32 +360,32 @@ const screenshotCards = [
         <div class="grid gap-0 lg:grid-cols-[0.92fr_1.08fr]">
           <div class="bg-[linear-gradient(180deg,rgba(106,45,204,0.96),rgba(85,34,173,0.98))] px-7 py-8 text-primary-foreground md:px-10 md:py-10">
             <span class="inline-flex rounded-full border border-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em]">Preise</span>
-            <h2 class="mt-5 text-4xl leading-tight sm:text-5xl">Ein Tarif. Alles inklusive.</h2>
+            <h2 class="mt-5 text-4xl leading-tight sm:text-5xl">Ein Preis, der zu kleinen Betrieben passt.</h2>
             <p class="mt-4 max-w-lg text-base leading-7 text-primary-foreground/85">
-              Kleine Betriebe brauchen keine Preisarchitektur mit Rechenaufgabe. Darum gibt es bewusst nur ein Modell:
-              30 Euro pro Monat fuer die Software, die den Betrieb sauberer organisiert.
+              Wer den ganzen Tag auf Baustellen, in der Werkstatt oder beim Kunden ist, will nicht erst Preislisten
+              vergleichen. Deshalb gibt es bei der Schreinerei-App bewusst nur ein Modell: 30 Euro pro Monat.
             </p>
           </div>
 
           <div class="grid gap-6 px-7 py-8 md:px-10 md:py-10 lg:grid-cols-[0.9fr_1.1fr]">
             <div class="rounded-[1.75rem] border border-primary/15 bg-accent/45 p-6">
-              <p class="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Schreinerei</p>
+              <p class="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Schreinerei-App</p>
               <p class="mt-4 text-6xl font-bold text-foreground">30</p>
               <p class="mt-1 text-lg font-semibold text-foreground">EUR / Monat</p>
               <p class="mt-4 text-sm leading-7 text-muted-foreground">
-                Alle Kernfunktionen inbegriffen. Keine Add-ons. Keine Staffelung. Keine unklare Upgrade-Grenze.
+                Alle Kernfunktionen drin. Keine Add-ons. Keine Staffelung. Keine Diskussion darüber, was im Alltag noch extra kostet.
               </p>
-              <a class="primary-button mt-6 w-full" href={signupUrl}>Organisation erstellen</a>
+              <a class="primary-button mt-6 w-full" href={signupUrl}>Einfach loslegen</a>
             </div>
 
             <div class="space-y-4">
               {[
-                "Projekt- und Baustellenuebersicht",
-                "Materialverwaltung und Bestandsbewegungen",
-                "Zeit- und Aktivitaetserfassung",
-                "Werkzeug- und Fahrzeugverwaltung",
-                "Login und Signup direkt ueber das Produkt",
-                "Klares Interface ohne Tarifgrenzen im Produkt",
+                "Weniger Papierkram bei Projekten und Baustellen",
+                "Material, das nicht erst gesucht werden muss",
+                "Arbeitszeiten ohne Stundenzettel-Chaos",
+                "Werkzeuge, Fahrzeuge und Wartungen im Blick",
+                "Ein Einstieg ohne langes Erklären",
+                "Eine Oberfläche, die man im Alltag schnell versteht",
               ].map((item) => (
                 <div class="flex items-start gap-3 rounded-2xl border border-border/70 bg-white px-4 py-4">
                   <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-success"></span>
@@ -402,10 +401,10 @@ const screenshotCards = [
     <section id="vergleich" class="shell py-14 md:py-20">
       <span class="eyebrow">Marktvergleich</span>
       <div class="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <h2 class="max-w-3xl text-4xl leading-tight text-foreground sm:text-5xl">Warum Schreinerei neben Plancraft und HERO einen klaren Platz hat.</h2>
+        <h2 class="max-w-3xl text-4xl leading-tight text-foreground sm:text-5xl">Warum die Schreinerei-App neben Plancraft und HERO einen klaren Platz hat.</h2>
         <p class="section-copy">
-          Die Aussage ist nicht, dass die anderen Produkte schlecht sind. Die Aussage ist, dass ein fokussiertes Produkt
-          fuer kleine Schreinereien einen anderen, einfacheren Kaufgrund haben darf.
+          Plancraft und HERO sind für viele Handwerksbetriebe interessante Lösungen. Die Schreinerei-App setzt bewusst
+          enger an: für Tischler und Schreiner, die vor allem ihren Verwaltungsaufwand klein halten wollen.
         </p>
       </div>
 
@@ -414,7 +413,7 @@ const screenshotCards = [
           <thead>
             <tr class="bg-secondary/55 text-sm">
               <th class="px-5 py-4 font-semibold text-muted-foreground">Kriterium</th>
-              <th class="px-5 py-4 font-semibold text-primary">Schreinerei</th>
+              <th class="px-5 py-4 font-semibold text-primary">Schreinerei-App</th>
               <th class="px-5 py-4 font-semibold text-foreground">Plancraft</th>
               <th class="px-5 py-4 font-semibold text-foreground">HERO</th>
             </tr>
@@ -433,8 +432,9 @@ const screenshotCards = [
       </div>
 
       <p class="mt-4 text-sm leading-6 text-muted-foreground">
-        Vergleich auf Basis der oeffentlichen Positionierung und Seitenstruktur von Plancraft und HERO: beide adressieren
-        deutlich breiter den gesamten Handwerksmarkt, waehrend Schreinerei hier bewusst enger positioniert wird.
+        Vergleich auf Basis der öffentlichen Positionierung und Seitenstruktur von Plancraft und HERO. Beide Lösungen
+        adressieren den Handwerksmarkt deutlich breiter, während die Schreinerei-App bewusst enger und alltagsnäher für
+        kleine Tischler- und Schreinerbetriebe positioniert ist.
       </p>
     </section>
 
@@ -442,7 +442,7 @@ const screenshotCards = [
       <div class="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
         <div>
           <span class="eyebrow">FAQ</span>
-          <h2 class="mt-5 text-4xl leading-tight text-foreground sm:text-5xl">Die wichtigsten Fragen vor dem ersten Klick.</h2>
+          <h2 class="mt-5 text-4xl leading-tight text-foreground sm:text-5xl">Die wichtigsten Fragen vor dem Start.</h2>
         </div>
 
         <div class="space-y-4">
@@ -461,17 +461,18 @@ const screenshotCards = [
         <div class="absolute -right-10 -top-8 h-40 w-40 rounded-full bg-primary/18 blur-3xl"></div>
         <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <span class="eyebrow">Naechster Schritt</span>
-            <h2 class="mt-5 max-w-3xl text-4xl leading-tight text-foreground sm:text-5xl">Wenn der Betrieb klein ist, darf die Software endlich wieder einfach werden.</h2>
+            <span class="eyebrow">Nächster Schritt</span>
+            <h2 class="mt-5 max-w-3xl text-4xl leading-tight text-foreground sm:text-5xl">Wenn du weniger organisieren musst, bleibt mehr Energie für gute Arbeit.</h2>
             <p class="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              Landingpage, CTA und Preislogik sind auf genau einen Abschluss optimiert: interessierte Kunden direkt in den
-              bestehenden Login- oder Signup-Fluss fuehren.
+              Die Schreinerei-App ist für kleine Handwerksbetriebe gedacht, die nicht noch mehr Software wollen,
+              sondern weniger Dinge, an die sie ständig denken müssen. Schau dir an, ob genau dieser Fokus zu deinem
+              Betrieb passt.
             </p>
           </div>
 
           <div class="flex flex-col gap-3 sm:flex-row">
             <a class="secondary-button" href={loginUrl}>Zum Login</a>
-            <a class="primary-button" href={signupUrl}>Jetzt Organisation anlegen</a>
+            <a class="primary-button" href={signupUrl}>Schreinerei-App starten</a>
           </div>
         </div>
       </div>
@@ -480,11 +481,11 @@ const screenshotCards = [
 
   <footer class="shell pb-10">
     <div class="flex flex-col gap-4 border-t border-border/70 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-      <p>Schreinerei Landingpage fuer kleine Schreiner- und Tischlerbetriebe in Deutschland.</p>
+      <p>Schreinerei-App für kleine Schreinereien und Tischlereien in Deutschland.</p>
       <div class="flex items-center gap-5">
         <a href="/impressum" class="hover:text-foreground">Impressum</a>
         <a href={loginUrl} class="hover:text-foreground">Login</a>
-        <a href={signupUrl} class="hover:text-foreground">Signup</a>
+        <a href={signupUrl} class="hover:text-foreground">Starten</a>
       </div>
     </div>
   </footer>
