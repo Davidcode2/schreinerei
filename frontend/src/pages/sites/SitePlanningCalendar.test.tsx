@@ -62,4 +62,27 @@ describe('SitePlanningCalendar', () => {
       'grid-cols-[44px_repeat(7,minmax(0,1fr))]'
     )
   })
+
+  it('keeps the appointment dialog scrollable on smaller screens', async () => {
+    const user = userEvent.setup()
+
+    server.use(
+      http.get('*/api/v1/sites/site-1/appointments*', () => HttpResponse.json([]))
+    )
+
+    render(<SitePlanningCalendar siteId="site-1" assignments={[]} canEdit />)
+
+    const [slot] = await screen.findAllByRole('button', {
+      name: /termin am .* um 11:00 erstellen/i,
+    })
+
+    await user.click(slot!)
+
+    const dialog = await screen.findByRole('dialog')
+    const formBody = screen.getByLabelText(/titel/i).closest('div')?.parentElement
+
+    expect(dialog.className).toContain('max-h-[90vh]')
+    expect(dialog.className).toContain('overflow-hidden')
+    expect(formBody?.className).toContain('overflow-y-auto')
+  })
 })

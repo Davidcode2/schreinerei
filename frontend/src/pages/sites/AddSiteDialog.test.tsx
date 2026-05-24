@@ -30,6 +30,17 @@ describe('AddSiteDialog', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('keeps the dialog scrollable on smaller screens', () => {
+    render(<AddSiteDialog open={true} onOpenChange={mockOnOpenChange} />);
+
+    const dialog = screen.getByRole('dialog');
+    const formBody = screen.getByLabelText(/projektart/i).closest('div')?.parentElement;
+
+    expect(dialog.className).toContain('max-h-[90vh]');
+    expect(dialog.className).toContain('overflow-hidden');
+    expect(formBody?.className).toContain('overflow-y-auto');
+  });
+
   it('has submit button disabled when required fields are empty', () => {
     render(<AddSiteDialog open={true} onOpenChange={mockOnOpenChange} />);
 

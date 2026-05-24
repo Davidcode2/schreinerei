@@ -109,7 +109,7 @@ export function AddSiteDialog({ open, onOpenChange }: AddSiteDialogProps) {
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2.5 font-display">
 						<div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
@@ -120,7 +120,7 @@ export function AddSiteDialog({ open, onOpenChange }: AddSiteDialogProps) {
 					<DialogDescription>Externes oder internes Projekt anlegen</DialogDescription>
 				</DialogHeader>
 
-				<div className="space-y-5 py-4">
+				<div className="min-h-0 space-y-5 overflow-y-auto py-4 pr-1">
 					<div className="space-y-2">
 						<Label htmlFor="projectType">Projektart</Label>
 						<Select value={projectType} onValueChange={(value) => setProjectType(value as ProjectType)}>

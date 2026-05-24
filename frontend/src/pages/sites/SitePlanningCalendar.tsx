@@ -521,7 +521,7 @@ export function SitePlanningCalendar({
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>
               {draft.appointmentId ? "Planung bearbeiten" : "Termin planen"}
@@ -531,7 +531,7 @@ export function SitePlanningCalendar({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="min-h-0 space-y-4 overflow-y-auto pr-1">
             <div className="space-y-2">
               <Label htmlFor="appointment-title">Titel</Label>
               <Input
