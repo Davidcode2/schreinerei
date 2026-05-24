@@ -117,7 +117,7 @@ jobs:
       ref: ${{ needs.bump-version.outputs.sha }}
       version: ${{ needs.bump-version.outputs.version }}
       build_args: |
-        PUBLIC_APP_URL=${{ env.PUBLIC_APP_URL }}
+        PUBLIC_APP_URL=https://schreinerei.jakob-lingel.dev
     secrets: inherit
 
   deploy-app:
