@@ -20,8 +20,23 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateSite } from "@/lib/api/hooks";
-import type { ProjectType } from "@/types/sites";
+import { useBillingSettings, useCreateSite } from "@/lib/api/hooks";
+import type { InvoicePricingMode, ProjectType } from "@/types/sites";
+
+type PricingModeValue = InvoicePricingMode | "none";
+
+function formatMoney(value: number | null): string {
+	if (value == null) return "";
+	return (value / 100).toFixed(2);
+}
+
+function parseMoney(value: string): number | null {
+	const normalized = value.replace(",", ".").trim();
+	if (!normalized) return null;
+	const parsed = Number(normalized);
+	if (!Number.isFinite(parsed) || parsed < 0) return null;
+	return Math.round(parsed * 100);
+}
 
 interface AddSiteDialogProps {
 	open: boolean;
@@ -37,8 +52,14 @@ export function AddSiteDialog({ open, onOpenChange }: AddSiteDialogProps) {
 	const [startDate, setStartDate] = useState("");
 	const [endDate, setEndDate] = useState("");
 	const [estimatedDays, setEstimatedDays] = useState("");
+	const [pricingMode, setPricingMode] = useState<PricingModeValue>("none");
+	const [hourlyRate, setHourlyRate] = useState("");
+	const [fixedPrice, setFixedPrice] = useState("");
 
 	const createSite = useCreateSite();
+	const { data: billingSettings } = useBillingSettings();
+
+	const defaultHourlyRate = billingSettings?.default_hourly_rate_cents ?? null;
 
 	const resetForm = () => {
 		setName("");
@@ -49,6 +70,14 @@ export function AddSiteDialog({ open, onOpenChange }: AddSiteDialogProps) {
 		setStartDate("");
 		setEndDate("");
 		setEstimatedDays("");
+		if (defaultHourlyRate != null) {
+			setPricingMode("hourly_rate");
+			setHourlyRate(formatMoney(defaultHourlyRate));
+		} else {
+			setPricingMode("none");
+			setHourlyRate("");
+		}
+		setFixedPrice("");
 	};
 
 	const handleOpenChange = (open: boolean) => {
@@ -59,7 +88,13 @@ export function AddSiteDialog({ open, onOpenChange }: AddSiteDialogProps) {
 	};
 
 	const customerRequired = projectType === "external_site";
-	const isFormValid = Boolean(name && (!customerRequired || customerName));
+	const parsedHourlyRate = parseMoney(hourlyRate);
+	const parsedFixedPrice = parseMoney(fixedPrice);
+	const pricingIsValid =
+		pricingMode === "none" ||
+		(pricingMode === "hourly_rate" && parsedHourlyRate != null) ||
+		(pricingMode === "fixed_price" && parsedFixedPrice != null);
+	const isFormValid = Boolean(name && (!customerRequired || customerName) && pricingIsValid);
 
 	const handleSubmit = () => {
 		if (!isFormValid) return;
@@ -73,6 +108,9 @@ export function AddSiteDialog({ open, onOpenChange }: AddSiteDialogProps) {
 			start_date?: string;
 			end_date?: string;
 			estimated_days?: number;
+			invoice_pricing_mode?: InvoicePricingMode;
+			hourly_rate_cents?: number;
+			fixed_price_cents?: number;
 		} = {
 			project_type: projectType,
 			name,
@@ -93,6 +131,14 @@ export function AddSiteDialog({ open, onOpenChange }: AddSiteDialogProps) {
 		}
 		if (estimatedDays) {
 			payload.estimated_days = Number(estimatedDays);
+		}
+		if (pricingMode === "hourly_rate" && parsedHourlyRate != null) {
+			payload.invoice_pricing_mode = "hourly_rate";
+			payload.hourly_rate_cents = parsedHourlyRate;
+		}
+		if (pricingMode === "fixed_price" && parsedFixedPrice != null) {
+			payload.invoice_pricing_mode = "fixed_price";
+			payload.fixed_price_cents = parsedFixedPrice;
 		}
 
 		createSite.mutate(payload, {
@@ -192,6 +238,58 @@ export function AddSiteDialog({ open, onOpenChange }: AddSiteDialogProps) {
 							onChange={(e) => setDescription(e.target.value)}
 							rows={3}
 						/>
+					</div>
+
+					<div className="space-y-4 rounded-lg border border-border/70 bg-card/70 p-4 shadow-sm">
+						<p className="text-sm font-medium">Abrechnung</p>
+
+						<div className="space-y-2">
+							<Label htmlFor="pricingMode">Rechnungslogik</Label>
+							<Select value={pricingMode} onValueChange={(value) => setPricingMode(value as PricingModeValue)}>
+								<SelectTrigger id="pricingMode" className="h-10">
+									<SelectValue placeholder="Rechnungslogik wählen" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="none">Keine Vorgabe</SelectItem>
+									<SelectItem value="hourly_rate">Stundensatz</SelectItem>
+									<SelectItem value="fixed_price">Pauschalpreis</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+
+						{pricingMode === "hourly_rate" && (
+							<div className="space-y-2">
+								<Label htmlFor="hourlyRate">Stundensatz (EUR)</Label>
+								<Input
+									id="hourlyRate"
+									type="number"
+									min="0"
+									step="0.01"
+									inputMode="decimal"
+									placeholder="z.B. 85,00"
+									value={hourlyRate}
+									onChange={(e) => setHourlyRate(e.target.value)}
+									className="h-10"
+								/>
+							</div>
+						)}
+
+						{pricingMode === "fixed_price" && (
+							<div className="space-y-2">
+								<Label htmlFor="fixedPrice">Pauschalpreis (EUR)</Label>
+								<Input
+									id="fixedPrice"
+									type="number"
+									min="0"
+									step="0.01"
+									inputMode="decimal"
+									placeholder="z.B. 2500,00"
+									value={fixedPrice}
+									onChange={(e) => setFixedPrice(e.target.value)}
+									className="h-10"
+								/>
+							</div>
+						)}
 					</div>
 				</div>
 

@@ -28,6 +28,10 @@ pub fn create_router() -> Router<AppState> {
         // Current user endpoints (any authenticated user)
         .route("/api/v1/auth/me", get(get_current_user))
         .route("/api/v1/users/me", patch(update_own_profile))
+        .route(
+            "/api/v1/settings/billing",
+            get(get_billing_settings).patch(update_billing_settings),
+        )
         // Preferences endpoints
         .route(
             "/api/v1/preferences",
@@ -138,6 +142,18 @@ impl From<UserPreferenceRecord> for PreferencesResponse {
 #[ts(export, export_to = "generated.ts")]
 pub struct UpdatePreferencesRequest {
     pub active_site_id: Option<String>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "generated.ts")]
+pub struct BillingSettingsResponse {
+    pub default_hourly_rate_cents: Option<i64>,
+}
+
+#[derive(Debug, Deserialize, TS)]
+#[ts(export, export_to = "generated.ts")]
+pub struct UpdateBillingSettingsRequest {
+    pub default_hourly_rate_cents: Option<i64>,
 }
 
 /// GET /api/v1/auth/me - Get current user profile
@@ -282,6 +298,68 @@ pub async fn update_own_profile(
     let user = service.update_profile(update, &ctx).await?;
 
     Ok(Json(UserResponse::from(user)))
+}
+
+pub async fn get_billing_settings(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+) -> Result<impl IntoResponse, AppError> {
+    if !ctx.is_admin() {
+        return Err(AppError::Forbidden("Admin access required".to_string()));
+    }
+
+    let default_hourly_rate_cents: Option<i64> = sqlx::query_scalar(
+        r#"
+        SELECT default_hourly_rate_cents
+        FROM tenants
+        WHERE id = $1
+        "#,
+    )
+    .bind(ctx.tenant_id.0)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|error| AppError::Database(error.to_string()))?
+    .flatten();
+
+    Ok(Json(BillingSettingsResponse {
+        default_hourly_rate_cents,
+    }))
+}
+
+pub async fn update_billing_settings(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Json(request): Json<UpdateBillingSettingsRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    if !ctx.is_admin() {
+        return Err(AppError::Forbidden("Admin access required".to_string()));
+    }
+
+    if let Some(rate) = request.default_hourly_rate_cents {
+        if rate < 0 {
+            return Err(AppError::Validation(
+                "Default hourly rate cannot be negative".to_string(),
+            ));
+        }
+    }
+
+    let default_hourly_rate_cents: Option<i64> = sqlx::query_scalar(
+        r#"
+        UPDATE tenants
+        SET default_hourly_rate_cents = $2
+        WHERE id = $1
+        RETURNING default_hourly_rate_cents
+        "#,
+    )
+    .bind(ctx.tenant_id.0)
+    .bind(request.default_hourly_rate_cents)
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|error| AppError::Database(error.to_string()))?;
+
+    Ok(Json(BillingSettingsResponse {
+        default_hourly_rate_cents,
+    }))
 }
 
 /// GET /api/v1/preferences - Get current user's preferences

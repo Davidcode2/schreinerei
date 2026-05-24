@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiClient } from "../client"
 import type {
+  CreateProjectInvoiceRequest,
+  ProjectInvoiceDraft,
   Site,
   CreateSiteRequest,
   UpdateSiteRequest,
@@ -24,11 +26,7 @@ import type {
   SiteInvoiceSummary,
   SiteProjectSummary,
 } from "@/types/sites"
-import type {
-  ProjectInvoiceDraftResponse,
-  UploadPhotoAttachmentResponse,
-  UploadSiteAttachmentResponse,
-} from "@/types/generated"
+import type { UploadPhotoAttachmentResponse, UploadSiteAttachmentResponse } from "@/types/generated"
 
 // === Sites ===
 
@@ -105,14 +103,13 @@ export function useCreateSiteInvoice() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (siteId: string) =>
-      apiClient
-        .post<ProjectInvoiceDraftResponse>(`/api/v1/billing/projects/${siteId}/invoices`, {})
-        .then((draft) => draft.invoice),
-    onSuccess: (_, siteId) => {
-      queryClient.invalidateQueries({ queryKey: ["site-invoices", siteId] })
-      queryClient.invalidateQueries({ queryKey: ["site-summary", siteId] })
-      queryClient.invalidateQueries({ queryKey: ["site-invoice-summary", siteId] })
+    mutationFn: ({ siteId, ...data }: CreateProjectInvoiceRequest & { siteId: string }) =>
+      apiClient.post<ProjectInvoiceDraft>(`/api/v1/billing/projects/${siteId}/invoices`, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["site-invoices", variables.siteId] })
+      queryClient.invalidateQueries({ queryKey: ["site-summary", variables.siteId] })
+      queryClient.invalidateQueries({ queryKey: ["site-invoice-summary", variables.siteId] })
+      queryClient.invalidateQueries({ queryKey: ["site", variables.siteId] })
     },
   })
 }

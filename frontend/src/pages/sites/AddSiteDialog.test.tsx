@@ -15,6 +15,7 @@ describe('AddSiteDialog', () => {
   beforeEach(() => {
     mockOnOpenChange.mockClear();
     mockData.sites = [];
+    mockData.billingSettings = { default_hourly_rate_cents: null };
   });
 
   it('renders dialog with correct title when open', () => {
@@ -63,7 +64,7 @@ describe('AddSiteDialog', () => {
     const user = userEvent.setup();
     render(<AddSiteDialog open={true} onOpenChange={mockOnOpenChange} />);
 
-    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('combobox', { name: /projektart/i }));
     await user.click(screen.getByRole('option', { name: /werkstatt intern/i }));
     await user.type(screen.getByLabelText(/projektname/i), 'CNC Vorbereitung');
 
@@ -98,6 +99,34 @@ describe('AddSiteDialog', () => {
         customer_name: 'Familie Müller',
         location: 'Musterstraße 1, Berlin',
         description: 'Küchenumbau',
+      });
+    });
+  });
+
+  it('submits hourly billing defaults for a new project', async () => {
+    const user = userEvent.setup();
+    let submittedPayload: Record<string, unknown> | null = null;
+
+    server.use(
+      http.post(apiRoute('/sites'), async ({ request }) => {
+        submittedPayload = await request.json() as Record<string, unknown>;
+        return HttpResponse.json({ id: 'new-site', ...(submittedPayload ?? {}) }, { status: 201 });
+      })
+    );
+
+    render(<AddSiteDialog open={true} onOpenChange={mockOnOpenChange} />);
+
+    await user.type(screen.getByLabelText(/projektname/i), 'Villa Müller');
+    await user.type(screen.getByLabelText(/kunde/i), 'Familie Müller');
+    await user.click(screen.getByRole('combobox', { name: /rechnungslogik/i }));
+    await user.click(screen.getByRole('option', { name: /stundensatz/i }));
+    await user.type(screen.getByLabelText(/stundensatz/i), '85');
+    await user.click(screen.getByRole('button', { name: /projekt erstellen/i }));
+
+    await waitFor(() => {
+      expect(submittedPayload).toMatchObject({
+        invoice_pricing_mode: 'hourly_rate',
+        hourly_rate_cents: 8500,
       });
     });
   });

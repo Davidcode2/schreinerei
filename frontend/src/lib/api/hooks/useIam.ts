@@ -42,6 +42,14 @@ export interface PublicInviteResponse {
   expires_at: string
 }
 
+export interface BillingSettings {
+  default_hourly_rate_cents: number | null
+}
+
+export interface UpdateBillingSettingsRequest {
+  default_hourly_rate_cents: number | null
+}
+
 export function useUsers() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   return useQuery({
@@ -49,6 +57,29 @@ export function useUsers() {
     queryFn: () => apiClient.get<User[]>("/api/v1/users"),
     staleTime: 30000,
     enabled: isAuthenticated,
+  })
+}
+
+export function useBillingSettings() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+
+  return useQuery({
+    queryKey: ["billing-settings"],
+    queryFn: () => apiClient.get<BillingSettings>("/api/v1/settings/billing"),
+    staleTime: 30000,
+    enabled: isAuthenticated,
+  })
+}
+
+export function useUpdateBillingSettings() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: UpdateBillingSettingsRequest) =>
+      apiClient.patch<BillingSettings>("/api/v1/settings/billing", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["billing-settings"] })
+    },
   })
 }
 

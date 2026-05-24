@@ -4,6 +4,7 @@ import { Info, LogOut } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useAuthStore } from "@/lib/auth/authStore"
 import { PageHeader } from "@/components/shared"
+import { BillingSettingsSection } from "./BillingSettingsSection"
 import { ProfileSection } from "./ProfileSection"
 import { UserManagementSection } from "./UserManagementSection"
 
@@ -27,6 +28,8 @@ export default function SettingsPage() {
       />
 
       <ProfileSection />
+
+      <BillingSettingsSection isAdmin={isAdmin} />
 
       <UserManagementSection isAdmin={isAdmin} />
 

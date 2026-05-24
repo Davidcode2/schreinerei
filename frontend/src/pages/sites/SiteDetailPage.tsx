@@ -44,6 +44,7 @@ import { MediaViewer } from "./MediaViewer"
 import { ProjectAssignmentsSection } from "./ProjectAssignmentsSection"
 import { SitePlanningCalendar } from "./SitePlanningCalendar"
 import { ProjectPlanningSheet } from "./ProjectPlanningSheet"
+import { CreateInvoiceDialog } from "./CreateInvoiceDialog"
 import {
   buildMediaViewerPath,
   buildSiteDetailPath,
@@ -113,6 +114,7 @@ export default function SiteDetailPage() {
   const [showNoteModal, setShowNoteModal] = useState(false)
   const [showCameraFlow, setShowCameraFlow] = useState(false)
   const [showPlanningSheet, setShowPlanningSheet] = useState(false)
+  const [showCreateInvoiceDialog, setShowCreateInvoiceDialog] = useState(false)
   const [selectedTimeEntry, setSelectedTimeEntry] = useState<TimeEntry | null>(null)
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null)
 
@@ -156,9 +158,11 @@ export default function SiteDetailPage() {
   const totalHours = siteSummary?.labor.total_hours ?? 0
   const materialSummary = siteSummary?.materials
 
-  async function handleCreateInvoice() {
+  async function handleCreateInvoice(
+    invoiceRequest: import("@/types/sites").CreateProjectInvoiceRequest
+  ) {
     try {
-      await createInvoice.mutateAsync(currentSite.id)
+      await createInvoice.mutateAsync({ siteId: currentSite.id, ...invoiceRequest })
       toast.success('Rechnung erstellt')
     } catch {
       toast.error('Rechnung konnte nicht erstellt werden')
@@ -291,7 +295,7 @@ export default function SiteDetailPage() {
               </div>
             )}
 
-            {(site.budget_amount_cents != null || site.quote_reference || site.billing_reference || site.billing_notes) && (
+            {(site.budget_amount_cents != null || site.invoice_pricing_mode || site.hourly_rate_cents != null || site.fixed_price_cents != null || site.quote_reference || site.billing_reference || site.billing_notes) && (
               <>
                 <Separator />
                 <div className="min-w-0">
@@ -319,8 +323,20 @@ export default function SiteDetailPage() {
                         <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{site.billing_reference || '-'}</p>
                       </div>
                       <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Rechnungslogik</p>
+                        <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{site.invoice_pricing_mode === 'fixed_price' ? 'Pauschalpreis' : site.invoice_pricing_mode === 'hourly_rate' ? 'Stundensatz' : '-'}</p>
+                      </div>
+                      <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Verbrauchte Materialien</p>
                         <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{siteSummary ? siteSummary.materials.distinct_material_count : 0}</p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Stundensatz</p>
+                        <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{formatCurrency(site.hourly_rate_cents)}</p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Pauschalpreis</p>
+                        <p className={`${WRAP_VALUE_CLASS} text-sm font-medium`}>{formatCurrency(site.fixed_price_cents)}</p>
                       </div>
                     </div>
                     {site.billing_notes && (
@@ -346,7 +362,7 @@ export default function SiteDetailPage() {
                       </p>
                     </div>
                     <Button
-                      onClick={handleCreateInvoice}
+                      onClick={() => setShowCreateInvoiceDialog(true)}
                       disabled={createInvoice.isPending}
                       className="h-10 w-full gap-2 sm:w-auto"
                     >
@@ -660,6 +676,14 @@ export default function SiteDetailPage() {
         open={showPlanningSheet}
         onOpenChange={setShowPlanningSheet}
         site={site}
+      />
+      <CreateInvoiceDialog
+        open={showCreateInvoiceDialog}
+        onOpenChange={setShowCreateInvoiceDialog}
+        site={site}
+        totalHours={totalHours}
+        isPending={createInvoice.isPending}
+        onSubmit={handleCreateInvoice}
       />
 
       <MediaViewer

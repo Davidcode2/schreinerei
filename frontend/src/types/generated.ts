@@ -16,6 +16,8 @@ export type AvailabilityQuery = { resource_type: string, resource_id: string, st
 
 export type AvailabilityResponse = { available: boolean, conflicts: Array<ConflictDetail> | null, };
 
+export type BillingSettingsResponse = { default_hourly_rate_cents: bigint | null, };
+
 export type CalendarEntryResponse = { resource_type: string, resource_id: string, resource_name: string, resource_display_color: string | null, reservations: Array<ReservationSummaryResponse>, };
 
 export type CalendarQuery = { start_date: string, end_date: string, resource_type: string | null, site_id: string | null, };
@@ -42,7 +44,7 @@ export type CreateOnboardingSessionRequest = { organization_name: string, admin_
 
 export type CreateOrderRequestDto = { material_id: string, quantity: number, reason: string | null, };
 
-export type CreateProjectInvoiceRequest = { sender_name: string | null, sender_address: string | null, };
+export type CreateProjectInvoiceRequest = { sender_name: string | null, sender_address: string | null, invoice_pricing_mode: string | null, hourly_rate_cents: bigint | null, fixed_price_cents: bigint | null, };
 
 export type CreateReservationRequest = { resource_type: string, resource_id: string, site_id: string | null, project_id: string | null, start_time: string, end_time: string, purpose: string | null, notes: string | null, };
 
@@ -183,6 +185,8 @@ export type StockInRequest = { quantity: number, notes: string | null, expires_o
 export type TimeEntryResponse = { id: string, site_id: string | null, user_id: string, creator_name: string, can_edit: boolean, can_delete: boolean, work_type: string, hours: number, work_date: string, notes: string | null, created_at: string, };
 
 export type ToolResponse = { id: string, name: string, category: string | null, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
+
+export type UpdateBillingSettingsRequest = { default_hourly_rate_cents: bigint | null, };
 
 export type UpdateCategoryRequest = { name?: string, description?: string, can_expire?: boolean, };
 

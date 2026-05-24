@@ -11,6 +11,7 @@ export const mockData = {
   sites: [] as MockRecord[],
   users: [] as MockRecord[],
   preferences: { active_site_id: null as string | null },
+  billingSettings: { default_hourly_rate_cents: null as number | null },
   vehicles: [] as MockRecord[],
   tools: [] as MockRecord[],
   machines: [] as MockRecord[],
@@ -108,6 +109,19 @@ export const handlers = [
   http.get(apiRoute('/preferences'), async () => {
     await delay(10);
     return HttpResponse.json(mockData.preferences);
+  }),
+
+  http.get(apiRoute('/settings/billing'), async () => {
+    await delay(10);
+    return HttpResponse.json(mockData.billingSettings);
+  }),
+
+  http.patch(apiRoute('/settings/billing'), async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    mockData.billingSettings = {
+      default_hourly_rate_cents: (body.default_hourly_rate_cents as number | null | undefined) ?? null,
+    };
+    return HttpResponse.json(mockData.billingSettings);
   }),
 
   http.patch(apiRoute('/preferences'), async ({ request }) => {
