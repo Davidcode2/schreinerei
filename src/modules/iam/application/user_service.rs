@@ -112,6 +112,10 @@ impl UserService {
     /// Get or create user from request-scoped tenant context.
     pub async fn get_or_create_from_ctx(&self, ctx: &TenantContext) -> Result<User, AppError> {
         let tenant_id = ctx.tenant_id;
+        let invited_role = self
+            .user_repo
+            .find_pending_invite_role(tenant_id, &ctx.email)
+            .await?;
 
         // Check if user exists
         if let Some(user) = self
@@ -128,6 +132,14 @@ impl UserService {
             .claim_pending_by_email(tenant_id, &ctx.email, &ctx.user_id.to_string())
             .await?
         {
+            let user = self
+                .apply_invited_role_if_needed(user, tenant_id, invited_role)
+                .await?;
+            if invited_role.is_some() {
+                self.user_repo
+                    .mark_pending_invite_accepted(tenant_id, &ctx.email)
+                    .await?;
+            }
             self.sync_realm_role_if_needed(&user, ctx).await?;
             return Ok(user);
         }
@@ -137,16 +149,42 @@ impl UserService {
             keycloak_user_id: ctx.user_id.to_string(),
             email: ctx.email.clone(),
             name: None,
-            role: if ctx.is_admin() {
-                Role::Admin
-            } else {
-                Role::Employee
-            },
+            role: invited_role.unwrap_or_else(|| {
+                if ctx.is_admin() {
+                    Role::Admin
+                } else {
+                    Role::Employee
+                }
+            }),
         };
 
         let user = self.user_repo.create(&create_user, tenant_id).await?;
+        if invited_role.is_some() {
+            self.user_repo
+                .mark_pending_invite_accepted(tenant_id, &ctx.email)
+                .await?;
+        }
         self.sync_realm_role_if_needed(&user, ctx).await?;
         Ok(user)
+    }
+
+    async fn apply_invited_role_if_needed(
+        &self,
+        user: User,
+        tenant_id: TenantId,
+        invited_role: Option<Role>,
+    ) -> Result<User, AppError> {
+        let Some(invited_role) = invited_role else {
+            return Ok(user);
+        };
+
+        if user.role == invited_role {
+            return Ok(user);
+        }
+
+        self.user_repo
+            .update_role(user.id, invited_role, tenant_id)
+            .await
     }
 
     async fn sync_realm_role_if_needed(

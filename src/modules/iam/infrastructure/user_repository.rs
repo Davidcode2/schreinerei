@@ -100,6 +100,58 @@ impl UserRepository {
         Ok(user.map(|row| row.into_user()))
     }
 
+    pub async fn find_pending_invite_role(
+        &self,
+        tenant_id: TenantId,
+        email: &str,
+    ) -> Result<Option<Role>, AppError> {
+        let role: Option<String> = sqlx::query_scalar(
+            r#"
+            SELECT role
+            FROM organization_invites
+            WHERE tenant_id = $1
+              AND lower(email) = lower($2)
+              AND status = 'pending'
+              AND expires_at > NOW()
+            ORDER BY created_at DESC
+            LIMIT 1
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(email)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        role.map(|value| value.parse().map_err(AppError::Database))
+            .transpose()
+    }
+
+    pub async fn mark_pending_invite_accepted(
+        &self,
+        tenant_id: TenantId,
+        email: &str,
+    ) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+            UPDATE organization_invites
+            SET status = 'accepted',
+                updated_at = NOW()
+            WHERE tenant_id = $1
+              AND lower(email) = lower($2)
+              AND status = 'pending'
+              AND expires_at > NOW()
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(email)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(())
+    }
+
     /// List all users in a tenant
     pub async fn list(&self, tenant_id: TenantId) -> Result<Vec<User>, AppError> {
         let users = sqlx::query_as::<_, UserRow>(
