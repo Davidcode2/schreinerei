@@ -35,6 +35,7 @@ pub fn create_router() -> Router<AppState> {
         )
         // User management endpoints (admin only)
         .route("/api/v1/users", get(list_users))
+        .route("/api/v1/users/invites", get(list_pending_invites))
         .route("/api/v1/users/invite", post(invite_user))
         .route("/api/v1/users/{id}/role", patch(update_user_role))
         .route("/api/v1/users/{id}", get(get_user))
@@ -90,6 +91,17 @@ pub struct InviteUserResponse {
     pub invite_url: String,
     pub organization_alias: String,
     pub expires_at: String,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "generated.ts")]
+pub struct PendingInviteResponse {
+    pub id: String,
+    pub email: String,
+    pub role: String,
+    pub status: String,
+    pub expires_at: String,
+    pub created_at: String,
 }
 
 /// Request DTO for updating role
@@ -148,6 +160,34 @@ pub async fn list_users(
 
     let users = service.list_users(&ctx).await?;
     let response: Vec<UserResponse> = users.into_iter().map(UserResponse::from).collect();
+
+    Ok(Json(response))
+}
+
+/// GET /api/v1/users/invites - List pending invites in tenant (admin only)
+pub async fn list_pending_invites(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+) -> Result<impl IntoResponse, AppError> {
+    if !ctx.is_admin() {
+        return Err(AppError::Forbidden("Admin access required".to_string()));
+    }
+
+    let invites = OnboardingRepository::new(state.pool)
+        .list_pending_invites(ctx.tenant_id)
+        .await?;
+
+    let response = invites
+        .into_iter()
+        .map(|invite| PendingInviteResponse {
+            id: invite.id.to_string(),
+            email: invite.email,
+            role: invite.role,
+            status: invite.status.to_string(),
+            expires_at: invite.expires_at.to_rfc3339(),
+            created_at: invite.created_at.to_rfc3339(),
+        })
+        .collect::<Vec<_>>();
 
     Ok(Json(response))
 }

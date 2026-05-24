@@ -118,6 +118,8 @@ export type OrderStatusQuery = { status: string | null, };
 
 export type PdfArtifactResponse = { storage_path: string, sha256_hash: string, content_type: string, size_bytes: bigint, created_at: string, };
 
+export type PendingInviteResponse = { id: string, email: string, role: string, status: string, expires_at: string, created_at: string, };
+
 /**
  * Response DTO for user preferences
  */

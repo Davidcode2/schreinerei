@@ -26,6 +26,15 @@ export interface InviteUserResponse {
   expires_at: string
 }
 
+export interface PendingInviteResponse {
+  id: string
+  email: string
+  role: string
+  status: string
+  expires_at: string
+  created_at: string
+}
+
 export interface PublicInviteResponse {
   email: string
   role: string
@@ -50,7 +59,18 @@ export function useInviteUser() {
       apiClient.post<InviteUserResponse>("/api/v1/users/invite", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: ["pending-invites"] })
     },
+  })
+}
+
+export function usePendingInvites() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  return useQuery({
+    queryKey: ["pending-invites"],
+    queryFn: () => apiClient.get<PendingInviteResponse[]>("/api/v1/users/invites"),
+    staleTime: 30000,
+    enabled: isAuthenticated,
   })
 }
 

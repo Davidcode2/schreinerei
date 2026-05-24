@@ -12,6 +12,9 @@
 use sqlx::PgPool;
 use uuid::Uuid;
 
+use schreinerei::common::types::TenantId;
+use schreinerei::modules::onboarding::infrastructure::onboarding_repository::OnboardingRepository;
+
 // Note: These tests require a database connection.
 // They will be skipped if DATABASE_URL is not set.
 
@@ -57,6 +60,29 @@ async fn create_test_user(pool: &PgPool, tenant_id: Uuid, email: &str, role: &st
     .expect("Failed to create test user");
 
     id
+}
+
+async fn create_test_invite(
+    pool: &PgPool,
+    tenant_id: Uuid,
+    email: &str,
+    status: &str,
+    expires_in_hours: i32,
+) {
+    sqlx::query(
+        r#"
+        INSERT INTO organization_invites (tenant_id, email, role, token, status, expires_at)
+        VALUES ($1, $2, 'employee', $3, $4, NOW() + make_interval(hours => $5))
+        "#,
+    )
+    .bind(tenant_id)
+    .bind(email)
+    .bind(Uuid::new_v4().to_string())
+    .bind(status)
+    .bind(expires_in_hours)
+    .execute(pool)
+    .await
+    .expect("Failed to create test invite");
 }
 
 #[cfg(test)]
@@ -187,5 +213,25 @@ mod tests {
             result.is_err(),
             "Should not allow duplicate keycloak_user_id in same tenant"
         );
+    }
+
+    #[sqlx::test]
+    async fn test_list_pending_invites_respects_tenant_boundary_and_expiry(pool: PgPool) {
+        let tenant_a = create_test_tenant(&pool, "Tenant Invite A").await;
+        let tenant_b = create_test_tenant(&pool, "Tenant Invite B").await;
+
+        create_test_invite(&pool, tenant_a, "pending-a@test.com", "pending", 24).await;
+        create_test_invite(&pool, tenant_a, "expired-a@test.com", "pending", -1).await;
+        create_test_invite(&pool, tenant_b, "pending-b@test.com", "pending", 24).await;
+
+        let repository = OnboardingRepository::new(pool.clone());
+        let invites = repository
+            .list_pending_invites(TenantId(tenant_a))
+            .await
+            .expect("list pending invites");
+
+        assert_eq!(invites.len(), 1);
+        assert_eq!(invites[0].email, "pending-a@test.com");
+        assert_eq!(invites[0].status.to_string(), "pending");
     }
 }
