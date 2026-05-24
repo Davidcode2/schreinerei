@@ -574,6 +574,29 @@ impl OnboardingRepository {
         row.map(organization_invite_from_row).transpose()
     }
 
+    pub async fn list_pending_invites(
+        &self,
+        tenant_id: TenantId,
+    ) -> Result<Vec<OrganizationInvite>, AppError> {
+        self.expire_pending_invites_for_tenant(tenant_id).await?;
+
+        let rows = sqlx::query(
+            r#"
+            SELECT id, tenant_id, email, role, token, status, expires_at, created_at
+            FROM organization_invites
+            WHERE tenant_id = $1
+              AND status = 'pending'
+            ORDER BY expires_at ASC, created_at DESC
+            "#,
+        )
+        .bind(tenant_id.0)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(database_error)?;
+
+        rows.into_iter().map(organization_invite_from_row).collect()
+    }
+
     async fn expire_invite_by_token(&self, token: &str) -> Result<(), AppError> {
         sqlx::query(
             r#"
@@ -585,6 +608,24 @@ impl OnboardingRepository {
             "#,
         )
         .bind(token)
+        .execute(&self.pool)
+        .await
+        .map_err(database_error)?;
+
+        Ok(())
+    }
+
+    async fn expire_pending_invites_for_tenant(&self, tenant_id: TenantId) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+            UPDATE organization_invites
+            SET status = 'expired'
+            WHERE tenant_id = $1
+              AND status = 'pending'
+              AND expires_at <= NOW()
+            "#,
+        )
+        .bind(tenant_id.0)
         .execute(&self.pool)
         .await
         .map_err(database_error)?;

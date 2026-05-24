@@ -27,6 +27,22 @@ async fn create_test_tenant(pool: &PgPool, name: &str) -> Uuid {
     id
 }
 
+async fn insert_pending_invite(pool: &PgPool, tenant_id: Uuid, email: &str, role: &str) {
+    sqlx::query(
+        r#"
+        INSERT INTO organization_invites (tenant_id, email, role, token, expires_at)
+        VALUES ($1, $2, $3, $4, NOW() + INTERVAL '7 days')
+        "#,
+    )
+    .bind(tenant_id)
+    .bind(email)
+    .bind(role)
+    .bind(Uuid::new_v4().to_string())
+    .execute(pool)
+    .await
+    .expect("create pending invite");
+}
+
 fn auth_user(keycloak_subject: Uuid, tenant_id: Uuid, email: &str) -> AuthenticatedUser {
     AuthenticatedUser {
         user_id: UserId(keycloak_subject),
@@ -144,4 +160,31 @@ async fn same_keycloak_subject_stays_tenant_isolated(pool: PgPool) {
 
     assert_eq!(count_a, 1);
     assert_eq!(count_b, 1);
+}
+
+#[sqlx::test]
+async fn first_login_consumes_pending_org_invite_and_uses_invited_role(pool: PgPool) {
+    let tenant_id = create_test_tenant(&pool, "Tenant Invite").await;
+    insert_pending_invite(&pool, tenant_id, "new-admin@test.com", "admin").await;
+
+    let service = UserService::new(UserRepository::new(pool.clone()));
+    let auth = auth_user(Uuid::new_v4(), tenant_id, "NEW-ADMIN@test.com");
+
+    let user = service
+        .get_or_create_from_auth(&auth)
+        .await
+        .expect("resolve invited user");
+
+    assert_eq!(user.role, Role::Admin);
+
+    let invite_status: String = sqlx::query_scalar(
+        "SELECT status FROM organization_invites WHERE tenant_id = $1 AND lower(email) = lower($2)",
+    )
+    .bind(tenant_id)
+    .bind("new-admin@test.com")
+    .fetch_one(&pool)
+    .await
+    .expect("load invite status");
+
+    assert_eq!(invite_status, "accepted");
 }

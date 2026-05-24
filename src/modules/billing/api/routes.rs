@@ -427,6 +427,17 @@ fn validate_non_negative(label: &str, value: Option<i64>) -> Result<(), AppError
     Ok(())
 }
 
+fn normalize_optional_text(value: Option<&str>) -> Option<String> {
+    value.and_then(|entry| {
+        let trimmed = entry.trim();
+        if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed.to_string())
+        }
+    })
+}
+
 fn resolve_sender_name(
     request: &CreateProjectInvoiceRequest,
     billing_profile: &TenantBillingProfile,
@@ -501,13 +512,6 @@ fn tax_note_for_mode(mode: BillingTaxMode) -> Option<String> {
             Some("Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.".to_string())
         }
     }
-}
-
-fn normalize_optional_text(value: Option<&str>) -> Option<String> {
-    value
-        .map(str::trim)
-        .filter(|trimmed| !trimmed.is_empty())
-        .map(ToOwned::to_owned)
 }
 
 impl From<Invoice> for InvoiceResponse {
