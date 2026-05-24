@@ -7,6 +7,7 @@ use axum::{
 };
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use std::sync::Arc;
 use ts_rs::TS;
 use uuid::Uuid;
@@ -31,6 +32,13 @@ use crate::modules::sites::domain::InvoicePricingMode;
 use crate::modules::sites::infrastructure::site_repository::SiteRepository;
 use crate::AppState;
 
+#[derive(Debug, Clone, Copy)]
+struct ResolvedInvoicePricing {
+    mode: Option<InvoicePricingMode>,
+    hourly_rate_cents: Option<i64>,
+    fixed_price_cents: Option<i64>,
+}
+
 pub fn create_router() -> Router<AppState> {
     Router::new()
         .route("/api/v1/billing/invoices/{id}", get(get_invoice))
@@ -49,6 +57,9 @@ pub fn create_router() -> Router<AppState> {
 pub struct CreateProjectInvoiceRequest {
     pub sender_name: Option<String>,
     pub sender_address: Option<String>,
+    pub invoice_pricing_mode: Option<String>,
+    pub hourly_rate_cents: Option<i64>,
+    pub fixed_price_cents: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -146,6 +157,7 @@ async fn create_project_invoice(
 
     let site_id = SiteId(site_id);
     let invoice_summary = load_invoice_summary(state.pool.clone(), site_id, &ctx).await?;
+    let invoice_summary = apply_invoice_overrides(invoice_summary, &request)?;
     let user_service = match KeycloakAdminClient::from_config(&state.config) {
         Ok(client) => UserService::new_with_role_assigner(
             UserRepository::new(state.pool.clone()),
@@ -251,6 +263,91 @@ fn invoice_snapshot(summary: &InvoiceSummary) -> InvoiceSnapshot {
             .map(InvoiceSnapshotLineItem::from)
             .collect(),
     }
+}
+
+fn apply_invoice_overrides(
+    mut summary: InvoiceSummary,
+    request: &CreateProjectInvoiceRequest,
+) -> Result<InvoiceSummary, AppError> {
+    let requested_mode = request
+        .invoice_pricing_mode
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(InvoicePricingMode::from_str)
+        .transpose()
+        .map_err(AppError::Validation)?;
+    let pricing = resolve_invoice_pricing(
+        requested_mode,
+        request.hourly_rate_cents,
+        request.fixed_price_cents,
+        summary.site.invoice_pricing_mode,
+        summary.site.hourly_rate_cents,
+        summary.site.fixed_price_cents,
+    )?;
+
+    summary.site.invoice_pricing_mode = pricing.mode;
+    summary.site.hourly_rate_cents = pricing.hourly_rate_cents;
+    summary.site.fixed_price_cents = pricing.fixed_price_cents;
+
+    Ok(summary)
+}
+
+fn resolve_invoice_pricing(
+    requested_mode: Option<InvoicePricingMode>,
+    requested_hourly_rate_cents: Option<i64>,
+    requested_fixed_price_cents: Option<i64>,
+    current_mode: Option<InvoicePricingMode>,
+    current_hourly_rate_cents: Option<i64>,
+    current_fixed_price_cents: Option<i64>,
+) -> Result<ResolvedInvoicePricing, AppError> {
+    validate_non_negative("Hourly rate", requested_hourly_rate_cents)?;
+    validate_non_negative("Fixed price", requested_fixed_price_cents)?;
+
+    let hourly_rate_cents = requested_hourly_rate_cents.or(current_hourly_rate_cents);
+    let fixed_price_cents = requested_fixed_price_cents.or(current_fixed_price_cents);
+    let mode = infer_invoice_pricing_mode(
+        requested_mode.or(current_mode),
+        hourly_rate_cents,
+        fixed_price_cents,
+    );
+
+    match mode {
+        Some(InvoicePricingMode::HourlyRate) if hourly_rate_cents.is_none() => Err(
+            AppError::Validation("Hourly pricing requires an hourly rate".to_string()),
+        ),
+        Some(InvoicePricingMode::FixedPrice) if fixed_price_cents.is_none() => Err(
+            AppError::Validation("Fixed-price billing requires a fixed price".to_string()),
+        ),
+        _ => Ok(ResolvedInvoicePricing {
+            mode,
+            hourly_rate_cents,
+            fixed_price_cents,
+        }),
+    }
+}
+
+fn infer_invoice_pricing_mode(
+    mode: Option<InvoicePricingMode>,
+    hourly_rate_cents: Option<i64>,
+    fixed_price_cents: Option<i64>,
+) -> Option<InvoicePricingMode> {
+    match mode {
+        Some(mode) => Some(mode),
+        None if fixed_price_cents.is_some() => Some(InvoicePricingMode::FixedPrice),
+        None if hourly_rate_cents.is_some() => Some(InvoicePricingMode::HourlyRate),
+        None => None,
+    }
+}
+
+fn validate_non_negative(label: &str, value: Option<i64>) -> Result<(), AppError> {
+    if let Some(value) = value {
+        if value < 0 {
+            return Err(AppError::Validation(format!("{label} cannot be negative")));
+        }
+    }
+
+    Ok(())
 }
 
 impl From<Invoice> for InvoiceResponse {
@@ -691,6 +788,9 @@ mod tests {
             Json(CreateProjectInvoiceRequest {
                 sender_name: Some(" Schreinerei ".to_string()),
                 sender_address: Some("Werkstrasse 1".to_string()),
+                invoice_pricing_mode: None,
+                hourly_rate_cents: None,
+                fixed_price_cents: None,
             }),
         )
         .await
@@ -777,6 +877,79 @@ mod tests {
         assert_eq!(response.line_items[0].source, "fixed_price");
         assert_eq!(response.line_items[0].unit_price_cents, Some(120_000));
         assert_eq!(response.line_items[0].line_total_cents, Some(120_000));
+    }
+
+    #[sqlx::test]
+    async fn create_project_invoice_allows_one_off_pricing_override_without_mutating_site(
+        pool: PgPool,
+    ) {
+        let tenant_id = create_tenant(&pool, "Tenant A").await;
+        let user = create_user(&pool, tenant_id, Role::Admin).await;
+        let site_id = create_site_with_billing(
+            &pool,
+            tenant_id,
+            "Project A",
+            Some("hourly_rate"),
+            Some(8_500),
+            None,
+        )
+        .await;
+        create_time_entry(&pool, tenant_id, site_id, user.local_id, "site", 3.5).await;
+
+        let response = create_project_invoice(
+            State(test_state(pool.clone())),
+            tenant_context(tenant_id, user.auth_user_id, &user.email, Role::Admin),
+            Path(site_id.0),
+            Json(CreateProjectInvoiceRequest {
+                sender_name: None,
+                sender_address: None,
+                invoice_pricing_mode: Some("fixed_price".to_string()),
+                hourly_rate_cents: None,
+                fixed_price_cents: Some(150_000),
+            }),
+        )
+        .await
+        .expect("override should create invoice draft")
+        .0;
+
+        let stored_mode: Option<String> =
+            sqlx::query_scalar("SELECT invoice_pricing_mode FROM sites WHERE id = $1")
+                .bind(site_id.0)
+                .fetch_one(&pool)
+                .await
+                .expect("site pricing mode should be readable");
+
+        assert_eq!(
+            response.billing.invoice_pricing_mode.as_deref(),
+            Some("fixed_price")
+        );
+        assert_eq!(response.total_amount_cents, Some(150_000));
+        assert_eq!(stored_mode.as_deref(), Some("hourly_rate"));
+    }
+
+    #[sqlx::test]
+    async fn create_project_invoice_rejects_invalid_override_combinations(pool: PgPool) {
+        let tenant_id = create_tenant(&pool, "Tenant A").await;
+        let user = create_user(&pool, tenant_id, Role::Admin).await;
+        let site_id = create_site(&pool, tenant_id, "Project A").await;
+
+        let result = create_project_invoice(
+            State(test_state(pool)),
+            tenant_context(tenant_id, user.auth_user_id, &user.email, Role::Admin),
+            Path(site_id.0),
+            Json(CreateProjectInvoiceRequest {
+                sender_name: None,
+                sender_address: None,
+                invoice_pricing_mode: Some("fixed_price".to_string()),
+                hourly_rate_cents: None,
+                fixed_price_cents: None,
+            }),
+        )
+        .await;
+
+        assert!(
+            matches!(result, Err(AppError::Validation(message)) if message == "Fixed-price billing requires a fixed price")
+        );
     }
 
     #[sqlx::test]
@@ -893,6 +1066,9 @@ mod tests {
         CreateProjectInvoiceRequest {
             sender_name: None,
             sender_address: None,
+            invoice_pricing_mode: None,
+            hourly_rate_cents: None,
+            fixed_price_cents: None,
         }
     }
 

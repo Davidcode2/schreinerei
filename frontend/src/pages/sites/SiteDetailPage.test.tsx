@@ -20,6 +20,9 @@ const site = {
   end_date: null,
   estimated_days: 2,
   budget_amount_cents: 320000,
+  invoice_pricing_mode: 'hourly_rate' as const,
+  hourly_rate_cents: 8500,
+  fixed_price_cents: null,
   billing_reference: 'BR-2',
   billing_notes: 'Schlussrechnung nach Abnahme',
   quote_reference: 'ANG-2026-09',
@@ -287,7 +290,7 @@ describe('SiteDetailPage', () => {
   it('lets admins create an invoice from the site detail page', async () => {
     window.history.pushState({}, '', '/sites/site-1')
     setAdminUser()
-    let createRequested = false
+    let submittedPayload: Record<string, unknown> | null = null
     let invoiceListCalls = 0
 
     server.use(
@@ -317,8 +320,8 @@ describe('SiteDetailPage', () => {
           },
         ] : [])
       }),
-      http.post('*/api/v1/billing/projects/site-1/invoices', () => {
-        createRequested = true
+      http.post('*/api/v1/billing/projects/site-1/invoices', async ({ request }) => {
+        submittedPayload = await request.json() as Record<string, unknown>
         return HttpResponse.json({
           invoice: {
             id: 'inv-2',
@@ -337,9 +340,10 @@ describe('SiteDetailPage', () => {
             updated_at: '2026-05-10T09:00:00.000Z',
           },
           project: {},
-          billing: {},
+          billing: { invoice_pricing_mode: 'fixed_price', fixed_price_cents: 500000 },
           labor: {},
           materials: {},
+          total_amount_cents: 500000,
           line_items: [],
         })
       }),
@@ -359,8 +363,19 @@ describe('SiteDetailPage', () => {
 
     const user = userEvent.setup()
     await user.click(await screen.findByRole('button', { name: /rechnung erstellen/i }))
+    expect(await screen.findByText(/einmalige abrechnungslogik/i)).toBeInTheDocument()
+    await user.click(screen.getByRole('combobox', { name: /rechnungslogik/i }))
+    await user.click(screen.getByRole('option', { name: /pauschalpreis/i }))
+    await user.clear(screen.getByLabelText(/pauschalpreis/i))
+    await user.type(screen.getByLabelText(/pauschalpreis/i), '5000')
+    await user.click(screen.getByRole('button', { name: /^rechnung erstellen$/i }))
 
-    await waitFor(() => expect(createRequested).toBe(true))
+    await waitFor(() => {
+      expect(submittedPayload).toMatchObject({
+        invoice_pricing_mode: 'fixed_price',
+        fixed_price_cents: 500000,
+      })
+    })
     expect(await screen.findByText('2026-00002')).toBeInTheDocument()
     expect(screen.getByText(/PDF noch nicht verfügbar/i)).toBeInTheDocument()
   })
@@ -398,6 +413,7 @@ describe('SiteDetailPage', () => {
     const user = userEvent.setup()
     const createButton = await screen.findByRole('button', { name: /rechnung erstellen/i })
     await user.click(createButton)
+    await user.click(await screen.findByRole('button', { name: /^rechnung erstellen$/i }))
 
     await waitFor(() => expect(createAttempts).toBe(1))
     expect(await screen.findByRole('button', { name: /rechnung erstellen/i })).toBeEnabled()

@@ -1,6 +1,7 @@
 import type {
   CreateSiteAppointmentRequest as GeneratedCreateSiteAppointmentRequest,
   InvoiceResponse as GeneratedInvoiceResponse,
+  ProjectInvoiceDraftResponse as GeneratedProjectInvoiceDraftResponse,
   SiteHistoryReportQuery as GeneratedSiteHistoryReportQuery,
   SiteHistoryReportRowResponse as GeneratedSiteHistoryReportRowResponse,
   SiteAppointmentResponse as GeneratedSiteAppointmentResponse,
@@ -18,6 +19,7 @@ import type {
 
 export type SiteStatus = 'planned' | 'active' | 'completed' | 'archived'
 export type ProjectType = 'external_site' | 'internal_workshop'
+export type InvoicePricingMode = 'hourly_rate' | 'fixed_price'
 
 export interface Site {
   id: string
@@ -31,6 +33,9 @@ export interface Site {
   end_date: string | null
   estimated_days: number | null
   budget_amount_cents: number | null
+  invoice_pricing_mode: InvoicePricingMode | null
+  hourly_rate_cents: number | null
+  fixed_price_cents: number | null
   billing_reference: string | null
   billing_notes: string | null
   quote_reference: string | null
@@ -47,6 +52,9 @@ export interface CreateSiteRequest {
   end_date?: string
   estimated_days?: number
   budget_amount_cents?: number | null
+  invoice_pricing_mode?: InvoicePricingMode | null
+  hourly_rate_cents?: number | null
+  fixed_price_cents?: number | null
   billing_reference?: string | null
   billing_notes?: string | null
   quote_reference?: string | null
@@ -63,10 +71,16 @@ export interface UpdateSiteRequest {
   end_date?: string
   estimated_days?: number
   budget_amount_cents?: number | null
+  invoice_pricing_mode?: InvoicePricingMode | null
+  hourly_rate_cents?: number | null
+  fixed_price_cents?: number | null
   billing_reference?: string | null
   billing_notes?: string | null
   quote_reference?: string | null
   clear_budget_amount?: boolean
+  clear_invoice_pricing_mode?: boolean
+  clear_hourly_rate_cents?: boolean
+  clear_fixed_price_cents?: boolean
   clear_billing_reference?: boolean
   clear_billing_notes?: boolean
   clear_quote_reference?: boolean
@@ -205,6 +219,16 @@ export type SiteProjectSummary = GeneratedSiteProjectSummaryResponse
 export type SiteInvoiceSummary = GeneratedSiteInvoiceSummaryResponse
 
 export type SiteInvoice = GeneratedInvoiceResponse
+
+export interface CreateProjectInvoiceRequest {
+  sender_name?: string | null
+  sender_address?: string | null
+  invoice_pricing_mode?: InvoicePricingMode | null
+  hourly_rate_cents?: number | null
+  fixed_price_cents?: number | null
+}
+
+export type ProjectInvoiceDraft = GeneratedProjectInvoiceDraftResponse
 
 export type SiteHistoryReportRow = GeneratedSiteHistoryReportRowResponse
 

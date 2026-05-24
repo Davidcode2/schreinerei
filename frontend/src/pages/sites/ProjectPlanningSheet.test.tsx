@@ -18,6 +18,9 @@ const site = {
   end_date: null,
   estimated_days: 3,
   budget_amount_cents: 250000,
+  invoice_pricing_mode: 'hourly_rate' as const,
+  hourly_rate_cents: 8500,
+  fixed_price_cents: null,
   billing_reference: 'BR-1',
   billing_notes: 'Teilrechnung nach Montage',
   quote_reference: 'ANG-2026-01',
@@ -39,13 +42,17 @@ describe('ProjectPlanningSheet', () => {
 
     render(<ProjectPlanningSheet open={true} onOpenChange={onOpenChange} site={site} />)
 
-    await user.click(screen.getByRole('combobox'))
+    await user.click(screen.getByRole('combobox', { name: /projektart/i }))
     await user.click(screen.getByRole('option', { name: /werkstatt intern/i }))
     await user.clear(screen.getByLabelText(/kunde/i))
     await user.clear(screen.getByLabelText(/geplante tage/i))
     await user.type(screen.getByLabelText(/geplante tage/i), '5')
     await user.clear(screen.getByLabelText(/budget/i))
     await user.type(screen.getByLabelText(/budget/i), '3000')
+    await user.click(screen.getByRole('combobox', { name: /rechnungslogik/i }))
+    await user.click(screen.getByRole('option', { name: /pauschalpreis/i }))
+    await user.clear(screen.getByLabelText(/pauschalpreis/i))
+    await user.type(screen.getByLabelText(/pauschalpreis/i), '4500')
     await user.clear(screen.getByLabelText(/abrechnungsreferenz/i))
     await user.type(screen.getByLabelText(/abrechnungsreferenz/i), 'BR-2')
     await user.click(screen.getByRole('button', { name: /speichern/i }))
@@ -55,6 +62,9 @@ describe('ProjectPlanningSheet', () => {
         project_type: 'internal_workshop',
         estimated_days: 5,
         budget_amount_cents: 300000,
+        invoice_pricing_mode: 'fixed_price',
+        fixed_price_cents: 450000,
+        clear_hourly_rate_cents: true,
         billing_reference: 'BR-2',
       })
       expect(onOpenChange).toHaveBeenCalledWith(false)
@@ -75,6 +85,8 @@ describe('ProjectPlanningSheet', () => {
     render(<ProjectPlanningSheet open={true} onOpenChange={vi.fn()} site={site} />)
 
     await user.clear(screen.getByLabelText(/budget/i))
+    await user.click(screen.getByRole('combobox', { name: /rechnungslogik/i }))
+    await user.click(screen.getByRole('option', { name: /keine vorgabe/i }))
     await user.clear(screen.getByLabelText(/angebotsreferenz/i))
     await user.clear(screen.getByLabelText(/abrechnungsreferenz/i))
     await user.clear(screen.getByLabelText(/abrechnungshinweise/i))
@@ -83,6 +95,8 @@ describe('ProjectPlanningSheet', () => {
     await waitFor(() => {
       expect(submitted).toMatchObject({
         clear_budget_amount: true,
+        clear_invoice_pricing_mode: true,
+        clear_hourly_rate_cents: true,
         clear_quote_reference: true,
         clear_billing_reference: true,
         clear_billing_notes: true,
