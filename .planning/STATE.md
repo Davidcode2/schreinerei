@@ -4,8 +4,8 @@ milestone: v1.14
 milestone_name: Project Costing, Planning & Billing Basis
 status: ready
 stopped_at: Milestone v1.14 complete and next seed ready for activation
-last_updated: "2026-05-08T15:30:00Z"
-last_activity: 2026-05-08 -- Completed Phase 52
+last_updated: "2026-05-24T14:52:00Z"
+last_activity: 2026-05-24 -- Completed quick task 260524-k4d
 progress:
   total_phases: 5
   completed_phases: 5
@@ -28,7 +28,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-05)
 Phase: —
 Plan: —
 Status: v1.14 complete, ready for next milestone activation
-Last activity: 2026-05-08 -- Completed Phase 52
+Last activity: 2026-05-24 -- Completed quick task 260524-k4d: Add project hourly-rate billing defaults and invoice pricing mode backend support
 
 ## Performance Metrics
 
@@ -110,6 +110,12 @@ Last activity: 2026-05-08 -- Completed Phase 52
 - Fleet calendar local-day derivation may still need timezone-safe cleanup later.
 - The newly captured product note is much broader than a single milestone; future work must stay sliced by bounded context and delivery risk.
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260524-k4d | Add project hourly-rate billing defaults and invoice pricing mode backend support | 2026-05-24 | 8c07380 | [260524-k4d-add-project-hourly-rate-billing-defaults](./quick/260524-k4d-add-project-hourly-rate-billing-defaults/) |
+
 ## Deferred Items
 
 | Category | Item | Status | Deferred At |
@@ -122,6 +128,6 @@ Last activity: 2026-05-08 -- Completed Phase 52
 
 ## Session Continuity
 
-Last session: 2026-05-08T15:30:00Z
-Stopped at: Milestone v1.14 complete and next seed ready for activation
-Resume file: `.planning/phases/51-historical-project-reporting/51-PLAN.md`
+Last session: 2026-05-24T14:52:00Z
+Stopped at: Quick task 260524-k4d complete
+Resume file: `.planning/quick/260524-k4d-add-project-hourly-rate-billing-defaults/260524-k4d-SUMMARY.md`
