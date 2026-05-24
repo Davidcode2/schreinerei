@@ -84,6 +84,63 @@ const comparisonRows = [
     hero: "Nicht im Fokus",
   },
 ]
+
+const screenshotCards = [
+  {
+    eyebrow: "Dashboard",
+    title: "Tageslage auf einen Blick",
+    description: "Der Startbildschirm verbindet Projektstatus, Materialwarnungen und Tagesstunden in einer ruhigen Uebersicht fuer Inhaber und Buero.",
+    desktopImage: "/screenshots/dashboard-desktop.png",
+    desktopAlt: "Desktop-Screenshot des Schreinerei-Dashboards",
+    mobileImage: "/screenshots/dashboard-mobile.png",
+    mobileAlt: "Mobiler Screenshot des Schreinerei-Dashboards",
+  },
+  {
+    eyebrow: "Projekte",
+    title: "Baustellen und Werkstattprojekte im Raster",
+    description: "Die Projektliste zeigt Suche, Statusfilter und Kartenlayout fuer externe Baustellen und interne Werkstattauftraege in einer Ansicht.",
+    desktopImage: "/screenshots/sites-desktop.png",
+    desktopAlt: "Desktop-Screenshot der Projekte-Seite in Schreinerei",
+    mobileImage: "/screenshots/sites-mobile.png",
+    mobileAlt: "Mobiler Screenshot der Projekte-Seite in Schreinerei",
+  },
+  {
+    eyebrow: "Fuhrpark",
+    title: "Fahrzeuge mit Reservierungen im Griff",
+    description: "Der Fuhrparkbereich zeigt Fahrzeuge, Status und Reservierungskontext so, dass schnell klar wird, was verfuegbar ist und was schon eingeplant wurde.",
+    desktopImage: "/screenshots/fleet-desktop.png",
+    desktopAlt: "Desktop-Screenshot der Fuhrpark-Seite in Schreinerei",
+    mobileImage: "/screenshots/fleet-mobile.png",
+    mobileAlt: "Mobiler Screenshot der Fuhrpark-Seite in Schreinerei",
+  },
+  {
+    eyebrow: "Werkzeuge",
+    title: "Werkzeugbestand separat und sauber organisiert",
+    description: "Werkzeuge bekommen ihre eigene klare Oberflaeche statt in einer allgemeinen Ressourcenansicht unterzugehen. Das passt zum Alltag kleiner Teams.",
+    desktopImage: "/screenshots/tools-desktop.png",
+    desktopAlt: "Desktop-Screenshot der Werkzeuge-Seite in Schreinerei",
+    mobileImage: "/screenshots/tools-mobile.png",
+    mobileAlt: "Mobiler Screenshot der Werkzeuge-Seite in Schreinerei",
+  },
+  {
+    eyebrow: "Inventar",
+    title: "Materialsuche, Kategorien und Warnungen an einem Ort",
+    description: "Das Inventar verbindet Suchfeld, Kategorien und Ablaufwarnungen, damit Materialfragen nicht erst zwischen Lagerregal und Telefon geklaert werden muessen.",
+    desktopImage: "/screenshots/inventory-desktop.png",
+    desktopAlt: "Desktop-Screenshot der Inventar-Seite in Schreinerei",
+    mobileImage: "/screenshots/inventory-mobile.png",
+    mobileAlt: "Mobiler Screenshot der Inventar-Seite in Schreinerei",
+  },
+  {
+    eyebrow: "Einstellungen",
+    title: "Profil, Abrechnung und Teamverwaltung ohne Umwege",
+    description: "Auch die Verwaltungsbereiche bleiben in derselben ruhigen Sprache: klar gegliederte Karten fuer Profil, Rechnungsdaten und Benutzerverwaltung.",
+    desktopImage: "/screenshots/settings-desktop.png",
+    desktopAlt: "Desktop-Screenshot der Einstellungen-Seite in Schreinerei",
+    mobileImage: "/screenshots/settings-mobile.png",
+    mobileAlt: "Mobiler Screenshot der Einstellungen-Seite in Schreinerei",
+  },
+]
 ---
 
 <BaseLayout
@@ -273,38 +330,29 @@ const comparisonRows = [
           <span class="eyebrow">Produkt-Einblicke</span>
           <h2 class="mt-5 text-4xl leading-tight text-foreground sm:text-5xl">Zeige das Produkt, nicht nur Versprechen.</h2>
           <p class="mt-4 section-copy">
-            Falls spaeter echte Screenshots mit Playwright erstellt werden, koennen diese Platzhalter sofort ersetzt
-            werden. Der Bereich ist bereits in das Layout eingebaut und verkauft die Anwendung visuell mit.
+            Die Einblicke unten sind direkt aus dem laufenden Frontend aufgenommen. Jede Karte kombiniert Desktop-
+            und Mobile-Ansicht derselben Route, damit Interessenten sofort sehen, wie ruhig und alltagstauglich die
+            Anwendung auf Baustelle, im Buero und unterwegs wirkt.
           </p>
         </div>
-        <div class="glass-card border-dashed px-5 py-4 text-sm leading-6 text-muted-foreground">
-          Aktuell sind hier hochwertige Platzhaltergrafiken eingebunden. Empfohlene spaetere Ersetzungen: Dashboard,
-          Baustellen-Detailansicht und mobile Zeiterfassung.
+        <div class="glass-card px-5 py-4 text-sm leading-6 text-muted-foreground">
+          Gezeigt werden zuerst die Kernrouten fuer den taeglichen Betrieb: Dashboard, Projekte, Fuhrpark,
+          Werkzeuge, Inventar und Einstellungen.
         </div>
       </div>
 
-      <div class="mt-8 grid gap-6 xl:grid-cols-3">
-        <AppScreenshotPlaceholder
-          eyebrow="Uebersicht"
-          title="Dashboard mit Tageslage"
-          description="Ein erster Blick fuer Inhaber oder Buero: Was laeuft, was ist offen, wo muss heute gehandelt werden?"
-          image="/screenshots/dashboard-placeholder.svg"
-          alt="Platzhalter fuer einen Dashboard-Screenshot der Schreinerei-App"
-        />
-        <AppScreenshotPlaceholder
-          eyebrow="Baustelle"
-          title="Projektansicht mit Zeit, Material und Verlauf"
-          description="Die wichtigste Einheit fuer den Betrieb: eine Baustelle mit allen relevanten Informationen in einer Ansicht."
-          image="/screenshots/project-placeholder.svg"
-          alt="Platzhalter fuer einen Projekt-Screenshot der Schreinerei-App"
-        />
-        <AppScreenshotPlaceholder
-          eyebrow="Mobil"
-          title="Zeiterfassung fuer unterwegs"
-          description="Auch auf dem Smartphone soll die Anwendung ruhig, klar und schnell bleiben. Genau das transportiert dieser Bereich."
-          image="/screenshots/mobile-placeholder.svg"
-          alt="Platzhalter fuer einen mobilen Screenshot der Schreinerei-App"
-        />
+      <div class="mt-8 grid gap-6 lg:grid-cols-2">
+        {screenshotCards.map((card) => (
+          <AppScreenshotPlaceholder
+            eyebrow={card.eyebrow}
+            title={card.title}
+            description={card.description}
+            desktopImage={card.desktopImage}
+            desktopAlt={card.desktopAlt}
+            mobileImage={card.mobileImage}
+            mobileAlt={card.mobileAlt}
+          />
+        ))}
       </div>
     </section>
 
