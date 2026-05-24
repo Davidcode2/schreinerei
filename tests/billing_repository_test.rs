@@ -1,7 +1,7 @@
 use schreinerei::common::error::AppError;
 use schreinerei::common::types::{SiteId, TenantId};
 use schreinerei::modules::billing::domain::{
-    AttachInvoicePdf, CreateInvoiceDraft, InvoiceSnapshot, InvoiceStatus,
+    AttachInvoicePdf, BillingTaxMode, CreateInvoiceDraft, InvoiceSnapshot, InvoiceStatus,
 };
 use schreinerei::modules::billing::infrastructure::InvoiceRepository;
 use sqlx::PgPool;
@@ -199,6 +199,12 @@ fn draft_for(site_id: SiteId) -> CreateInvoiceDraft {
             budget_amount_cents: None,
             labor_total_hours: 0.0,
             material_withdrawal_count: 0,
+            billing_tax_mode: Some(BillingTaxMode::Standard),
+            subtotal_amount_cents: None,
+            vat_rate_percent: Some(19),
+            vat_amount_cents: None,
+            gross_amount_cents: None,
+            tax_note: None,
             total_amount_cents: None,
             line_items: Vec::new(),
         },

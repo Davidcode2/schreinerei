@@ -1,4 +1,5 @@
 import { Building2 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 import { usePreferences, useSites } from "@/lib/api/hooks"
 import { getSiteColorClass } from "@/lib/active-site/siteColor"
 import { cn } from "@/lib/utils"
@@ -9,18 +10,33 @@ interface ActiveSiteIndicatorProps {
 }
 
 export function ActiveSiteIndicator({ compact = false, className }: ActiveSiteIndicatorProps) {
+  const navigate = useNavigate()
   const { data: preferences } = usePreferences()
   const { data: sites } = useSites()
 
   const activeSiteId = preferences?.active_site_id ?? null
   const activeSite = sites?.find((site) => site.id === activeSiteId)
   const activeTypeLabel = activeSite?.project_type === "internal_workshop" ? "Werkstatt" : "Extern"
+  const isInteractive = Boolean(activeSiteId)
+
+  const handleClick = () => {
+    if (!activeSiteId) {
+      return
+    }
+
+    navigate(`/sites/${activeSiteId}`)
+  }
 
   if (compact) {
     return (
-      <div
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={!isInteractive}
         className={cn(
-          "min-w-0 rounded-lg border border-border/60 bg-background px-3 py-1.5 shadow-sm",
+          "min-w-0 rounded-lg border border-border/60 bg-background px-3 py-1.5 text-left shadow-sm transition-colors",
+          isInteractive && "hover:bg-accent/60",
+          !isInteractive && "cursor-default",
           className
         )}
       >
@@ -38,12 +54,22 @@ export function ActiveSiteIndicator({ compact = false, className }: ActiveSiteIn
             {activeSite && <p className="text-[11px] text-muted-foreground">{activeTypeLabel}</p>}
           </div>
         </div>
-      </div>
+      </button>
     )
   }
 
   return (
-    <div className={cn("mx-3 mb-3 rounded-lg border border-border/60 bg-accent/40 px-3 py-2.5", className)}>
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={!isInteractive}
+      className={cn(
+        "mx-3 mb-3 w-[calc(100%-1.5rem)] rounded-lg border border-border/60 bg-accent/40 px-3 py-2.5 text-left transition-colors",
+        isInteractive && "hover:bg-accent/60",
+        !isInteractive && "cursor-default",
+        className
+      )}
+    >
       <div className="flex items-center gap-2">
         <span
           className={`h-2.5 w-2.5 rounded-full ${getSiteColorClass(activeSiteId)}`}
@@ -57,6 +83,6 @@ export function ActiveSiteIndicator({ compact = false, className }: ActiveSiteIn
         {activeSite?.name ?? "Kein aktives Projekt"}
       </p>
       {activeSite && <p className="mt-1 text-xs text-muted-foreground">{activeTypeLabel}</p>}
-    </div>
+    </button>
   )
 }

@@ -6,6 +6,7 @@ use axum::{
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
+use sqlx::Row;
 use std::sync::Arc;
 use ts_rs::TS;
 use uuid::Uuid;
@@ -39,6 +40,7 @@ pub fn create_router() -> Router<AppState> {
         )
         // User management endpoints (admin only)
         .route("/api/v1/users", get(list_users))
+        .route("/api/v1/users/invites", get(list_pending_invites))
         .route("/api/v1/users/invite", post(invite_user))
         .route("/api/v1/users/{id}/role", patch(update_user_role))
         .route("/api/v1/users/{id}", get(get_user))
@@ -96,6 +98,17 @@ pub struct InviteUserResponse {
     pub expires_at: String,
 }
 
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "generated.ts")]
+pub struct PendingInviteResponse {
+    pub id: String,
+    pub email: String,
+    pub role: String,
+    pub status: String,
+    pub expires_at: String,
+    pub created_at: String,
+}
+
 /// Request DTO for updating role
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "generated.ts")]
@@ -136,12 +149,18 @@ pub struct UpdatePreferencesRequest {
 #[ts(export, export_to = "generated.ts")]
 pub struct BillingSettingsResponse {
     pub default_hourly_rate_cents: Option<i64>,
+    pub billing_tax_mode: String,
+    pub sender_name: String,
+    pub sender_address: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
 #[ts(export, export_to = "generated.ts")]
 pub struct UpdateBillingSettingsRequest {
     pub default_hourly_rate_cents: Option<i64>,
+    pub billing_tax_mode: Option<String>,
+    pub sender_name: Option<String>,
+    pub sender_address: Option<String>,
 }
 
 /// GET /api/v1/auth/me - Get current user profile
@@ -164,6 +183,34 @@ pub async fn list_users(
 
     let users = service.list_users(&ctx).await?;
     let response: Vec<UserResponse> = users.into_iter().map(UserResponse::from).collect();
+
+    Ok(Json(response))
+}
+
+/// GET /api/v1/users/invites - List pending invites in tenant (admin only)
+pub async fn list_pending_invites(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+) -> Result<impl IntoResponse, AppError> {
+    if !ctx.is_admin() {
+        return Err(AppError::Forbidden("Admin access required".to_string()));
+    }
+
+    let invites = OnboardingRepository::new(state.pool)
+        .list_pending_invites(ctx.tenant_id)
+        .await?;
+
+    let response = invites
+        .into_iter()
+        .map(|invite| PendingInviteResponse {
+            id: invite.id.to_string(),
+            email: invite.email,
+            role: invite.role,
+            status: invite.status.to_string(),
+            expires_at: invite.expires_at.to_rfc3339(),
+            created_at: invite.created_at.to_rfc3339(),
+        })
+        .collect::<Vec<_>>();
 
     Ok(Json(response))
 }
@@ -268,21 +315,44 @@ pub async fn get_billing_settings(
         return Err(AppError::Forbidden("Admin access required".to_string()));
     }
 
-    let default_hourly_rate_cents: Option<i64> = sqlx::query_scalar(
+    let row = sqlx::query(
         r#"
-        SELECT default_hourly_rate_cents
+        SELECT default_hourly_rate_cents, billing_tax_mode, billing_sender_name, billing_sender_address, name
         FROM tenants
         WHERE id = $1
         "#,
     )
     .bind(ctx.tenant_id.0)
-    .fetch_optional(&state.pool)
+    .fetch_one(&state.pool)
     .await
-    .map_err(|error| AppError::Database(error.to_string()))?
-    .flatten();
+    .map_err(|error| AppError::Database(error.to_string()))?;
+
+    let tenant_name: String = row
+        .try_get("name")
+        .map_err(|error| AppError::Database(error.to_string()))?;
+    let sender_name = normalize_optional_text(
+        row.try_get::<Option<String>, _>("billing_sender_name")
+            .map_err(|error| AppError::Database(error.to_string()))?
+            .as_deref(),
+    )
+    .unwrap_or(tenant_name);
+    let sender_address = normalize_optional_text(
+        row.try_get::<Option<String>, _>("billing_sender_address")
+            .map_err(|error| AppError::Database(error.to_string()))?
+            .as_deref(),
+    );
+    let billing_tax_mode: String = row
+        .try_get("billing_tax_mode")
+        .map_err(|error| AppError::Database(error.to_string()))?;
+    let default_hourly_rate_cents: Option<i64> = row
+        .try_get("default_hourly_rate_cents")
+        .map_err(|error| AppError::Database(error.to_string()))?;
 
     Ok(Json(BillingSettingsResponse {
         default_hourly_rate_cents,
+        billing_tax_mode,
+        sender_name,
+        sender_address,
     }))
 }
 
@@ -303,23 +373,76 @@ pub async fn update_billing_settings(
         }
     }
 
-    let default_hourly_rate_cents: Option<i64> = sqlx::query_scalar(
+    let billing_tax_mode = request
+        .billing_tax_mode
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or("standard");
+
+    if billing_tax_mode != "standard" && billing_tax_mode != "kleinunternehmer" {
+        return Err(AppError::Validation(
+            "Billing tax mode must be standard or kleinunternehmer".to_string(),
+        ));
+    }
+
+    let sender_name = normalize_optional_text(request.sender_name.as_deref());
+    let sender_address = normalize_optional_text(request.sender_address.as_deref());
+
+    let row = sqlx::query(
         r#"
         UPDATE tenants
-        SET default_hourly_rate_cents = $2
+        SET default_hourly_rate_cents = $2,
+            billing_tax_mode = $3,
+            billing_sender_name = $4,
+            billing_sender_address = $5
         WHERE id = $1
-        RETURNING default_hourly_rate_cents
+        RETURNING default_hourly_rate_cents, billing_tax_mode, billing_sender_name, billing_sender_address, name
         "#,
     )
     .bind(ctx.tenant_id.0)
     .bind(request.default_hourly_rate_cents)
+    .bind(billing_tax_mode)
+    .bind(sender_name)
+    .bind(sender_address)
     .fetch_one(&state.pool)
     .await
     .map_err(|error| AppError::Database(error.to_string()))?;
 
+    let tenant_name: String = row
+        .try_get("name")
+        .map_err(|error| AppError::Database(error.to_string()))?;
+    let response_sender_name = normalize_optional_text(
+        row.try_get::<Option<String>, _>("billing_sender_name")
+            .map_err(|error| AppError::Database(error.to_string()))?
+            .as_deref(),
+    )
+    .unwrap_or(tenant_name);
+    let response_sender_address = normalize_optional_text(
+        row.try_get::<Option<String>, _>("billing_sender_address")
+            .map_err(|error| AppError::Database(error.to_string()))?
+            .as_deref(),
+    );
+    let response_tax_mode: String = row
+        .try_get("billing_tax_mode")
+        .map_err(|error| AppError::Database(error.to_string()))?;
+    let response_hourly_rate: Option<i64> = row
+        .try_get("default_hourly_rate_cents")
+        .map_err(|error| AppError::Database(error.to_string()))?;
+
     Ok(Json(BillingSettingsResponse {
-        default_hourly_rate_cents,
+        default_hourly_rate_cents: response_hourly_rate,
+        billing_tax_mode: response_tax_mode,
+        sender_name: response_sender_name,
+        sender_address: response_sender_address,
     }))
+}
+
+fn normalize_optional_text(value: Option<&str>) -> Option<String> {
+    value
+        .map(str::trim)
+        .filter(|trimmed| !trimmed.is_empty())
+        .map(ToOwned::to_owned)
 }
 
 /// GET /api/v1/preferences - Get current user's preferences

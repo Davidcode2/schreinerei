@@ -10,10 +10,11 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Calendar, AlertCircle } from "lucide-react"
+import { Calendar, AlertCircle, Trash2 } from "lucide-react"
 import {
   useAvailability,
   useCreateReservation,
+  useCancelReservation,
   useMachines,
   usePreferences,
   useSites,
@@ -107,6 +108,7 @@ export function ReservationDialog({
 
   const createMutation = useCreateReservation()
   const updateMutation = useUpdateReservation()
+  const deleteMutation = useCancelReservation()
 
   useEffect(() => {
     if (open) {
@@ -192,6 +194,20 @@ export function ReservationDialog({
       toast.error(
         mode === "edit" ? "Aktualisierung fehlgeschlagen" : "Reservierung fehlgeschlagen"
       )
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!initialData) {
+      return
+    }
+
+    try {
+      await deleteMutation.mutateAsync(initialData.id)
+      toast.success("Reservierung gelöscht")
+      onOpenChange(false)
+    } catch {
+      toast.error("Löschen fehlgeschlagen")
     }
   }
 
@@ -414,27 +430,43 @@ export function ReservationDialog({
           </div>
         </div>
 
-        <DialogFooter className="border-t border-border/70 pt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="shadow-sm">
-            Abbrechen
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={
-              mode === "create"
-                ? createMutation.isPending || !isAvailable
-                : updateMutation.isPending
-            }
-            className="shadow-sm"
-          >
-            {mode === "edit"
-              ? updateMutation.isPending
-                ? "Wird gespeichert..."
-                : "Speichern"
-              : createMutation.isPending
-                ? "Wird erstellt..."
-                : "Reservieren"}
-          </Button>
+        <DialogFooter className="flex-col-reverse gap-2 border-t border-border/70 pt-4 sm:flex-row sm:justify-between">
+          <div>
+            {isEditing ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2 text-destructive hover:text-destructive"
+                disabled={deleteMutation.isPending}
+                onClick={handleDelete}
+              >
+                <Trash2 className="h-4 w-4" />
+                {deleteMutation.isPending ? "Wird gelöscht..." : "Löschen"}
+              </Button>
+            ) : null}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="shadow-sm">
+              Abbrechen
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={
+                mode === "create"
+                  ? createMutation.isPending || !isAvailable
+                  : updateMutation.isPending
+              }
+              className="shadow-sm"
+            >
+              {mode === "edit"
+                ? updateMutation.isPending
+                  ? "Wird gespeichert..."
+                  : "Speichern"
+                : createMutation.isPending
+                  ? "Wird erstellt..."
+                  : "Reservieren"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

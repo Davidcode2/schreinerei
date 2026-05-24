@@ -40,4 +40,41 @@ describe('ReservationDialog', () => {
       expect(screen.getByRole('option', { name: 'Villa Müller (Extern)' })).toBeInTheDocument()
     })
   })
+
+  it('renders the edit delete action like the sites calendar modal', async () => {
+    mockData.sites = []
+
+    render(
+      <ReservationDialog
+        open={true}
+        onOpenChange={() => {}}
+        mode="edit"
+        initialData={{
+          id: 'reservation-1',
+          resource_id: 'tool-1',
+          resource_type: 'tool',
+          resource_name: 'Akkuschrauber',
+          site_id: null,
+          site_name: null,
+          project_id: null,
+          project_name: null,
+          user_id: 'user-1',
+          user_name: 'Max Mustermann',
+          status: 'confirmed',
+          start_time: '2026-05-05T08:00:00.000Z',
+          end_time: '2026-05-05T10:00:00.000Z',
+          purpose: null,
+          notes: null,
+          current_holder: null,
+          created_at: '2026-05-01T08:00:00.000Z',
+          updated_at: '2026-05-02T08:00:00.000Z',
+        }}
+      />
+    )
+
+    const deleteButton = await screen.findByRole('button', { name: 'Löschen' })
+
+    expect(deleteButton).toHaveClass('text-destructive')
+    expect(deleteButton).toHaveClass('gap-2')
+  })
 })

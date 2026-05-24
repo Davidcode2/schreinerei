@@ -15,7 +15,12 @@ describe('AddSiteDialog', () => {
   beforeEach(() => {
     mockOnOpenChange.mockClear();
     mockData.sites = [];
-    mockData.billingSettings = { default_hourly_rate_cents: null };
+    mockData.billingSettings = {
+      default_hourly_rate_cents: null,
+      billing_tax_mode: 'standard',
+      sender_name: 'Schreinerei',
+      sender_address: null,
+    };
   });
 
   it('renders dialog with correct title when open', () => {

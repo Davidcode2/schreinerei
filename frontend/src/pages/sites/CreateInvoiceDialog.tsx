@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useBillingSettings } from "@/lib/api/hooks"
 import type { CreateProjectInvoiceRequest, InvoicePricingMode, Site } from "@/types/sites"
 
 type PricingModeValue = InvoicePricingMode | "none"
@@ -59,6 +60,7 @@ export function CreateInvoiceDialog({
   isPending,
   onSubmit,
 }: CreateInvoiceDialogProps) {
+  const { data: billingSettings } = useBillingSettings()
   const [senderName, setSenderName] = useState("")
   const [senderAddress, setSenderAddress] = useState("")
   const [pricingMode, setPricingMode] = useState<PricingModeValue>(getInitialPricingMode(site))
@@ -67,12 +69,12 @@ export function CreateInvoiceDialog({
 
   useEffect(() => {
     if (!open) return
-    setSenderName("")
-    setSenderAddress("")
+    setSenderName(billingSettings?.sender_name ?? "")
+    setSenderAddress(billingSettings?.sender_address ?? "")
     setPricingMode(getInitialPricingMode(site))
     setHourlyRate(formatMoney(site.hourly_rate_cents))
     setFixedPrice(formatMoney(site.fixed_price_cents))
-  }, [open, site])
+  }, [open, site, billingSettings?.sender_name, billingSettings?.sender_address])
 
   const parsedHourlyRate = parseMoney(hourlyRate)
   const parsedFixedPrice = parseMoney(fixedPrice)
@@ -116,6 +118,9 @@ export function CreateInvoiceDialog({
             <p className="font-medium">Projektbasis</p>
             <p className="mt-1 text-muted-foreground">Gebuchte Stunden: {totalHours.toFixed(1)}h</p>
             <p className="text-muted-foreground">Projekt: {site.name}</p>
+            <p className="text-muted-foreground">
+              Umsatzsteuer: {billingSettings?.billing_tax_mode === "kleinunternehmer" ? "Kleinunternehmer (§ 19 UStG)" : "19% MwSt"}
+            </p>
           </div>
 
           <div className="space-y-2">

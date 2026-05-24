@@ -6,6 +6,7 @@ import { startOfLocalWeek } from "@/lib/utils"
 
 vi.mock("@/lib/api/hooks", () => ({
   useCalendar: vi.fn(),
+  useCancelReservation: vi.fn(),
   useCreateReservation: vi.fn(),
   useMachines: vi.fn(),
   usePreferences: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock("@/lib/api/hooks", () => ({
 
 import {
   useCalendar,
+  useCancelReservation,
   useCreateReservation,
   useMachines,
   usePreferences,
@@ -88,6 +90,10 @@ describe("CalendarView", () => {
 
     vi.mocked(useCreateReservation).mockReturnValue({
       mutateAsync: mutateAsyncMock,
+      isPending: false,
+    } as never)
+    vi.mocked(useCancelReservation).mockReturnValue({
+      mutateAsync: vi.fn(),
       isPending: false,
     } as never)
     vi.mocked(usePreferences).mockReturnValue({

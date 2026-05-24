@@ -11,7 +11,12 @@ export const mockData = {
   sites: [] as MockRecord[],
   users: [] as MockRecord[],
   preferences: { active_site_id: null as string | null },
-  billingSettings: { default_hourly_rate_cents: null as number | null },
+  billingSettings: {
+    default_hourly_rate_cents: null as number | null,
+    billing_tax_mode: 'standard' as 'standard' | 'kleinunternehmer',
+    sender_name: 'Schreinerei' as string,
+    sender_address: null as string | null,
+  },
   vehicles: [] as MockRecord[],
   tools: [] as MockRecord[],
   machines: [] as MockRecord[],
@@ -120,6 +125,9 @@ export const handlers = [
     const body = await request.json() as Record<string, unknown>;
     mockData.billingSettings = {
       default_hourly_rate_cents: (body.default_hourly_rate_cents as number | null | undefined) ?? null,
+      billing_tax_mode: (body.billing_tax_mode as 'standard' | 'kleinunternehmer' | undefined) ?? 'standard',
+      sender_name: (body.sender_name as string | null | undefined) ?? 'Schreinerei',
+      sender_address: (body.sender_address as string | null | undefined) ?? null,
     };
     return HttpResponse.json(mockData.billingSettings);
   }),
@@ -349,6 +357,11 @@ export const handlers = [
     };
     mockData.reservations.push(newReservation);
     return HttpResponse.json(newReservation, { status: 201 });
+  }),
+
+  http.delete(apiRoute('/fleet/reservations/:id'), async ({ params }) => {
+    mockData.reservations = mockData.reservations.filter((entry) => entry.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
   }),
 
   // Time Entries

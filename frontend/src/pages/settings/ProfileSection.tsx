@@ -60,7 +60,7 @@ export function ProfileSection() {
 
         <Separator />
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
               <Shield className="h-4 w-4" />

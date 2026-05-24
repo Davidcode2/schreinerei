@@ -103,6 +103,7 @@ fn collect_bindings(cfg: &Config, bindings: &mut Vec<Binding>) -> Result<()> {
     add_binding::<iam_api::UserResponse>(cfg, bindings)?;
     add_binding::<iam_api::InviteUserRequest>(cfg, bindings)?;
     add_binding::<iam_api::InviteUserResponse>(cfg, bindings)?;
+    add_binding::<iam_api::PendingInviteResponse>(cfg, bindings)?;
     add_binding::<iam_api::UpdateRoleRequest>(cfg, bindings)?;
     add_binding::<iam_api::UpdateProfileRequest>(cfg, bindings)?;
     add_binding::<iam_api::BillingSettingsResponse>(cfg, bindings)?;

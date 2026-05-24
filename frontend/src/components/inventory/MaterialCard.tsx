@@ -16,9 +16,14 @@ interface MaterialCardProps {
   categoryName?: string
 }
 
+function getDisplayUnit(unit: string): string {
+  return unit === "Quadratmeter" ? "m²" : unit
+}
+
 export function MaterialCard({ material, categoryName }: MaterialCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const deleteMutation = useDeleteMaterial()
+  const displayUnit = getDisplayUnit(material.unit)
 
   const handleDelete = () => {
     deleteMutation.mutate(material.id, {
@@ -73,7 +78,7 @@ export function MaterialCard({ material, categoryName }: MaterialCardProps) {
               <div className="flex items-center justify-between pt-3 border-t border-border/60 ml-[46px]">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="outline" className="font-mono text-xs">
-                    {material.quantity} {material.unit}
+                    {material.quantity} {displayUnit}
                   </Badge>
                   {material.expired_quantity > 0 && (
                     <Badge variant="destructive" className="gap-1 text-xs">
@@ -89,7 +94,7 @@ export function MaterialCard({ material, categoryName }: MaterialCardProps) {
                   )}
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  Min: {material.min_quantity} {material.unit}
+                  Min: {material.min_quantity} {displayUnit}
                 </span>
               </div>
             </Link>

@@ -119,10 +119,41 @@
   )).flatten(),
 )
 
-#if invoice.total_amount != "" [
+#if invoice.subtotal_amount != "" [
   #v(10pt)
   #align(right)[
-    *Gesamtbetrag:* #invoice.total_amount
+    #if invoice.vat_amount != "" [
+      #table(
+        columns: (2.2fr, 1fr),
+        align: (left, right),
+        stroke: none,
+        inset: 2pt,
+        [Zwischensumme netto],
+        [#invoice.subtotal_amount],
+        [zzgl. MwSt. (#invoice.vat_rate_label)],
+        [#invoice.vat_amount],
+        [*Gesamtbetrag*],
+        [*#invoice.gross_amount*],
+      )
+    ] else [
+      #table(
+        columns: (2.2fr, 1fr),
+        align: (left, right),
+        stroke: none,
+        inset: 2pt,
+        [Zwischensumme netto],
+        [#invoice.subtotal_amount],
+        [*Gesamtbetrag*],
+        [*#invoice.gross_amount*],
+      )
+    ]
+  ]
+]
+
+#if invoice.tax_note != "" [
+  #v(8pt)
+  #align(right)[
+    #text(size: 8.5pt, fill: muted)[#invoice.tax_note]
   ]
 ]
 
