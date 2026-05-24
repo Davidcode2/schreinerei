@@ -116,6 +116,14 @@ fn invoice_typst_input(invoice: &Invoice, snapshot: &InvoiceSnapshot) -> Dict {
             .into_value(),
     );
     invoice_dict.insert(
+        "invoice_pricing_mode".into(),
+        snapshot
+            .invoice_pricing_mode
+            .map(|mode| mode.to_string())
+            .unwrap_or_default()
+            .into_value(),
+    );
+    invoice_dict.insert(
         "billing_reference".into(),
         snapshot
             .billing_reference
@@ -152,6 +160,14 @@ fn invoice_typst_input(invoice: &Invoice, snapshot: &InvoiceSnapshot) -> Dict {
         snapshot
             .billing_notes
             .clone()
+            .unwrap_or_default()
+            .into_value(),
+    );
+    invoice_dict.insert(
+        "total_amount".into(),
+        snapshot
+            .total_amount_cents
+            .map(format_euro_cents)
             .unwrap_or_default()
             .into_value(),
     );
@@ -213,6 +229,22 @@ fn build_line_item(line_item: &InvoiceSnapshotLineItem) -> Dict {
         "source_count".into(),
         count_label(line_item.source_count, "Buchung", "Buchungen").into_value(),
     );
+    item.insert(
+        "unit_price".into(),
+        line_item
+            .unit_price_cents
+            .map(format_euro_cents)
+            .unwrap_or_else(|| "-".to_string())
+            .into_value(),
+    );
+    item.insert(
+        "line_total".into(),
+        line_item
+            .line_total_cents
+            .map(format_euro_cents)
+            .unwrap_or_else(|| "-".to_string())
+            .into_value(),
+    );
     item
 }
 
@@ -227,6 +259,8 @@ fn fallback_line_item() -> Dict {
     item.insert("quantity".into(), "-".to_string().into_value());
     item.insert("unit".into(), "-".to_string().into_value());
     item.insert("source_count".into(), "-".to_string().into_value());
+    item.insert("unit_price".into(), "-".to_string().into_value());
+    item.insert("line_total".into(), "-".to_string().into_value());
     item
 }
 
@@ -244,6 +278,7 @@ fn localized_unit(unit: &str) -> String {
         "hours" => "Std.".to_string(),
         "pieces" => "Stk.".to_string(),
         "days" => "Tage".to_string(),
+        "project" => "Projekt".to_string(),
         other => other.to_string(),
     }
 }
@@ -301,6 +336,7 @@ mod tests {
     use super::*;
     use crate::common::types::{InvoiceId, SiteId, TenantId};
     use crate::modules::billing::domain::InvoiceStatus;
+    use crate::modules::sites::domain::InvoicePricingMode;
 
     #[test]
     fn generates_valid_pdf_bytes_from_snapshot() {
@@ -320,19 +356,25 @@ mod tests {
                 project_name: "Kueche Meyer".to_string(),
                 customer_name: "Meyer".to_string(),
                 project_location: Some("Berlin".to_string()),
+                invoice_pricing_mode: Some(InvoicePricingMode::HourlyRate),
+                hourly_rate_cents: Some(8_500),
+                fixed_price_cents: None,
                 billing_reference: Some("BR-1".to_string()),
                 billing_notes: Some("Nach Aufwand".to_string()),
                 quote_reference: None,
                 budget_amount_cents: Some(125_000),
                 labor_total_hours: 4.5,
                 material_withdrawal_count: 1,
+                total_amount_cents: Some(38_250),
                 line_items: vec![InvoiceSnapshotLineItem {
                     source: "labor_site".to_string(),
                     description: "Baustellenarbeit".to_string(),
                     quantity: 4.5,
                     unit: "hours".to_string(),
                     source_count: 1,
-                    priced: false,
+                    priced: true,
+                    unit_price_cents: Some(8_500),
+                    line_total_cents: Some(38_250),
                 }],
             }),
             pdf_artifact: None,

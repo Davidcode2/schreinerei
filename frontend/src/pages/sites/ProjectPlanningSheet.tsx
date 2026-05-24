@@ -14,7 +14,7 @@ import {
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
 import { useUpdateSite } from "@/lib/api/hooks"
-import type { ProjectType, Site } from "@/types/sites"
+import type { InvoicePricingMode, ProjectType, Site } from "@/types/sites"
 
 interface ProjectPlanningSheetProps {
   open: boolean
@@ -34,6 +34,8 @@ const projectTypeOptions: Array<{ value: ProjectType; label: string; description
     description: "Interne Vorbereitung oder Werkstattauftrag",
   },
 ]
+
+type PricingModeValue = InvoicePricingMode | "none"
 
 function formatBudgetAmount(value: number | null): string {
   if (value == null) return ""
@@ -59,6 +61,9 @@ export function ProjectPlanningSheet({ open, onOpenChange, site }: ProjectPlanni
   const [endDate, setEndDate] = useState(site.end_date ?? "")
   const [estimatedDays, setEstimatedDays] = useState(site.estimated_days?.toString() ?? "")
   const [budgetAmount, setBudgetAmount] = useState(formatBudgetAmount(site.budget_amount_cents))
+  const [pricingMode, setPricingMode] = useState<PricingModeValue>(site.invoice_pricing_mode ?? "none")
+  const [hourlyRate, setHourlyRate] = useState(formatBudgetAmount(site.hourly_rate_cents))
+  const [fixedPrice, setFixedPrice] = useState(formatBudgetAmount(site.fixed_price_cents))
   const [quoteReference, setQuoteReference] = useState(site.quote_reference ?? "")
   const [billingReference, setBillingReference] = useState(site.billing_reference ?? "")
   const [billingNotes, setBillingNotes] = useState(site.billing_notes ?? "")
@@ -74,6 +79,9 @@ export function ProjectPlanningSheet({ open, onOpenChange, site }: ProjectPlanni
     setEndDate(site.end_date ?? "")
     setEstimatedDays(site.estimated_days?.toString() ?? "")
     setBudgetAmount(formatBudgetAmount(site.budget_amount_cents))
+    setPricingMode(site.invoice_pricing_mode ?? "none")
+    setHourlyRate(formatBudgetAmount(site.hourly_rate_cents))
+    setFixedPrice(formatBudgetAmount(site.fixed_price_cents))
     setQuoteReference(site.quote_reference ?? "")
     setBillingReference(site.billing_reference ?? "")
     setBillingNotes(site.billing_notes ?? "")
@@ -98,10 +106,39 @@ export function ProjectPlanningSheet({ open, onOpenChange, site }: ProjectPlanni
     if (endDate) payload.end_date = endDate
     if (estimatedDays) payload.estimated_days = Number(estimatedDays)
     const parsedBudgetAmount = parseBudgetAmount(budgetAmount)
+    const parsedHourlyRate = parseBudgetAmount(hourlyRate)
+    const parsedFixedPrice = parseBudgetAmount(fixedPrice)
     if (parsedBudgetAmount != null) {
       payload.budget_amount_cents = parsedBudgetAmount
     } else if (site.budget_amount_cents != null) {
       payload.clear_budget_amount = true
+    }
+    if (pricingMode === "hourly_rate") {
+      payload.invoice_pricing_mode = "hourly_rate"
+      if (parsedHourlyRate != null) {
+        payload.hourly_rate_cents = parsedHourlyRate
+      }
+      if (site.fixed_price_cents != null) {
+        payload.clear_fixed_price_cents = true
+      }
+    } else if (pricingMode === "fixed_price") {
+      payload.invoice_pricing_mode = "fixed_price"
+      if (parsedFixedPrice != null) {
+        payload.fixed_price_cents = parsedFixedPrice
+      }
+      if (site.hourly_rate_cents != null) {
+        payload.clear_hourly_rate_cents = true
+      }
+    } else {
+      if (site.invoice_pricing_mode != null) {
+        payload.clear_invoice_pricing_mode = true
+      }
+      if (site.hourly_rate_cents != null) {
+        payload.clear_hourly_rate_cents = true
+      }
+      if (site.fixed_price_cents != null) {
+        payload.clear_fixed_price_cents = true
+      }
     }
     if (quoteReference.trim()) {
       payload.quote_reference = quoteReference.trim()
@@ -230,6 +267,34 @@ export function ProjectPlanningSheet({ open, onOpenChange, site }: ProjectPlanni
               <Label htmlFor="project-budget">Budget (EUR)</Label>
               <Input id="project-budget" inputMode="decimal" className="h-11" value={budgetAmount} onChange={(e) => setBudgetAmount(e.target.value)} placeholder="z. B. 2500,00" />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="project-pricing-mode">Rechnungslogik</Label>
+              <Select value={pricingMode} onValueChange={(value) => setPricingMode(value as PricingModeValue)}>
+                <SelectTrigger id="project-pricing-mode" className="h-11">
+                  <SelectValue placeholder="Rechnungslogik wählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Keine Vorgabe</SelectItem>
+                  <SelectItem value="hourly_rate">Stundensatz</SelectItem>
+                  <SelectItem value="fixed_price">Pauschalpreis</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {pricingMode === "hourly_rate" && (
+              <div className="space-y-2">
+                <Label htmlFor="project-hourly-rate">Stundensatz (EUR)</Label>
+                <Input id="project-hourly-rate" inputMode="decimal" className="h-11" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} placeholder="z. B. 85,00" />
+              </div>
+            )}
+
+            {pricingMode === "fixed_price" && (
+              <div className="space-y-2">
+                <Label htmlFor="project-fixed-price">Pauschalpreis (EUR)</Label>
+                <Input id="project-fixed-price" inputMode="decimal" className="h-11" value={fixedPrice} onChange={(e) => setFixedPrice(e.target.value)} placeholder="z. B. 2500,00" />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="project-quote-reference">Angebotsreferenz</Label>

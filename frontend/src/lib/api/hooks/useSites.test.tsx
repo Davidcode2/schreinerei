@@ -145,10 +145,12 @@ describe("site invoice hooks", () => {
       wrapper: createWrapper(queryClient),
     })
 
-    const invoice = await result.current.mutateAsync("site-1")
+    const draft = await result.current.mutateAsync({ siteId: "site-1" })
 
     expect(apiClient.post).toHaveBeenCalledWith("/api/v1/billing/projects/site-1/invoices", {})
-    expect(invoice).toEqual({ id: "inv-1", invoice_number_display: "2026-00001" })
+    expect(draft).toEqual({
+      invoice: { id: "inv-1", invoice_number_display: "2026-00001" },
+    })
     expect(invalidateQueriesSpy).toHaveBeenCalledWith({
       queryKey: ["site-invoices", "site-1"],
     })

@@ -8,7 +8,7 @@ use crate::modules::inventory::infrastructure::material_repository::{
 };
 use crate::modules::sites::domain::{
     work_type_requires_project_link, Activity, ActivityAttachmentMetadata, AssignUser,
-    CreateActivity, CreateSite, CreateSiteAppointment, CreateTimeEntry, Site,
+    CreateActivity, CreateSite, CreateSiteAppointment, CreateTimeEntry, InvoicePricingMode, Site,
     SiteActivityAttachment, SiteAppointment, SiteCreatedPayload, SiteStatusChangedPayload,
     TimeEntry, TimeEntryCreatedPayload, UpdateSite, UpdateSiteAppointment, UpdateTimeEntry,
     UserAssignedToSitePayload,
@@ -46,6 +46,12 @@ pub struct ProjectSummary {
 pub struct InvoiceSummary {
     pub site: Site,
     pub project: ProjectSummary,
+}
+
+struct ResolvedSitePricing {
+    mode: Option<InvoicePricingMode>,
+    hourly_rate_cents: Option<i64>,
+    fixed_price_cents: Option<i64>,
 }
 
 /// Service for site business logic
@@ -239,19 +245,143 @@ impl SiteService {
         )
     }
 
+    fn infer_pricing_mode(
+        mode: Option<InvoicePricingMode>,
+        hourly_rate_cents: Option<i64>,
+        fixed_price_cents: Option<i64>,
+    ) -> Option<InvoicePricingMode> {
+        match mode {
+            Some(mode) => Some(mode),
+            None if fixed_price_cents.is_some() => Some(InvoicePricingMode::FixedPrice),
+            None if hourly_rate_cents.is_some() => Some(InvoicePricingMode::HourlyRate),
+            None => None,
+        }
+    }
+
+    fn validate_pricing_defaults(
+        mode: Option<InvoicePricingMode>,
+        hourly_rate_cents: Option<i64>,
+        fixed_price_cents: Option<i64>,
+    ) -> Result<(), AppError> {
+        match mode {
+            Some(InvoicePricingMode::HourlyRate) if hourly_rate_cents.is_none() => Err(
+                AppError::Validation("Hourly pricing requires an hourly rate".to_string()),
+            ),
+            Some(InvoicePricingMode::FixedPrice) if fixed_price_cents.is_none() => Err(
+                AppError::Validation("Fixed-price billing requires a fixed price".to_string()),
+            ),
+            _ => Ok(()),
+        }
+    }
+
+    fn resolve_site_pricing(update: &UpdateSite, existing: &Site) -> ResolvedSitePricing {
+        let hourly_rate_cents = if update.clear_hourly_rate_cents {
+            None
+        } else {
+            update.hourly_rate_cents.or(existing.hourly_rate_cents)
+        };
+        let fixed_price_cents = if update.clear_fixed_price_cents {
+            None
+        } else {
+            update.fixed_price_cents.or(existing.fixed_price_cents)
+        };
+        let requested_mode = if update.clear_invoice_pricing_mode {
+            None
+        } else {
+            update
+                .invoice_pricing_mode
+                .or(existing.invoice_pricing_mode)
+        };
+
+        ResolvedSitePricing {
+            mode: Self::infer_pricing_mode(requested_mode, hourly_rate_cents, fixed_price_cents),
+            hourly_rate_cents,
+            fixed_price_cents,
+        }
+    }
+
+    async fn record_site_status_change(
+        &self,
+        old_site: &Site,
+        site: &Site,
+        new_status: crate::common::types::SiteStatus,
+        ctx: &TenantContext,
+    ) -> Result<(), AppError> {
+        let event = SiteStatusChangedPayload {
+            site_id: site.id,
+            old_status: old_site.status.to_string(),
+            new_status: new_status.to_string(),
+            changed_by: ctx.user_id,
+        }
+        .into_event(ctx.tenant_id);
+
+        self.site_repo.publish_event(&event).await?;
+
+        let local_user_id = self.resolve_local_user_id(ctx).await?;
+        let activity_content = serde_json::json!({
+            "old_status": old_site.status.to_string(),
+            "new_status": new_status.to_string(),
+        })
+        .to_string();
+
+        sqlx::query!(
+            r#"
+            INSERT INTO site_activities (id, tenant_id, site_id, user_id, activity_type, content, photo_url, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, NULL, $7)
+            "#,
+            uuid::Uuid::new_v4(),
+            ctx.tenant_id.0,
+            site.id.0,
+            local_user_id.0,
+            "status_change",
+            activity_content,
+            chrono::Utc::now(),
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(())
+    }
+
     // === Site operations ===
 
     pub async fn create_site(
         &self,
-        create: CreateSite,
+        mut create: CreateSite,
         ctx: &TenantContext,
     ) -> Result<Site, AppError> {
         if !ctx.is_admin() {
             return Err(AppError::Forbidden("Admin access required".to_string()));
         }
+        let had_explicit_hourly_rate = create.hourly_rate_cents.is_some();
+        if create.hourly_rate_cents.is_none() {
+            create.hourly_rate_cents = self
+                .site_repo
+                .get_default_hourly_rate_cents(ctx.tenant_id)
+                .await?;
+        }
+        create.invoice_pricing_mode = Self::infer_pricing_mode(
+            create.invoice_pricing_mode,
+            create.hourly_rate_cents,
+            create.fixed_price_cents,
+        );
         create.validate()?;
+        Self::validate_pricing_defaults(
+            create.invoice_pricing_mode,
+            create.hourly_rate_cents,
+            create.fixed_price_cents,
+        )?;
 
         let site = self.site_repo.create_site(&create, ctx.tenant_id).await?;
+
+        if had_explicit_hourly_rate {
+            if let Some(hourly_rate_cents) = create.hourly_rate_cents {
+                self.site_repo
+                    .set_default_hourly_rate_cents(ctx.tenant_id, hourly_rate_cents)
+                    .await?;
+            }
+        }
 
         // Emit SiteCreated event
         let event = SiteCreatedPayload {
@@ -335,7 +465,7 @@ impl SiteService {
     pub async fn update_site(
         &self,
         site_id: SiteId,
-        update: UpdateSite,
+        mut update: UpdateSite,
         ctx: &TenantContext,
     ) -> Result<Site, AppError> {
         if !ctx.is_admin() {
@@ -350,48 +480,25 @@ impl SiteService {
             .await?
             .ok_or_else(|| AppError::NotFound("Site not found".to_string()))?;
 
+        let resolved_pricing = Self::resolve_site_pricing(&update, &old_site);
+        if !update.clear_invoice_pricing_mode && update.invoice_pricing_mode.is_none() {
+            update.invoice_pricing_mode = resolved_pricing.mode;
+        }
+        Self::validate_pricing_defaults(
+            resolved_pricing.mode,
+            resolved_pricing.hourly_rate_cents,
+            resolved_pricing.fixed_price_cents,
+        )?;
+
         let site = self
             .site_repo
             .update_site(ctx.tenant_id, site_id, &update)
             .await?;
 
-        // Emit SiteStatusChanged event if status changed
         if let Some(new_status) = &update.status {
             if old_site.status != *new_status {
-                let event = SiteStatusChangedPayload {
-                    site_id: site.id,
-                    old_status: old_site.status.to_string(),
-                    new_status: new_status.to_string(),
-                    changed_by: ctx.user_id,
-                }
-                .into_event(ctx.tenant_id);
-
-                self.site_repo.publish_event(&event).await?;
-
-                // Create activity for status change
-                let local_user_id = self.resolve_local_user_id(ctx).await?;
-                let activity_content = serde_json::json!({
-                    "old_status": old_site.status.to_string(),
-                    "new_status": new_status.to_string(),
-                })
-                .to_string();
-
-                sqlx::query!(
-                    r#"
-                    INSERT INTO site_activities (id, tenant_id, site_id, user_id, activity_type, content, photo_url, created_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, NULL, $7)
-                    "#,
-                    uuid::Uuid::new_v4(),
-                    ctx.tenant_id.0,
-                    site.id.0,
-                    local_user_id.0,
-                    "status_change",
-                    activity_content,
-                    chrono::Utc::now(),
-                )
-                .execute(&self.pool)
-                .await
-                .map_err(|e| AppError::Database(e.to_string()))?;
+                self.record_site_status_change(&old_site, &site, *new_status, ctx)
+                    .await?;
             }
         }
 
