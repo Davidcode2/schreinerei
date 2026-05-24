@@ -73,3 +73,4 @@ tmp/
 .worktrees/
 beads-backup/
 scripts/restore-beads-backup.sh
+.agents/local/
