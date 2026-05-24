@@ -5,9 +5,22 @@ import { http, HttpResponse } from 'msw';
 import { render } from '@/test/utils';
 import { server } from '@/test/mocks/server';
 import { mockData } from '@/test/mocks/handlers';
+import type { Tool } from '@/types/fleet';
 import { AddToolDialog } from './AddToolDialog';
 
 const apiRoute = (path: string) => `*/api/v1${path}`;
+
+const existingTool: Tool = {
+  id: 'tool-1',
+  name: 'Bohrhammer',
+  category: 'Elektrowerkzeug',
+  description: 'Bosch GBH 2-21',
+  status: 'available',
+  location: 'Werkstatt',
+  qr_code: 'tool-drill-01',
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+};
 
 describe('AddToolDialog', () => {
   const mockOnOpenChange = vi.fn();
@@ -59,6 +72,28 @@ describe('AddToolDialog', () => {
     expect(screen.getByRole('tab', { name: /schritt 2 von 2/i })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByLabelText(/standort/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /zurück/i })).toBeInTheDocument();
+  });
+
+  it('keeps the edit dialog vertically scrollable on mobile', async () => {
+    const user = userEvent.setup();
+    render(
+      <AddToolDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        mode="edit"
+        initialData={existingTool}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /weiter/i }));
+
+    const dialog = screen.getByRole('dialog');
+    const formBody = screen.getByLabelText(/standort/i).closest('div')?.parentElement?.parentElement;
+
+    expect(dialog.className).toContain('max-h-[90vh]');
+    expect(dialog.className).toContain('overflow-hidden');
+    expect(formBody?.className).toContain('overflow-y-auto');
+    expect(formBody?.parentElement?.className).toContain('flex-col');
   });
 
   it('submits form with correct payload', async () => {

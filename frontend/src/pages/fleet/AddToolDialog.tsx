@@ -183,7 +183,7 @@ export function AddToolDialog({
             }
           }}
           totalSteps={2}
-          className="min-h-0 flex-1"
+          className="flex min-h-0 flex-1 flex-col"
         >
           <div className="flex h-full flex-col overflow-y-auto py-4 pr-1">
             {currentStep === 1 ? (

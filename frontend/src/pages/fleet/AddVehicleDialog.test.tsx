@@ -5,9 +5,24 @@ import { http, HttpResponse } from 'msw';
 import { render } from '@/test/utils';
 import { server } from '@/test/mocks/server';
 import { mockData } from '@/test/mocks/handlers';
+import type { Vehicle } from '@/types/fleet';
 import { AddVehicleDialog } from './AddVehicleDialog';
 
 const apiRoute = (path: string) => `*/api/v1${path}`;
+
+const existingVehicle: Vehicle = {
+  id: 'vehicle-1',
+  name: 'VW Transporter',
+  license_plate: 'B-AB 1234',
+  vehicle_type: 'van',
+  description: 'Baujahr 2020',
+  status: 'available',
+  location: 'Hof 1',
+  qr_code: 'fleet-van-01',
+  display_color: '#2563eb',
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+};
 
 // Helper to select an option from a Radix UI Select
 async function selectOption(
@@ -73,6 +88,28 @@ describe('AddVehicleDialog', () => {
     expect(screen.getByRole('tab', { name: /schritt 2 von 2/i })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('button', { name: /zurück/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/standort/i)).toBeInTheDocument();
+  });
+
+  it('keeps the edit dialog vertically scrollable on mobile', async () => {
+    const user = userEvent.setup();
+    render(
+      <AddVehicleDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        mode="edit"
+        initialData={existingVehicle}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /weiter/i }));
+
+    const dialog = screen.getByRole('dialog');
+    const formBody = screen.getByLabelText(/standort/i).closest('div')?.parentElement?.parentElement;
+
+    expect(dialog.className).toContain('max-h-[90vh]');
+    expect(dialog.className).toContain('overflow-hidden');
+    expect(formBody?.className).toContain('overflow-y-auto');
+    expect(formBody?.parentElement?.className).toContain('flex-col');
   });
 
   it('submits form with correct payload', async () => {
