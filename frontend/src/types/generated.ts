@@ -16,7 +16,7 @@ export type AvailabilityQuery = { resource_type: string, resource_id: string, st
 
 export type AvailabilityResponse = { available: boolean, conflicts: Array<ConflictDetail> | null, };
 
-export type BillingSettingsResponse = { default_hourly_rate_cents: bigint | null, };
+export type BillingSettingsResponse = { default_hourly_rate_cents: bigint | null, billing_tax_mode: string, sender_name: string, sender_address: string | null, };
 
 export type CalendarEntryResponse = { resource_type: string, resource_id: string, resource_name: string, resource_display_color: string | null, reservations: Array<ReservationSummaryResponse>, };
 
@@ -120,12 +120,14 @@ export type OrderStatusQuery = { status: string | null, };
 
 export type PdfArtifactResponse = { storage_path: string, sha256_hash: string, content_type: string, size_bytes: bigint, created_at: string, };
 
+export type PendingInviteResponse = { id: string, email: string, role: string, status: string, expires_at: string, created_at: string, };
+
 /**
  * Response DTO for user preferences
  */
 export type PreferencesResponse = { active_site_id: string | null, };
 
-export type ProjectInvoiceDraftResponse = { invoice: InvoiceResponse, project: SiteInvoiceProjectResponse, billing: SiteInvoiceBillingResponse, labor: ProjectLaborSummaryResponse, materials: ProjectMaterialSummaryResponse, total_amount_cents: bigint | null, line_items: Array<ProjectInvoiceLineItemResponse>, };
+export type ProjectInvoiceDraftResponse = { invoice: InvoiceResponse, project: SiteInvoiceProjectResponse, billing: SiteInvoiceBillingResponse, labor: ProjectLaborSummaryResponse, materials: ProjectMaterialSummaryResponse, billing_tax_mode: string | null, subtotal_amount_cents: bigint | null, vat_rate_percent: number | null, vat_amount_cents: bigint | null, gross_amount_cents: bigint | null, tax_note: string | null, total_amount_cents: bigint | null, line_items: Array<ProjectInvoiceLineItemResponse>, };
 
 export type ProjectInvoiceLineItemResponse = { source: string, description: string, quantity: number, unit: string, source_count: bigint, priced: boolean, unit_price_cents: bigint | null, line_total_cents: bigint | null, };
 
@@ -184,7 +186,7 @@ export type TimeEntryResponse = { id: string, site_id: string | null, user_id: s
 
 export type ToolResponse = { id: string, name: string, category: string | null, description: string | null, status: string, location: string | null, qr_code: string | null, created_at: string, updated_at: string, };
 
-export type UpdateBillingSettingsRequest = { default_hourly_rate_cents: bigint | null, };
+export type UpdateBillingSettingsRequest = { default_hourly_rate_cents: bigint | null, billing_tax_mode: string | null, sender_name: string | null, sender_address: string | null, };
 
 export type UpdateCategoryRequest = { name?: string, description?: string, can_expire?: boolean, };
 

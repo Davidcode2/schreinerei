@@ -20,7 +20,12 @@ describe("SettingsPage", () => {
       isAuthenticated: true,
       isLoading: false,
     })
-    mockData.billingSettings = { default_hourly_rate_cents: 8500 }
+    mockData.billingSettings = {
+      default_hourly_rate_cents: 8500,
+      billing_tax_mode: 'standard',
+      sender_name: 'Schreinerei Mustermann',
+      sender_address: 'Werkstrasse 1\n12345 Musterstadt',
+    }
   })
 
   it("renders the default hourly rate section for admins", async () => {
@@ -35,7 +40,7 @@ describe("SettingsPage", () => {
     })
   })
 
-  it("updates the default hourly rate", async () => {
+  it("updates the billing settings", async () => {
     const user = userEvent.setup()
     render(<SettingsPage />)
 
@@ -47,11 +52,20 @@ describe("SettingsPage", () => {
     })
     await user.clear(input)
     await user.type(input, "92.50")
+    await user.click(screen.getByRole("combobox", { name: /umsatzsteuer/i }))
+    await user.click(screen.getByRole("option", { name: /kleinunternehmer/i }))
+    await user.clear(screen.getByLabelText(/absendername/i))
+    await user.type(screen.getByLabelText(/absendername/i), "Schreinerei Neu")
+    await user.clear(screen.getByLabelText(/absenderadresse/i))
+    await user.type(screen.getByLabelText(/absenderadresse/i), "Holzweg 5\n12345 Berlin")
     await user.click(screen.getByRole("button", { name: /speichern/i }))
 
     await waitFor(() => {
       expect(mockData.billingSettings.default_hourly_rate_cents).toBe(9250)
+      expect(mockData.billingSettings.billing_tax_mode).toBe("kleinunternehmer")
+      expect(mockData.billingSettings.sender_name).toBe("Schreinerei Neu")
+      expect(mockData.billingSettings.sender_address).toBe("Holzweg 5\n12345 Berlin")
     })
-    expect(await screen.findByText("Standard-Stundensatz gespeichert")).toBeInTheDocument()
+    expect(await screen.findByText("Abrechnungseinstellungen gespeichert")).toBeInTheDocument()
   })
 })

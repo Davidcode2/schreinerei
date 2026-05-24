@@ -7,6 +7,7 @@ use axum::{
 };
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
+use sqlx::Row;
 use std::str::FromStr;
 use std::sync::Arc;
 use ts_rs::TS;
@@ -16,7 +17,7 @@ use crate::common::error::AppError;
 use crate::common::types::{InvoiceId, SiteId};
 use crate::modules::billing::application::BillingService;
 use crate::modules::billing::domain::{
-    Invoice, InvoiceSnapshot, InvoiceSnapshotLineItem, InvoiceStatus, PdfArtifact,
+    BillingTaxMode, Invoice, InvoiceSnapshot, InvoiceSnapshotLineItem, InvoiceStatus, PdfArtifact,
 };
 use crate::modules::billing::infrastructure::InvoiceRepository;
 use crate::modules::billing::pdf::{generate_invoice_pdf, invoice_pdf_filename};
@@ -37,6 +38,22 @@ struct ResolvedInvoicePricing {
     mode: Option<InvoicePricingMode>,
     hourly_rate_cents: Option<i64>,
     fixed_price_cents: Option<i64>,
+}
+
+#[derive(Debug, Clone)]
+struct TenantBillingProfile {
+    sender_name: String,
+    sender_address: Option<String>,
+    billing_tax_mode: BillingTaxMode,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct InvoiceTotals {
+    subtotal_amount_cents: Option<i64>,
+    vat_rate_percent: Option<i32>,
+    vat_amount_cents: Option<i64>,
+    gross_amount_cents: Option<i64>,
+    total_amount_cents: Option<i64>,
 }
 
 pub fn create_router() -> Router<AppState> {
@@ -102,6 +119,12 @@ pub struct ProjectInvoiceDraftResponse {
     pub billing: SiteInvoiceBillingResponse,
     pub labor: ProjectLaborSummaryResponse,
     pub materials: ProjectMaterialSummaryResponse,
+    pub billing_tax_mode: Option<String>,
+    pub subtotal_amount_cents: Option<i64>,
+    pub vat_rate_percent: Option<i32>,
+    pub vat_amount_cents: Option<i64>,
+    pub gross_amount_cents: Option<i64>,
+    pub tax_note: Option<String>,
     pub total_amount_cents: Option<i64>,
     pub line_items: Vec<ProjectInvoiceLineItemResponse>,
 }
@@ -158,6 +181,7 @@ async fn create_project_invoice(
     let site_id = SiteId(site_id);
     let invoice_summary = load_invoice_summary(state.pool.clone(), site_id, &ctx).await?;
     let invoice_summary = apply_invoice_overrides(invoice_summary, &request)?;
+    let billing_profile = load_tenant_billing_profile(state.pool.clone(), &ctx).await?;
     let user_service = match KeycloakAdminClient::from_config(&state.config) {
         Ok(client) => UserService::new_with_role_assigner(
             UserRepository::new(state.pool.clone()),
@@ -167,14 +191,14 @@ async fn create_project_invoice(
     };
     let created_by = user_service.get_or_create_user_id_from_ctx(&ctx).await?;
     let service = BillingService::new(InvoiceRepository::new(state.pool));
-    let snapshot = invoice_snapshot(&invoice_summary);
+    let snapshot = invoice_snapshot(&invoice_summary, &billing_profile);
     let draft = service
         .create_draft_invoice(
             ctx.tenant_id,
             crate::modules::billing::domain::CreateInvoiceDraft {
                 site_id,
-                sender_name: request.sender_name,
-                sender_address: request.sender_address,
+                sender_name: Some(resolve_sender_name(&request, &billing_profile)),
+                sender_address: resolve_sender_address(&request, &billing_profile),
                 snapshot,
                 created_by: Some(created_by),
             },
@@ -242,8 +266,55 @@ async fn load_invoice_summary(
     service.get_invoice_summary(site_id, ctx).await
 }
 
-fn invoice_snapshot(summary: &InvoiceSummary) -> InvoiceSnapshot {
+async fn load_tenant_billing_profile(
+    pool: sqlx::PgPool,
+    ctx: &TenantContext,
+) -> Result<TenantBillingProfile, AppError> {
+    let row = sqlx::query(
+        r#"
+        SELECT name, billing_sender_name, billing_sender_address, billing_tax_mode
+        FROM tenants
+        WHERE id = $1
+        "#,
+    )
+    .bind(ctx.tenant_id.0)
+    .fetch_one(&pool)
+    .await
+    .map_err(|error| AppError::Database(error.to_string()))?;
+
+    let tenant_name: String = row
+        .try_get("name")
+        .map_err(|error| AppError::Database(error.to_string()))?;
+    let sender_name = normalize_optional_text(
+        row.try_get::<Option<String>, _>("billing_sender_name")
+            .map_err(|error| AppError::Database(error.to_string()))?
+            .as_deref(),
+    )
+    .unwrap_or(tenant_name);
+    let sender_address = normalize_optional_text(
+        row.try_get::<Option<String>, _>("billing_sender_address")
+            .map_err(|error| AppError::Database(error.to_string()))?
+            .as_deref(),
+    );
+    let tax_mode = row
+        .try_get::<String, _>("billing_tax_mode")
+        .map_err(|error| AppError::Database(error.to_string()))?
+        .parse::<BillingTaxMode>()
+        .map_err(AppError::Database)?;
+
+    Ok(TenantBillingProfile {
+        sender_name,
+        sender_address,
+        billing_tax_mode: tax_mode,
+    })
+}
+
+fn invoice_snapshot(
+    summary: &InvoiceSummary,
+    billing_profile: &TenantBillingProfile,
+) -> InvoiceSnapshot {
     let line_items = invoice_line_items(summary);
+    let totals = invoice_totals(&line_items, billing_profile.billing_tax_mode);
     InvoiceSnapshot {
         project_name: summary.site.name.clone(),
         customer_name: summary.site.customer_name.clone(),
@@ -257,7 +328,13 @@ fn invoice_snapshot(summary: &InvoiceSummary) -> InvoiceSnapshot {
         budget_amount_cents: summary.site.budget_amount_cents,
         labor_total_hours: summary.project.labor.total_hours,
         material_withdrawal_count: summary.project.materials.withdrawal_count,
-        total_amount_cents: total_amount_cents(&line_items),
+        billing_tax_mode: Some(billing_profile.billing_tax_mode),
+        subtotal_amount_cents: totals.subtotal_amount_cents,
+        vat_rate_percent: totals.vat_rate_percent,
+        vat_amount_cents: totals.vat_amount_cents,
+        gross_amount_cents: totals.gross_amount_cents,
+        tax_note: tax_note_for_mode(billing_profile.billing_tax_mode),
+        total_amount_cents: totals.total_amount_cents,
         line_items: line_items
             .into_iter()
             .map(InvoiceSnapshotLineItem::from)
@@ -350,6 +427,89 @@ fn validate_non_negative(label: &str, value: Option<i64>) -> Result<(), AppError
     Ok(())
 }
 
+fn resolve_sender_name(
+    request: &CreateProjectInvoiceRequest,
+    billing_profile: &TenantBillingProfile,
+) -> String {
+    normalize_optional_text(request.sender_name.as_deref())
+        .unwrap_or_else(|| billing_profile.sender_name.clone())
+}
+
+fn resolve_sender_address(
+    request: &CreateProjectInvoiceRequest,
+    billing_profile: &TenantBillingProfile,
+) -> Option<String> {
+    normalize_optional_text(request.sender_address.as_deref())
+        .or_else(|| billing_profile.sender_address.clone())
+}
+
+fn invoice_totals(
+    line_items: &[ProjectInvoiceLineItemResponse],
+    billing_tax_mode: BillingTaxMode,
+) -> InvoiceTotals {
+    let subtotal_amount_cents = priced_subtotal_amount_cents(line_items);
+
+    match (billing_tax_mode, subtotal_amount_cents) {
+        (_, None) => InvoiceTotals {
+            subtotal_amount_cents: None,
+            vat_rate_percent: None,
+            vat_amount_cents: None,
+            gross_amount_cents: None,
+            total_amount_cents: None,
+        },
+        (BillingTaxMode::Standard, Some(subtotal_amount_cents)) => {
+            let vat_amount_cents = ((subtotal_amount_cents * 19) + 50) / 100;
+            let gross_amount_cents = subtotal_amount_cents + vat_amount_cents;
+
+            InvoiceTotals {
+                subtotal_amount_cents: Some(subtotal_amount_cents),
+                vat_rate_percent: Some(19),
+                vat_amount_cents: Some(vat_amount_cents),
+                gross_amount_cents: Some(gross_amount_cents),
+                total_amount_cents: Some(gross_amount_cents),
+            }
+        }
+        (BillingTaxMode::Kleinunternehmer, Some(subtotal_amount_cents)) => InvoiceTotals {
+            subtotal_amount_cents: Some(subtotal_amount_cents),
+            vat_rate_percent: None,
+            vat_amount_cents: None,
+            gross_amount_cents: Some(subtotal_amount_cents),
+            total_amount_cents: Some(subtotal_amount_cents),
+        },
+    }
+}
+
+fn priced_subtotal_amount_cents(line_items: &[ProjectInvoiceLineItemResponse]) -> Option<i64> {
+    let mut has_priced_lines = false;
+    let subtotal: i64 = line_items
+        .iter()
+        .filter_map(|line| {
+            if line.line_total_cents.is_some() {
+                has_priced_lines = true;
+            }
+            line.line_total_cents
+        })
+        .sum();
+
+    has_priced_lines.then_some(subtotal)
+}
+
+fn tax_note_for_mode(mode: BillingTaxMode) -> Option<String> {
+    match mode {
+        BillingTaxMode::Standard => None,
+        BillingTaxMode::Kleinunternehmer => {
+            Some("Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.".to_string())
+        }
+    }
+}
+
+fn normalize_optional_text(value: Option<&str>) -> Option<String> {
+    value
+        .map(str::trim)
+        .filter(|trimmed| !trimmed.is_empty())
+        .map(ToOwned::to_owned)
+}
+
 impl From<Invoice> for InvoiceResponse {
     fn from(invoice: Invoice) -> Self {
         Self {
@@ -389,6 +549,8 @@ impl From<ProjectInvoiceLineItemResponse> for InvoiceSnapshotLineItem {
 impl ProjectInvoiceDraftResponse {
     fn from_parts(invoice: Invoice, summary: InvoiceSummary) -> Self {
         let line_items = invoice_line_items(&summary);
+        let snapshot = invoice.snapshot.clone();
+        let snapshot = snapshot.as_ref();
 
         Self {
             invoice: InvoiceResponse::from(invoice),
@@ -396,7 +558,15 @@ impl ProjectInvoiceDraftResponse {
             project: SiteInvoiceProjectResponse::from(summary.site),
             labor: ProjectLaborSummaryResponse::from(summary.project.labor),
             materials: ProjectMaterialSummaryResponse::from(summary.project.materials),
-            total_amount_cents: total_amount_cents(&line_items),
+            billing_tax_mode: snapshot
+                .and_then(|snapshot| snapshot.billing_tax_mode)
+                .map(|mode| mode.to_string()),
+            subtotal_amount_cents: snapshot.and_then(|snapshot| snapshot.subtotal_amount_cents),
+            vat_rate_percent: snapshot.and_then(|snapshot| snapshot.vat_rate_percent),
+            vat_amount_cents: snapshot.and_then(|snapshot| snapshot.vat_amount_cents),
+            gross_amount_cents: snapshot.and_then(|snapshot| snapshot.gross_amount_cents),
+            tax_note: snapshot.and_then(|snapshot| snapshot.tax_note.clone()),
+            total_amount_cents: snapshot.and_then(|snapshot| snapshot.total_amount_cents),
             line_items,
         }
     }
@@ -502,20 +672,6 @@ fn invoice_line_items(summary: &InvoiceSummary) -> Vec<ProjectInvoiceLineItemRes
     lines
 }
 
-fn total_amount_cents(line_items: &[ProjectInvoiceLineItemResponse]) -> Option<i64> {
-    let mut has_priced_lines = false;
-    let total: i64 = line_items
-        .iter()
-        .filter_map(|line| {
-            if line.line_total_cents.is_some() {
-                has_priced_lines = true;
-            }
-            line.line_total_cents
-        })
-        .sum();
-    has_priced_lines.then_some(total)
-}
-
 fn euro_cents_from_quantity(quantity: f64, unit_price_cents: i64) -> i64 {
     ((quantity * (unit_price_cents as f64)).round()) as i64
 }
@@ -601,13 +757,16 @@ mod tests {
         };
 
         let lines = invoice_line_items(&summary);
+        let totals = invoice_totals(&lines, BillingTaxMode::Standard);
 
         assert_eq!(lines.len(), 2);
         assert!(lines.iter().all(|line| line.priced));
         assert_eq!(lines[0].unit_price_cents, Some(8_500));
         assert_eq!(lines[0].line_total_cents, Some(29_750));
         assert_eq!(lines[1].line_total_cents, Some(17_000));
-        assert_eq!(total_amount_cents(&lines), Some(46_750));
+        assert_eq!(totals.subtotal_amount_cents, Some(46_750));
+        assert_eq!(totals.vat_amount_cents, Some(8_883));
+        assert_eq!(totals.total_amount_cents, Some(55_633));
     }
 
     #[test]
@@ -635,13 +794,16 @@ mod tests {
         };
 
         let lines = invoice_line_items(&summary);
+        let totals = invoice_totals(&lines, BillingTaxMode::Kleinunternehmer);
 
         assert_eq!(lines.len(), 1);
         assert_eq!(lines[0].source, "fixed_price");
         assert_eq!(lines[0].quantity, 1.0);
         assert_eq!(lines[0].unit_price_cents, Some(120_000));
         assert_eq!(lines[0].line_total_cents, Some(120_000));
-        assert_eq!(total_amount_cents(&lines), Some(120_000));
+        assert_eq!(totals.subtotal_amount_cents, Some(120_000));
+        assert_eq!(totals.vat_amount_cents, None);
+        assert_eq!(totals.total_amount_cents, Some(120_000));
     }
 
     #[test]
@@ -693,6 +855,12 @@ mod tests {
                 budget_amount_cents: site.budget_amount_cents,
                 labor_total_hours: 0.0,
                 material_withdrawal_count: 0,
+                billing_tax_mode: Some(BillingTaxMode::Standard),
+                subtotal_amount_cents: None,
+                vat_rate_percent: Some(19),
+                vat_amount_cents: None,
+                gross_amount_cents: None,
+                tax_note: None,
                 total_amount_cents: None,
                 line_items: Vec::new(),
             }),
@@ -728,6 +896,7 @@ mod tests {
             response.billing.invoice_pricing_mode.as_deref(),
             Some("hourly_rate")
         );
+        assert_eq!(response.billing_tax_mode.as_deref(), Some("standard"));
         assert_eq!(response.total_amount_cents, None);
         assert_eq!(response.line_items.len(), 0);
     }
@@ -807,6 +976,7 @@ mod tests {
         assert_eq!(response.materials.withdrawal_count, 1);
         assert_eq!(response.line_items.len(), 3);
         assert!(response.line_items.iter().all(|line| !line.priced));
+        assert_eq!(response.billing_tax_mode.as_deref(), Some("standard"));
         assert_eq!(response.total_amount_cents, None);
     }
 
@@ -840,7 +1010,10 @@ mod tests {
             response.billing.invoice_pricing_mode.as_deref(),
             Some("hourly_rate")
         );
-        assert_eq!(response.total_amount_cents, Some(46_750));
+        assert_eq!(response.subtotal_amount_cents, Some(46_750));
+        assert_eq!(response.vat_amount_cents, Some(8_883));
+        assert_eq!(response.gross_amount_cents, Some(55_633));
+        assert_eq!(response.total_amount_cents, Some(55_633));
         assert_eq!(response.line_items[0].unit_price_cents, Some(8_500));
         assert_eq!(response.line_items[0].line_total_cents, Some(29_750));
         assert_eq!(response.line_items[1].line_total_cents, Some(17_000));
@@ -873,7 +1046,10 @@ mod tests {
         .expect("admin should create project invoice draft")
         .0;
 
-        assert_eq!(response.total_amount_cents, Some(120_000));
+        assert_eq!(response.billing_tax_mode.as_deref(), Some("standard"));
+        assert_eq!(response.subtotal_amount_cents, Some(120_000));
+        assert_eq!(response.vat_amount_cents, Some(22_800));
+        assert_eq!(response.total_amount_cents, Some(142_800));
         assert_eq!(response.line_items[0].source, "fixed_price");
         assert_eq!(response.line_items[0].unit_price_cents, Some(120_000));
         assert_eq!(response.line_items[0].line_total_cents, Some(120_000));
@@ -923,7 +1099,9 @@ mod tests {
             response.billing.invoice_pricing_mode.as_deref(),
             Some("fixed_price")
         );
-        assert_eq!(response.total_amount_cents, Some(150_000));
+        assert_eq!(response.subtotal_amount_cents, Some(150_000));
+        assert_eq!(response.vat_amount_cents, Some(28_500));
+        assert_eq!(response.total_amount_cents, Some(178_500));
         assert_eq!(stored_mode.as_deref(), Some("hourly_rate"));
     }
 

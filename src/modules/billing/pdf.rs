@@ -124,6 +124,14 @@ fn invoice_typst_input(invoice: &Invoice, snapshot: &InvoiceSnapshot) -> Dict {
             .into_value(),
     );
     invoice_dict.insert(
+        "billing_tax_mode".into(),
+        snapshot
+            .billing_tax_mode
+            .map(|mode| mode.to_string())
+            .unwrap_or_default()
+            .into_value(),
+    );
+    invoice_dict.insert(
         "billing_reference".into(),
         snapshot
             .billing_reference
@@ -162,6 +170,44 @@ fn invoice_typst_input(invoice: &Invoice, snapshot: &InvoiceSnapshot) -> Dict {
             .clone()
             .unwrap_or_default()
             .into_value(),
+    );
+    invoice_dict.insert(
+        "subtotal_amount".into(),
+        snapshot
+            .subtotal_amount_cents
+            .or(snapshot.total_amount_cents)
+            .map(format_euro_cents)
+            .unwrap_or_default()
+            .into_value(),
+    );
+    invoice_dict.insert(
+        "vat_rate_label".into(),
+        snapshot
+            .vat_rate_percent
+            .map(|value| format!("{} %", value))
+            .unwrap_or_default()
+            .into_value(),
+    );
+    invoice_dict.insert(
+        "vat_amount".into(),
+        snapshot
+            .vat_amount_cents
+            .map(format_euro_cents)
+            .unwrap_or_default()
+            .into_value(),
+    );
+    invoice_dict.insert(
+        "gross_amount".into(),
+        snapshot
+            .gross_amount_cents
+            .or(snapshot.total_amount_cents)
+            .map(format_euro_cents)
+            .unwrap_or_default()
+            .into_value(),
+    );
+    invoice_dict.insert(
+        "tax_note".into(),
+        snapshot.tax_note.clone().unwrap_or_default().into_value(),
     );
     invoice_dict.insert(
         "total_amount".into(),
@@ -335,7 +381,7 @@ mod tests {
 
     use super::*;
     use crate::common::types::{InvoiceId, SiteId, TenantId};
-    use crate::modules::billing::domain::InvoiceStatus;
+    use crate::modules::billing::domain::{BillingTaxMode, InvoiceStatus};
     use crate::modules::sites::domain::InvoicePricingMode;
 
     #[test]
@@ -365,7 +411,13 @@ mod tests {
                 budget_amount_cents: Some(125_000),
                 labor_total_hours: 4.5,
                 material_withdrawal_count: 1,
-                total_amount_cents: Some(38_250),
+                billing_tax_mode: Some(BillingTaxMode::Standard),
+                subtotal_amount_cents: Some(38_250),
+                vat_rate_percent: Some(19),
+                vat_amount_cents: Some(7_268),
+                gross_amount_cents: Some(45_518),
+                tax_note: None,
+                total_amount_cents: Some(45_518),
                 line_items: vec![InvoiceSnapshotLineItem {
                     source: "labor_site".to_string(),
                     description: "Baustellenarbeit".to_string(),
