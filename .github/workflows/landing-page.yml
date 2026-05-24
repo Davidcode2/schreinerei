@@ -34,7 +34,7 @@ jobs:
 
       - name: Install landing page dependencies
         working-directory: landing-page
-        run: npm ci
+        run: npm install
 
       - name: Run landing page checks
         working-directory: landing-page
