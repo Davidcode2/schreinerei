@@ -1,0 +1,159 @@
+name: Build and Deploy Landing Page
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'landing-page/**'
+      - '.github/workflows/landing-page.yml'
+      - '.github/workflows/build-and-push.yml'
+
+env:
+  GITHUB_OWNER: Davidcode2
+  APP_REPO_NAME: schreinerei
+  APP_OF_APPS_REPO: app-of-apps
+  DEPLOYMENT_DIR: schreinerei-app
+  DEPLOYMENT_FILE: schreinerei-app-deployment.yaml
+  PUBLIC_APP_URL: https://schreinerei.jakob-lingel.dev
+
+jobs:
+  landing-page-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: landing-page/package-lock.json
+
+      - name: Install landing page dependencies
+        working-directory: landing-page
+        run: npm ci
+
+      - name: Run landing page checks
+        working-directory: landing-page
+        env:
+          PUBLIC_APP_URL: ${{ env.PUBLIC_APP_URL }}
+        run: npm run check
+
+      - name: Run landing page build
+        working-directory: landing-page
+        env:
+          PUBLIC_APP_URL: ${{ env.PUBLIC_APP_URL }}
+        run: npm run build
+
+  landing-page-image-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Build landing page image
+        run: |
+          docker build \
+            -f landing-page/dockerfile \
+            --build-arg PUBLIC_APP_URL=${{ env.PUBLIC_APP_URL }} \
+            -t schreinerei-landing-page-check \
+            landing-page
+
+  bump-version:
+    runs-on: ubuntu-latest
+    needs: [landing-page-check, landing-page-image-check]
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      sha: ${{ steps.push.outputs.sha }}
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3.0.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ env.GITHUB_OWNER }}
+          repositories: ${{ env.APP_REPO_NAME }},${{ env.APP_OF_APPS_REPO }}
+
+      - name: Checkout code
+        uses: actions/checkout@v6.0.2
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Bump landing page patch version
+        id: bump
+        working-directory: landing-page
+        run: |
+          npm version patch --no-git-tag-version
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Commit version bump
+        id: push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add landing-page/package.json landing-page/package-lock.json
+          git diff --cached --exit-code && echo "No version changes to commit" && exit 1
+          git commit -m "chore(landing-page): bump version to ${{ steps.bump.outputs.version }} [skip ci]"
+          git push
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  build-and-push:
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build-and-push.yml
+    needs: bump-version
+    with:
+      image_name: ghcr.io/${{ github.repository }}-landing-page
+      context: landing-page
+      dockerfile: landing-page/dockerfile
+      ref: ${{ needs.bump-version.outputs.sha }}
+      version: ${{ needs.bump-version.outputs.version }}
+      build_args: |
+        PUBLIC_APP_URL=${{ env.PUBLIC_APP_URL }}
+    secrets: inherit
+
+  deploy-app:
+    runs-on: ubuntu-latest
+    needs: [bump-version, build-and-push]
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ needs.bump-version.outputs.version }}
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3.0.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ env.GITHUB_OWNER }}
+          repositories: ${{ env.APP_OF_APPS_REPO }}
+
+      - name: Checkout app-of-apps repo
+        uses: actions/checkout@v6.0.2
+        with:
+          repository: ${{ env.GITHUB_OWNER }}/${{ env.APP_OF_APPS_REPO }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Update landing page deployment image tag
+        working-directory: ${{ env.DEPLOYMENT_DIR }}
+        run: |
+          sed -i "s|image: ghcr.io/davidcode2/schreinerei-landing-page:.*|image: ghcr.io/davidcode2/schreinerei-landing-page:${VERSION}|g" "${{ env.DEPLOYMENT_FILE }}"
+          echo "Updated landing page image tag to ${VERSION}"
+
+      - name: Commit and push deployment changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git diff --exit-code && echo "No changes to commit" && exit 0
+          git add "${{ env.DEPLOYMENT_DIR }}/${{ env.DEPLOYMENT_FILE }}"
+          git commit -m "deploy: schreinerei landing page v${VERSION}"
+          git push

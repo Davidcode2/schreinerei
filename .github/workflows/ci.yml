@@ -3,8 +3,14 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'landing-page/**'
+      - '.github/workflows/landing-page.yml'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - 'landing-page/**'
+      - '.github/workflows/landing-page.yml'
 
 env:
   CARGO_TERM_COLOR: always
