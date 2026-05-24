@@ -337,6 +337,11 @@ export const handlers = [
     return HttpResponse.json(newReservation, { status: 201 });
   }),
 
+  http.delete(apiRoute('/fleet/reservations/:id'), async ({ params }) => {
+    mockData.reservations = mockData.reservations.filter((entry) => entry.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
   // Time Entries
   http.get(apiRoute('/time-entries'), async () => {
     await delay(10);

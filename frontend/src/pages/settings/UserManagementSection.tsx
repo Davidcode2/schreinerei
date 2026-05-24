@@ -50,7 +50,7 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-3 font-display text-lg">
               <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
@@ -62,7 +62,7 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
           </div>
           <Button
             size="sm"
-            className="gap-2 shadow-sm active:scale-[0.97] transition-transform"
+            className="w-full gap-2 shadow-sm transition-transform active:scale-[0.97] sm:w-auto"
             onClick={() => setShowInviteDialog(true)}
           >
             <UserPlus className="h-4 w-4" />
@@ -94,8 +94,8 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
             {users.map((apiUser, index) => (
               <div key={apiUser.id}>
                 {index > 0 && <Separator className="my-3" />}
-                <div className="flex items-center justify-between gap-3 rounded-lg p-2 -mx-2 transition-colors hover:bg-accent/30">
-                  <div className="flex items-center gap-3 min-w-0">
+                <div className="flex flex-col items-start gap-3 rounded-lg p-2 -mx-2 transition-colors hover:bg-accent/30 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-3 self-stretch sm:self-auto">
                     <Avatar className="h-10 w-10 flex-shrink-0">
                       <AvatarFallback className="bg-accent text-foreground text-xs font-medium">
                         {getInitials(apiUser.name)}
@@ -108,7 +108,7 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
                   </div>
                   <Badge
                     variant={apiUser.role === "admin" ? "default" : "outline"}
-                    className="gap-1 flex-shrink-0"
+                    className="gap-1 sm:flex-shrink-0"
                   >
                     {apiUser.role === "admin" && <Shield className="h-3 w-3" />}
                     {getRoleLabel(apiUser.role)}

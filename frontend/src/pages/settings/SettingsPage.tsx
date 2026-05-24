@@ -41,7 +41,7 @@ export default function SettingsPage() {
           <CardDescription>Informationen zur Anwendung</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
             <div className="rounded-lg bg-accent/50 p-3">
               <p className="text-muted-foreground">Version</p>
               <p className="font-medium mt-0.5">{APP_VERSION}</p>
@@ -58,7 +58,7 @@ export default function SettingsPage() {
 
       <Card className="border-destructive/30 overflow-hidden">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-destructive/10">
                 <LogOut className="h-4 w-4 text-destructive" />
@@ -73,7 +73,7 @@ export default function SettingsPage() {
             <Button
               variant="outline"
               onClick={handleLogout}
-              className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 active:scale-[0.97] transition-transform"
+              className="w-full gap-2 text-destructive transition-transform hover:bg-destructive/10 hover:text-destructive active:scale-[0.97] sm:w-auto"
             >
               <LogOut className="h-4 w-4" />
               Abmelden

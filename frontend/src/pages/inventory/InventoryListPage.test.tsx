@@ -62,4 +62,21 @@ describe("InventoryListPage", () => {
     expect(await screen.findByText("Ablaufwarnungen")).toBeInTheDocument()
     expect(screen.getByText(/3 Stück abgelaufen/i)).toBeInTheDocument()
   })
+
+  it("renders Quadratmeter as m² in the inventory amount chip", async () => {
+    mockData.materials = [
+      createMaterial({
+        id: "mat-3",
+        name: "Sperrholzplatte",
+        unit: "Quadratmeter",
+        quantity: 12,
+        min_quantity: 4,
+      }),
+    ]
+
+    render(<InventoryListPage />)
+
+    expect(await screen.findByText("12 m²")).toBeInTheDocument()
+    expect(screen.getByText("Min: 4 m²")).toBeInTheDocument()
+  })
 })
