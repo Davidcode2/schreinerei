@@ -172,15 +172,15 @@ export function MediaViewer({
 		<Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
 			<DialogContent
 				showCloseButton={false}
-				className="h-[100dvh] w-[100dvw] max-w-none translate-x-[-50%] translate-y-[-50%] gap-0 rounded-none border-0 p-0 sm:h-[calc(100dvh-32px)] sm:w-[calc(100dvw-32px)] sm:rounded-xl"
+				className="h-[100dvh] w-[100dvw] max-w-none translate-x-[-50%] translate-y-[-50%] gap-0 overflow-y-auto rounded-none border-0 p-0 sm:h-[calc(100dvh-32px)] sm:w-[calc(100dvw-32px)] sm:overflow-hidden sm:rounded-xl"
 			>
 				<DialogTitle className="sr-only">Medienansicht</DialogTitle>
 				<DialogDescription className="sr-only">
 					Vollbildansicht für Baustellenmedien mit Metadaten und Aktionen.
 				</DialogDescription>
 
-				<div className="grid h-full grid-cols-1 bg-background lg:grid-cols-[minmax(0,1fr)_320px]">
-					<div className="min-h-0 bg-primary-foreground/95 p-4 lg:p-6">
+				<div className="grid min-h-full grid-cols-1 bg-background lg:h-full lg:grid-cols-[minmax(0,1fr)_320px]">
+					<div className="min-h-[50dvh] bg-primary-foreground/95 p-4 lg:min-h-0 lg:p-6">
 						<MediaPreviewPane
 							key={
 								target
@@ -192,7 +192,7 @@ export function MediaViewer({
 						/>
 					</div>
 
-					<aside className="flex flex-col gap-6 border-l bg-card p-5 lg:p-6">
+					<aside className="flex flex-col gap-6 border-t bg-card p-5 lg:border-l lg:border-t-0 lg:p-6">
 						<div className="flex items-start justify-between gap-3">
 							<div className="flex flex-1 flex-col gap-2">
 								<Button

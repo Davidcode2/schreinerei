@@ -144,6 +144,28 @@ describe("MediaViewer", () => {
     expect(screen.getByRole("button", { name: "Herunterladen" })).toBeInTheDocument()
   })
 
+  it("allows vertical scrolling for stacked mobile content", async () => {
+    getBlobMock.mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" }))
+
+    render(
+      <MediaViewer
+        open={true}
+        target={{
+          activity: firstActivity,
+          attachment: firstAttachment,
+          title: firstAttachment.filename,
+        }}
+        sharePath="/sites/site-1/media/activity-1/attachment-1/montage-plan-pdf"
+        onClose={vi.fn()}
+      />
+    )
+
+    const dialog = await screen.findByRole("dialog")
+
+    expect(dialog.className).toContain("overflow-y-auto")
+    expect(dialog.className).toContain("sm:overflow-hidden")
+  })
+
   it("copies the canonical viewer url to the clipboard", async () => {
     getBlobMock.mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" }))
 
