@@ -4,8 +4,8 @@ milestone: v1.14
 milestone_name: Project Costing, Planning & Billing Basis
 status: ready
 stopped_at: Milestone v1.14 complete and next seed ready for activation
-last_updated: "2026-05-24T14:52:00Z"
-last_activity: 2026-05-24 -- Completed quick task 260524-k4d
+last_updated: "2026-05-24T15:49:00Z"
+last_activity: 2026-05-24 -- Completed quick task 260524-lhg
 progress:
   total_phases: 5
   completed_phases: 5
@@ -28,7 +28,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-05)
 Phase: —
 Plan: —
 Status: v1.14 complete, ready for next milestone activation
-Last activity: 2026-05-24 -- Completed quick task 260524-k4d: Add project hourly-rate billing defaults and invoice pricing mode backend support
+Last activity: 2026-05-24 -- Completed quick task 260524-lhg: Complete project billing UI and per-invoice pricing override flow
 
 ## Performance Metrics
 
@@ -115,6 +115,7 @@ Last activity: 2026-05-24 -- Completed quick task 260524-k4d: Add project hourly
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260524-k4d | Add project hourly-rate billing defaults and invoice pricing mode backend support | 2026-05-24 | 8c07380 | [260524-k4d-add-project-hourly-rate-billing-defaults](./quick/260524-k4d-add-project-hourly-rate-billing-defaults/) |
+| 260524-lhg | Complete project billing UI and per-invoice pricing override flow | 2026-05-24 | 542a08d | [260524-lhg-complete-project-billing-ui-and-per-invo](./quick/260524-lhg-complete-project-billing-ui-and-per-invo/) |
 
 ## Deferred Items
 
@@ -128,6 +129,6 @@ Last activity: 2026-05-24 -- Completed quick task 260524-k4d: Add project hourly
 
 ## Session Continuity
 
-Last session: 2026-05-24T14:52:00Z
-Stopped at: Quick task 260524-k4d complete
-Resume file: `.planning/quick/260524-k4d-add-project-hourly-rate-billing-defaults/260524-k4d-SUMMARY.md`
+Last session: 2026-05-24T15:49:00Z
+Stopped at: Quick task 260524-lhg complete
+Resume file: `.planning/quick/260524-lhg-complete-project-billing-ui-and-per-invo/260524-lhg-SUMMARY.md`
