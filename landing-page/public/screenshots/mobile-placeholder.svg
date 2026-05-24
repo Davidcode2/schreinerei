@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1200" viewBox="0 0 960 1200" fill="none">
+  <rect width="960" height="1200" rx="36" fill="#F8F7FC"/>
+  <rect x="94" y="54" width="772" height="1092" rx="70" fill="#191824"/>
+  <rect x="128" y="116" width="704" height="968" rx="48" fill="white"/>
+  <rect x="370" y="78" width="220" height="18" rx="9" fill="#2C2B39"/>
+  <text x="186" y="188" fill="#6A2DCC" font-family="DM Sans, Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="4">MOBIL</text>
+  <text x="186" y="246" fill="#191824" font-family="DM Serif Display, Georgia, serif" font-size="52">Zeiterfassung unterwegs</text>
+  <rect x="186" y="292" width="588" height="124" rx="28" fill="#863BFF"/>
+  <rect x="186" y="448" width="588" height="176" rx="28" fill="#FBFAFE" stroke="#E3E0EB"/>
+  <rect x="186" y="654" width="588" height="176" rx="28" fill="#FBFAFE" stroke="#E3E0EB"/>
+  <rect x="186" y="860" width="588" height="142" rx="28" fill="#F2EFFA" stroke="#E3E0EB" stroke-dasharray="10 12"/>
+  <text x="480" y="987" text-anchor="middle" fill="#6F6A7F" font-family="DM Sans, Arial, sans-serif" font-size="24">Placeholder fuer Smartphone-Screenshot</text>
+</svg>

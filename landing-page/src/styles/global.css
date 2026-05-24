@@ -1,0 +1,111 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Serif+Display:ital@0;1&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-background: hsl(240 20% 98%);
+  --color-foreground: hsl(240 10% 10%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(240 10% 10%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(240 10% 10%);
+  --color-primary: hsl(252 56% 40%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(240 10% 94%);
+  --color-secondary-foreground: hsl(240 10% 15%);
+  --color-muted: hsl(240 10% 94%);
+  --color-muted-foreground: hsl(240 5% 46%);
+  --color-accent: hsl(250 30% 93%);
+  --color-accent-foreground: hsl(240 10% 15%);
+  --color-border: hsl(240 8% 89%);
+  --color-success: hsl(142 64% 34%);
+  --radius: 0.875rem;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "DM Serif Display", ui-serif, Georgia, serif;
+  --shadow-soft: 0 20px 60px hsl(252 56% 40% / 0.12);
+  --shadow-card: 0 18px 50px hsl(240 20% 18% / 0.08);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top, hsl(250 100% 98%), transparent 38%),
+      linear-gradient(180deg, hsl(240 20% 99%), hsl(240 20% 97%));
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+  }
+
+  a,
+  button {
+    transition:
+      transform 180ms ease,
+      background-color 180ms ease,
+      color 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      opacity 180ms ease;
+  }
+}
+
+@layer components {
+  .shell {
+    @apply mx-auto w-full max-w-7xl px-6 lg:px-10;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-primary shadow-sm;
+  }
+
+  .section-copy {
+    @apply max-w-2xl text-base leading-7 text-muted-foreground md:text-lg;
+  }
+
+  .glass-card {
+    @apply rounded-[1.75rem] border border-white/70 bg-white/85 backdrop-blur;
+    box-shadow: var(--shadow-card);
+  }
+
+  .primary-button {
+    @apply inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:-translate-y-0.5 hover:bg-primary/90;
+  }
+
+  .secondary-button {
+    @apply inline-flex items-center justify-center rounded-full border border-border bg-white px-6 py-3 text-sm font-semibold text-foreground hover:-translate-y-0.5 hover:border-primary/30 hover:bg-accent/60;
+  }
+
+  .noise {
+    position: relative;
+  }
+
+  .noise::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(hsl(252 56% 40% / 0.08) 0.7px, transparent 0.7px),
+      radial-gradient(hsl(240 10% 10% / 0.04) 0.7px, transparent 0.7px);
+    background-position: 0 0, 14px 14px;
+    background-size: 28px 28px;
+    mask-image: linear-gradient(180deg, black, transparent 88%);
+  }
+}
