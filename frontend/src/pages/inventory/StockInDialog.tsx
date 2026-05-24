@@ -62,13 +62,13 @@ export function StockInDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Material einlagern</DialogTitle>
           <DialogDescription>Neue Menge für {material.name} erfassen.</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="min-h-0 space-y-4 overflow-y-auto py-4 pr-1">
           <div className="flex items-center justify-between rounded-lg bg-accent/50 p-3">
             <div className="flex items-center gap-2.5 text-sm">
               <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent">
@@ -164,7 +164,7 @@ export function StockInDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="border-t border-border/70 pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Abbrechen
           </Button>

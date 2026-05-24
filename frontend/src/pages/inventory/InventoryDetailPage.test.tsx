@@ -248,6 +248,34 @@ describe("InventoryDetailPage interactions", () => {
     expect(await screen.findByText("3 Stück eingelagert")).toBeInTheDocument()
   })
 
+  it("keeps the stock-in dialog vertically scrollable on small screens", async () => {
+    const user = userEvent.setup()
+
+    server.use(
+      http.get(apiPath("/inventory/materials/mat-123"), () =>
+        HttpResponse.json({
+          ...materialResponse,
+          can_expire: true,
+          legacy_quantity: 0,
+        })
+      ),
+      http.get(apiPath("/inventory/materials/mat-123/history/enriched"), () =>
+        HttpResponse.json([])
+      )
+    )
+
+    render(<InventoryDetailPage />)
+
+    await user.click(await screen.findByRole("button", { name: /material einlagern/i }))
+
+    const dialog = await screen.findByRole("dialog")
+    const scrollContainer = dialog.querySelector(".overflow-y-auto")
+
+    expect(dialog.className).toContain("max-h-[90vh]")
+    expect(dialog.className).toContain("overflow-hidden")
+    expect(scrollContainer).not.toBeNull()
+  })
+
   it("defaults withdrawals to the active project and sends the linked project id", async () => {
     const user = userEvent.setup()
     let withdrawPayload: unknown = null
