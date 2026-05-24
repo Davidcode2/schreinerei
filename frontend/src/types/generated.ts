@@ -48,7 +48,7 @@ export type CreateReservationRequest = { resource_type: string, resource_id: str
 
 export type CreateSiteAppointmentRequest = { title: string, appointment_kind: string, starts_at: string, ends_at: string, notes: string | null, assigned_user_ids: Array<string>, };
 
-export type CreateSiteRequest = { project_type: string, name: string, customer_name: string, location: string | null, description: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, budget_amount_cents: bigint | null, billing_reference: string | null, billing_notes: string | null, quote_reference: string | null, };
+export type CreateSiteRequest = { project_type: string, name: string, customer_name: string, location: string | null, description: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, budget_amount_cents: bigint | null, invoice_pricing_mode: string | null, hourly_rate_cents: bigint | null, fixed_price_cents: bigint | null, billing_reference: string | null, billing_notes: string | null, quote_reference: string | null, };
 
 export type CreateTimeEntryRequest = { site_id: string | null, work_type: string, hours: number, work_date: string, notes: string | null, };
 
@@ -123,9 +123,9 @@ export type PdfArtifactResponse = { storage_path: string, sha256_hash: string, c
  */
 export type PreferencesResponse = { active_site_id: string | null, };
 
-export type ProjectInvoiceDraftResponse = { invoice: InvoiceResponse, project: SiteInvoiceProjectResponse, billing: SiteInvoiceBillingResponse, labor: ProjectLaborSummaryResponse, materials: ProjectMaterialSummaryResponse, line_items: Array<ProjectInvoiceLineItemResponse>, };
+export type ProjectInvoiceDraftResponse = { invoice: InvoiceResponse, project: SiteInvoiceProjectResponse, billing: SiteInvoiceBillingResponse, labor: ProjectLaborSummaryResponse, materials: ProjectMaterialSummaryResponse, total_amount_cents: bigint | null, line_items: Array<ProjectInvoiceLineItemResponse>, };
 
-export type ProjectInvoiceLineItemResponse = { source: string, description: string, quantity: number, unit: string, source_count: bigint, priced: boolean, };
+export type ProjectInvoiceLineItemResponse = { source: string, description: string, quantity: number, unit: string, source_count: bigint, priced: boolean, unit_price_cents: bigint | null, line_total_cents: bigint | null, };
 
 export type ProjectLaborSummaryResponse = { total_hours: number, entry_count: bigint, site_hours: number, workshop_hours: number, last_work_date: string | null, };
 
@@ -159,7 +159,7 @@ export type SiteHistoryReportQuery = { customer: string | null, project_type: st
 
 export type SiteHistoryReportRowResponse = { site_id: string, project_type: string, name: string, customer_name: string, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, budget_amount_cents: bigint | null, billing_reference: string | null, quote_reference: string | null, total_hours: number, worker_count: bigint, distinct_material_count: bigint, withdrawal_count: bigint, cost_basis: string, };
 
-export type SiteInvoiceBillingResponse = { budget_amount_cents: bigint | null, quote_reference: string | null, billing_reference: string | null, billing_notes: string | null, };
+export type SiteInvoiceBillingResponse = { budget_amount_cents: bigint | null, invoice_pricing_mode: string | null, hourly_rate_cents: bigint | null, fixed_price_cents: bigint | null, quote_reference: string | null, billing_reference: string | null, billing_notes: string | null, };
 
 export type SiteInvoiceProjectResponse = { id: string, name: string, project_type: string, customer_name: string, location: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, };
 
@@ -167,7 +167,7 @@ export type SiteInvoiceSummaryResponse = { export_version: string, generated_at:
 
 export type SiteProjectSummaryResponse = { labor: ProjectLaborSummaryResponse, materials: ProjectMaterialSummaryResponse, };
 
-export type SiteResponse = { id: string, project_type: string, name: string, customer_name: string, location: string | null, description: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, budget_amount_cents: bigint | null, billing_reference: string | null, billing_notes: string | null, quote_reference: string | null, created_at: string, };
+export type SiteResponse = { id: string, project_type: string, name: string, customer_name: string, location: string | null, description: string | null, status: string, start_date: string | null, end_date: string | null, estimated_days: number | null, budget_amount_cents: bigint | null, invoice_pricing_mode: string | null, hourly_rate_cents: bigint | null, fixed_price_cents: bigint | null, billing_reference: string | null, billing_notes: string | null, quote_reference: string | null, created_at: string, };
 
 export type SiteStockHistoryResponse = { id: string, material_id: string, material_name: string, category_name: string, quantity_change: number, quantity_after: number, notes: string | null, site_id: string | null, site_name: string | null, extracted_by: string, created_at: string, };
 
@@ -209,7 +209,7 @@ export type UpdateRoleRequest = { role: string, };
 
 export type UpdateSiteAppointmentRequest = { title: string | null, appointment_kind: string | null, starts_at: string | null, ends_at: string | null, notes: string | null, clear_notes: boolean | null, assigned_user_ids: Array<string> | null, };
 
-export type UpdateSiteRequest = { project_type: string | null, name: string | null, customer_name: string | null, location: string | null, description: string | null, status: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, budget_amount_cents: bigint | null, billing_reference: string | null, billing_notes: string | null, quote_reference: string | null, clear_budget_amount: boolean | null, clear_billing_reference: boolean | null, clear_billing_notes: boolean | null, clear_quote_reference: boolean | null, };
+export type UpdateSiteRequest = { project_type: string | null, name: string | null, customer_name: string | null, location: string | null, description: string | null, status: string | null, start_date: string | null, end_date: string | null, estimated_days: number | null, budget_amount_cents: bigint | null, invoice_pricing_mode: string | null, hourly_rate_cents: bigint | null, fixed_price_cents: bigint | null, billing_reference: string | null, billing_notes: string | null, quote_reference: string | null, clear_budget_amount: boolean | null, clear_invoice_pricing_mode: boolean | null, clear_hourly_rate_cents: boolean | null, clear_fixed_price_cents: boolean | null, clear_billing_reference: boolean | null, clear_billing_notes: boolean | null, clear_quote_reference: boolean | null, };
 
 export type UpdateTimeEntryRequest = { site_id: string | null, work_type: string | null, hours: number | null, work_date: string | null, notes: string | null, };
 
