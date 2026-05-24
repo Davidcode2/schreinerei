@@ -28,6 +28,8 @@ pub struct ProjectMaterialUsageLine {
     pub total_withdrawn: i32,
     pub withdrawal_count: i64,
     pub last_withdrawn_at: DateTime<Utc>,
+    pub base_price_cents: Option<i64>,
+    pub price_markup_percentage: Option<i32>,
 }
 
 #[derive(Debug, Clone)]
@@ -305,9 +307,10 @@ impl MaterialRepository {
             r#"
             INSERT INTO materials (
                 id, tenant_id, category_id, name, description, unit, quantity,
-                min_quantity, legacy_quantity, location, qr_code, created_at, updated_at
+                min_quantity, legacy_quantity, location, base_price_cents,
+                price_markup_percentage, qr_code, created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             "#,
         )
         .bind(id)
@@ -320,6 +323,8 @@ impl MaterialRepository {
         .bind(create.min_quantity)
         .bind(if can_expire { 0 } else { create.quantity })
         .bind(&create.location)
+        .bind(create.base_price_cents)
+        .bind(create.price_markup_percentage)
         .bind(&Option::<String>::None)
         .bind(now)
         .bind(now)
@@ -440,55 +445,43 @@ impl MaterialRepository {
         update: &UpdateMaterial,
         tenant_id: TenantId,
     ) -> Result<Material, AppError> {
-        // Handle clear_location separately from location set
-        let (location_param, clear_location) = match (&update.location, update.clear_location) {
-            // clear_location is true: explicitly set location to NULL
-            (_, Some(true)) => (None::<String>, true),
-            // location is Some: set location to new value
-            (Some(loc), _) => (Some(loc.clone()), false),
-            // Neither: don't change location
-            (None, _) => (None, false),
-        };
-
-        let updated_id = if clear_location {
-            sqlx::query_scalar::<_, Uuid>(
-                r#"
-                UPDATE materials
-                SET location = NULL,
-                    min_quantity = COALESCE($2, min_quantity),
-                    updated_at = NOW()
-                WHERE id = $3 AND tenant_id = $4 AND deleted_at IS NULL
-                RETURNING id
-                "#,
-            )
-            .bind(location_param)
-            .bind(update.min_quantity)
-            .bind(id.0)
-            .bind(tenant_id.0)
-            .fetch_optional(&self.pool)
-            .await
-            .map_err(|e| AppError::Database(e.to_string()))?
-            .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?
-        } else {
-            sqlx::query_scalar::<_, Uuid>(
-                r#"
-                UPDATE materials
-                SET location = COALESCE($1, location),
-                    min_quantity = COALESCE($2, min_quantity),
-                    updated_at = NOW()
-                WHERE id = $3 AND tenant_id = $4 AND deleted_at IS NULL
-                RETURNING id
-                "#,
-            )
-            .bind(location_param)
-            .bind(update.min_quantity)
-            .bind(id.0)
-            .bind(tenant_id.0)
-            .fetch_optional(&self.pool)
-            .await
-            .map_err(|e| AppError::Database(e.to_string()))?
-            .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?
-        };
+        let updated_id = sqlx::query_scalar::<_, Uuid>(
+            r#"
+            UPDATE materials
+            SET location = CASE
+                    WHEN $1 THEN NULL
+                    WHEN $2 IS NOT NULL THEN $2
+                    ELSE location
+                END,
+                min_quantity = COALESCE($3, min_quantity),
+                base_price_cents = CASE
+                    WHEN $4 THEN NULL
+                    WHEN $5 IS NOT NULL THEN $5
+                    ELSE base_price_cents
+                END,
+                price_markup_percentage = CASE
+                    WHEN $6 THEN NULL
+                    WHEN $7 IS NOT NULL THEN $7
+                    ELSE price_markup_percentage
+                END,
+                updated_at = NOW()
+            WHERE id = $8 AND tenant_id = $9 AND deleted_at IS NULL
+            RETURNING id
+            "#,
+        )
+        .bind(update.clear_location == Some(true))
+        .bind(update.location.clone())
+        .bind(update.min_quantity)
+        .bind(update.clear_base_price_cents == Some(true))
+        .bind(update.base_price_cents)
+        .bind(update.clear_price_markup_percentage == Some(true))
+        .bind(update.price_markup_percentage)
+        .bind(id.0)
+        .bind(tenant_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Material not found".to_string()))?;
 
         self.find_material_by_id(MaterialId(updated_id), tenant_id)
             .await?
@@ -930,7 +923,8 @@ impl MaterialRepository {
             r#"
             SELECT
                 m.id, m.tenant_id, m.category_id, m.name, m.description, m.unit,
-                m.quantity, m.min_quantity, m.legacy_quantity, m.location, m.qr_code,
+                m.quantity, m.min_quantity, m.legacy_quantity, m.location,
+                m.base_price_cents, m.price_markup_percentage, m.qr_code,
                 m.created_at, m.updated_at, c.can_expire,
                 COALESCE(summary.expired_quantity, 0) AS expired_quantity,
                 COALESCE(summary.expiring_soon_quantity, 0) AS expiring_soon_quantity,
@@ -958,7 +952,8 @@ impl MaterialRepository {
             r#"
             SELECT
                 m.id, m.tenant_id, m.category_id, m.name, m.description, m.unit,
-                m.quantity, m.min_quantity, m.legacy_quantity, m.location, m.qr_code,
+                m.quantity, m.min_quantity, m.legacy_quantity, m.location,
+                m.base_price_cents, m.price_markup_percentage, m.qr_code,
                 m.created_at, m.updated_at, c.can_expire,
                 COALESCE(summary.expired_quantity, 0) AS expired_quantity,
                 COALESCE(summary.expiring_soon_quantity, 0) AS expiring_soon_quantity,
@@ -985,7 +980,8 @@ impl MaterialRepository {
             r#"
             SELECT
                 m.id, m.tenant_id, m.category_id, m.name, m.description, m.unit,
-                m.quantity, m.min_quantity, m.legacy_quantity, m.location, m.qr_code,
+                m.quantity, m.min_quantity, m.legacy_quantity, m.location,
+                m.base_price_cents, m.price_markup_percentage, m.qr_code,
                 m.created_at, m.updated_at, c.can_expire,
                 COALESCE(summary.expired_quantity, 0) AS expired_quantity,
                 COALESCE(summary.expiring_soon_quantity, 0) AS expiring_soon_quantity,
@@ -1017,7 +1013,8 @@ impl MaterialRepository {
             r#"
             SELECT
                 m.id, m.tenant_id, m.category_id, m.name, m.description, m.unit,
-                m.quantity, m.min_quantity, m.legacy_quantity, m.location, m.qr_code,
+                m.quantity, m.min_quantity, m.legacy_quantity, m.location,
+                m.base_price_cents, m.price_markup_percentage, m.qr_code,
                 m.created_at, m.updated_at, c.can_expire,
                 COALESCE(summary.expired_quantity, 0) AS expired_quantity,
                 COALESCE(summary.expiring_soon_quantity, 0) AS expiring_soon_quantity,
@@ -1373,6 +1370,8 @@ impl MaterialRepository {
                 m.name AS material_name,
                 c.name AS category_name,
                 m.unit,
+                m.base_price_cents,
+                m.price_markup_percentage,
                 COALESCE(SUM(-se.quantity_change), 0)::INT4 AS total_withdrawn,
                 COUNT(*)::INT8 AS withdrawal_count,
                 MAX(se.created_at) AS last_withdrawn_at
@@ -1380,7 +1379,7 @@ impl MaterialRepository {
             INNER JOIN materials m ON se.material_id = m.id
             INNER JOIN categories c ON m.category_id = c.id
             WHERE se.site_id = $1 AND se.tenant_id = $2 AND se.entry_type = 'withdrawn'
-            GROUP BY se.material_id, m.name, c.name, m.unit
+            GROUP BY se.material_id, m.name, c.name, m.unit, m.base_price_cents, m.price_markup_percentage
             ORDER BY total_withdrawn DESC, last_withdrawn_at DESC
             "#,
         )
@@ -1774,6 +1773,8 @@ struct MaterialRow {
     min_quantity: i32,
     legacy_quantity: i32,
     location: Option<String>,
+    base_price_cents: Option<i64>,
+    price_markup_percentage: Option<i32>,
     qr_code: Option<String>,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
@@ -1805,6 +1806,8 @@ impl MaterialRow {
             next_expiry_on: self.next_expiry_on,
             expiry_batches,
             location: self.location,
+            base_price_cents: self.base_price_cents,
+            price_markup_percentage: self.price_markup_percentage,
             qr_code: self.qr_code,
             created_at: self.created_at,
             updated_at: self.updated_at,
@@ -1846,6 +1849,8 @@ struct ProjectMaterialUsageLineRow {
     material_name: String,
     category_name: String,
     unit: String,
+    base_price_cents: Option<i64>,
+    price_markup_percentage: Option<i32>,
     total_withdrawn: i32,
     withdrawal_count: i64,
     last_withdrawn_at: DateTime<Utc>,
@@ -1992,6 +1997,8 @@ impl ProjectMaterialUsageLineRow {
             total_withdrawn: self.total_withdrawn,
             withdrawal_count: self.withdrawal_count,
             last_withdrawn_at: self.last_withdrawn_at,
+            base_price_cents: self.base_price_cents,
+            price_markup_percentage: self.price_markup_percentage,
         }
     }
 }

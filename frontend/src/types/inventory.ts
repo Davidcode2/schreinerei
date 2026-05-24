@@ -3,17 +3,14 @@
  */
 
 import type {
-  AdjustStockRequest as GeneratedAdjustStockRequest,
   ApproveOrderRequestDto as GeneratedApproveOrderRequestDto,
   CategoryResponse,
   CreateCategoryRequest as GeneratedCreateCategoryRequest,
-  CreateMaterialRequest as GeneratedCreateMaterialRequest,
   CreateOrderRequestDto as GeneratedCreateOrderRequestDto,
   EnrichedStockHistoryResponse,
   EntryType as GeneratedEntryType,
   FulfillOrderRequestDto as GeneratedFulfillOrderRequestDto,
   ListMaterialsQuery as GeneratedListMaterialsQuery,
-  MaterialResponse,
   OrderRequestResponse as GeneratedOrderRequestResponse,
   OrderStatusQuery as GeneratedOrderStatusQuery,
   QrCodeResponse as GeneratedQrCodeResponse,
@@ -22,7 +19,6 @@ import type {
   StockEntryResponse,
   StockInRequest as GeneratedStockInRequest,
   UpdateCategoryRequest as GeneratedUpdateCategoryRequest,
-  UpdateMaterialRequest as GeneratedUpdateMaterialRequest,
   WithdrawRequest as GeneratedWithdrawRequest,
 } from "@/types/generated"
 
@@ -36,7 +32,35 @@ export type UpdateCategoryRequest = GeneratedUpdateCategoryRequest
 
 // === Material ===
 
-export type Material = MaterialResponse
+export interface Material {
+  id: string
+  category_id: string
+  name: string
+  description: string | null
+  unit: string
+  quantity: number
+  min_quantity: number
+  can_expire: boolean
+  legacy_quantity: number
+  expired_quantity: number
+  expiring_soon_quantity: number
+  next_expiry_on: string | null
+  expiry_batches: Array<{
+    id: string
+    batch_code: string | null
+    expires_on: string
+    quantity: number
+    received_at: string
+    is_expired: boolean
+    is_expiring_soon: boolean
+  }>
+  location: string | null
+  base_price_cents: number | null
+  price_markup_percentage: number | null
+  qr_code: string | null
+  is_low_stock: boolean
+  created_at: string
+}
 
 export type MaterialStockHistoryEntry = StockEntryResponse
 
@@ -46,13 +70,36 @@ export type EnrichedStockHistoryEntry = EnrichedStockHistoryResponse
 
 export type SiteMaterialHistoryEntry = SiteStockHistoryResponse
 
-export type CreateMaterialRequest = GeneratedCreateMaterialRequest
+export interface CreateMaterialRequest {
+  category_id: string
+  name: string
+  description: string | null
+  unit: string
+  quantity: number
+  min_quantity: number
+  location: string | null
+  base_price_cents: number | null
+  price_markup_percentage: number | null
+  expires_on: string | null
+  batch_code: string | null
+}
 
-export type UpdateMaterialRequest = GeneratedUpdateMaterialRequest
+export interface UpdateMaterialRequest {
+  location?: string
+  min_quantity?: number
+  base_price_cents?: number | null
+  price_markup_percentage?: number | null
+  clear_location?: boolean
+  clear_base_price_cents?: boolean
+  clear_price_markup_percentage?: boolean
+}
 
 export type WithdrawRequest = GeneratedWithdrawRequest
 
-export type AdjustStockRequest = GeneratedAdjustStockRequest
+export interface AdjustStockRequest {
+  quantity: number
+  reason: string
+}
 
 export type StockInRequest = GeneratedStockInRequest
 

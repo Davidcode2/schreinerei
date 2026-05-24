@@ -21,6 +21,8 @@ pub struct Material {
     pub next_expiry_on: Option<NaiveDate>,
     pub expiry_batches: Vec<MaterialBatchSummary>,
     pub location: Option<String>,
+    pub base_price_cents: Option<i64>,
+    pub price_markup_percentage: Option<i32>,
     pub qr_code: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -64,6 +66,8 @@ pub struct CreateMaterial {
     pub quantity: i32,
     pub min_quantity: i32,
     pub location: Option<String>,
+    pub base_price_cents: Option<i64>,
+    pub price_markup_percentage: Option<i32>,
     pub expires_on: Option<NaiveDate>,
     pub batch_code: Option<String>,
 }
@@ -79,6 +83,15 @@ impl CreateMaterial {
         }
         if self.min_quantity < 0 {
             return Err("Minimum quantity cannot be negative".to_string());
+        }
+        if self.base_price_cents.is_some_and(|price| price < 0) {
+            return Err("Base price cannot be negative".to_string());
+        }
+        if self
+            .price_markup_percentage
+            .is_some_and(|markup| markup < 0)
+        {
+            return Err("Price markup cannot be negative".to_string());
         }
         Ok(())
     }
@@ -135,7 +148,11 @@ impl AdjustStock {
 pub struct UpdateMaterial {
     pub location: Option<String>,
     pub min_quantity: Option<i32>,
+    pub base_price_cents: Option<i64>,
+    pub price_markup_percentage: Option<i32>,
     pub clear_location: Option<bool>,
+    pub clear_base_price_cents: Option<bool>,
+    pub clear_price_markup_percentage: Option<bool>,
 }
 
 impl UpdateMaterial {
@@ -146,11 +163,31 @@ impl UpdateMaterial {
                 return Err("Minimum quantity cannot be negative".to_string());
             }
         }
+        if let Some(base_price_cents) = self.base_price_cents {
+            if base_price_cents < 0 {
+                return Err("Base price cannot be negative".to_string());
+            }
+        }
+        if let Some(price_markup_percentage) = self.price_markup_percentage {
+            if price_markup_percentage < 0 {
+                return Err("Price markup cannot be negative".to_string());
+            }
+        }
         // If both setting a location and clearing it, that's a conflict
         if let Some(ref loc) = self.location {
             if !loc.is_empty() && self.clear_location == Some(true) {
                 return Err("Cannot set location and clear location at the same time".to_string());
             }
+        }
+        if self.base_price_cents.is_some() && self.clear_base_price_cents == Some(true) {
+            return Err("Cannot set base price and clear base price at the same time".to_string());
+        }
+        if self.price_markup_percentage.is_some()
+            && self.clear_price_markup_percentage == Some(true)
+        {
+            return Err(
+                "Cannot set price markup and clear price markup at the same time".to_string(),
+            );
         }
         Ok(())
     }
@@ -201,6 +238,8 @@ mod tests {
             next_expiry_on: None,
             expiry_batches: Vec::new(),
             location: None,
+            base_price_cents: None,
+            price_markup_percentage: None,
             qr_code: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
@@ -259,6 +298,8 @@ mod tests {
             quantity: 10,
             min_quantity: 5,
             location: None,
+            base_price_cents: None,
+            price_markup_percentage: None,
             expires_on: None,
             batch_code: None,
         };
@@ -275,6 +316,8 @@ mod tests {
             quantity: 10,
             min_quantity: 5,
             location: None,
+            base_price_cents: None,
+            price_markup_percentage: None,
             expires_on: None,
             batch_code: None,
         };
@@ -291,6 +334,8 @@ mod tests {
             quantity: -1,
             min_quantity: 5,
             location: None,
+            base_price_cents: None,
+            price_markup_percentage: None,
             expires_on: None,
             batch_code: None,
         };
@@ -310,12 +355,58 @@ mod tests {
             quantity: 10,
             min_quantity: -1,
             location: None,
+            base_price_cents: None,
+            price_markup_percentage: None,
             expires_on: None,
             batch_code: None,
         };
         assert_eq!(
             cmd.validate(),
             Err("Minimum quantity cannot be negative".to_string())
+        );
+    }
+
+    #[test]
+    fn create_material_validate_fails_with_negative_base_price() {
+        let cmd = CreateMaterial {
+            category_id: CategoryId::new(),
+            name: "Wood".to_string(),
+            description: None,
+            unit: Unit::Piece,
+            quantity: 10,
+            min_quantity: 5,
+            location: None,
+            base_price_cents: Some(-1),
+            price_markup_percentage: None,
+            expires_on: None,
+            batch_code: None,
+        };
+
+        assert_eq!(
+            cmd.validate(),
+            Err("Base price cannot be negative".to_string())
+        );
+    }
+
+    #[test]
+    fn create_material_validate_fails_with_negative_price_markup() {
+        let cmd = CreateMaterial {
+            category_id: CategoryId::new(),
+            name: "Wood".to_string(),
+            description: None,
+            unit: Unit::Piece,
+            quantity: 10,
+            min_quantity: 5,
+            location: None,
+            base_price_cents: None,
+            price_markup_percentage: Some(-1),
+            expires_on: None,
+            batch_code: None,
+        };
+
+        assert_eq!(
+            cmd.validate(),
+            Err("Price markup cannot be negative".to_string())
         );
     }
 
@@ -425,7 +516,11 @@ mod tests {
         let cmd = UpdateMaterial {
             location: Some("Lager A".to_string()),
             min_quantity: None,
+            base_price_cents: None,
+            price_markup_percentage: None,
             clear_location: None,
+            clear_base_price_cents: None,
+            clear_price_markup_percentage: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -435,7 +530,11 @@ mod tests {
         let cmd = UpdateMaterial {
             location: None,
             min_quantity: Some(10),
+            base_price_cents: None,
+            price_markup_percentage: None,
             clear_location: None,
+            clear_base_price_cents: None,
+            clear_price_markup_percentage: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -445,7 +544,11 @@ mod tests {
         let cmd = UpdateMaterial {
             location: None,
             min_quantity: None,
+            base_price_cents: None,
+            price_markup_percentage: None,
             clear_location: Some(true),
+            clear_base_price_cents: None,
+            clear_price_markup_percentage: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -455,7 +558,11 @@ mod tests {
         let cmd = UpdateMaterial {
             location: None,
             min_quantity: None,
+            base_price_cents: None,
+            price_markup_percentage: None,
             clear_location: None,
+            clear_base_price_cents: None,
+            clear_price_markup_percentage: None,
         };
         assert!(cmd.validate().is_ok());
     }
@@ -465,7 +572,11 @@ mod tests {
         let cmd = UpdateMaterial {
             location: None,
             min_quantity: Some(-1),
+            base_price_cents: None,
+            price_markup_percentage: None,
             clear_location: None,
+            clear_base_price_cents: None,
+            clear_price_markup_percentage: None,
         };
         assert_eq!(
             cmd.validate(),
@@ -478,11 +589,87 @@ mod tests {
         let cmd = UpdateMaterial {
             location: Some("Lager A".to_string()),
             min_quantity: None,
+            base_price_cents: None,
+            price_markup_percentage: None,
             clear_location: Some(true),
+            clear_base_price_cents: None,
+            clear_price_markup_percentage: None,
         };
         assert_eq!(
             cmd.validate(),
             Err("Cannot set location and clear location at the same time".to_string())
+        );
+    }
+
+    #[test]
+    fn update_material_validate_fails_with_negative_base_price() {
+        let cmd = UpdateMaterial {
+            location: None,
+            min_quantity: None,
+            base_price_cents: Some(-1),
+            price_markup_percentage: None,
+            clear_location: None,
+            clear_base_price_cents: None,
+            clear_price_markup_percentage: None,
+        };
+
+        assert_eq!(
+            cmd.validate(),
+            Err("Base price cannot be negative".to_string())
+        );
+    }
+
+    #[test]
+    fn update_material_validate_fails_with_negative_price_markup() {
+        let cmd = UpdateMaterial {
+            location: None,
+            min_quantity: None,
+            base_price_cents: None,
+            price_markup_percentage: Some(-1),
+            clear_location: None,
+            clear_base_price_cents: None,
+            clear_price_markup_percentage: None,
+        };
+
+        assert_eq!(
+            cmd.validate(),
+            Err("Price markup cannot be negative".to_string())
+        );
+    }
+
+    #[test]
+    fn update_material_validate_fails_when_base_price_is_set_and_cleared() {
+        let cmd = UpdateMaterial {
+            location: None,
+            min_quantity: None,
+            base_price_cents: Some(100),
+            price_markup_percentage: None,
+            clear_location: None,
+            clear_base_price_cents: Some(true),
+            clear_price_markup_percentage: None,
+        };
+
+        assert_eq!(
+            cmd.validate(),
+            Err("Cannot set base price and clear base price at the same time".to_string())
+        );
+    }
+
+    #[test]
+    fn update_material_validate_fails_when_markup_is_set_and_cleared() {
+        let cmd = UpdateMaterial {
+            location: None,
+            min_quantity: None,
+            base_price_cents: None,
+            price_markup_percentage: Some(10),
+            clear_location: None,
+            clear_base_price_cents: None,
+            clear_price_markup_percentage: Some(true),
+        };
+
+        assert_eq!(
+            cmd.validate(),
+            Err("Cannot set price markup and clear price markup at the same time".to_string())
         );
     }
 

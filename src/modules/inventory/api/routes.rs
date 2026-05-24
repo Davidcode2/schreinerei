@@ -176,6 +176,8 @@ pub struct MaterialResponse {
     pub next_expiry_on: Option<String>,
     pub expiry_batches: Vec<ExpiryBatchResponse>,
     pub location: Option<String>,
+    pub base_price_cents: Option<i64>,
+    pub price_markup_percentage: Option<i32>,
     pub qr_code: Option<String>,
     pub is_low_stock: bool,
     pub created_at: String,
@@ -202,6 +204,8 @@ impl From<crate::modules::inventory::domain::Material> for MaterialResponse {
                 .map(ExpiryBatchResponse::from)
                 .collect(),
             location: mat.location,
+            base_price_cents: mat.base_price_cents,
+            price_markup_percentage: mat.price_markup_percentage,
             qr_code: mat.qr_code,
             is_low_stock: mat.quantity <= mat.min_quantity,
             created_at: mat.created_at.to_rfc3339(),
@@ -219,6 +223,8 @@ pub struct CreateMaterialRequest {
     pub quantity: i32,
     pub min_quantity: i32,
     pub location: Option<String>,
+    pub base_price_cents: Option<i64>,
+    pub price_markup_percentage: Option<i32>,
     pub expires_on: Option<String>,
     pub batch_code: Option<String>,
 }
@@ -231,7 +237,15 @@ pub struct UpdateMaterialRequest {
     #[ts(optional)]
     pub min_quantity: Option<i32>,
     #[ts(optional)]
+    pub base_price_cents: Option<i64>,
+    #[ts(optional)]
+    pub price_markup_percentage: Option<i32>,
+    #[ts(optional)]
     pub clear_location: Option<bool>,
+    #[ts(optional)]
+    pub clear_base_price_cents: Option<bool>,
+    #[ts(optional)]
+    pub clear_price_markup_percentage: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -495,7 +509,11 @@ impl From<UpdateMaterialRequest> for UpdateMaterial {
         Self {
             location: request.location,
             min_quantity: request.min_quantity,
+            base_price_cents: request.base_price_cents,
+            price_markup_percentage: request.price_markup_percentage,
             clear_location: request.clear_location,
+            clear_base_price_cents: request.clear_base_price_cents,
+            clear_price_markup_percentage: request.clear_price_markup_percentage,
         }
     }
 }
@@ -648,6 +666,8 @@ pub async fn create_material(
         quantity: request.quantity,
         min_quantity: request.min_quantity,
         location: request.location,
+        base_price_cents: request.base_price_cents,
+        price_markup_percentage: request.price_markup_percentage,
         expires_on: parse_optional_date(request.expires_on, "MHD")?,
         batch_code: normalize_optional_text(request.batch_code),
     };
@@ -1159,13 +1179,21 @@ mod tests {
         let update: UpdateMaterial = UpdateMaterialRequest {
             location: None,
             min_quantity: None,
+            base_price_cents: None,
+            price_markup_percentage: None,
             clear_location: Some(true),
+            clear_base_price_cents: Some(true),
+            clear_price_markup_percentage: Some(true),
         }
         .into();
 
         assert_eq!(update.location, None);
         assert_eq!(update.min_quantity, None);
+        assert_eq!(update.base_price_cents, None);
+        assert_eq!(update.price_markup_percentage, None);
         assert_eq!(update.clear_location, Some(true));
+        assert_eq!(update.clear_base_price_cents, Some(true));
+        assert_eq!(update.clear_price_markup_percentage, Some(true));
     }
 
     #[test]

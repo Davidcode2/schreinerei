@@ -38,13 +38,13 @@ export type CreateMaintenanceScheduleRequest = { asset_id: string, task_descript
 
 export type CreateMaintenanceScheduleResponse = { schedule: MaintenanceScheduleResponse, due: MaintenanceDueResponse, };
 
-export type CreateMaterialRequest = { category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, location: string | null, expires_on: string | null, batch_code: string | null, };
+export type CreateMaterialRequest = { category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, location: string | null, base_price_cents: bigint | null, price_markup_percentage: number | null, expires_on: string | null, batch_code: string | null, };
 
 export type CreateOnboardingSessionRequest = { organization_name: string, admin_email: string, admin_name: string | null, selected_plan: string, };
 
 export type CreateOrderRequestDto = { material_id: string, quantity: number, reason: string | null, };
 
-export type CreateProjectInvoiceRequest = { sender_name: string | null, sender_address: string | null, invoice_pricing_mode: string | null, hourly_rate_cents: bigint | null, fixed_price_cents: bigint | null, };
+export type CreateProjectInvoiceRequest = { sender_name: string | null, sender_address: string | null, invoice_pricing_mode: string | null, hourly_rate_cents: bigint | null, fixed_price_cents: bigint | null, material_overrides: Array<ProjectInvoiceMaterialOverrideRequest> | null, };
 
 export type CreateReservationRequest = { resource_type: string, resource_id: string, site_id: string | null, project_id: string | null, start_time: string, end_time: string, purpose: string | null, notes: string | null, };
 
@@ -104,7 +104,7 @@ export type MaintenanceScheduleResponse = { id: string, asset_id: string, task_d
 
 export type MarkOrderedRequestDto = { notes: string | null, };
 
-export type MaterialResponse = { id: string, category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, can_expire: boolean, legacy_quantity: number, expired_quantity: number, expiring_soon_quantity: number, next_expiry_on: string | null, expiry_batches: Array<ExpiryBatchResponse>, location: string | null, qr_code: string | null, is_low_stock: boolean, created_at: string, };
+export type MaterialResponse = { id: string, category_id: string, name: string, description: string | null, unit: string, quantity: number, min_quantity: number, can_expire: boolean, legacy_quantity: number, expired_quantity: number, expiring_soon_quantity: number, next_expiry_on: string | null, expiry_batches: Array<ExpiryBatchResponse>, location: string | null, base_price_cents: bigint | null, price_markup_percentage: number | null, qr_code: string | null, is_low_stock: boolean, created_at: string, };
 
 export type MollieWebhookRequest = { id: string, };
 
@@ -131,11 +131,13 @@ export type ProjectInvoiceDraftResponse = { invoice: InvoiceResponse, project: S
 
 export type ProjectInvoiceLineItemResponse = { source: string, description: string, quantity: number, unit: string, source_count: bigint, priced: boolean, unit_price_cents: bigint | null, line_total_cents: bigint | null, };
 
+export type ProjectInvoiceMaterialOverrideRequest = { material_id: string, price_markup_percentage: number, };
+
 export type ProjectLaborSummaryResponse = { total_hours: number, entry_count: bigint, site_hours: number, workshop_hours: number, last_work_date: string | null, };
 
 export type ProjectMaterialSummaryResponse = { distinct_material_count: bigint, withdrawal_count: bigint, lines: Array<ProjectMaterialUsageLineResponse>, };
 
-export type ProjectMaterialUsageLineResponse = { material_id: string, material_name: string, category_name: string, unit: string, total_withdrawn: number, withdrawal_count: bigint, last_withdrawn_at: string, };
+export type ProjectMaterialUsageLineResponse = { material_id: string, material_name: string, category_name: string, unit: string, base_price_cents: bigint | null, price_markup_percentage: number | null, total_withdrawn: number, withdrawal_count: bigint, last_withdrawn_at: string, };
 
 export type PublicInviteResponse = { email: string, role: string, status: string, expires_at: string, };
 
@@ -192,7 +194,7 @@ export type UpdateCategoryRequest = { name?: string, description?: string, can_e
 
 export type UpdateMachineRequest = { name: string | null, machine_type: string | null, description: string | null, status: string | null, location: string | null, qr_code: string | null, };
 
-export type UpdateMaterialRequest = { location?: string, min_quantity?: number, clear_location?: boolean, };
+export type UpdateMaterialRequest = { location?: string, min_quantity?: number, base_price_cents?: bigint, price_markup_percentage?: number, clear_location?: boolean, clear_base_price_cents?: boolean, clear_price_markup_percentage?: boolean, };
 
 export type UpdatePreferences = { active_site_id: string | null, };
 

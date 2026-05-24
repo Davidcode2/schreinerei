@@ -8,6 +8,7 @@ use axum::{
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
+use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::sync::Arc;
 use ts_rs::TS;
@@ -77,6 +78,14 @@ pub struct CreateProjectInvoiceRequest {
     pub invoice_pricing_mode: Option<String>,
     pub hourly_rate_cents: Option<i64>,
     pub fixed_price_cents: Option<i64>,
+    pub material_overrides: Option<Vec<ProjectInvoiceMaterialOverrideRequest>>,
+}
+
+#[derive(Debug, Clone, Deserialize, TS)]
+#[ts(export)]
+pub struct ProjectInvoiceMaterialOverrideRequest {
+    pub material_id: Uuid,
+    pub price_markup_percentage: i32,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -366,8 +375,59 @@ fn apply_invoice_overrides(
     summary.site.invoice_pricing_mode = pricing.mode;
     summary.site.hourly_rate_cents = pricing.hourly_rate_cents;
     summary.site.fixed_price_cents = pricing.fixed_price_cents;
+    apply_material_overrides(&mut summary, request.material_overrides.as_deref())?;
 
     Ok(summary)
+}
+
+fn apply_material_overrides(
+    summary: &mut InvoiceSummary,
+    overrides: Option<&[ProjectInvoiceMaterialOverrideRequest]>,
+) -> Result<(), AppError> {
+    let Some(overrides) = overrides else {
+        return Ok(());
+    };
+
+    let known_material_ids: HashSet<Uuid> = summary
+        .project
+        .materials
+        .lines
+        .iter()
+        .map(|line| line.material_id.0)
+        .collect();
+    let mut overrides_by_material = HashMap::new();
+
+    for override_entry in overrides {
+        if override_entry.price_markup_percentage < 0 {
+            return Err(AppError::Validation(
+                "Material markup cannot be negative".to_string(),
+            ));
+        }
+        if !known_material_ids.contains(&override_entry.material_id) {
+            return Err(AppError::Validation(
+                "Material override references an unknown project material".to_string(),
+            ));
+        }
+        if overrides_by_material
+            .insert(
+                override_entry.material_id,
+                override_entry.price_markup_percentage,
+            )
+            .is_some()
+        {
+            return Err(AppError::Validation(
+                "Material override contains duplicate materials".to_string(),
+            ));
+        }
+    }
+
+    for line in &mut summary.project.materials.lines {
+        if let Some(markup_percentage) = overrides_by_material.get(&line.material_id.0) {
+            line.price_markup_percentage = Some(*markup_percentage);
+        }
+    }
+
+    Ok(())
 }
 
 fn resolve_invoice_pricing(
@@ -656,28 +716,39 @@ fn invoice_line_items(summary: &InvoiceSummary) -> Vec<ProjectInvoiceLineItemRes
         }
     }
 
-    lines.extend(
-        project
-            .materials
-            .lines
-            .iter()
-            .map(|line| ProjectInvoiceLineItemResponse {
-                source: "material".to_string(),
-                description: format!("{} ({})", line.material_name, line.category_name),
-                quantity: f64::from(line.total_withdrawn),
-                unit: line.unit.clone(),
-                source_count: line.withdrawal_count,
-                priced: false,
-                unit_price_cents: None,
-                line_total_cents: None,
+    lines.extend(project.materials.lines.iter().map(|line| {
+        let unit_price_cents =
+            resolved_material_unit_price_cents(line.base_price_cents, line.price_markup_percentage);
+
+        ProjectInvoiceLineItemResponse {
+            source: "material".to_string(),
+            description: format!("{} ({})", line.material_name, line.category_name),
+            quantity: f64::from(line.total_withdrawn),
+            unit: line.unit.clone(),
+            source_count: line.withdrawal_count,
+            priced: unit_price_cents.is_some(),
+            unit_price_cents,
+            line_total_cents: unit_price_cents.map(|unit_price_cents| {
+                euro_cents_from_quantity(f64::from(line.total_withdrawn), unit_price_cents)
             }),
-    );
+        }
+    }));
 
     lines
 }
 
 fn euro_cents_from_quantity(quantity: f64, unit_price_cents: i64) -> i64 {
     ((quantity * (unit_price_cents as f64)).round()) as i64
+}
+
+fn resolved_material_unit_price_cents(
+    base_price_cents: Option<i64>,
+    price_markup_percentage: Option<i32>,
+) -> Option<i64> {
+    base_price_cents.map(|base_price_cents| {
+        let markup_percentage = i64::from(price_markup_percentage.unwrap_or(0));
+        ((base_price_cents * (100 + markup_percentage)) + 50) / 100
+    })
 }
 
 #[cfg(test)]
@@ -720,6 +791,8 @@ mod tests {
                         material_name: "Eiche Leimholz".to_string(),
                         category_name: "Platten".to_string(),
                         unit: "Stk".to_string(),
+                        base_price_cents: None,
+                        price_markup_percentage: None,
                         total_withdrawn: 4,
                         withdrawal_count: 2,
                         last_withdrawn_at: Utc::now(),
@@ -738,6 +811,44 @@ mod tests {
         assert_eq!(lines[2].description, "Eiche Leimholz (Platten)");
         assert!(lines.iter().all(|line| !line.priced));
         assert!(lines.iter().all(|line| line.line_total_cents.is_none()));
+    }
+
+    #[test]
+    fn invoice_line_items_price_materials_from_base_price_and_markup() {
+        let summary = InvoiceSummary {
+            site: test_site(None, None, None),
+            project: ProjectSummary {
+                labor: ProjectLaborSummary {
+                    total_hours: 0.0,
+                    entry_count: 0,
+                    site_hours: 0.0,
+                    workshop_hours: 0.0,
+                    last_work_date: None,
+                },
+                materials: ProjectMaterialSummary {
+                    distinct_material_count: 1,
+                    withdrawal_count: 1,
+                    lines: vec![ProjectMaterialUsageLine {
+                        material_id: MaterialId(Uuid::new_v4()),
+                        material_name: "Birke".to_string(),
+                        category_name: "Platten".to_string(),
+                        unit: "Stk".to_string(),
+                        base_price_cents: Some(10_000),
+                        price_markup_percentage: Some(15),
+                        total_withdrawn: 2,
+                        withdrawal_count: 1,
+                        last_withdrawn_at: Utc::now(),
+                    }],
+                },
+            },
+        };
+
+        let lines = invoice_line_items(&summary);
+
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0].unit_price_cents, Some(11_500));
+        assert_eq!(lines[0].line_total_cents, Some(23_000));
+        assert!(lines[0].priced);
     }
 
     #[test]
@@ -964,6 +1075,7 @@ mod tests {
                 invoice_pricing_mode: None,
                 hourly_rate_cents: None,
                 fixed_price_cents: None,
+                material_overrides: None,
             }),
         )
         .await
@@ -1086,6 +1198,7 @@ mod tests {
                 invoice_pricing_mode: Some("fixed_price".to_string()),
                 hourly_rate_cents: None,
                 fixed_price_cents: Some(150_000),
+                material_overrides: None,
             }),
         )
         .await
@@ -1125,6 +1238,7 @@ mod tests {
                 invoice_pricing_mode: Some("fixed_price".to_string()),
                 hourly_rate_cents: None,
                 fixed_price_cents: None,
+                material_overrides: None,
             }),
         )
         .await;
@@ -1251,6 +1365,7 @@ mod tests {
             invoice_pricing_mode: None,
             hourly_rate_cents: None,
             fixed_price_cents: None,
+            material_overrides: None,
         }
     }
 

@@ -63,6 +63,7 @@ fn generate_typescript() -> Result<String> {
 fn collect_bindings(cfg: &Config, bindings: &mut Vec<Binding>) -> Result<()> {
     add_binding::<billing::InvoiceResponse>(cfg, bindings)?;
     add_binding::<billing::CreateProjectInvoiceRequest>(cfg, bindings)?;
+    add_binding::<billing::ProjectInvoiceMaterialOverrideRequest>(cfg, bindings)?;
     add_binding::<billing::ProjectInvoiceDraftResponse>(cfg, bindings)?;
     add_binding::<billing::ProjectInvoiceLineItemResponse>(cfg, bindings)?;
     add_binding::<billing::PdfArtifactResponse>(cfg, bindings)?;

@@ -7,7 +7,6 @@ import type {
   SiteAppointmentResponse as GeneratedSiteAppointmentResponse,
   SiteAppointmentsQuery as GeneratedSiteAppointmentsQuery,
   SiteInvoiceSummaryResponse as GeneratedSiteInvoiceSummaryResponse,
-  SiteProjectSummaryResponse as GeneratedSiteProjectSummaryResponse,
   UpdateSiteAppointmentRequest as GeneratedUpdateSiteAppointmentRequest,
 } from '@/types/generated'
 
@@ -214,11 +213,45 @@ export interface DashboardSite {
   total_hours: number
 }
 
-export type SiteProjectSummary = GeneratedSiteProjectSummaryResponse
+export interface ProjectMaterialUsageLine {
+  material_id: string
+  material_name: string
+  category_name: string
+  unit: string
+  base_price_cents: number | null
+  price_markup_percentage: number | null
+  total_withdrawn: number
+  withdrawal_count: number
+  last_withdrawn_at: string
+}
+
+export interface ProjectMaterialSummary {
+  distinct_material_count: number
+  withdrawal_count: number
+  lines: ProjectMaterialUsageLine[]
+}
+
+export interface ProjectLaborSummary {
+  total_hours: number
+  entry_count: number
+  site_hours: number
+  workshop_hours: number
+  last_work_date: string | null
+}
+
+export interface SiteProjectSummary {
+  labor: ProjectLaborSummary
+  materials: ProjectMaterialSummary
+}
 
 export type SiteInvoiceSummary = GeneratedSiteInvoiceSummaryResponse
 
 export type SiteInvoice = GeneratedInvoiceResponse
+
+export interface ProjectInvoiceMaterialOverride {
+  material_id: string
+  price_markup_percentage: number
+}
 
 export interface CreateProjectInvoiceRequest {
   sender_name?: string | null
@@ -226,6 +259,7 @@ export interface CreateProjectInvoiceRequest {
   invoice_pricing_mode?: InvoicePricingMode | null
   hourly_rate_cents?: number | null
   fixed_price_cents?: number | null
+  material_overrides?: ProjectInvoiceMaterialOverride[] | null
 }
 
 export type ProjectInvoiceDraft = GeneratedProjectInvoiceDraftResponse
