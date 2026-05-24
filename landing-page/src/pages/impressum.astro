@@ -1,0 +1,94 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro"
+---
+
+<BaseLayout
+  title="Impressum | Schreinerei"
+  description="Impressum der Schreinerei Landingpage gemaess aktueller DDG-Struktur."
+>
+  <main class="shell py-10 md:py-16">
+    <a href="/" class="secondary-button">Zur Startseite</a>
+
+    <section class="mx-auto mt-8 max-w-3xl rounded-[2rem] border border-border/70 bg-white px-6 py-8 shadow-[0_18px_50px_rgba(0,0,0,0.08)] md:px-10 md:py-10">
+      <span class="eyebrow">Rechtliches</span>
+      <h1 class="mt-5 text-4xl text-foreground sm:text-5xl">Impressum</h1>
+      <p class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
+        Diese Seite ist technisch fertig vorbereitet, enthaelt aber derzeit noch Platzhalter fuer die gesetzlich noetigen
+        Unternehmensdaten. Vor dem Go-live muessen die markierten Felder mit den echten Angaben ersetzt und rechtlich
+        geprueft werden.
+      </p>
+
+      <div class="mt-8 space-y-8 text-sm leading-7 text-muted-foreground">
+        <section>
+          <h2 class="text-2xl text-foreground">Angaben gemaess § 5 DDG</h2>
+          <p class="mt-3">
+            <strong>[Unternehmensname / Betreiber]</strong><br />
+            [Rechtsform, falls vorhanden]<br />
+            [Strasse und Hausnummer]<br />
+            [PLZ] [Ort]<br />
+            Deutschland
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl text-foreground">Kontakt</h2>
+          <p class="mt-3">
+            E-Mail: <a class="text-primary underline underline-offset-4" href="mailto:[email@example.de]">[email@example.de]</a><br />
+            Telefon: [Telefonnummer]
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl text-foreground">Registereintrag</h2>
+          <p class="mt-3">
+            Handelsregister: [Registergericht]<br />
+            Registernummer: [HRB/HRA Nummer]
+          </p>
+          <p class="mt-3 text-xs leading-6 text-muted-foreground">
+            Falls kein Registereintrag besteht, diesen Abschnitt entfernen oder passend ersetzen.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl text-foreground">Umsatzsteuer</h2>
+          <p class="mt-3">
+            Umsatzsteuer-Identifikationsnummer gemaess § 27 a Umsatzsteuergesetz: [USt-IdNr.]<br />
+            Alternativ bei Kleinunternehmerregelung: Gemaess § 19 UStG wird keine Umsatzsteuer ausgewiesen.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl text-foreground">Verantwortlich fuer den Inhalt gemaess § 18 Abs. 2 MStV</h2>
+          <p class="mt-3">
+            [Vor- und Nachname]<br />
+            [Strasse und Hausnummer]<br />
+            [PLZ] [Ort]
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl text-foreground">EU-Streitbeilegung</h2>
+          <p class="mt-3">
+            Die Europaeische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:
+            <a
+              class="text-primary underline underline-offset-4"
+              href="https://ec.europa.eu/consumers/odr/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              https://ec.europa.eu/consumers/odr/
+            </a>
+            . Unsere E-Mail-Adresse finden Sie oben im Impressum.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl text-foreground">Verbraucherstreitbeilegung</h2>
+          <p class="mt-3">
+            Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
+          </p>
+        </section>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

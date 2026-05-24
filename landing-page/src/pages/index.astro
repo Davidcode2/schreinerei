@@ -1,0 +1,443 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro"
+import AppScreenshotPlaceholder from "../components/AppScreenshotPlaceholder.astro"
+
+const appUrl = (import.meta.env.PUBLIC_APP_URL ?? "http://localhost:5173").replace(/\/$/, "")
+const loginUrl = `${appUrl}/login`
+const signupUrl = `${appUrl}/signup`
+
+const features = [
+  {
+    title: "Baustellen im Blick",
+    copy: "Verfolge Projekte, Stunden, Budget und Fortschritt an einem Ort statt in verstreuten Listen, Fotos und Telefonnotizen.",
+  },
+  {
+    title: "Material ohne Sucherei",
+    copy: "Bestände, Entnahmen und Kategorien bleiben nachvollziehbar. Das hilft besonders kleinen Werkstätten, die pragmatisch arbeiten wollen.",
+  },
+  {
+    title: "Werkzeuge und Fahrzeuge organisiert",
+    copy: "Behalte im Alltag im Blick, wer was nutzt, was reserviert ist und welches Fahrzeug oder Werkzeug gerade verfügbar bleibt.",
+  },
+  {
+    title: "Mobile Zeiterfassung",
+    copy: "Zeiten landen direkt im System und nicht erst abends auf Zetteln. Das spart Rückfragen im Büro und Nacharbeit auf der Baustelle.",
+  },
+  {
+    title: "Einfaches Onboarding",
+    copy: "Klare Oberfläche, klare Wege, keine Tariflogik. Teams können schnell starten, ohne sich durch ein großes Generalistenprodukt zu kämpfen.",
+  },
+  {
+    title: "Gebaut für deutsche Schreinerbetriebe",
+    copy: "Die Sprache, Abläufe und Prioritäten passen zu kleinen Schreinereien und Tischlereien in Deutschland statt zu allen Gewerken gleichzeitig.",
+  },
+]
+
+const faqs = [
+  {
+    question: "Für wen ist Schreinerei gedacht?",
+    answer: "Für kleine Schreinereien und Tischlereien in Deutschland, die ihre Büroarbeit, Baustellenorganisation und Teamabläufe sauber digitalisieren wollen, ohne ein überladenes System einzuführen.",
+  },
+  {
+    question: "Was kostet das Tool?",
+    answer: "30 Euro pro Monat. Es gibt bewusst nur einen Tarif: alles inklusive, ohne Add-ons und ohne komplizierte Paketlogik.",
+  },
+  {
+    question: "Kann ich direkt loslegen?",
+    answer: "Ja. Die Landingpage führt direkt zur Anmeldung oder zur Organisationserstellung im bestehenden Frontend. Der Einstieg ist auf einen klaren Pfad reduziert.",
+  },
+  {
+    question: "Warum nicht einfach Plancraft oder HERO?",
+    answer: "Diese Produkte sind starke Generalisten. Schreinerei positioniert sich bewusst schmaler: fokussierter auf kleine Holzbetriebe, klarer im Pricing und leichter im Einstieg.",
+  },
+]
+
+const comparisonRows = [
+  {
+    label: "Fokus auf kleine Schreinereien & Tischlereien",
+    schreinerei: "Konsequent",
+    plancraft: "Teilweise",
+    hero: "Teilweise",
+  },
+  {
+    label: "Einfaches Pricing",
+    schreinerei: "1 Tarif, 30 EUR",
+    plancraft: "Mehrstufig",
+    hero: "Beratungsintensiver",
+  },
+  {
+    label: "Produktpositionierung",
+    schreinerei: "Spezialisiert",
+    plancraft: "Breit im Handwerk",
+    hero: "Sehr breit im Handwerk",
+  },
+  {
+    label: "Einstieg ohne Produktballast",
+    schreinerei: "Sehr hoch",
+    plancraft: "Mittel",
+    hero: "Mittel",
+  },
+  {
+    label: "Alles in einem Tarif",
+    schreinerei: "Ja",
+    plancraft: "Nicht im Fokus",
+    hero: "Nicht im Fokus",
+  },
+]
+---
+
+<BaseLayout
+  title="Schreinerei | Die Software für kleine Schreinereien und Tischlereien"
+  description="Kundenorientierte Landingpage für Schreinerei: Baustellen, Material, Zeiten und Betrieb im Griff. Ein Tarif, alles inklusive, 30 Euro pro Monat."
+>
+  <header class="shell pt-6">
+    <div class="glass-card flex items-center justify-between gap-4 px-5 py-4 sm:px-6">
+      <a href="#top" class="flex items-center gap-3">
+        <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground shadow-lg shadow-primary/20">S</span>
+        <span>
+          <span class="block font-display text-2xl leading-none text-foreground">Schreinerei</span>
+          <span class="block pt-1 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Software für Holzbetriebe</span>
+        </span>
+      </a>
+
+      <nav class="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
+        <a href="#funktionen" class="hover:text-foreground">Funktionen</a>
+        <a href="#einblicke" class="hover:text-foreground">Einblicke</a>
+        <a href="#preise" class="hover:text-foreground">Preise</a>
+        <a href="#vergleich" class="hover:text-foreground">Vergleich</a>
+      </nav>
+
+      <div class="flex items-center gap-3">
+        <a class="secondary-button hidden sm:inline-flex" href={loginUrl}>Login</a>
+        <a class="primary-button" href={signupUrl}>Jetzt starten</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top" class="noise overflow-x-hidden">
+    <section class="shell relative pt-14 pb-14 md:pt-20 md:pb-24">
+      <div class="absolute left-[8%] top-14 -z-10 h-36 w-36 rounded-full bg-primary/16 blur-3xl"></div>
+      <div class="absolute right-[10%] top-36 -z-10 h-52 w-52 rounded-full bg-primary/10 blur-3xl"></div>
+
+      <div class="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+        <div>
+          <span class="eyebrow">Fokussiert auf kleine Schreinereien in Deutschland</span>
+          <h1 class="mt-6 max-w-4xl text-5xl leading-[0.95] text-foreground sm:text-6xl lg:text-7xl">
+            Weniger Bueroabende. Mehr Zeit fuer Werkstatt, Baustelle und Kunden.
+          </h1>
+          <p class="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground md:text-xl">
+            Schreinerei ist die klare Betriebssoftware fuer kleine Schreinereien und Tischlereien. Projekte,
+            Material, Zeiten und Teamablaeufe landen in einem ruhigen System statt in Zetteln, WhatsApp und
+            Tabellen.
+          </p>
+
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a class="primary-button" href={signupUrl}>Kostenpflichtig, aber simpel starten</a>
+            <a class="secondary-button" href={loginUrl}>Zum Login</a>
+          </div>
+
+          <div class="mt-8 grid max-w-2xl gap-4 sm:grid-cols-3">
+            <div class="glass-card px-5 py-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Preis</p>
+              <p class="mt-2 text-3xl font-bold text-foreground">30 EUR</p>
+              <p class="mt-1 text-sm text-muted-foreground">pro Monat, alles drin</p>
+            </div>
+            <div class="glass-card px-5 py-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Ausrichtung</p>
+              <p class="mt-2 text-3xl font-bold text-foreground">1 Fokus</p>
+              <p class="mt-1 text-sm text-muted-foreground">kleine Holzbetriebe</p>
+            </div>
+            <div class="glass-card px-5 py-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Einrichtung</p>
+              <p class="mt-2 text-3xl font-bold text-foreground">Schnell</p>
+              <p class="mt-1 text-sm text-muted-foreground">ohne Tarifchaos</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card relative overflow-hidden rounded-[2rem] p-4 md:p-6">
+          <div class="absolute inset-x-10 top-0 h-24 rounded-full bg-primary/15 blur-3xl"></div>
+          <div class="relative rounded-[1.6rem] border border-white/70 bg-[linear-gradient(160deg,rgba(134,59,255,0.13),rgba(255,255,255,0.95)_42%,rgba(237,230,255,0.75))] p-5 shadow-[0_30px_80px_rgba(106,45,204,0.16)]">
+            <div class="flex items-center justify-between gap-4 border-b border-white/70 pb-4">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-primary">Schreinerei Cockpit</p>
+                <h2 class="mt-2 text-3xl text-foreground">Ein ruhiger Blick auf den ganzen Betrieb</h2>
+              </div>
+              <span class="rounded-full border border-primary/15 bg-white px-3 py-1 text-xs font-semibold text-primary">PWA</span>
+            </div>
+
+            <div class="mt-5 grid gap-4 sm:grid-cols-[1.15fr_0.85fr]">
+              <div class="rounded-[1.4rem] border border-white/80 bg-white/90 p-4 shadow-sm">
+                <div class="flex items-center justify-between">
+                  <p class="text-sm font-semibold text-foreground">Heute im Betrieb</p>
+                  <span class="rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground">Live</span>
+                </div>
+                <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div class="rounded-2xl bg-secondary/80 p-4">
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Baustellen</p>
+                    <p class="mt-2 text-3xl font-bold text-foreground">8</p>
+                    <p class="mt-1 text-sm text-muted-foreground">2 kritisch, 6 im Plan</p>
+                  </div>
+                  <div class="rounded-2xl bg-secondary/80 p-4">
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Material</p>
+                    <p class="mt-2 text-3xl font-bold text-foreground">24</p>
+                    <p class="mt-1 text-sm text-muted-foreground">Bestandsaenderungen diese Woche</p>
+                  </div>
+                  <div class="rounded-2xl bg-secondary/80 p-4 sm:col-span-2">
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Heute offen</p>
+                    <div class="mt-3 space-y-3">
+                      <div class="flex items-center justify-between rounded-xl border border-border/70 px-3 py-2">
+                        <span class="text-sm font-medium text-foreground">Fensterbau Schubert</span>
+                        <span class="text-xs text-muted-foreground">3 Mitarbeiter</span>
+                      </div>
+                      <div class="flex items-center justify-between rounded-xl border border-border/70 px-3 py-2">
+                        <span class="text-sm font-medium text-foreground">Innenausbau Lenz</span>
+                        <span class="text-xs text-muted-foreground">12.5 h gebucht</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <div class="rounded-[1.4rem] border border-white/80 bg-white/90 p-4 shadow-sm">
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Warum es passt</p>
+                  <ul class="mt-3 space-y-3 text-sm leading-6 text-foreground">
+                    <li>Eine Sprache, die in der Werkstatt verstanden wird.</li>
+                    <li>Keine unnoetigen Produktmodule fuer zehn andere Gewerke.</li>
+                    <li>Ein Tarif statt Angebotsgespraech und Add-on-Liste.</li>
+                  </ul>
+                </div>
+                <div class="rounded-[1.4rem] bg-primary p-5 text-primary-foreground shadow-lg shadow-primary/20">
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">Klares Angebot</p>
+                  <p class="mt-2 text-3xl font-bold">30 EUR monatlich</p>
+                  <p class="mt-2 text-sm leading-6 text-primary-foreground/85">Ein Tarif. Alle Kernfunktionen. Keine Paketlogik zwischen Baustelle und Buero.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="shell pb-12 md:pb-20">
+      <div class="glass-card grid gap-5 px-6 py-6 md:grid-cols-4 md:px-8">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Inspiriert von guten Handwerksseiten</p>
+          <p class="mt-2 text-sm leading-6 text-muted-foreground">Die Struktur orientiert sich an bewaehrten Mustern von Plancraft und HERO: klare Nutzenargumente, Produktbilder, Vergleich und direkte CTA.</p>
+        </div>
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Fokus</p>
+          <p class="mt-2 text-lg font-semibold text-foreground">Schreiner und Tischler</p>
+        </div>
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Positionierung</p>
+          <p class="mt-2 text-lg font-semibold text-foreground">Spezialisiert statt generalistisch</p>
+        </div>
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">CTA</p>
+          <p class="mt-2 text-lg font-semibold text-foreground">Direkt zu Login und Signup</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="funktionen" class="shell py-14 md:py-20">
+      <span class="eyebrow">Was Kunden sofort verstehen sollen</span>
+      <div class="mt-5 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h2 class="max-w-3xl text-4xl leading-tight text-foreground sm:text-5xl">Alles, was kleine Holzbetriebe taeglich brauchen. Nichts, was sie ablenkt.</h2>
+        </div>
+        <p class="section-copy">
+          Die Copy folgt dem Muster erfolgreicher Handwerkerseiten: zuerst das Problem, dann der konkrete Nutzen,
+          dann der einfache Einstieg. Hier steht nicht Software um der Software willen im Mittelpunkt, sondern ein
+          entspannterer Betriebsalltag.
+        </p>
+      </div>
+
+      <div class="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {features.map((feature) => (
+          <article class="glass-card p-6">
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent text-primary">
+              <span class="text-lg font-bold">S</span>
+            </div>
+            <h3 class="mt-5 text-2xl text-foreground">{feature.title}</h3>
+            <p class="mt-3 text-sm leading-7 text-muted-foreground">{feature.copy}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section id="einblicke" class="shell py-14 md:py-20">
+      <div class="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+        <div>
+          <span class="eyebrow">Produkt-Einblicke</span>
+          <h2 class="mt-5 text-4xl leading-tight text-foreground sm:text-5xl">Zeige das Produkt, nicht nur Versprechen.</h2>
+          <p class="mt-4 section-copy">
+            Falls spaeter echte Screenshots mit Playwright erstellt werden, koennen diese Platzhalter sofort ersetzt
+            werden. Der Bereich ist bereits in das Layout eingebaut und verkauft die Anwendung visuell mit.
+          </p>
+        </div>
+        <div class="glass-card border-dashed px-5 py-4 text-sm leading-6 text-muted-foreground">
+          Aktuell sind hier hochwertige Platzhaltergrafiken eingebunden. Empfohlene spaetere Ersetzungen: Dashboard,
+          Baustellen-Detailansicht und mobile Zeiterfassung.
+        </div>
+      </div>
+
+      <div class="mt-8 grid gap-6 xl:grid-cols-3">
+        <AppScreenshotPlaceholder
+          eyebrow="Uebersicht"
+          title="Dashboard mit Tageslage"
+          description="Ein erster Blick fuer Inhaber oder Buero: Was laeuft, was ist offen, wo muss heute gehandelt werden?"
+          image="/screenshots/dashboard-placeholder.svg"
+          alt="Platzhalter fuer einen Dashboard-Screenshot der Schreinerei-App"
+        />
+        <AppScreenshotPlaceholder
+          eyebrow="Baustelle"
+          title="Projektansicht mit Zeit, Material und Verlauf"
+          description="Die wichtigste Einheit fuer den Betrieb: eine Baustelle mit allen relevanten Informationen in einer Ansicht."
+          image="/screenshots/project-placeholder.svg"
+          alt="Platzhalter fuer einen Projekt-Screenshot der Schreinerei-App"
+        />
+        <AppScreenshotPlaceholder
+          eyebrow="Mobil"
+          title="Zeiterfassung fuer unterwegs"
+          description="Auch auf dem Smartphone soll die Anwendung ruhig, klar und schnell bleiben. Genau das transportiert dieser Bereich."
+          image="/screenshots/mobile-placeholder.svg"
+          alt="Platzhalter fuer einen mobilen Screenshot der Schreinerei-App"
+        />
+      </div>
+    </section>
+
+    <section id="preise" class="shell py-14 md:py-20">
+      <div class="glass-card overflow-hidden">
+        <div class="grid gap-0 lg:grid-cols-[0.92fr_1.08fr]">
+          <div class="bg-[linear-gradient(180deg,rgba(106,45,204,0.96),rgba(85,34,173,0.98))] px-7 py-8 text-primary-foreground md:px-10 md:py-10">
+            <span class="inline-flex rounded-full border border-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em]">Preise</span>
+            <h2 class="mt-5 text-4xl leading-tight sm:text-5xl">Ein Tarif. Alles inklusive.</h2>
+            <p class="mt-4 max-w-lg text-base leading-7 text-primary-foreground/85">
+              Kleine Betriebe brauchen keine Preisarchitektur mit Rechenaufgabe. Darum gibt es bewusst nur ein Modell:
+              30 Euro pro Monat fuer die Software, die den Betrieb sauberer organisiert.
+            </p>
+          </div>
+
+          <div class="grid gap-6 px-7 py-8 md:px-10 md:py-10 lg:grid-cols-[0.9fr_1.1fr]">
+            <div class="rounded-[1.75rem] border border-primary/15 bg-accent/45 p-6">
+              <p class="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Schreinerei</p>
+              <p class="mt-4 text-6xl font-bold text-foreground">30</p>
+              <p class="mt-1 text-lg font-semibold text-foreground">EUR / Monat</p>
+              <p class="mt-4 text-sm leading-7 text-muted-foreground">
+                Alle Kernfunktionen inbegriffen. Keine Add-ons. Keine Staffelung. Keine unklare Upgrade-Grenze.
+              </p>
+              <a class="primary-button mt-6 w-full" href={signupUrl}>Organisation erstellen</a>
+            </div>
+
+            <div class="space-y-4">
+              {[
+                "Projekt- und Baustellenuebersicht",
+                "Materialverwaltung und Bestandsbewegungen",
+                "Zeit- und Aktivitaetserfassung",
+                "Werkzeug- und Fahrzeugverwaltung",
+                "Login und Signup direkt ueber das Produkt",
+                "Klares Interface ohne Tarifgrenzen im Produkt",
+              ].map((item) => (
+                <div class="flex items-start gap-3 rounded-2xl border border-border/70 bg-white px-4 py-4">
+                  <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-success"></span>
+                  <p class="text-sm leading-6 text-foreground">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="vergleich" class="shell py-14 md:py-20">
+      <span class="eyebrow">Marktvergleich</span>
+      <div class="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <h2 class="max-w-3xl text-4xl leading-tight text-foreground sm:text-5xl">Warum Schreinerei neben Plancraft und HERO einen klaren Platz hat.</h2>
+        <p class="section-copy">
+          Die Aussage ist nicht, dass die anderen Produkte schlecht sind. Die Aussage ist, dass ein fokussiertes Produkt
+          fuer kleine Schreinereien einen anderen, einfacheren Kaufgrund haben darf.
+        </p>
+      </div>
+
+      <div class="mt-8 overflow-hidden rounded-[2rem] border border-border/70 bg-white shadow-[0_20px_70px_rgba(0,0,0,0.08)]">
+        <table class="w-full border-collapse text-left">
+          <thead>
+            <tr class="bg-secondary/55 text-sm">
+              <th class="px-5 py-4 font-semibold text-muted-foreground">Kriterium</th>
+              <th class="px-5 py-4 font-semibold text-primary">Schreinerei</th>
+              <th class="px-5 py-4 font-semibold text-foreground">Plancraft</th>
+              <th class="px-5 py-4 font-semibold text-foreground">HERO</th>
+            </tr>
+          </thead>
+          <tbody>
+            {comparisonRows.map((row) => (
+              <tr class="border-t border-border/70 align-top">
+                <td class="px-5 py-4 text-sm font-medium text-foreground">{row.label}</td>
+                <td class="px-5 py-4 text-sm text-primary">{row.schreinerei}</td>
+                <td class="px-5 py-4 text-sm text-muted-foreground">{row.plancraft}</td>
+                <td class="px-5 py-4 text-sm text-muted-foreground">{row.hero}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p class="mt-4 text-sm leading-6 text-muted-foreground">
+        Vergleich auf Basis der oeffentlichen Positionierung und Seitenstruktur von Plancraft und HERO: beide adressieren
+        deutlich breiter den gesamten Handwerksmarkt, waehrend Schreinerei hier bewusst enger positioniert wird.
+      </p>
+    </section>
+
+    <section class="shell py-14 md:py-20">
+      <div class="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
+        <div>
+          <span class="eyebrow">FAQ</span>
+          <h2 class="mt-5 text-4xl leading-tight text-foreground sm:text-5xl">Die wichtigsten Fragen vor dem ersten Klick.</h2>
+        </div>
+
+        <div class="space-y-4">
+          {faqs.map((faq) => (
+            <details class="glass-card group px-6 py-5" open={faq.question === faqs[0].question}>
+              <summary class="cursor-pointer list-none text-lg font-semibold text-foreground marker:hidden">{faq.question}</summary>
+              <p class="mt-3 pr-8 text-sm leading-7 text-muted-foreground">{faq.answer}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="shell pt-6 pb-16 md:pb-24">
+      <div class="glass-card relative overflow-hidden rounded-[2.25rem] bg-[linear-gradient(135deg,rgba(134,59,255,0.14),rgba(255,255,255,0.9)_38%,rgba(237,230,255,0.65))] px-7 py-10 md:px-12 md:py-14">
+        <div class="absolute -right-10 -top-8 h-40 w-40 rounded-full bg-primary/18 blur-3xl"></div>
+        <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <span class="eyebrow">Naechster Schritt</span>
+            <h2 class="mt-5 max-w-3xl text-4xl leading-tight text-foreground sm:text-5xl">Wenn der Betrieb klein ist, darf die Software endlich wieder einfach werden.</h2>
+            <p class="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+              Landingpage, CTA und Preislogik sind auf genau einen Abschluss optimiert: interessierte Kunden direkt in den
+              bestehenden Login- oder Signup-Fluss fuehren.
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-3 sm:flex-row">
+            <a class="secondary-button" href={loginUrl}>Zum Login</a>
+            <a class="primary-button" href={signupUrl}>Jetzt Organisation anlegen</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell pb-10">
+    <div class="flex flex-col gap-4 border-t border-border/70 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+      <p>Schreinerei Landingpage fuer kleine Schreiner- und Tischlerbetriebe in Deutschland.</p>
+      <div class="flex items-center gap-5">
+        <a href="/impressum" class="hover:text-foreground">Impressum</a>
+        <a href={loginUrl} class="hover:text-foreground">Login</a>
+        <a href={signupUrl} class="hover:text-foreground">Signup</a>
+      </div>
+    </div>
+  </footer>
+</BaseLayout>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960" fill="none">
+  <rect width="1440" height="960" rx="36" fill="#F8F7FC"/>
+  <rect x="40" y="40" width="1360" height="880" rx="30" fill="white" stroke="#E3E0EB"/>
+  <rect x="84" y="84" width="290" height="792" rx="24" fill="#F2EFFA"/>
+  <rect x="114" y="122" width="104" height="104" rx="28" fill="#863BFF"/>
+  <text x="166" y="184" text-anchor="middle" fill="white" font-family="DM Sans, Arial, sans-serif" font-size="54" font-weight="700">S</text>
+  <text x="114" y="278" fill="#191824" font-family="DM Serif Display, Georgia, serif" font-size="44">Schreinerei</text>
+  <text x="114" y="322" fill="#6F6A7F" font-family="DM Sans, Arial, sans-serif" font-size="20">Landingpage Platzhalter</text>
+  <rect x="114" y="390" width="230" height="84" rx="22" fill="#863BFF" fill-opacity="0.12"/>
+  <rect x="114" y="500" width="230" height="84" rx="22" fill="#fff" stroke="#E3E0EB"/>
+  <rect x="114" y="610" width="230" height="84" rx="22" fill="#fff" stroke="#E3E0EB"/>
+  <rect x="114" y="720" width="230" height="84" rx="22" fill="#fff" stroke="#E3E0EB"/>
+  <text x="430" y="148" fill="#6A2DCC" font-family="DM Sans, Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="4">DASHBOARD</text>
+  <text x="430" y="210" fill="#191824" font-family="DM Serif Display, Georgia, serif" font-size="58">Ein Screenshot kommt hier hin.</text>
+  <text x="430" y="258" fill="#6F6A7F" font-family="DM Sans, Arial, sans-serif" font-size="24">Ersetzen durch echten App-Screenshot aus Dashboard, sobald Playwright verfuegbar ist.</text>
+  <rect x="430" y="324" width="296" height="180" rx="28" fill="#F2EFFA"/>
+  <rect x="756" y="324" width="296" height="180" rx="28" fill="#F8F7FC" stroke="#E3E0EB"/>
+  <rect x="1082" y="324" width="276" height="388" rx="28" fill="#863BFF"/>
+  <rect x="430" y="534" width="622" height="178" rx="28" fill="#fff" stroke="#E3E0EB"/>
+  <rect x="430" y="742" width="928" height="120" rx="28" fill="#F8F7FC" stroke="#E3E0EB" stroke-dasharray="10 14"/>
+  <text x="894" y="812" text-anchor="middle" fill="#6F6A7F" font-family="DM Sans, Arial, sans-serif" font-size="26">Empfohlene Motive: Tageslage, offene Baustellen, Materialbewegungen</text>
+</svg>

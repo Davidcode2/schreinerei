@@ -1,0 +1,27 @@
+---
+interface Props {
+  title: string
+  image: string
+  alt: string
+  eyebrow: string
+  description: string
+}
+
+const { title, image, alt, eyebrow, description } = Astro.props
+---
+
+<article class="glass-card overflow-hidden">
+  <div class="border-b border-border/70 px-5 py-4">
+    <p class="text-xs font-semibold uppercase tracking-[0.22em] text-primary">{eyebrow}</p>
+    <h3 class="mt-2 text-2xl text-foreground">{title}</h3>
+    <p class="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+  </div>
+  <div class="bg-[linear-gradient(180deg,rgba(134,59,255,0.08),rgba(255,255,255,0.7))] p-4">
+    <img
+      src={image}
+      alt={alt}
+      class="w-full rounded-[1.35rem] border border-white/70 bg-white shadow-[0_12px_40px_rgba(0,0,0,0.08)]"
+      loading="lazy"
+    />
+  </div>
+</article>
