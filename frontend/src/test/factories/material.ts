@@ -21,6 +21,8 @@ export function createMaterial(overrides: Partial<Material> = {}): Material {
     next_expiry_on: null,
     expiry_batches: [],
     location: 'Regal A1',
+    base_price_cents: null,
+    price_markup_percentage: null,
     qr_code: null,
     is_low_stock: false,
     created_at: new Date().toISOString(),

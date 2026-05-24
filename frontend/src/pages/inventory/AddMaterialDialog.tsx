@@ -38,6 +38,22 @@ const UNIT_OPTIONS = [
   { value: "Packung", label: "Packung" },
 ]
 
+function parseMoney(value: string): number | null {
+  const normalized = value.replace(",", ".").trim()
+  if (!normalized) return null
+  const parsed = Number(normalized)
+  if (!Number.isFinite(parsed) || parsed < 0) return null
+  return Math.round(parsed * 100)
+}
+
+function parseNonNegativeInteger(value: string): number | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const parsed = Number(trimmed)
+  if (!Number.isInteger(parsed) || parsed < 0) return null
+  return parsed
+}
+
 export function AddMaterialDialog({
   open,
   onOpenChange,
@@ -49,6 +65,8 @@ export function AddMaterialDialog({
   const [unit, setUnit] = useState("")
   const [minQuantity, setMinQuantity] = useState("")
   const [location, setLocation] = useState("")
+  const [basePrice, setBasePrice] = useState("")
+  const [priceMarkupPercentage, setPriceMarkupPercentage] = useState("")
   const [expiresOn, setExpiresOn] = useState("")
   const [batchCode, setBatchCode] = useState("")
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
@@ -64,9 +82,16 @@ export function AddMaterialDialog({
 
   const quantityValue = Number(quantity) || 0
   const requiresExpiryDate = selectedCategory?.can_expire === true && quantityValue > 0
+  const parsedBasePrice = parseMoney(basePrice)
+  const parsedMarkupPercentage = parseNonNegativeInteger(priceMarkupPercentage)
 
   const isStep1Valid = Boolean(categoryId && name && quantity && unit)
-  const isStep2Valid = Boolean(minQuantity && (!requiresExpiryDate || expiresOn))
+  const isStep2Valid = Boolean(
+    minQuantity &&
+      (!requiresExpiryDate || expiresOn) &&
+      (basePrice.trim() === "" || parsedBasePrice != null) &&
+      (priceMarkupPercentage.trim() === "" || parsedMarkupPercentage != null)
+  )
 
   const resetForm = () => {
     setCategoryId("")
@@ -75,6 +100,8 @@ export function AddMaterialDialog({
     setUnit("")
     setMinQuantity("")
     setLocation("")
+    setBasePrice("")
+    setPriceMarkupPercentage("")
     setExpiresOn("")
     setBatchCode("")
     setIsCategoryDialogOpen(false)
@@ -104,6 +131,8 @@ export function AddMaterialDialog({
         unit,
         min_quantity: Number(minQuantity),
         location: location || null,
+        base_price_cents: parsedBasePrice,
+        price_markup_percentage: parsedMarkupPercentage,
         expires_on: expiresOn || null,
         batch_code: batchCode || null,
       },
@@ -246,6 +275,37 @@ export function AddMaterialDialog({
                       value={minQuantity}
                       onChange={(event) => setMinQuantity(event.target.value)}
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="basePrice">Basispreis (EUR)</Label>
+                    <Input
+                      id="basePrice"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      inputMode="decimal"
+                      placeholder="z.B. 12,50"
+                      value={basePrice}
+                      onChange={(event) => setBasePrice(event.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="priceMarkupPercentage">Aufschlag (%)</Label>
+                    <Input
+                      id="priceMarkupPercentage"
+                      type="number"
+                      min={0}
+                      step="1"
+                      inputMode="numeric"
+                      placeholder="z.B. 15"
+                      value={priceMarkupPercentage}
+                      onChange={(event) => setPriceMarkupPercentage(event.target.value)}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Wird als Standardaufschlag fuer die Kundenrechnung verwendet.
+                    </p>
                   </div>
 
                   {selectedCategory?.can_expire && (

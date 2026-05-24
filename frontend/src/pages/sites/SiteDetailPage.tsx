@@ -682,6 +682,7 @@ export default function SiteDetailPage() {
         onOpenChange={setShowCreateInvoiceDialog}
         site={site}
         totalHours={totalHours}
+        materialLines={materialSummary?.lines ?? []}
         isPending={createInvoice.isPending}
         onSubmit={handleCreateInvoice}
       />

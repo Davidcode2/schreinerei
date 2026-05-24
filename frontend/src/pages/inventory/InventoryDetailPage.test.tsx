@@ -484,7 +484,12 @@ describe("InventoryDetailPage interactions", () => {
     await user.click(screen.getByRole("button", { name: /änderungen speichern/i }))
 
     await waitFor(() => {
-      expect(updatePayload).toEqual({ location: "Regal B2", min_quantity: 14 })
+      expect(updatePayload).toEqual({
+        location: "Regal B2",
+        min_quantity: 14,
+        clear_base_price_cents: true,
+        clear_price_markup_percentage: true,
+      })
       expect(adjustPayload).toEqual({
         quantity: 12,
         reason: "Bestandskorrektur über Materialdialog",

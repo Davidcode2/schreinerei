@@ -256,6 +256,8 @@ describe('AddMaterialDialog', () => {
       await user.click(screen.getByRole('button', { name: 'Weiter' }));
 
       await user.type(screen.getByLabelText(/mindestbestand/i), '2');
+      fireEvent.change(screen.getByLabelText(/basispreis/i), { target: { value: '12.50' } });
+      await user.type(screen.getByLabelText(/aufschlag/i), '15');
       await user.type(screen.getByLabelText(/charge \/ los/i), 'LOT-START-01');
       fireEvent.change(screen.getByLabelText(/mhd/i), { target: { value: '2026-05-20' } });
       await user.type(screen.getByLabelText(/lagerort/i), 'Regal A1');
@@ -271,6 +273,8 @@ describe('AddMaterialDialog', () => {
           unit: 'Liter',
           min_quantity: 2,
           location: 'Regal A1',
+          base_price_cents: 1250,
+          price_markup_percentage: 15,
           expires_on: '2026-05-20',
           batch_code: 'LOT-START-01',
         });

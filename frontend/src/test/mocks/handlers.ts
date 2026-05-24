@@ -42,6 +42,8 @@ export const handlers = [
       expired_quantity: 0,
       expiring_soon_quantity: 0,
       next_expiry_on: null,
+      base_price_cents: null,
+      price_markup_percentage: null,
       expiry_batches: [],
       qr_code: null,
       description: null,

@@ -228,7 +228,21 @@ describe('SiteDetailPage', () => {
       http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
       http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
         labor: { total_hours: 12.5, entry_count: 4, site_hours: 7.5, workshop_hours: 5, last_work_date: '2026-05-08' },
-        materials: { distinct_material_count: 2, withdrawal_count: 3, lines: [] },
+        materials: {
+          distinct_material_count: 2,
+          withdrawal_count: 3,
+          lines: [{
+            material_id: 'mat-1',
+            material_name: 'Montageschaum',
+            category_name: 'Chemie',
+            unit: 'Stück',
+            base_price_cents: 1200,
+            price_markup_percentage: 15,
+            total_withdrawn: 4,
+            withdrawal_count: 2,
+            last_withdrawn_at: new Date().toISOString(),
+          }],
+        },
       })),
       http.get('*/api/v1/sites/site-1/invoices', () => HttpResponse.json([
         {
@@ -297,7 +311,21 @@ describe('SiteDetailPage', () => {
       http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
       http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
         labor: { total_hours: 12.5, entry_count: 4, site_hours: 7.5, workshop_hours: 5, last_work_date: '2026-05-08' },
-        materials: { distinct_material_count: 2, withdrawal_count: 3, lines: [] },
+        materials: {
+          distinct_material_count: 2,
+          withdrawal_count: 3,
+          lines: [{
+            material_id: 'mat-1',
+            material_name: 'Montageschaum',
+            category_name: 'Chemie',
+            unit: 'Stück',
+            base_price_cents: 1200,
+            price_markup_percentage: 15,
+            total_withdrawn: 4,
+            withdrawal_count: 2,
+            last_withdrawn_at: new Date().toISOString(),
+          }],
+        },
       })),
       http.get('*/api/v1/sites/site-1/invoices', () => {
         invoiceListCalls += 1
@@ -364,6 +392,10 @@ describe('SiteDetailPage', () => {
     const user = userEvent.setup()
     await user.click(await screen.findByRole('button', { name: /rechnung erstellen/i }))
     expect(await screen.findByText(/einmalige abrechnungslogik/i)).toBeInTheDocument()
+    const materialMarkupInput = await screen.findByLabelText(/aufschlag montageschaum/i)
+    expect(materialMarkupInput).toHaveValue(15)
+    await user.clear(materialMarkupInput)
+    await user.type(materialMarkupInput, '20')
     await user.click(screen.getByRole('combobox', { name: /rechnungslogik/i }))
     await user.click(screen.getByRole('option', { name: /pauschalpreis/i }))
     await user.clear(screen.getByLabelText(/pauschalpreis/i))
@@ -374,6 +406,7 @@ describe('SiteDetailPage', () => {
       expect(submittedPayload).toMatchObject({
         invoice_pricing_mode: 'fixed_price',
         fixed_price_cents: 500000,
+        material_overrides: [{ material_id: 'mat-1', price_markup_percentage: 20 }],
       })
     })
     expect(await screen.findByText('2026-00002')).toBeInTheDocument()

@@ -22,7 +22,7 @@ describe("InventoryListPage", () => {
         name: "Multiplexplatte",
         description: "Birke 18 mm",
         location: "Regal A1",
-      }),
+      }) as unknown as Record<string, unknown>,
     ]
   })
 
@@ -54,7 +54,7 @@ describe("InventoryListPage", () => {
         legacy_quantity: 0,
         expired_quantity: 3,
         expiring_soon_quantity: 0,
-      }),
+      }) as unknown as Record<string, unknown>,
     ]
 
     render(<InventoryListPage />)
@@ -71,7 +71,7 @@ describe("InventoryListPage", () => {
         unit: "Quadratmeter",
         quantity: 12,
         min_quantity: 4,
-      }),
+      }) as unknown as Record<string, unknown>,
     ]
 
     render(<InventoryListPage />)
