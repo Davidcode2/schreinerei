@@ -26,7 +26,8 @@ use crate::modules::sites::api::routes::{
     ProjectLaborSummaryResponse, ProjectMaterialSummaryResponse, SiteInvoiceBillingResponse,
     SiteInvoiceProjectResponse,
 };
-use crate::modules::sites::application::site_service::{InvoiceSummary, ProjectSummary};
+use crate::modules::sites::application::site_service::InvoiceSummary;
+use crate::modules::sites::domain::InvoicePricingMode;
 use crate::modules::sites::infrastructure::site_repository::SiteRepository;
 use crate::AppState;
 
@@ -78,6 +79,8 @@ pub struct ProjectInvoiceLineItemResponse {
     pub unit: String,
     pub source_count: i64,
     pub priced: bool,
+    pub unit_price_cents: Option<i64>,
+    pub line_total_cents: Option<i64>,
 }
 
 #[derive(Debug, Serialize, TS)]
@@ -88,6 +91,7 @@ pub struct ProjectInvoiceDraftResponse {
     pub billing: SiteInvoiceBillingResponse,
     pub labor: ProjectLaborSummaryResponse,
     pub materials: ProjectMaterialSummaryResponse,
+    pub total_amount_cents: Option<i64>,
     pub line_items: Vec<ProjectInvoiceLineItemResponse>,
 }
 
@@ -227,17 +231,22 @@ async fn load_invoice_summary(
 }
 
 fn invoice_snapshot(summary: &InvoiceSummary) -> InvoiceSnapshot {
+    let line_items = invoice_line_items(summary);
     InvoiceSnapshot {
         project_name: summary.site.name.clone(),
         customer_name: summary.site.customer_name.clone(),
         project_location: summary.site.location.clone(),
+        invoice_pricing_mode: summary.site.invoice_pricing_mode,
+        hourly_rate_cents: summary.site.hourly_rate_cents,
+        fixed_price_cents: summary.site.fixed_price_cents,
         billing_reference: summary.site.billing_reference.clone(),
         billing_notes: summary.site.billing_notes.clone(),
         quote_reference: summary.site.quote_reference.clone(),
         budget_amount_cents: summary.site.budget_amount_cents,
         labor_total_hours: summary.project.labor.total_hours,
         material_withdrawal_count: summary.project.materials.withdrawal_count,
-        line_items: invoice_line_items(&summary.project)
+        total_amount_cents: total_amount_cents(&line_items),
+        line_items: line_items
             .into_iter()
             .map(InvoiceSnapshotLineItem::from)
             .collect(),
@@ -274,13 +283,15 @@ impl From<ProjectInvoiceLineItemResponse> for InvoiceSnapshotLineItem {
             unit: line.unit,
             source_count: line.source_count,
             priced: line.priced,
+            unit_price_cents: line.unit_price_cents,
+            line_total_cents: line.line_total_cents,
         }
     }
 }
 
 impl ProjectInvoiceDraftResponse {
     fn from_parts(invoice: Invoice, summary: InvoiceSummary) -> Self {
-        let line_items = invoice_line_items(&summary.project);
+        let line_items = invoice_line_items(&summary);
 
         Self {
             invoice: InvoiceResponse::from(invoice),
@@ -288,6 +299,7 @@ impl ProjectInvoiceDraftResponse {
             project: SiteInvoiceProjectResponse::from(summary.site),
             labor: ProjectLaborSummaryResponse::from(summary.project.labor),
             materials: ProjectMaterialSummaryResponse::from(summary.project.materials),
+            total_amount_cents: total_amount_cents(&line_items),
             line_items,
         }
     }
@@ -309,33 +321,72 @@ fn status_label(status: InvoiceStatus) -> String {
     status.as_str().to_string()
 }
 
-fn invoice_line_items(summary: &ProjectSummary) -> Vec<ProjectInvoiceLineItemResponse> {
+fn invoice_line_items(summary: &InvoiceSummary) -> Vec<ProjectInvoiceLineItemResponse> {
     let mut lines = Vec::new();
+    let project = &summary.project;
+    let pricing_mode = summary.site.invoice_pricing_mode;
+    let hourly_rate_cents = summary.site.hourly_rate_cents;
+    let fixed_price_cents = summary.site.fixed_price_cents;
 
-    if summary.labor.site_hours > 0.0 {
-        lines.push(ProjectInvoiceLineItemResponse {
-            source: "labor_site".to_string(),
-            description: "Baustellenarbeit".to_string(),
-            quantity: summary.labor.site_hours,
-            unit: "hours".to_string(),
-            source_count: summary.labor.entry_count,
-            priced: false,
-        });
-    }
+    if pricing_mode == Some(InvoicePricingMode::FixedPrice) {
+        if let Some(fixed_price_cents) = fixed_price_cents {
+            lines.push(ProjectInvoiceLineItemResponse {
+                source: "fixed_price".to_string(),
+                description: format!("Pauschalpreis {}", summary.site.name),
+                quantity: 1.0,
+                unit: "project".to_string(),
+                source_count: project.labor.entry_count,
+                priced: true,
+                unit_price_cents: Some(fixed_price_cents),
+                line_total_cents: Some(fixed_price_cents),
+            });
+        }
+    } else {
+        let site_hours_priced =
+            pricing_mode == Some(InvoicePricingMode::HourlyRate) && hourly_rate_cents.is_some();
+        let workshop_hours_priced = site_hours_priced;
 
-    if summary.labor.workshop_hours > 0.0 {
-        lines.push(ProjectInvoiceLineItemResponse {
-            source: "labor_workshop".to_string(),
-            description: "Werkstattarbeit".to_string(),
-            quantity: summary.labor.workshop_hours,
-            unit: "hours".to_string(),
-            source_count: summary.labor.entry_count,
-            priced: false,
-        });
+        if project.labor.site_hours > 0.0 {
+            let line_total_cents = if site_hours_priced {
+                hourly_rate_cents
+                    .map(|rate| euro_cents_from_quantity(project.labor.site_hours, rate))
+            } else {
+                None
+            };
+            lines.push(ProjectInvoiceLineItemResponse {
+                source: "labor_site".to_string(),
+                description: "Baustellenarbeit".to_string(),
+                quantity: project.labor.site_hours,
+                unit: "hours".to_string(),
+                source_count: project.labor.entry_count,
+                priced: site_hours_priced,
+                unit_price_cents: hourly_rate_cents.filter(|_| site_hours_priced),
+                line_total_cents,
+            });
+        }
+
+        if project.labor.workshop_hours > 0.0 {
+            let line_total_cents = if workshop_hours_priced {
+                hourly_rate_cents
+                    .map(|rate| euro_cents_from_quantity(project.labor.workshop_hours, rate))
+            } else {
+                None
+            };
+            lines.push(ProjectInvoiceLineItemResponse {
+                source: "labor_workshop".to_string(),
+                description: "Werkstattarbeit".to_string(),
+                quantity: project.labor.workshop_hours,
+                unit: "hours".to_string(),
+                source_count: project.labor.entry_count,
+                priced: workshop_hours_priced,
+                unit_price_cents: hourly_rate_cents.filter(|_| workshop_hours_priced),
+                line_total_cents,
+            });
+        }
     }
 
     lines.extend(
-        summary
+        project
             .materials
             .lines
             .iter()
@@ -346,10 +397,30 @@ fn invoice_line_items(summary: &ProjectSummary) -> Vec<ProjectInvoiceLineItemRes
                 unit: line.unit.clone(),
                 source_count: line.withdrawal_count,
                 priced: false,
+                unit_price_cents: None,
+                line_total_cents: None,
             }),
     );
 
     lines
+}
+
+fn total_amount_cents(line_items: &[ProjectInvoiceLineItemResponse]) -> Option<i64> {
+    let mut has_priced_lines = false;
+    let total: i64 = line_items
+        .iter()
+        .filter_map(|line| {
+            if line.line_total_cents.is_some() {
+                has_priced_lines = true;
+            }
+            line.line_total_cents
+        })
+        .sum();
+    has_priced_lines.then_some(total)
+}
+
+fn euro_cents_from_quantity(quantity: f64, unit_price_cents: i64) -> i64 {
+    ((quantity * (unit_price_cents as f64)).round()) as i64
 }
 
 #[cfg(test)]
@@ -367,31 +438,36 @@ mod tests {
     use crate::modules::inventory::infrastructure::material_repository::{
         ProjectMaterialSummary, ProjectMaterialUsageLine,
     };
+    use crate::modules::sites::application::site_service::ProjectSummary;
+    use crate::modules::sites::domain::InvoicePricingMode;
     use crate::modules::sites::domain::Site;
     use crate::modules::sites::infrastructure::site_repository::ProjectLaborSummary;
 
     #[test]
     fn invoice_line_items_use_actuals_without_prices() {
-        let summary = ProjectSummary {
-            labor: ProjectLaborSummary {
-                total_hours: 7.5,
-                entry_count: 3,
-                site_hours: 5.0,
-                workshop_hours: 2.5,
-                last_work_date: Some(NaiveDate::from_ymd_opt(2026, 5, 10).unwrap()),
-            },
-            materials: ProjectMaterialSummary {
-                distinct_material_count: 1,
-                withdrawal_count: 2,
-                lines: vec![ProjectMaterialUsageLine {
-                    material_id: MaterialId(Uuid::new_v4()),
-                    material_name: "Eiche Leimholz".to_string(),
-                    category_name: "Platten".to_string(),
-                    unit: "Stk".to_string(),
-                    total_withdrawn: 4,
+        let summary = InvoiceSummary {
+            site: test_site(None, None, None),
+            project: ProjectSummary {
+                labor: ProjectLaborSummary {
+                    total_hours: 7.5,
+                    entry_count: 3,
+                    site_hours: 5.0,
+                    workshop_hours: 2.5,
+                    last_work_date: Some(NaiveDate::from_ymd_opt(2026, 5, 10).unwrap()),
+                },
+                materials: ProjectMaterialSummary {
+                    distinct_material_count: 1,
                     withdrawal_count: 2,
-                    last_withdrawn_at: Utc::now(),
-                }],
+                    lines: vec![ProjectMaterialUsageLine {
+                        material_id: MaterialId(Uuid::new_v4()),
+                        material_name: "Eiche Leimholz".to_string(),
+                        category_name: "Platten".to_string(),
+                        unit: "Stk".to_string(),
+                        total_withdrawn: 4,
+                        withdrawal_count: 2,
+                        last_withdrawn_at: Utc::now(),
+                    }],
+                },
             },
         };
 
@@ -404,6 +480,71 @@ mod tests {
         assert_eq!(lines[2].source, "material");
         assert_eq!(lines[2].description, "Eiche Leimholz (Platten)");
         assert!(lines.iter().all(|line| !line.priced));
+        assert!(lines.iter().all(|line| line.line_total_cents.is_none()));
+    }
+
+    #[test]
+    fn invoice_line_items_price_labor_when_hourly_rate_mode_is_set() {
+        let summary = InvoiceSummary {
+            site: test_site(Some(InvoicePricingMode::HourlyRate), Some(8_500), None),
+            project: ProjectSummary {
+                labor: ProjectLaborSummary {
+                    total_hours: 5.5,
+                    entry_count: 2,
+                    site_hours: 3.5,
+                    workshop_hours: 2.0,
+                    last_work_date: Some(NaiveDate::from_ymd_opt(2026, 5, 10).unwrap()),
+                },
+                materials: ProjectMaterialSummary {
+                    distinct_material_count: 0,
+                    withdrawal_count: 0,
+                    lines: Vec::new(),
+                },
+            },
+        };
+
+        let lines = invoice_line_items(&summary);
+
+        assert_eq!(lines.len(), 2);
+        assert!(lines.iter().all(|line| line.priced));
+        assert_eq!(lines[0].unit_price_cents, Some(8_500));
+        assert_eq!(lines[0].line_total_cents, Some(29_750));
+        assert_eq!(lines[1].line_total_cents, Some(17_000));
+        assert_eq!(total_amount_cents(&lines), Some(46_750));
+    }
+
+    #[test]
+    fn invoice_line_items_use_fixed_price_line_when_mode_is_fixed_price() {
+        let summary = InvoiceSummary {
+            site: test_site(
+                Some(InvoicePricingMode::FixedPrice),
+                Some(8_500),
+                Some(120_000),
+            ),
+            project: ProjectSummary {
+                labor: ProjectLaborSummary {
+                    total_hours: 5.5,
+                    entry_count: 2,
+                    site_hours: 3.5,
+                    workshop_hours: 2.0,
+                    last_work_date: Some(NaiveDate::from_ymd_opt(2026, 5, 10).unwrap()),
+                },
+                materials: ProjectMaterialSummary {
+                    distinct_material_count: 0,
+                    withdrawal_count: 0,
+                    lines: Vec::new(),
+                },
+            },
+        };
+
+        let lines = invoice_line_items(&summary);
+
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0].source, "fixed_price");
+        assert_eq!(lines[0].quantity, 1.0);
+        assert_eq!(lines[0].unit_price_cents, Some(120_000));
+        assert_eq!(lines[0].line_total_cents, Some(120_000));
+        assert_eq!(total_amount_cents(&lines), Some(120_000));
     }
 
     #[test]
@@ -421,6 +562,9 @@ mod tests {
             end_date: None,
             estimated_days: Some(5),
             budget_amount_cents: Some(120_000),
+            invoice_pricing_mode: Some(InvoicePricingMode::HourlyRate),
+            hourly_rate_cents: Some(8_500),
+            fixed_price_cents: None,
             billing_reference: Some("AB-42".to_string()),
             billing_notes: Some("Nach Aufwand pruefen".to_string()),
             quote_reference: Some("Q-42".to_string()),
@@ -443,12 +587,16 @@ mod tests {
                 project_name: site.name.clone(),
                 customer_name: site.customer_name.clone(),
                 project_location: site.location.clone(),
+                invoice_pricing_mode: site.invoice_pricing_mode,
+                hourly_rate_cents: site.hourly_rate_cents,
+                fixed_price_cents: site.fixed_price_cents,
                 billing_reference: site.billing_reference.clone(),
                 billing_notes: site.billing_notes.clone(),
                 quote_reference: site.quote_reference.clone(),
                 budget_amount_cents: site.budget_amount_cents,
                 labor_total_hours: 0.0,
                 material_withdrawal_count: 0,
+                total_amount_cents: None,
                 line_items: Vec::new(),
             }),
             pdf_artifact: None,
@@ -479,6 +627,11 @@ mod tests {
         assert_eq!(response.invoice.status, "draft");
         assert_eq!(response.project.name, "Kueche Meyer");
         assert_eq!(response.billing.budget_amount_cents, Some(120_000));
+        assert_eq!(
+            response.billing.invoice_pricing_mode.as_deref(),
+            Some("hourly_rate")
+        );
+        assert_eq!(response.total_amount_cents, None);
         assert_eq!(response.line_items.len(), 0);
     }
 
@@ -554,6 +707,76 @@ mod tests {
         assert_eq!(response.materials.withdrawal_count, 1);
         assert_eq!(response.line_items.len(), 3);
         assert!(response.line_items.iter().all(|line| !line.priced));
+        assert_eq!(response.total_amount_cents, None);
+    }
+
+    #[sqlx::test]
+    async fn create_project_invoice_prices_labor_when_project_uses_hourly_rate(pool: PgPool) {
+        let tenant_id = create_tenant(&pool, "Tenant A").await;
+        let user = create_user(&pool, tenant_id, Role::Admin).await;
+        let site_id = create_site_with_billing(
+            &pool,
+            tenant_id,
+            "Project A",
+            Some("hourly_rate"),
+            Some(8_500),
+            None,
+        )
+        .await;
+        create_time_entry(&pool, tenant_id, site_id, user.local_id, "site", 3.5).await;
+        create_time_entry(&pool, tenant_id, site_id, user.local_id, "workshop", 2.0).await;
+
+        let response = create_project_invoice(
+            State(test_state(pool)),
+            tenant_context(tenant_id, user.auth_user_id, &user.email, Role::Admin),
+            Path(site_id.0),
+            Json(empty_create_request()),
+        )
+        .await
+        .expect("admin should create project invoice draft")
+        .0;
+
+        assert_eq!(
+            response.billing.invoice_pricing_mode.as_deref(),
+            Some("hourly_rate")
+        );
+        assert_eq!(response.total_amount_cents, Some(46_750));
+        assert_eq!(response.line_items[0].unit_price_cents, Some(8_500));
+        assert_eq!(response.line_items[0].line_total_cents, Some(29_750));
+        assert_eq!(response.line_items[1].line_total_cents, Some(17_000));
+    }
+
+    #[sqlx::test]
+    async fn create_project_invoice_uses_fixed_price_line_when_project_is_fixed_price(
+        pool: PgPool,
+    ) {
+        let tenant_id = create_tenant(&pool, "Tenant A").await;
+        let user = create_user(&pool, tenant_id, Role::Admin).await;
+        let site_id = create_site_with_billing(
+            &pool,
+            tenant_id,
+            "Project A",
+            Some("fixed_price"),
+            Some(8_500),
+            Some(120_000),
+        )
+        .await;
+        create_time_entry(&pool, tenant_id, site_id, user.local_id, "site", 3.5).await;
+
+        let response = create_project_invoice(
+            State(test_state(pool)),
+            tenant_context(tenant_id, user.auth_user_id, &user.email, Role::Admin),
+            Path(site_id.0),
+            Json(empty_create_request()),
+        )
+        .await
+        .expect("admin should create project invoice draft")
+        .0;
+
+        assert_eq!(response.total_amount_cents, Some(120_000));
+        assert_eq!(response.line_items[0].source, "fixed_price");
+        assert_eq!(response.line_items[0].unit_price_cents, Some(120_000));
+        assert_eq!(response.line_items[0].line_total_cents, Some(120_000));
     }
 
     #[sqlx::test]
@@ -774,24 +997,69 @@ mod tests {
     }
 
     async fn create_site(pool: &PgPool, tenant_id: TenantId, name: &str) -> SiteId {
+        create_site_with_billing(pool, tenant_id, name, None, None, None).await
+    }
+
+    async fn create_site_with_billing(
+        pool: &PgPool,
+        tenant_id: TenantId,
+        name: &str,
+        invoice_pricing_mode: Option<&str>,
+        hourly_rate_cents: Option<i64>,
+        fixed_price_cents: Option<i64>,
+    ) -> SiteId {
         let id = Uuid::new_v4();
         sqlx::query(
             r#"
             INSERT INTO sites (
                 id, tenant_id, project_type, name, customer_name, status,
-                budget_amount_cents, billing_reference, billing_notes, quote_reference
+                budget_amount_cents, invoice_pricing_mode, hourly_rate_cents, fixed_price_cents,
+                billing_reference, billing_notes, quote_reference
             )
-            VALUES ($1, $2, 'external_site', $3, 'Customer', 'active', 120000, 'BR-1', 'Billing note', 'Q-1')
+            VALUES ($1, $2, 'external_site', $3, 'Customer', 'active', $4, $5, $6, $7, 'BR-1', 'Billing note', 'Q-1')
             "#,
         )
         .bind(id)
         .bind(tenant_id.0)
         .bind(name)
+        .bind(120000_i64)
+        .bind(invoice_pricing_mode)
+        .bind(hourly_rate_cents)
+        .bind(fixed_price_cents)
         .execute(pool)
         .await
         .expect("site should be inserted");
 
         SiteId(id)
+    }
+
+    fn test_site(
+        invoice_pricing_mode: Option<InvoicePricingMode>,
+        hourly_rate_cents: Option<i64>,
+        fixed_price_cents: Option<i64>,
+    ) -> Site {
+        Site {
+            id: SiteId(Uuid::new_v4()),
+            tenant_id: TenantId(Uuid::new_v4()),
+            project_type: ProjectType::ExternalSite,
+            name: "Project A".to_string(),
+            customer_name: "Customer".to_string(),
+            location: Some("Berlin".to_string()),
+            description: None,
+            status: SiteStatus::Active,
+            start_date: None,
+            end_date: None,
+            estimated_days: Some(5),
+            budget_amount_cents: Some(120_000),
+            invoice_pricing_mode,
+            hourly_rate_cents,
+            fixed_price_cents,
+            billing_reference: Some("BR-1".to_string()),
+            billing_notes: Some("Billing note".to_string()),
+            quote_reference: Some("Q-1".to_string()),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
     }
 
     async fn create_time_entry(

@@ -98,22 +98,33 @@
 #v(16pt)
 
 #table(
-  columns: (4fr, 1.1fr, 1.3fr, 1.4fr),
-  align: (left, right, right, right),
+  columns: (3.2fr, 0.9fr, 1.1fr, 1.4fr, 1.4fr, 1.4fr),
+  align: (left, right, right, right, right, right),
   inset: 6pt,
   table.header(
     [Leistung],
     [Menge],
     [Einheit],
     [Erfasst],
+    [Satz],
+    [Summe],
   ),
   ..invoice.line_items.map(item => (
     [#item.description],
     [#item.quantity],
     [#item.unit],
     [#item.source_count],
+    [#item.unit_price],
+    [#item.line_total],
   )).flatten(),
 )
+
+#if invoice.total_amount != "" [
+  #v(10pt)
+  #align(right)[
+    *Gesamtbetrag:* #invoice.total_amount
+  ]
+]
 
 #if invoice.billing_notes != "" [
   #v(16pt)

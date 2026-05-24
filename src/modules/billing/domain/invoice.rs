@@ -4,6 +4,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use crate::common::types::{InvoiceId, SiteId, TenantId, UserId};
+use crate::modules::sites::domain::InvoicePricingMode;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -94,12 +95,16 @@ pub struct InvoiceSnapshot {
     pub project_name: String,
     pub customer_name: String,
     pub project_location: Option<String>,
+    pub invoice_pricing_mode: Option<InvoicePricingMode>,
+    pub hourly_rate_cents: Option<i64>,
+    pub fixed_price_cents: Option<i64>,
     pub billing_reference: Option<String>,
     pub billing_notes: Option<String>,
     pub quote_reference: Option<String>,
     pub budget_amount_cents: Option<i64>,
     pub labor_total_hours: f64,
     pub material_withdrawal_count: i64,
+    pub total_amount_cents: Option<i64>,
     pub line_items: Vec<InvoiceSnapshotLineItem>,
 }
 
@@ -111,4 +116,6 @@ pub struct InvoiceSnapshotLineItem {
     pub unit: String,
     pub source_count: i64,
     pub priced: bool,
+    pub unit_price_cents: Option<i64>,
+    pub line_total_cents: Option<i64>,
 }

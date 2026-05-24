@@ -1,5 +1,7 @@
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::str::FromStr;
 
 use crate::common::types::{AssignmentRole, ProjectType, SiteId, SiteStatus, TenantId, UserId};
 
@@ -18,11 +20,48 @@ pub struct Site {
     pub end_date: Option<NaiveDate>,
     pub estimated_days: Option<i32>,
     pub budget_amount_cents: Option<i64>,
+    pub invoice_pricing_mode: Option<InvoicePricingMode>,
+    pub hourly_rate_cents: Option<i64>,
+    pub fixed_price_cents: Option<i64>,
     pub billing_reference: Option<String>,
     pub billing_notes: Option<String>,
     pub quote_reference: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InvoicePricingMode {
+    HourlyRate,
+    FixedPrice,
+}
+
+impl InvoicePricingMode {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            InvoicePricingMode::HourlyRate => "hourly_rate",
+            InvoicePricingMode::FixedPrice => "fixed_price",
+        }
+    }
+}
+
+impl fmt::Display for InvoicePricingMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl FromStr for InvoicePricingMode {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value.to_lowercase().as_str() {
+            "hourly_rate" => Ok(InvoicePricingMode::HourlyRate),
+            "fixed_price" => Ok(InvoicePricingMode::FixedPrice),
+            _ => Err(format!("Invalid invoice pricing mode: {value}")),
+        }
+    }
 }
 
 impl Site {
@@ -65,6 +104,9 @@ pub struct CreateSite {
     pub end_date: Option<NaiveDate>,
     pub estimated_days: Option<i32>,
     pub budget_amount_cents: Option<i64>,
+    pub invoice_pricing_mode: Option<InvoicePricingMode>,
+    pub hourly_rate_cents: Option<i64>,
+    pub fixed_price_cents: Option<i64>,
     pub billing_reference: Option<String>,
     pub billing_notes: Option<String>,
     pub quote_reference: Option<String>,
@@ -95,6 +137,16 @@ impl CreateSite {
                 return Err("Budget amount cannot be negative".to_string());
             }
         }
+        if let Some(rate) = self.hourly_rate_cents {
+            if rate < 0 {
+                return Err("Hourly rate cannot be negative".to_string());
+            }
+        }
+        if let Some(amount) = self.fixed_price_cents {
+            if amount < 0 {
+                return Err("Fixed price cannot be negative".to_string());
+            }
+        }
         Ok(())
     }
 }
@@ -112,10 +164,16 @@ pub struct UpdateSite {
     pub end_date: Option<NaiveDate>,
     pub estimated_days: Option<i32>,
     pub budget_amount_cents: Option<i64>,
+    pub invoice_pricing_mode: Option<InvoicePricingMode>,
+    pub hourly_rate_cents: Option<i64>,
+    pub fixed_price_cents: Option<i64>,
     pub billing_reference: Option<String>,
     pub billing_notes: Option<String>,
     pub quote_reference: Option<String>,
     pub clear_budget_amount: bool,
+    pub clear_invoice_pricing_mode: bool,
+    pub clear_hourly_rate_cents: bool,
+    pub clear_fixed_price_cents: bool,
     pub clear_billing_reference: bool,
     pub clear_billing_notes: bool,
     pub clear_quote_reference: bool,
@@ -141,6 +199,16 @@ impl UpdateSite {
         if let Some(amount) = self.budget_amount_cents {
             if amount < 0 {
                 return Err("Budget amount cannot be negative".to_string());
+            }
+        }
+        if let Some(rate) = self.hourly_rate_cents {
+            if rate < 0 {
+                return Err("Hourly rate cannot be negative".to_string());
+            }
+        }
+        if let Some(amount) = self.fixed_price_cents {
+            if amount < 0 {
+                return Err("Fixed price cannot be negative".to_string());
             }
         }
         Ok(())
@@ -172,6 +240,9 @@ mod tests {
             end_date: None,
             estimated_days: None,
             budget_amount_cents: None,
+            invoice_pricing_mode: None,
+            hourly_rate_cents: None,
+            fixed_price_cents: None,
             billing_reference: None,
             billing_notes: None,
             quote_reference: None,
@@ -242,6 +313,9 @@ mod tests {
             end_date: None,
             estimated_days: None,
             budget_amount_cents: None,
+            invoice_pricing_mode: None,
+            hourly_rate_cents: None,
+            fixed_price_cents: None,
             billing_reference: None,
             billing_notes: None,
             quote_reference: None,
@@ -261,6 +335,9 @@ mod tests {
             end_date: None,
             estimated_days: None,
             budget_amount_cents: None,
+            invoice_pricing_mode: None,
+            hourly_rate_cents: None,
+            fixed_price_cents: None,
             billing_reference: None,
             billing_notes: None,
             quote_reference: None,
@@ -280,6 +357,9 @@ mod tests {
             end_date: None,
             estimated_days: None,
             budget_amount_cents: None,
+            invoice_pricing_mode: None,
+            hourly_rate_cents: None,
+            fixed_price_cents: None,
             billing_reference: None,
             billing_notes: None,
             quote_reference: None,
@@ -299,6 +379,9 @@ mod tests {
             end_date: Some(NaiveDate::from_ymd_opt(2024, 12, 1).unwrap()),
             estimated_days: None,
             budget_amount_cents: None,
+            invoice_pricing_mode: None,
+            hourly_rate_cents: None,
+            fixed_price_cents: None,
             billing_reference: None,
             billing_notes: None,
             quote_reference: None,
@@ -321,6 +404,9 @@ mod tests {
             end_date: None,
             estimated_days: Some(-5),
             budget_amount_cents: None,
+            invoice_pricing_mode: None,
+            hourly_rate_cents: None,
+            fixed_price_cents: None,
             billing_reference: None,
             billing_notes: None,
             quote_reference: None,
@@ -343,6 +429,9 @@ mod tests {
             end_date: None,
             estimated_days: Some(1),
             budget_amount_cents: Some(250000),
+            invoice_pricing_mode: Some(InvoicePricingMode::HourlyRate),
+            hourly_rate_cents: Some(8500),
+            fixed_price_cents: None,
             billing_reference: Some("BR-1".to_string()),
             billing_notes: Some("Teilrechnung".to_string()),
             quote_reference: Some("ANG-2026-01".to_string()),
@@ -363,6 +452,9 @@ mod tests {
             end_date: None,
             estimated_days: None,
             budget_amount_cents: Some(-1),
+            invoice_pricing_mode: None,
+            hourly_rate_cents: None,
+            fixed_price_cents: None,
             billing_reference: None,
             billing_notes: None,
             quote_reference: None,
@@ -375,10 +467,70 @@ mod tests {
     }
 
     #[test]
+    fn create_site_validate_fails_with_negative_hourly_rate() {
+        let cmd = CreateSite {
+            project_type: ProjectType::ExternalSite,
+            name: "Site".to_string(),
+            customer_name: "Customer".to_string(),
+            location: None,
+            description: None,
+            start_date: None,
+            end_date: None,
+            estimated_days: None,
+            budget_amount_cents: None,
+            invoice_pricing_mode: Some(InvoicePricingMode::HourlyRate),
+            hourly_rate_cents: Some(-1),
+            fixed_price_cents: None,
+            billing_reference: None,
+            billing_notes: None,
+            quote_reference: None,
+        };
+
+        assert_eq!(
+            cmd.validate(),
+            Err("Hourly rate cannot be negative".to_string())
+        );
+    }
+
+    #[test]
+    fn create_site_validate_fails_with_negative_fixed_price() {
+        let cmd = CreateSite {
+            project_type: ProjectType::ExternalSite,
+            name: "Site".to_string(),
+            customer_name: "Customer".to_string(),
+            location: None,
+            description: None,
+            start_date: None,
+            end_date: None,
+            estimated_days: None,
+            budget_amount_cents: None,
+            invoice_pricing_mode: Some(InvoicePricingMode::FixedPrice),
+            hourly_rate_cents: None,
+            fixed_price_cents: Some(-1),
+            billing_reference: None,
+            billing_notes: None,
+            quote_reference: None,
+        };
+
+        assert_eq!(
+            cmd.validate(),
+            Err("Fixed price cannot be negative".to_string())
+        );
+    }
+
+    #[test]
     fn project_type_roundtrips() {
         let parsed = "internal_workshop".parse::<ProjectType>().unwrap();
         assert_eq!(parsed, ProjectType::InternalWorkshop);
         assert_eq!(parsed.to_string(), "internal_workshop");
         assert!("invalid".parse::<ProjectType>().is_err());
+    }
+
+    #[test]
+    fn invoice_pricing_mode_roundtrips() {
+        let parsed = "hourly_rate".parse::<InvoicePricingMode>().unwrap();
+        assert_eq!(parsed, InvoicePricingMode::HourlyRate);
+        assert_eq!(parsed.to_string(), "hourly_rate");
+        assert!("invalid".parse::<InvoicePricingMode>().is_err());
     }
 }

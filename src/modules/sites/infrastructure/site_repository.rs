@@ -2,6 +2,7 @@ use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
 use std::collections::HashMap;
+use std::str::FromStr;
 use uuid::Uuid;
 
 use crate::common::error::AppError;
@@ -11,9 +12,9 @@ use crate::common::types::{
     TimeEntryId, UserId, WorkType,
 };
 use crate::modules::sites::domain::{
-    Activity, CreateActivity, CreateSite, CreateSiteAppointment, CreateTimeEntry, Site,
-    SiteActivityAttachment, SiteAppointment, SiteAppointmentKind, SiteAssignment, TimeEntry,
-    UpdateSite, UpdateSiteAppointment, UpdateTimeEntry,
+    Activity, CreateActivity, CreateSite, CreateSiteAppointment, CreateTimeEntry,
+    InvoicePricingMode, Site, SiteActivityAttachment, SiteAppointment, SiteAppointmentKind,
+    SiteAssignment, TimeEntry, UpdateSite, UpdateSiteAppointment, UpdateTimeEntry,
 };
 use crate::modules::sites::infrastructure::site_read_model::{
     classify_cost_basis, SiteReadModelRepository,
@@ -89,9 +90,9 @@ impl SiteRepository {
 
         let site = sqlx::query_as::<_, SiteRow>(
             r#"
-            INSERT INTO sites (id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-            RETURNING id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
+            INSERT INTO sites (id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, invoice_pricing_mode, hourly_rate_cents, fixed_price_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+            RETURNING id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, invoice_pricing_mode, hourly_rate_cents, fixed_price_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
             "#
         )
         .bind(id)
@@ -106,6 +107,9 @@ impl SiteRepository {
         .bind(create.end_date)
         .bind(create.estimated_days)
         .bind(create.budget_amount_cents)
+        .bind(create.invoice_pricing_mode.map(|mode| mode.as_str()))
+        .bind(create.hourly_rate_cents)
+        .bind(create.fixed_price_cents)
         .bind(&create.billing_reference)
         .bind(&create.billing_notes)
         .bind(&create.quote_reference)
@@ -131,7 +135,7 @@ impl SiteRepository {
     ) -> Result<Option<Site>, AppError> {
         let site = sqlx::query_as::<_, SiteRow>(
             r#"
-            SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
+            SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, invoice_pricing_mode, hourly_rate_cents, fixed_price_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
             FROM sites
             WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#
@@ -154,7 +158,7 @@ impl SiteRepository {
             Some(s) => {
                 sqlx::query_as::<_, SiteRow>(
                     r#"
-                    SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
+                    SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, invoice_pricing_mode, hourly_rate_cents, fixed_price_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
                     FROM sites
                     WHERE tenant_id = $1 AND status = $2 AND deleted_at IS NULL
                     ORDER BY created_at DESC
@@ -168,7 +172,7 @@ impl SiteRepository {
             None => {
                 sqlx::query_as::<_, SiteRow>(
                     r#"
-                    SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
+                    SELECT id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, invoice_pricing_mode, hourly_rate_cents, fixed_price_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
                     FROM sites
                     WHERE tenant_id = $1 AND deleted_at IS NULL
                     ORDER BY created_at DESC
@@ -220,12 +224,15 @@ impl SiteRepository {
                 end_date = COALESCE($8, end_date),
                 estimated_days = COALESCE($9, estimated_days),
                 budget_amount_cents = CASE WHEN $10 THEN NULL ELSE COALESCE($11, budget_amount_cents) END,
-                billing_reference = CASE WHEN $12 THEN NULL ELSE COALESCE($13, billing_reference) END,
-                billing_notes = CASE WHEN $14 THEN NULL ELSE COALESCE($15, billing_notes) END,
-                quote_reference = CASE WHEN $16 THEN NULL ELSE COALESCE($17, quote_reference) END,
+                invoice_pricing_mode = CASE WHEN $12 THEN NULL ELSE COALESCE($13, invoice_pricing_mode) END,
+                hourly_rate_cents = CASE WHEN $14 THEN NULL ELSE COALESCE($15, hourly_rate_cents) END,
+                fixed_price_cents = CASE WHEN $16 THEN NULL ELSE COALESCE($17, fixed_price_cents) END,
+                billing_reference = CASE WHEN $18 THEN NULL ELSE COALESCE($19, billing_reference) END,
+                billing_notes = CASE WHEN $20 THEN NULL ELSE COALESCE($21, billing_notes) END,
+                quote_reference = CASE WHEN $22 THEN NULL ELSE COALESCE($23, quote_reference) END,
                 updated_at = NOW()
-            WHERE id = $18 AND tenant_id = $19
-            RETURNING id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
+            WHERE id = $24 AND tenant_id = $25
+            RETURNING id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, invoice_pricing_mode, hourly_rate_cents, fixed_price_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at
             "#
         )
         .bind(update.project_type.as_ref().map(|p| p.as_str()))
@@ -239,6 +246,12 @@ impl SiteRepository {
         .bind(update.estimated_days)
         .bind(update.clear_budget_amount)
         .bind(update.budget_amount_cents)
+        .bind(update.clear_invoice_pricing_mode)
+        .bind(update.invoice_pricing_mode.as_ref().map(|mode| mode.as_str()))
+        .bind(update.clear_hourly_rate_cents)
+        .bind(update.hourly_rate_cents)
+        .bind(update.clear_fixed_price_cents)
+        .bind(update.fixed_price_cents)
         .bind(update.clear_billing_reference)
         .bind(&update.billing_reference)
         .bind(update.clear_billing_notes)
@@ -277,6 +290,45 @@ impl SiteRepository {
         .map_err(|e| AppError::Database(e.to_string()))?;
 
         Ok(count)
+    }
+
+    pub async fn get_default_hourly_rate_cents(
+        &self,
+        tenant_id: TenantId,
+    ) -> Result<Option<i64>, AppError> {
+        sqlx::query_scalar(
+            r#"
+            SELECT default_hourly_rate_cents
+            FROM tenants
+            WHERE id = $1
+            "#,
+        )
+        .bind(tenant_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))
+        .map(|value| value.flatten())
+    }
+
+    pub async fn set_default_hourly_rate_cents(
+        &self,
+        tenant_id: TenantId,
+        hourly_rate_cents: i64,
+    ) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+            UPDATE tenants
+            SET default_hourly_rate_cents = $2
+            WHERE id = $1
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(hourly_rate_cents)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+        Ok(())
     }
 
     /// Soft delete a site by setting deleted_at timestamp
@@ -1302,6 +1354,9 @@ struct SiteRow {
     end_date: Option<NaiveDate>,
     estimated_days: Option<i32>,
     budget_amount_cents: Option<i64>,
+    invoice_pricing_mode: Option<String>,
+    hourly_rate_cents: Option<i64>,
+    fixed_price_cents: Option<i64>,
     billing_reference: Option<String>,
     billing_notes: Option<String>,
     quote_reference: Option<String>,
@@ -1327,6 +1382,14 @@ impl SiteRow {
             end_date: self.end_date,
             estimated_days: self.estimated_days,
             budget_amount_cents: self.budget_amount_cents,
+            invoice_pricing_mode: self
+                .invoice_pricing_mode
+                .as_deref()
+                .map(InvoicePricingMode::from_str)
+                .transpose()
+                .unwrap_or(None),
+            hourly_rate_cents: self.hourly_rate_cents,
+            fixed_price_cents: self.fixed_price_cents,
             billing_reference: self.billing_reference,
             billing_notes: self.billing_notes,
             quote_reference: self.quote_reference,
