@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO site_activities (id, tenant_id, site_id, user_id, activity_type, content, photo_url, created_at)\n            VALUES ($1, $2, $3, $4, $5, $6, NULL, $7)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Varchar",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6602da35338a9f98fbc589fe67639fce920114c9e3ad2e0005b97cdf0c28e883"
+}
