@@ -1,663 +1,914 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import userEvent from '@testing-library/user-event'
-import { screen, waitFor, within } from '@testing-library/react'
-import { Route, Routes } from 'react-router-dom'
-import { http, HttpResponse } from 'msw'
-import { render } from '@/test/utils'
-import { server } from '@/test/mocks/server'
-import { useAuthStore } from '@/lib/auth/authStore'
-import SiteDetailPage from './SiteDetailPage'
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { screen, waitFor, within } from "@testing-library/react";
+import { Route, Routes } from "react-router-dom";
+import { http, HttpResponse } from "msw";
+import { render } from "@/test/utils";
+import { server } from "@/test/mocks/server";
+import { useAuthStore } from "@/lib/auth/authStore";
+import SiteDetailPage from "./SiteDetailPage";
 
 const site = {
-  id: 'site-1',
-  project_type: 'internal_workshop' as const,
-  name: 'CNC Vorbereitung',
-  customer_name: '',
-  location: 'Werkstatt',
-  description: 'Vorbereitung',
-  status: 'planned' as const,
+  id: "site-1",
+  project_type: "internal_workshop" as const,
+  name: "CNC Vorbereitung",
+  customer_name: "",
+  location: "Werkstatt",
+  description: "Vorbereitung",
+  status: "planned" as const,
   start_date: null,
   end_date: null,
   estimated_days: 2,
   budget_amount_cents: 320000,
-  invoice_pricing_mode: 'hourly_rate' as const,
+  invoice_pricing_mode: "hourly_rate" as const,
   hourly_rate_cents: 8500,
   fixed_price_cents: null,
-  billing_reference: 'BR-2',
-  billing_notes: 'Schlussrechnung nach Abnahme',
-  quote_reference: 'ANG-2026-09',
+  billing_reference: "BR-2",
+  billing_notes: "Schlussrechnung nach Abnahme",
+  quote_reference: "ANG-2026-09",
   created_at: new Date().toISOString(),
-}
+};
 
 function emptyAppointmentsResponse() {
-  return HttpResponse.json([])
+  return HttpResponse.json([]);
 }
 
-describe('SiteDetailPage', () => {
+function renderSiteDetailRoutes() {
+  return render(
+    <Routes>
+      <Route path="/sites/:id/*" element={<SiteDetailPage />} />
+    </Routes>,
+  );
+}
+
+describe("SiteDetailPage", () => {
   beforeEach(() => {
     useAuthStore.setState({
       user: {
-        id: 'user-2',
-        tenant_id: 'tenant-1',
-        email: 'employee@example.com',
-        name: 'Employee',
-        role: 'mitarbeiter',
+        id: "user-2",
+        tenant_id: "tenant-1",
+        email: "employee@example.com",
+        name: "Employee",
+        role: "mitarbeiter",
         created_at: new Date().toISOString(),
       },
       tokens: null,
       isAuthenticated: true,
       isLoading: false,
-    })
-  })
+    });
+  });
 
   afterEach(() => {
-    vi.restoreAllMocks()
-  })
+    vi.restoreAllMocks();
+  });
 
   function setAdminUser() {
     useAuthStore.setState({
       user: {
-        id: 'user-1',
-        tenant_id: 'tenant-1',
-        email: 'admin@example.com',
-        name: 'Admin',
-        role: 'admin',
+        id: "user-1",
+        tenant_id: "tenant-1",
+        email: "admin@example.com",
+        name: "Admin",
+        role: "admin",
         created_at: new Date().toISOString(),
       },
       tokens: null,
       isAuthenticated: true,
       isLoading: false,
-    })
+    });
   }
 
-  it('labels the main feed as Projekt-Timeline with canonical context copy', async () => {
-    window.history.pushState({}, '', '/sites/site-1')
+  it("labels the main feed as Projekt-Timeline with canonical context copy", async () => {
+    window.history.pushState({}, "", "/sites/site-1");
 
     server.use(
-      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
-      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
-      http.get('*/api/v1/users', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
-      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
-    )
+      http.get("*/api/v1/sites/site-1", () => HttpResponse.json(site)),
+      http.get("*/api/v1/sites/site-1/assignments", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/users", () => HttpResponse.json([])),
+      http.get(
+        "*/api/v1/sites/site-1/appointments*",
+        emptyAppointmentsResponse,
+      ),
+      http.get("*/api/v1/sites/site-1/time-entries", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/sites/site-1/activities", () => HttpResponse.json([])),
+      http.get("*/api/v1/inventory/sites/site-1/history", () =>
+        HttpResponse.json([]),
+      ),
+    );
 
-    render(
-      <Routes>
-        <Route path="/sites/:id" element={<SiteDetailPage />} />
-      </Routes>
-    )
+    renderSiteDetailRoutes();
 
     await waitFor(() => {
-      expect(screen.getAllByText('Werkstattprojekt').length).toBeGreaterThan(0)
-      expect(screen.getAllByText('Projekt-Timeline').length).toBeGreaterThan(0)
+      expect(screen.getAllByText("Werkstattprojekt").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Projekt-Timeline").length).toBeGreaterThan(0);
       expect(
-        screen.getByText(/Der zentrale Ort für Notizen, Fotos und Dokumente/i)
-      ).toBeInTheDocument()
-    })
-  })
+        screen.getByText(/Der zentrale Ort für Notizen, Fotos und Dokumente/i),
+      ).toBeInTheDocument();
+    });
+  });
 
-  it('opens the unified composer from the primary entry CTA while keeping the camera shortcut available', async () => {
-    window.history.pushState({}, '', '/sites/site-1')
+  it("opens the unified composer from the primary entry CTA while keeping the camera shortcut available", async () => {
+    window.history.pushState({}, "", "/sites/site-1");
 
     server.use(
-      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
-      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
-      http.get('*/api/v1/users', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
-      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
-    )
+      http.get("*/api/v1/sites/site-1", () => HttpResponse.json(site)),
+      http.get("*/api/v1/sites/site-1/assignments", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/users", () => HttpResponse.json([])),
+      http.get(
+        "*/api/v1/sites/site-1/appointments*",
+        emptyAppointmentsResponse,
+      ),
+      http.get("*/api/v1/sites/site-1/time-entries", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/sites/site-1/activities", () => HttpResponse.json([])),
+      http.get("*/api/v1/inventory/sites/site-1/history", () =>
+        HttpResponse.json([]),
+      ),
+    );
 
-    render(
-      <Routes>
-        <Route path="/sites/:id" element={<SiteDetailPage />} />
-      </Routes>
-    )
+    renderSiteDetailRoutes();
 
-    const user = userEvent.setup()
+    const user = userEvent.setup();
 
-    const helperText = await screen.findByText(/Der zentrale Ort für Notizen, Fotos und Dokumente/i)
+    const helperText = await screen.findByText(
+      /Der zentrale Ort für Notizen, Fotos und Dokumente/i,
+    );
     const timelineSection =
-      (helperText.closest('[class*="rounded"]') as HTMLElement | null) ?? document.body
+      (helperText.closest('[class*="rounded"]') as HTMLElement | null) ??
+      document.body;
 
-    expect(within(timelineSection).getByRole('button', { name: /kamera/i })).toBeInTheDocument()
+    expect(
+      within(timelineSection).getByRole("button", { name: /kamera/i }),
+    ).toBeInTheDocument();
 
-    await user.click(within(timelineSection).getByRole('button', { name: /eintrag/i }))
+    await user.click(
+      within(timelineSection).getByRole("button", { name: /eintrag/i }),
+    );
 
-    expect(await screen.findByText('Dokumente hinzufügen')).toBeInTheDocument()
-  })
+    expect(await screen.findByText("Dokumente hinzufügen")).toBeInTheDocument();
+  });
 
-  it('keeps material history reachable inside the same timeline surface', async () => {
-    window.history.pushState({}, '', '/sites/site-1')
+  it("keeps material history reachable inside the same timeline surface", async () => {
+    window.history.pushState({}, "", "/sites/site-1");
 
     server.use(
-      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
-      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
-      http.get('*/api/v1/users', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
-      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
-    )
+      http.get("*/api/v1/sites/site-1", () => HttpResponse.json(site)),
+      http.get("*/api/v1/sites/site-1/assignments", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/users", () => HttpResponse.json([])),
+      http.get(
+        "*/api/v1/sites/site-1/appointments*",
+        emptyAppointmentsResponse,
+      ),
+      http.get("*/api/v1/sites/site-1/time-entries", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/sites/site-1/activities", () => HttpResponse.json([])),
+      http.get("*/api/v1/inventory/sites/site-1/history", () =>
+        HttpResponse.json([]),
+      ),
+    );
 
-    render(
-      <Routes>
-        <Route path="/sites/:id" element={<SiteDetailPage />} />
-      </Routes>
-    )
+    renderSiteDetailRoutes();
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /Material/i })).toBeInTheDocument()
-      expect(screen.getByText('Projektplanung')).toBeInTheDocument()
-    })
-  })
+      expect(
+        screen.getByRole("tab", { name: /Material/i }),
+      ).toBeInTheDocument();
+      expect(screen.getByText("Projektplanung")).toBeInTheDocument();
+    });
+  });
 
-  it('shows project labor and material aggregates on the detail surface', async () => {
-    window.history.pushState({}, '', '/sites/site-1')
+  it("keeps the overview focused and moves full project details behind route-backed tabs", async () => {
+    window.history.pushState({}, "", "/sites/site-1");
 
     server.use(
-      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
-      http.get('*/api/v1/sites/site-1/summary', () =>
+      http.get("*/api/v1/sites/site-1", () => HttpResponse.json(site)),
+      http.get("*/api/v1/sites/site-1/summary", () =>
         HttpResponse.json({
           labor: {
             total_hours: 12.5,
             entry_count: 4,
             site_hours: 7.5,
             workshop_hours: 5,
-            last_work_date: '2026-05-08',
+            last_work_date: "2026-05-08",
+          },
+          materials: {
+            distinct_material_count: 2,
+            withdrawal_count: 3,
+            lines: [],
+          },
+        }),
+      ),
+      http.get("*/api/v1/sites/site-1/assignments", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/users", () => HttpResponse.json([])),
+      http.get(
+        "*/api/v1/sites/site-1/appointments*",
+        emptyAppointmentsResponse,
+      ),
+      http.get("*/api/v1/sites/site-1/time-entries", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/sites/site-1/activities", () => HttpResponse.json([])),
+      http.get("*/api/v1/inventory/sites/site-1/history", () =>
+        HttpResponse.json([]),
+      ),
+    );
+
+    renderSiteDetailRoutes();
+
+    expect(
+      await screen.findByText("Projekt auf einen Blick"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Übersicht" })).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    expect(screen.getByRole("tab", { name: "Details" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Zeiten" })).toBeInTheDocument();
+    expect(screen.queryByText("Budget & Abrechnung")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /zu den details/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows project labor and material aggregates on the detail surface", async () => {
+    window.history.pushState({}, "", "/sites/site-1/details");
+
+    server.use(
+      http.get("*/api/v1/sites/site-1", () => HttpResponse.json(site)),
+      http.get("*/api/v1/sites/site-1/summary", () =>
+        HttpResponse.json({
+          labor: {
+            total_hours: 12.5,
+            entry_count: 4,
+            site_hours: 7.5,
+            workshop_hours: 5,
+            last_work_date: "2026-05-08",
           },
           materials: {
             distinct_material_count: 2,
             withdrawal_count: 3,
             lines: [
               {
-                material_id: 'mat-1',
-                material_name: 'Montageschaum',
-                category_name: 'Chemie',
-                unit: 'Stück',
+                material_id: "mat-1",
+                material_name: "Montageschaum",
+                category_name: "Chemie",
+                unit: "Stück",
                 total_withdrawn: 4,
                 withdrawal_count: 2,
                 last_withdrawn_at: new Date().toISOString(),
               },
             ],
           },
-        })
+        }),
       ),
-      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
-      http.get('*/api/v1/users', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
-      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
-    )
+      http.get("*/api/v1/sites/site-1/assignments", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/users", () => HttpResponse.json([])),
+      http.get(
+        "*/api/v1/sites/site-1/appointments*",
+        emptyAppointmentsResponse,
+      ),
+      http.get("*/api/v1/sites/site-1/time-entries", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/sites/site-1/activities", () => HttpResponse.json([])),
+      http.get("*/api/v1/inventory/sites/site-1/history", () =>
+        HttpResponse.json([]),
+      ),
+    );
 
-    render(
-      <Routes>
-        <Route path="/sites/:id" element={<SiteDetailPage />} />
-      </Routes>
-    )
+    renderSiteDetailRoutes();
 
-    expect(await screen.findByText('Projektkennzahlen')).toBeInTheDocument()
-    expect(screen.getAllByText('12.5h').length).toBeGreaterThan(0)
-    expect(screen.getByText('Montageschaum')).toBeInTheDocument()
-    expect(screen.getByText(/4 Stück/i)).toBeInTheDocument()
-    expect(screen.getByText('Budget & Abrechnung')).toBeInTheDocument()
-    expect(screen.getByText(/3\.200,00/)).toBeInTheDocument()
-    expect(screen.getByText('ANG-2026-09')).toBeInTheDocument()
-  })
+    expect(await screen.findByText("Projektkennzahlen")).toBeInTheDocument();
+    expect(screen.getAllByText("12.5h").length).toBeGreaterThan(0);
+    expect(screen.getByText("Montageschaum")).toBeInTheDocument();
+    expect(screen.getByText(/4 Stück/i)).toBeInTheDocument();
+    expect(screen.getByText("Budget & Abrechnung")).toBeInTheDocument();
+    expect(screen.getByText(/3\.200,00/)).toBeInTheDocument();
+    expect(screen.getByText("ANG-2026-09")).toBeInTheDocument();
+  });
 
-  it('lets admins download existing invoice PDFs', async () => {
-    window.history.pushState({}, '', '/sites/site-1')
-    setAdminUser()
+  it("lets admins download existing invoice PDFs", async () => {
+    window.history.pushState({}, "", "/sites/site-1/details");
+    setAdminUser();
 
-    let pdfRequested = false
+    let pdfRequested = false;
     const createObjectUrl = vi
-      .spyOn(URL, 'createObjectURL')
-      .mockReturnValue('blob:invoice-pdf')
+      .spyOn(URL, "createObjectURL")
+      .mockReturnValue("blob:invoice-pdf");
     const revokeObjectUrl = vi
-      .spyOn(URL, 'revokeObjectURL')
-      .mockImplementation(() => undefined)
+      .spyOn(URL, "revokeObjectURL")
+      .mockImplementation(() => undefined);
     const clickDownload = vi
-      .spyOn(HTMLAnchorElement.prototype, 'click')
-      .mockImplementation(() => undefined)
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
 
     server.use(
-      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
-      http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
-        labor: { total_hours: 12.5, entry_count: 4, site_hours: 7.5, workshop_hours: 5, last_work_date: '2026-05-08' },
-        materials: {
-          distinct_material_count: 2,
-          withdrawal_count: 3,
-          lines: [{
-            material_id: 'mat-1',
-            material_name: 'Montageschaum',
-            category_name: 'Chemie',
-            unit: 'Stück',
-            base_price_cents: 1200,
-            price_markup_percentage: 15,
-            total_withdrawn: 4,
-            withdrawal_count: 2,
-            last_withdrawn_at: new Date().toISOString(),
-          }],
-        },
-      })),
-      http.get('*/api/v1/sites/site-1/invoices', () => HttpResponse.json([
-        {
-          id: 'inv-1',
-          site_id: 'site-1',
-          invoice_number: 1,
-          invoice_number_display: '2026-00001',
-          status: 'generated',
-          sender_name: null,
-          sender_address: null,
-          issued_at: '2026-05-10T08:00:00.000Z',
-          due_on: null,
-          voided_at: null,
-          pdf_artifact: {
-            storage_path: 'invoices/tenant/inv-1.pdf',
-            sha256_hash: 'hash',
-            content_type: 'application/pdf',
-            size_bytes: 12,
-            created_at: '2026-05-10T08:01:00.000Z',
+      http.get("*/api/v1/sites/site-1", () => HttpResponse.json(site)),
+      http.get("*/api/v1/sites/site-1/summary", () =>
+        HttpResponse.json({
+          labor: {
+            total_hours: 12.5,
+            entry_count: 4,
+            site_hours: 7.5,
+            workshop_hours: 5,
+            last_work_date: "2026-05-08",
           },
-          created_by: 'user-1',
-          created_at: '2026-05-10T08:00:00.000Z',
-          updated_at: '2026-05-10T08:01:00.000Z',
-        },
-      ])),
-      http.get('*/api/v1/billing/invoices/inv-1/pdf', () => {
-        pdfRequested = true
-        return new HttpResponse('pdf', {
-          headers: { 'Content-Type': 'application/pdf' },
-        })
-      }),
-      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
-      http.get('*/api/v1/users', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
-      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
-    )
-
-    render(
-      <Routes>
-        <Route path="/sites/:id" element={<SiteDetailPage />} />
-      </Routes>
-    )
-
-    expect(await screen.findByText('Rechnungen')).toBeInTheDocument()
-    expect(await screen.findByText('2026-00001')).toBeInTheDocument()
-    expect(screen.getByText('Erstellt')).toBeInTheDocument()
-    expect(screen.getByText(/PDF verfügbar/i)).toBeInTheDocument()
-
-    await userEvent.click(screen.getByRole('button', { name: /pdf/i }))
-
-    await waitFor(() => expect(pdfRequested).toBe(true))
-    expect(createObjectUrl).toHaveBeenCalled()
-    expect(clickDownload).toHaveBeenCalled()
-    expect(revokeObjectUrl).toHaveBeenCalledWith('blob:invoice-pdf')
-  })
-
-  it('lets admins create an invoice from the site detail page', async () => {
-    window.history.pushState({}, '', '/sites/site-1')
-    setAdminUser()
-    let submittedPayload: Record<string, unknown> | null = null
-    let invoiceListCalls = 0
-
-    server.use(
-      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
-      http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
-        labor: { total_hours: 12.5, entry_count: 4, site_hours: 7.5, workshop_hours: 5, last_work_date: '2026-05-08' },
-        materials: {
-          distinct_material_count: 2,
-          withdrawal_count: 3,
-          lines: [{
-            material_id: 'mat-1',
-            material_name: 'Montageschaum',
-            category_name: 'Chemie',
-            unit: 'Stück',
-            base_price_cents: 1200,
-            price_markup_percentage: 15,
-            total_withdrawn: 4,
-            withdrawal_count: 2,
-            last_withdrawn_at: new Date().toISOString(),
-          }],
-        },
-      })),
-      http.get('*/api/v1/sites/site-1/invoices', () => {
-        invoiceListCalls += 1
-        return HttpResponse.json(invoiceListCalls > 1 ? [
+          materials: {
+            distinct_material_count: 2,
+            withdrawal_count: 3,
+            lines: [
+              {
+                material_id: "mat-1",
+                material_name: "Montageschaum",
+                category_name: "Chemie",
+                unit: "Stück",
+                base_price_cents: 1200,
+                price_markup_percentage: 15,
+                total_withdrawn: 4,
+                withdrawal_count: 2,
+                last_withdrawn_at: new Date().toISOString(),
+              },
+            ],
+          },
+        }),
+      ),
+      http.get("*/api/v1/sites/site-1/invoices", () =>
+        HttpResponse.json([
           {
-            id: 'inv-2',
-            site_id: 'site-1',
-            invoice_number: 2,
-            invoice_number_display: '2026-00002',
-            status: 'draft',
+            id: "inv-1",
+            site_id: "site-1",
+            invoice_number: 1,
+            invoice_number_display: "2026-00001",
+            status: "generated",
             sender_name: null,
             sender_address: null,
-            issued_at: null,
+            issued_at: "2026-05-10T08:00:00.000Z",
             due_on: null,
             voided_at: null,
-            pdf_artifact: null,
-            created_by: 'user-1',
-            created_at: '2026-05-10T09:00:00.000Z',
-            updated_at: '2026-05-10T09:00:00.000Z',
+            pdf_artifact: {
+              storage_path: "invoices/tenant/inv-1.pdf",
+              sha256_hash: "hash",
+              content_type: "application/pdf",
+              size_bytes: 12,
+              created_at: "2026-05-10T08:01:00.000Z",
+            },
+            created_by: "user-1",
+            created_at: "2026-05-10T08:00:00.000Z",
+            updated_at: "2026-05-10T08:01:00.000Z",
           },
-        ] : [])
+        ]),
+      ),
+      http.get("*/api/v1/billing/invoices/inv-1/pdf", () => {
+        pdfRequested = true;
+        return new HttpResponse("pdf", {
+          headers: { "Content-Type": "application/pdf" },
+        });
       }),
-      http.post('*/api/v1/billing/projects/site-1/invoices', async ({ request }) => {
-        submittedPayload = await request.json() as Record<string, unknown>
-        return HttpResponse.json({
-          invoice: {
-            id: 'inv-2',
-            site_id: 'site-1',
-            invoice_number: 2,
-            invoice_number_display: '2026-00002',
-            status: 'draft',
-            sender_name: null,
-            sender_address: null,
-            issued_at: null,
-            due_on: null,
-            voided_at: null,
-            pdf_artifact: null,
-            created_by: 'user-1',
-            created_at: '2026-05-10T09:00:00.000Z',
-            updated_at: '2026-05-10T09:00:00.000Z',
+      http.get("*/api/v1/sites/site-1/assignments", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/users", () => HttpResponse.json([])),
+      http.get(
+        "*/api/v1/sites/site-1/appointments*",
+        emptyAppointmentsResponse,
+      ),
+      http.get("*/api/v1/sites/site-1/time-entries", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/sites/site-1/activities", () => HttpResponse.json([])),
+      http.get("*/api/v1/inventory/sites/site-1/history", () =>
+        HttpResponse.json([]),
+      ),
+    );
+
+    renderSiteDetailRoutes();
+
+    expect(await screen.findByText("Rechnungen")).toBeInTheDocument();
+    expect(await screen.findByText("2026-00001")).toBeInTheDocument();
+    expect(screen.getByText("Erstellt")).toBeInTheDocument();
+    expect(screen.getByText(/PDF verfügbar/i)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /pdf/i }));
+
+    await waitFor(() => expect(pdfRequested).toBe(true));
+    expect(createObjectUrl).toHaveBeenCalled();
+    expect(clickDownload).toHaveBeenCalled();
+    expect(revokeObjectUrl).toHaveBeenCalledWith("blob:invoice-pdf");
+  });
+
+  it("lets admins create an invoice from the site detail page", async () => {
+    window.history.pushState({}, "", "/sites/site-1/details");
+    setAdminUser();
+    let submittedPayload: Record<string, unknown> | null = null;
+    let invoiceListCalls = 0;
+
+    server.use(
+      http.get("*/api/v1/sites/site-1", () => HttpResponse.json(site)),
+      http.get("*/api/v1/sites/site-1/summary", () =>
+        HttpResponse.json({
+          labor: {
+            total_hours: 12.5,
+            entry_count: 4,
+            site_hours: 7.5,
+            workshop_hours: 5,
+            last_work_date: "2026-05-08",
           },
-          project: {},
-          billing: { invoice_pricing_mode: 'fixed_price', fixed_price_cents: 500000 },
-          labor: {},
-          materials: {},
-          total_amount_cents: 500000,
-          line_items: [],
-        })
+          materials: {
+            distinct_material_count: 2,
+            withdrawal_count: 3,
+            lines: [
+              {
+                material_id: "mat-1",
+                material_name: "Montageschaum",
+                category_name: "Chemie",
+                unit: "Stück",
+                base_price_cents: 1200,
+                price_markup_percentage: 15,
+                total_withdrawn: 4,
+                withdrawal_count: 2,
+                last_withdrawn_at: new Date().toISOString(),
+              },
+            ],
+          },
+        }),
+      ),
+      http.get("*/api/v1/sites/site-1/invoices", () => {
+        invoiceListCalls += 1;
+        return HttpResponse.json(
+          invoiceListCalls > 1
+            ? [
+                {
+                  id: "inv-2",
+                  site_id: "site-1",
+                  invoice_number: 2,
+                  invoice_number_display: "2026-00002",
+                  status: "draft",
+                  sender_name: null,
+                  sender_address: null,
+                  issued_at: null,
+                  due_on: null,
+                  voided_at: null,
+                  pdf_artifact: null,
+                  created_by: "user-1",
+                  created_at: "2026-05-10T09:00:00.000Z",
+                  updated_at: "2026-05-10T09:00:00.000Z",
+                },
+              ]
+            : [],
+        );
       }),
-      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
-      http.get('*/api/v1/users', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
-      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
-    )
+      http.post(
+        "*/api/v1/billing/projects/site-1/invoices",
+        async ({ request }) => {
+          submittedPayload = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json({
+            invoice: {
+              id: "inv-2",
+              site_id: "site-1",
+              invoice_number: 2,
+              invoice_number_display: "2026-00002",
+              status: "draft",
+              sender_name: null,
+              sender_address: null,
+              issued_at: null,
+              due_on: null,
+              voided_at: null,
+              pdf_artifact: null,
+              created_by: "user-1",
+              created_at: "2026-05-10T09:00:00.000Z",
+              updated_at: "2026-05-10T09:00:00.000Z",
+            },
+            project: {},
+            billing: {
+              invoice_pricing_mode: "fixed_price",
+              fixed_price_cents: 500000,
+            },
+            labor: {},
+            materials: {},
+            total_amount_cents: 500000,
+            line_items: [],
+          });
+        },
+      ),
+      http.get("*/api/v1/sites/site-1/assignments", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/users", () => HttpResponse.json([])),
+      http.get(
+        "*/api/v1/sites/site-1/appointments*",
+        emptyAppointmentsResponse,
+      ),
+      http.get("*/api/v1/sites/site-1/time-entries", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/sites/site-1/activities", () => HttpResponse.json([])),
+      http.get("*/api/v1/inventory/sites/site-1/history", () =>
+        HttpResponse.json([]),
+      ),
+    );
 
-    render(
-      <Routes>
-        <Route path="/sites/:id" element={<SiteDetailPage />} />
-      </Routes>
-    )
+    renderSiteDetailRoutes();
 
-    const user = userEvent.setup()
-    await user.click(await screen.findByRole('button', { name: /rechnung erstellen/i }))
-    expect(await screen.findByText(/einmalige abrechnungslogik/i)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Montageschaum' })).toHaveAttribute('href', '/inventory/mat-1')
-    const materialMarkupInput = await screen.findByLabelText(/aufschlag montageschaum/i)
-    expect(materialMarkupInput).toHaveValue(15)
-    await user.clear(materialMarkupInput)
-    await user.type(materialMarkupInput, '20')
-    await user.click(screen.getByRole('combobox', { name: /rechnungslogik/i }))
-    await user.click(screen.getByRole('option', { name: /pauschalpreis/i }))
-    await user.clear(screen.getByLabelText(/pauschalpreis/i))
-    await user.type(screen.getByLabelText(/pauschalpreis/i), '5000')
-    await user.click(screen.getByRole('button', { name: /^rechnung erstellen$/i }))
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", { name: /rechnung erstellen/i }),
+    );
+    expect(
+      await screen.findByText(/einmalige abrechnungslogik/i),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Montageschaum" })).toHaveAttribute(
+      "href",
+      "/inventory/mat-1",
+    );
+    const materialMarkupInput = await screen.findByLabelText(
+      /aufschlag montageschaum/i,
+    );
+    expect(materialMarkupInput).toHaveValue(15);
+    await user.clear(materialMarkupInput);
+    await user.type(materialMarkupInput, "20");
+    await user.click(screen.getByRole("combobox", { name: /rechnungslogik/i }));
+    await user.click(screen.getByRole("option", { name: /pauschalpreis/i }));
+    await user.clear(screen.getByLabelText(/pauschalpreis/i));
+    await user.type(screen.getByLabelText(/pauschalpreis/i), "5000");
+    await user.click(
+      screen.getByRole("button", { name: /^rechnung erstellen$/i }),
+    );
 
     await waitFor(() => {
       expect(submittedPayload).toMatchObject({
-        invoice_pricing_mode: 'fixed_price',
+        invoice_pricing_mode: "fixed_price",
         fixed_price_cents: 500000,
-        material_overrides: [{ material_id: 'mat-1', price_markup_percentage: 20 }],
-      })
-    })
-    expect(await screen.findByText('2026-00002')).toBeInTheDocument()
-    expect(screen.getByText(/PDF noch nicht verfügbar/i)).toBeInTheDocument()
-  })
+        material_overrides: [
+          { material_id: "mat-1", price_markup_percentage: 20 },
+        ],
+      });
+    });
+    expect(await screen.findByText("2026-00002")).toBeInTheDocument();
+    expect(screen.getByText(/PDF noch nicht verfügbar/i)).toBeInTheDocument();
+  });
 
-  it('keeps the invoice action usable when invoice creation fails', async () => {
-    window.history.pushState({}, '', '/sites/site-1')
-    setAdminUser()
-    let createAttempts = 0
+  it("keeps the invoice action usable when invoice creation fails", async () => {
+    window.history.pushState({}, "", "/sites/site-1/details");
+    setAdminUser();
+    let createAttempts = 0;
 
     server.use(
-      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
-      http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
-        labor: { total_hours: 12.5, entry_count: 4, site_hours: 7.5, workshop_hours: 5, last_work_date: '2026-05-08' },
-        materials: { distinct_material_count: 2, withdrawal_count: 3, lines: [] },
-      })),
-      http.get('*/api/v1/sites/site-1/invoices', () => HttpResponse.json([])),
-      http.post('*/api/v1/billing/projects/site-1/invoices', () => {
-        createAttempts += 1
-        return HttpResponse.json({ error: 'invoice failed' }, { status: 500 })
+      http.get("*/api/v1/sites/site-1", () => HttpResponse.json(site)),
+      http.get("*/api/v1/sites/site-1/summary", () =>
+        HttpResponse.json({
+          labor: {
+            total_hours: 12.5,
+            entry_count: 4,
+            site_hours: 7.5,
+            workshop_hours: 5,
+            last_work_date: "2026-05-08",
+          },
+          materials: {
+            distinct_material_count: 2,
+            withdrawal_count: 3,
+            lines: [],
+          },
+        }),
+      ),
+      http.get("*/api/v1/sites/site-1/invoices", () => HttpResponse.json([])),
+      http.post("*/api/v1/billing/projects/site-1/invoices", () => {
+        createAttempts += 1;
+        return HttpResponse.json({ error: "invoice failed" }, { status: 500 });
       }),
-      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
-      http.get('*/api/v1/users', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
-      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
-    )
+      http.get("*/api/v1/sites/site-1/assignments", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/users", () => HttpResponse.json([])),
+      http.get(
+        "*/api/v1/sites/site-1/appointments*",
+        emptyAppointmentsResponse,
+      ),
+      http.get("*/api/v1/sites/site-1/time-entries", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/sites/site-1/activities", () => HttpResponse.json([])),
+      http.get("*/api/v1/inventory/sites/site-1/history", () =>
+        HttpResponse.json([]),
+      ),
+    );
 
-    render(
-      <Routes>
-        <Route path="/sites/:id" element={<SiteDetailPage />} />
-      </Routes>
-    )
+    renderSiteDetailRoutes();
 
-    const user = userEvent.setup()
-    const createButton = await screen.findByRole('button', { name: /rechnung erstellen/i })
-    await user.click(createButton)
-    await user.click(await screen.findByRole('button', { name: /^rechnung erstellen$/i }))
+    const user = userEvent.setup();
+    const createButton = await screen.findByRole("button", {
+      name: /rechnung erstellen/i,
+    });
+    await user.click(createButton);
+    await user.click(
+      await screen.findByRole("button", { name: /^rechnung erstellen$/i }),
+    );
 
-    await waitFor(() => expect(createAttempts).toBe(1))
-    expect(await screen.findByRole('button', { name: /rechnung erstellen/i })).toBeEnabled()
-  })
+    await waitFor(() => expect(createAttempts).toBe(1));
+    expect(
+      await screen.findByRole("button", { name: /rechnung erstellen/i }),
+    ).toBeEnabled();
+  });
 
-  it('keeps invoice creation controls hidden for non-admins', async () => {
-    window.history.pushState({}, '', '/sites/site-1')
-    let invoiceListRequested = false
+  it("keeps invoice creation controls hidden for non-admins", async () => {
+    window.history.pushState({}, "", "/sites/site-1/details");
+    let invoiceListRequested = false;
 
     server.use(
-      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
-      http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
-        labor: { total_hours: 0, entry_count: 0, site_hours: 0, workshop_hours: 0, last_work_date: null },
-        materials: { distinct_material_count: 0, withdrawal_count: 0, lines: [] },
-      })),
-      http.get('*/api/v1/sites/site-1/invoices', () => {
-        invoiceListRequested = true
-        return HttpResponse.json([])
+      http.get("*/api/v1/sites/site-1", () => HttpResponse.json(site)),
+      http.get("*/api/v1/sites/site-1/summary", () =>
+        HttpResponse.json({
+          labor: {
+            total_hours: 0,
+            entry_count: 0,
+            site_hours: 0,
+            workshop_hours: 0,
+            last_work_date: null,
+          },
+          materials: {
+            distinct_material_count: 0,
+            withdrawal_count: 0,
+            lines: [],
+          },
+        }),
+      ),
+      http.get("*/api/v1/sites/site-1/invoices", () => {
+        invoiceListRequested = true;
+        return HttpResponse.json([]);
       }),
-      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
-      http.get('*/api/v1/users', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
-      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
-    )
+      http.get("*/api/v1/sites/site-1/assignments", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/users", () => HttpResponse.json([])),
+      http.get(
+        "*/api/v1/sites/site-1/appointments*",
+        emptyAppointmentsResponse,
+      ),
+      http.get("*/api/v1/sites/site-1/time-entries", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/sites/site-1/activities", () => HttpResponse.json([])),
+      http.get("*/api/v1/inventory/sites/site-1/history", () =>
+        HttpResponse.json([]),
+      ),
+    );
 
-    render(
-      <Routes>
-        <Route path="/sites/:id" element={<SiteDetailPage />} />
-      </Routes>
-    )
+    renderSiteDetailRoutes();
 
-    expect(await screen.findByText('Budget & Abrechnung')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /rechnung erstellen/i })).not.toBeInTheDocument()
-    expect(screen.queryByText('Rechnungen')).not.toBeInTheDocument()
-    expect(invoiceListRequested).toBe(false)
-  })
+    expect(await screen.findByText("Budget & Abrechnung")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /rechnung erstellen/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Rechnungen")).not.toBeInTheDocument();
+    expect(invoiceListRequested).toBe(false);
+  });
 
-  it('shows the dedicated appointment planner instead of the fleet reservation calendar', async () => {
-    window.history.pushState({}, '', '/sites/site-1')
-    const appointmentStart = new Date()
-    appointmentStart.setHours(8, 30, 0, 0)
-    const appointmentEnd = new Date(appointmentStart)
-    appointmentEnd.setHours(10, 0, 0, 0)
+  it("shows the dedicated appointment planner instead of the fleet reservation calendar", async () => {
+    window.history.pushState({}, "", "/sites/site-1");
+    const appointmentStart = new Date();
+    appointmentStart.setHours(8, 30, 0, 0);
+    const appointmentEnd = new Date(appointmentStart);
+    appointmentEnd.setHours(10, 0, 0, 0);
 
     server.use(
-      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
-      http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
-        labor: { total_hours: 0, entry_count: 0, site_hours: 0, workshop_hours: 0, last_work_date: null },
-        materials: { distinct_material_count: 0, withdrawal_count: 0, lines: [] },
-      })),
-      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([
-        {
-          id: 'assignment-1',
-          site_id: 'site-1',
-          user_id: 'user-1',
-          role: 'worker',
-          created_at: new Date().toISOString(),
-        },
-      ])),
-      http.get('*/api/v1/users', () => HttpResponse.json([
-        {
-          id: 'user-1',
-          email: 'max@example.com',
-          name: 'Max Mustermann',
-          role: 'employee',
-          created_at: new Date().toISOString(),
-        },
-      ])),
-      http.get('*/api/v1/sites/site-1/appointments*', ({ request }) => {
-        const url = new URL(request.url)
-        expect(url.searchParams.get('start_date')).toBeTruthy()
-        expect(url.searchParams.get('end_date')).toBeTruthy()
+      http.get("*/api/v1/sites/site-1", () => HttpResponse.json(site)),
+      http.get("*/api/v1/sites/site-1/summary", () =>
+        HttpResponse.json({
+          labor: {
+            total_hours: 0,
+            entry_count: 0,
+            site_hours: 0,
+            workshop_hours: 0,
+            last_work_date: null,
+          },
+          materials: {
+            distinct_material_count: 0,
+            withdrawal_count: 0,
+            lines: [],
+          },
+        }),
+      ),
+      http.get("*/api/v1/sites/site-1/assignments", () =>
+        HttpResponse.json([
+          {
+            id: "assignment-1",
+            site_id: "site-1",
+            user_id: "user-1",
+            role: "worker",
+            created_at: new Date().toISOString(),
+          },
+        ]),
+      ),
+      http.get("*/api/v1/users", () =>
+        HttpResponse.json([
+          {
+            id: "user-1",
+            email: "max@example.com",
+            name: "Max Mustermann",
+            role: "employee",
+            created_at: new Date().toISOString(),
+          },
+        ]),
+      ),
+      http.get("*/api/v1/sites/site-1/appointments*", ({ request }) => {
+        const url = new URL(request.url);
+        expect(url.searchParams.get("start_date")).toBeTruthy();
+        expect(url.searchParams.get("end_date")).toBeTruthy();
         return HttpResponse.json([
           {
-            id: 'appt-1',
-            site_id: 'site-1',
-            title: 'Abnahme vor Ort',
-            appointment_kind: 'customer_appointment',
+            id: "appt-1",
+            site_id: "site-1",
+            title: "Abnahme vor Ort",
+            appointment_kind: "customer_appointment",
             starts_at: appointmentStart.toISOString(),
             ends_at: appointmentEnd.toISOString(),
-            notes: 'Mit Bauherr',
-            assigned_user_ids: ['user-1'],
+            notes: "Mit Bauherr",
+            assigned_user_ids: ["user-1"],
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
-        ])
+        ]);
       }),
-      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
-    )
+      http.get("*/api/v1/sites/site-1/time-entries", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/sites/site-1/activities", () => HttpResponse.json([])),
+      http.get("*/api/v1/inventory/sites/site-1/history", () =>
+        HttpResponse.json([]),
+      ),
+    );
 
-    render(
-      <Routes>
-        <Route path="/sites/:id" element={<SiteDetailPage />} />
-      </Routes>
-    )
+    renderSiteDetailRoutes();
 
-    const planningCard = (await screen.findByText('Projektplanung')).closest('.rounded-xl')
+    const planningCard = (await screen.findByText("Projektplanung")).closest(
+      ".rounded-xl",
+    );
 
-    expect(planningCard).toHaveClass('md:col-span-2')
-    expect(await screen.findByText('Terminplan')).toBeInTheDocument()
-    expect(await screen.findByText('Abnahme vor Ort')).toBeInTheDocument()
-    expect(screen.queryByText('Reservierungen im Projektkontext')).not.toBeInTheDocument()
-  })
+    expect(planningCard).toHaveClass("md:col-span-2");
+    expect(await screen.findByText("Terminplan")).toBeInTheDocument();
+    expect(await screen.findByText("Abnahme vor Ort")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Reservierungen im Projektkontext"),
+    ).not.toBeInTheDocument();
+  });
 
-  it('shows booking author and only offers edit for the creator entry', async () => {
-    window.history.pushState({}, '', '/sites/site-1')
-    setAdminUser()
-
-    server.use(
-      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
-      http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
-        labor: { total_hours: 6.5, entry_count: 2, site_hours: 6.5, workshop_hours: 0, last_work_date: '2026-05-08' },
-        materials: { distinct_material_count: 0, withdrawal_count: 0, lines: [] },
-      })),
-      http.get('*/api/v1/sites/site-1/invoices', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
-      http.get('*/api/v1/users', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
-      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([
-        {
-          id: 'entry-own',
-          site_id: 'site-1',
-          user_id: 'user-1',
-          creator_name: 'Admin',
-          can_edit: true,
-          can_delete: true,
-          work_type: 'site',
-          hours: 4,
-          work_date: '2026-05-08',
-          notes: 'Montage',
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: 'entry-other',
-          site_id: 'site-1',
-          user_id: 'user-2',
-          creator_name: 'Anna Tischler',
-          can_edit: false,
-          can_delete: false,
-          work_type: 'travel',
-          hours: 2.5,
-          work_date: '2026-05-07',
-          notes: 'Anfahrt',
-          created_at: new Date().toISOString(),
-        },
-      ])),
-      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
-    )
-
-    render(
-      <Routes>
-        <Route path="/sites/:id" element={<SiteDetailPage />} />
-      </Routes>
-    )
-
-    expect(await screen.findByText('Erfasst von Admin')).toBeInTheDocument()
-    expect(screen.getByText('Erfasst von Anna Tischler')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /bearbeiten/i })).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: /bearbeiten/i })).toHaveLength(1)
-  })
-
-  it('opens the time dialog in edit mode for creator-owned entries', async () => {
-    window.history.pushState({}, '', '/sites/site-1')
-    setAdminUser()
+  it("shows booking author and only offers edit for the creator entry", async () => {
+    window.history.pushState({}, "", "/sites/site-1");
+    setAdminUser();
 
     server.use(
-      http.get('*/api/v1/sites/site-1', () => HttpResponse.json(site)),
-      http.get('*/api/v1/sites/site-1/summary', () => HttpResponse.json({
-        labor: { total_hours: 4, entry_count: 1, site_hours: 4, workshop_hours: 0, last_work_date: '2026-05-08' },
-        materials: { distinct_material_count: 0, withdrawal_count: 0, lines: [] },
-      })),
-      http.get('*/api/v1/sites/site-1/invoices', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/assignments', () => HttpResponse.json([])),
-      http.get('*/api/v1/users', () => HttpResponse.json([])),
-      http.get('*/api/v1/sites/site-1/appointments*', emptyAppointmentsResponse),
-      http.get('*/api/v1/sites/site-1/time-entries', () => HttpResponse.json([
-        {
-          id: 'entry-own',
-          site_id: 'site-1',
-          user_id: 'user-1',
-          creator_name: 'Admin',
-          can_edit: true,
-          can_delete: true,
-          work_type: 'site',
-          hours: 4,
-          work_date: '2026-05-08',
-          notes: 'Montage',
-          created_at: new Date().toISOString(),
-        },
-      ])),
-      http.get('*/api/v1/sites/site-1/activities', () => HttpResponse.json([])),
-      http.get('*/api/v1/inventory/sites/site-1/history', () => HttpResponse.json([]))
-    )
+      http.get("*/api/v1/sites/site-1", () => HttpResponse.json(site)),
+      http.get("*/api/v1/sites/site-1/summary", () =>
+        HttpResponse.json({
+          labor: {
+            total_hours: 6.5,
+            entry_count: 2,
+            site_hours: 6.5,
+            workshop_hours: 0,
+            last_work_date: "2026-05-08",
+          },
+          materials: {
+            distinct_material_count: 0,
+            withdrawal_count: 0,
+            lines: [],
+          },
+        }),
+      ),
+      http.get("*/api/v1/sites/site-1/invoices", () => HttpResponse.json([])),
+      http.get("*/api/v1/sites/site-1/assignments", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/users", () => HttpResponse.json([])),
+      http.get(
+        "*/api/v1/sites/site-1/appointments*",
+        emptyAppointmentsResponse,
+      ),
+      http.get("*/api/v1/sites/site-1/time-entries", () =>
+        HttpResponse.json([
+          {
+            id: "entry-own",
+            site_id: "site-1",
+            user_id: "user-1",
+            creator_name: "Admin",
+            can_edit: true,
+            can_delete: true,
+            work_type: "site",
+            hours: 4,
+            work_date: "2026-05-08",
+            notes: "Montage",
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: "entry-other",
+            site_id: "site-1",
+            user_id: "user-2",
+            creator_name: "Anna Tischler",
+            can_edit: false,
+            can_delete: false,
+            work_type: "travel",
+            hours: 2.5,
+            work_date: "2026-05-07",
+            notes: "Anfahrt",
+            created_at: new Date().toISOString(),
+          },
+        ]),
+      ),
+      http.get("*/api/v1/sites/site-1/activities", () => HttpResponse.json([])),
+      http.get("*/api/v1/inventory/sites/site-1/history", () =>
+        HttpResponse.json([]),
+      ),
+    );
 
-    render(
-      <Routes>
-        <Route path="/sites/:id" element={<SiteDetailPage />} />
-      </Routes>
-    )
+    renderSiteDetailRoutes();
 
-    const user = userEvent.setup()
-    await user.click(await screen.findByRole('button', { name: /bearbeiten/i }))
+    expect(await screen.findByText("Erfasst von Admin")).toBeInTheDocument();
+    expect(screen.getByText("Erfasst von Anna Tischler")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /bearbeiten/i }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /bearbeiten/i })).toHaveLength(
+      1,
+    );
+  });
 
-    expect(await screen.findByText('Zeit bearbeiten')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('Montage')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^löschen$/i })).toBeInTheDocument()
-  })
-})
+  it("opens the time dialog in edit mode for creator-owned entries", async () => {
+    window.history.pushState({}, "", "/sites/site-1/time");
+    setAdminUser();
+
+    server.use(
+      http.get("*/api/v1/sites/site-1", () => HttpResponse.json(site)),
+      http.get("*/api/v1/sites/site-1/summary", () =>
+        HttpResponse.json({
+          labor: {
+            total_hours: 4,
+            entry_count: 1,
+            site_hours: 4,
+            workshop_hours: 0,
+            last_work_date: "2026-05-08",
+          },
+          materials: {
+            distinct_material_count: 0,
+            withdrawal_count: 0,
+            lines: [],
+          },
+        }),
+      ),
+      http.get("*/api/v1/sites/site-1/invoices", () => HttpResponse.json([])),
+      http.get("*/api/v1/sites/site-1/assignments", () =>
+        HttpResponse.json([]),
+      ),
+      http.get("*/api/v1/users", () => HttpResponse.json([])),
+      http.get(
+        "*/api/v1/sites/site-1/appointments*",
+        emptyAppointmentsResponse,
+      ),
+      http.get("*/api/v1/sites/site-1/time-entries", () =>
+        HttpResponse.json([
+          {
+            id: "entry-own",
+            site_id: "site-1",
+            user_id: "user-1",
+            creator_name: "Admin",
+            can_edit: true,
+            can_delete: true,
+            work_type: "site",
+            hours: 4,
+            work_date: "2026-05-08",
+            notes: "Montage",
+            created_at: new Date().toISOString(),
+          },
+        ]),
+      ),
+      http.get("*/api/v1/sites/site-1/activities", () => HttpResponse.json([])),
+      http.get("*/api/v1/inventory/sites/site-1/history", () =>
+        HttpResponse.json([]),
+      ),
+    );
+
+    renderSiteDetailRoutes();
+
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", { name: /bearbeiten/i }),
+    );
+
+    expect(await screen.findByText("Zeit bearbeiten")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Montage")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^löschen$/i }),
+    ).toBeInTheDocument();
+  });
+});

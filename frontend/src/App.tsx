@@ -1,24 +1,33 @@
-import { useEffect } from "react"
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { Toaster } from "@/components/ui/sonner"
-import { AppLayout } from "@/components/layout/AppLayout"
-import { AuthGuard } from "@/components/auth/AuthGuard"
-import { LoginPage } from "@/components/auth/LoginPage"
-import { OnboardingCompletePage } from "@/components/auth/OnboardingCompletePage"
-import { SignupPage } from "@/components/auth/SignupPage"
-import { AuthCallback } from "@/components/auth/AuthCallback"
-import { useAuth } from "@/hooks/useAuth"
-import { initSync } from "@/lib/offline/sync"
-import OfflineIndicator from "@/components/offline/OfflineIndicator"
-import InstallPrompt from "@/components/pwa/InstallPrompt"
-import DashboardPage from "@/pages/DashboardPage"
-import { InventoryListPage, InventoryDetailPage } from "@/pages/inventory"
-import { SitesListPage, SiteDetailPage, SiteHistoryReportPage } from "@/pages/sites"
-import { FleetPage, ToolDetailPage, ToolsPage, VehicleDetailPage } from "@/pages/fleet"
-import { InventorySettingsPage, SettingsPage } from "@/pages/settings"
-import ScanPage from "@/pages/qr/ScanPage"
-import NotFoundPage from "@/pages/NotFoundPage"
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/sonner";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { AuthGuard } from "@/components/auth/AuthGuard";
+import { LoginPage } from "@/components/auth/LoginPage";
+import { OnboardingCompletePage } from "@/components/auth/OnboardingCompletePage";
+import { SignupPage } from "@/components/auth/SignupPage";
+import { AuthCallback } from "@/components/auth/AuthCallback";
+import { useAuth } from "@/hooks/useAuth";
+import { initSync } from "@/lib/offline/sync";
+import OfflineIndicator from "@/components/offline/OfflineIndicator";
+import InstallPrompt from "@/components/pwa/InstallPrompt";
+import DashboardPage from "@/pages/DashboardPage";
+import { InventoryListPage, InventoryDetailPage } from "@/pages/inventory";
+import {
+  SitesListPage,
+  SiteDetailPage,
+  SiteHistoryReportPage,
+} from "@/pages/sites";
+import {
+  FleetPage,
+  ToolDetailPage,
+  ToolsPage,
+  VehicleDetailPage,
+} from "@/pages/fleet";
+import { InventorySettingsPage, SettingsPage } from "@/pages/settings";
+import ScanPage from "@/pages/qr/ScanPage";
+import NotFoundPage from "@/pages/NotFoundPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,25 +36,25 @@ const queryClient = new QueryClient({
       retry: 1,
     },
   },
-})
+});
 
 function AppRoutes() {
-  const { isLoading, isAuthenticated } = useAuth()
+  const { isLoading, isAuthenticated } = useAuth();
 
   // Initialize offline sync when authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      const cleanup = initSync()
-      return cleanup
+      const cleanup = initSync();
+      return cleanup;
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -67,13 +76,22 @@ function AppRoutes() {
 
                 {/* Inventory */}
                 <Route path="/inventory" element={<InventoryListPage />} />
-                <Route path="/inventory/:id" element={<InventoryDetailPage />} />
+                <Route
+                  path="/inventory/:id"
+                  element={<InventoryDetailPage />}
+                />
 
                 {/* Sites */}
                 <Route path="/sites" element={<SitesListPage />} />
-                <Route path="/sites/history" element={<SiteHistoryReportPage />} />
-                <Route path="/sites/:id" element={<SiteDetailPage />} />
-                <Route path="/sites/:id/media/:activityId/:attachmentId/:slug?" element={<SiteDetailPage />} />
+                <Route
+                  path="/sites/history"
+                  element={<SiteHistoryReportPage />}
+                />
+                <Route path="/sites/:id/*" element={<SiteDetailPage />} />
+                <Route
+                  path="/sites/:id/media/:activityId/:attachmentId/:slug?"
+                  element={<SiteDetailPage />}
+                />
 
                 {/* Fleet */}
                 <Route path="/fleet" element={<FleetPage />} />
@@ -99,7 +117,7 @@ function AppRoutes() {
         }
       />
     </Routes>
-  )
+  );
 }
 
 function App() {
@@ -112,7 +130,7 @@ function App() {
         <InstallPrompt />
       </BrowserRouter>
     </QueryClientProvider>
-  )
+  );
 }
 
-export default App
+export default App;

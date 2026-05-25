@@ -1,13 +1,21 @@
-import type { Activity, ActivityAttachment } from "@/types/sites"
+import type { Activity, ActivityAttachment } from "@/types/sites";
 
 export interface MediaViewerTarget {
-  activity: Activity
-  attachment: ActivityAttachment
-  title: string
+  activity: Activity;
+  attachment: ActivityAttachment;
+  title: string;
 }
 
 export function buildSiteDetailPath(siteId: string): string {
-  return `/sites/${siteId}`
+  return `/sites/${siteId}`;
+}
+
+export function buildSiteDetailsPath(siteId: string): string {
+  return `/sites/${siteId}/details`;
+}
+
+export function buildSiteTimePath(siteId: string): string {
+  return `/sites/${siteId}/time`;
 }
 
 export function slugifyFilename(filename: string): string {
@@ -17,53 +25,65 @@ export function slugifyFilename(filename: string): string {
     .trim()
     .toLowerCase()
     .replace(/[\s_.]+/g, "-")
-    .replace(/-+/g, "-")
+    .replace(/-+/g, "-");
 }
 
 export function buildMediaViewerPath(
   siteId: string,
   activityId: string,
   attachmentId: string,
-  filenameOrFallback: string
+  filenameOrFallback: string,
 ): string {
-  const slug = slugifyFilename(filenameOrFallback)
-  return `/sites/${siteId}/media/${activityId}/${attachmentId}/${slug}`
+  const slug = slugifyFilename(filenameOrFallback);
+  return `/sites/${siteId}/media/${activityId}/${attachmentId}/${slug}`;
 }
 
-export function extractAttachmentIdFromPhotoUrl(photoUrl: string | null | undefined): string | null {
+export function extractAttachmentIdFromPhotoUrl(
+  photoUrl: string | null | undefined,
+): string | null {
   if (!photoUrl) {
-    return null
+    return null;
   }
 
-  const match = photoUrl.match(/\/api\/v1\/attachments\/([^/]+)(?:\/thumbnail)?$/)
-  return match?.[1] ?? null
+  const match = photoUrl.match(
+    /\/api\/v1\/attachments\/([^/]+)(?:\/thumbnail)?$/,
+  );
+  return match?.[1] ?? null;
 }
 
 export function resolveMediaViewerTarget(
   activities: Activity[],
   activityId: string | undefined,
-  attachmentId: string | undefined
+  attachmentId: string | undefined,
 ): MediaViewerTarget | null {
   if (!activityId || !attachmentId) {
-    return null
+    return null;
   }
 
-  const activity = activities.find((item) => item.id === activityId)
+  const activity = activities.find((item) => item.id === activityId);
   if (!activity) {
-    return null
+    return null;
   }
 
-  const attachment = activity.attachments.find((item) => item.attachment_id === attachmentId)
+  const attachment = activity.attachments.find(
+    (item) => item.attachment_id === attachmentId,
+  );
   if (attachment) {
     return {
       activity,
       attachment,
       title: attachment.filename,
-    }
+    };
   }
 
-  const legacyAttachmentId = extractAttachmentIdFromPhotoUrl(activity.photo_url)
-  if (activity.activity_type === "photo" && legacyAttachmentId === attachmentId && activity.photo_url) {
+  const legacyAttachmentId = extractAttachmentIdFromPhotoUrl(
+    activity.photo_url,
+  );
+  if (
+    activity.activity_type === "photo" &&
+    legacyAttachmentId === attachmentId &&
+    activity.photo_url
+  ) {
     return {
       activity,
       attachment: {
@@ -74,8 +94,8 @@ export function resolveMediaViewerTarget(
         thumbnail_url: activity.photo_url,
       },
       title: "Aktivitätsfoto",
-    }
+    };
   }
 
-  return null
+  return null;
 }
