@@ -392,6 +392,7 @@ describe('SiteDetailPage', () => {
     const user = userEvent.setup()
     await user.click(await screen.findByRole('button', { name: /rechnung erstellen/i }))
     expect(await screen.findByText(/einmalige abrechnungslogik/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Montageschaum' })).toHaveAttribute('href', '/inventory/mat-1')
     const materialMarkupInput = await screen.findByLabelText(/aufschlag montageschaum/i)
     expect(materialMarkupInput).toHaveValue(15)
     await user.clear(materialMarkupInput)

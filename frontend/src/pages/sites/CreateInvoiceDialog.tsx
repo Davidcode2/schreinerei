@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { Link } from "react-router-dom"
 import { Euro, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -243,7 +244,12 @@ export function CreateInvoiceDialog({
                     <div key={line.material_id} className="rounded-lg border border-border/60 bg-background/70 p-3">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-sm font-medium">{line.material_name}</p>
+                          <Link
+                            to={`/inventory/${line.material_id}`}
+                            className="text-sm font-medium text-foreground transition-colors hover:text-primary hover:underline"
+                          >
+                            {line.material_name}
+                          </Link>
                           <p className="text-sm text-muted-foreground">
                             {line.total_withdrawn} {line.unit} aus {line.withdrawal_count} Entnahmen
                           </p>
