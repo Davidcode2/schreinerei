@@ -89,7 +89,7 @@ const screenshotCards = [
   {
     eyebrow: "Dashboard",
     title: "Tageslage auf einen Blick",
-    description: "Der Startbildschirm zeigt Projektstatus, Materialwarnungen und erfasste Stunden in einer klaren Übersicht für Inhaber und Büro.",
+    description: "Der Startbildschirm zeigt To-dos, fällige Wartungen und abgelaufene Materialien wie Lacke. So wird weniger vergessen und teure Nacharbeit vermieden.",
     desktopImage: "/screenshots/dashboard-desktop.png",
     desktopAlt: "Desktop-Screenshot des Schreinerei-Dashboards",
     mobileImage: "/screenshots/dashboard-mobile.png",
@@ -98,7 +98,7 @@ const screenshotCards = [
   {
     eyebrow: "Projekte",
     title: "Baustellen und Werkstattprojekte im Raster",
-    description: "Die Projektliste verbindet Suche, Statusfilter und Kartenansicht für externe Baustellen und interne Werkstattaufträge in einer Oberfläche.",
+    description: "Jede Baustelle und jeder Werkstattauftrag bleibt sauber nachvollziehbar. Das spart Rückfragen und sorgt dafür, dass Stunden und Material dort landen, wo sie hingehören.",
     desktopImage: "/screenshots/sites-desktop.png",
     desktopAlt: "Desktop-Screenshot der Projekte-Seite in Schreinerei",
     mobileImage: "/screenshots/sites-mobile.png",
@@ -107,7 +107,7 @@ const screenshotCards = [
   {
     eyebrow: "Fuhrpark",
     title: "Fahrzeuge mit Reservierungen im Griff",
-    description: "Der Fuhrparkbereich zeigt Fahrzeuge, Status und Reservierungen so, dass dein Team sofort sieht, was verfügbar und was schon eingeplant ist.",
+    description: "Fahrzeuge bleiben verfügbar, planbar und wartbar. So fällt der nächste Service nicht erst auf, wenn der Transporter schon auf der Baustelle gebraucht wird.",
     desktopImage: "/screenshots/fleet-desktop.png",
     desktopAlt: "Desktop-Screenshot der Fuhrpark-Seite in Schreinerei",
     mobileImage: "/screenshots/fleet-mobile.png",
@@ -116,7 +116,7 @@ const screenshotCards = [
   {
     eyebrow: "Werkzeuge",
     title: "Werkzeugbestand separat und sauber organisiert",
-    description: "Werkzeuge bekommen ihre eigene klare Oberfläche statt in einer allgemeinen Ressourcenansicht unterzugehen. Das passt zum Alltag kleiner Teams.",
+    description: "Wartungen lassen sich planen, fällige Services werden sichtbar und niemand sucht ein Werkzeug, das längst auf einer anderen Baustelle im Einsatz ist.",
     desktopImage: "/screenshots/tools-desktop.png",
     desktopAlt: "Desktop-Screenshot der Werkzeuge-Seite in Schreinerei",
     mobileImage: "/screenshots/tools-mobile.png",
@@ -125,7 +125,7 @@ const screenshotCards = [
   {
     eyebrow: "Inventar",
     title: "Materialsuche, Kategorien und Warnungen an einem Ort",
-    description: "Das Inventar verbindet Suche, Kategorien und Ablaufwarnungen, damit Materialfragen nicht erst zwischen Lagerregal und Telefon geklärt werden müssen.",
+    description: "Material wird direkt auf eine Baustelle gebucht. Zusammen mit den Zeitbuchungen entsteht daraus die Grundlage für Rechnungen fast ohne Nacharbeit.",
     desktopImage: "/screenshots/inventory-desktop.png",
     desktopAlt: "Desktop-Screenshot der Inventar-Seite in Schreinerei",
     mobileImage: "/screenshots/inventory-mobile.png",
@@ -223,8 +223,8 @@ const screenshotCards = [
               <span class="rounded-full border border-primary/15 bg-white px-3 py-1 text-xs font-semibold text-primary">PWA</span>
             </div>
 
-            <div class="mt-5 grid gap-4 sm:grid-cols-[1.15fr_0.85fr]">
-              <div class="rounded-[1.4rem] border border-white/80 bg-white/90 p-4 shadow-sm">
+            <div class="mt-5 grid gap-4 lg:grid-cols-2">
+              <div class="rounded-[1.4rem] border border-white/80 bg-white/90 p-4 shadow-sm lg:col-span-2">
                 <div class="flex items-center justify-between">
                   <p class="text-sm font-semibold text-foreground">Heute im Betrieb</p>
                   <span class="rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground">Live</span>
@@ -256,20 +256,18 @@ const screenshotCards = [
                 </div>
               </div>
 
-              <div class="space-y-4">
-                <div class="rounded-[1.4rem] border border-white/80 bg-white/90 p-4 shadow-sm">
+              <div class="rounded-[1.4rem] border border-white/80 bg-white/90 p-4 shadow-sm">
                   <p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Warum das für den Alltag zählt</p>
                   <ul class="mt-3 space-y-3 text-sm leading-6 text-foreground">
-                    <li>Weniger Dinge im Kopf behalten müssen.</li>
-                    <li>Weniger Rückfragen zwischen Baustelle, Werkstatt und Büro.</li>
-                    <li>Weniger Zeit für Organisation, mehr Zeit für saubere Arbeit.</li>
+                    <li>Der Startbildschirm warnt, bevor Lacke ablaufen oder Wartungen liegen bleiben.</li>
+                    <li>Werkzeuge und Fahrzeuge bleiben planbar, statt im Alltag plötzlich zu fehlen.</li>
+                    <li>Zeit- und Materialbuchungen fließen sauber in die spätere Rechnung ein.</li>
                   </ul>
-                </div>
-                <div class="rounded-[1.4rem] bg-primary p-5 text-primary-foreground shadow-lg shadow-primary/20">
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">Für kleine Betriebe gemacht</p>
-                  <p class="mt-2 text-3xl font-bold">30 EUR monatlich</p>
-                  <p class="mt-2 text-sm leading-6 text-primary-foreground/85">Ein Tarif. Klare Funktionen. Kein unnötiger Ballast für Betriebe, die einfach besser organisiert arbeiten wollen.</p>
-                </div>
+              </div>
+              <div class="rounded-[1.4rem] bg-primary p-5 text-primary-foreground shadow-lg shadow-primary/20">
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">Für kleine Betriebe gemacht</p>
+                <p class="mt-2 text-3xl font-bold">30 EUR monatlich</p>
+                <p class="mt-2 text-sm leading-6 text-primary-foreground/85">Ein Tarif. Klare Funktionen. Kein unnötiger Ballast für Betriebe, die Rechnungen, Material und Wartungen endlich ohne Zettelwirtschaft im Griff haben wollen.</p>
               </div>
             </div>
           </div>
@@ -327,16 +325,16 @@ const screenshotCards = [
       <div class="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
         <div>
           <span class="eyebrow">Produkt-Einblicke</span>
-          <h2 class="mt-5 text-4xl leading-tight text-foreground sm:text-5xl">Zeige, wie weniger Orga-Stress im Alltag aussieht.</h2>
+          <h2 class="mt-5 text-4xl leading-tight text-foreground sm:text-5xl">Jede Ansicht spart an anderer Stelle Zeit, Ärger oder Nacharbeit.</h2>
           <p class="mt-4 section-copy">
-            Die Einblicke unten sind direkt aus dem laufenden Frontend aufgenommen. Jede Karte kombiniert Desktop-
-            und Mobile-Ansicht derselben Route, damit sofort klar wird: Hier geht es nicht um schöne Software, sondern
-            darum, dass wichtige Dinge im Betrieb nicht untergehen.
+            Die Schreinerei-App ist nicht dafür da, beeindruckend auszusehen. Sie ist dafür da, dass To-dos sichtbar
+            bleiben, Wartungen rechtzeitig passieren, Material sauber auf Baustellen gebucht wird und Rechnungen nicht
+            erst am Abend mühsam zusammengesucht werden müssen.
           </p>
         </div>
         <div class="glass-card px-5 py-4 text-sm leading-6 text-muted-foreground">
-          Gezeigt werden die Kernrouten für den täglichen Betrieb: Projekte, Material, Werkzeuge,
-          Fahrzeuge, Zeiten und Einstellungen immer dort, wo sie gebraucht werden.
+          Gezeigt werden die Kernbereiche für den täglichen Betrieb: der Startbildschirm für offene Punkte, Werkzeuge
+          und Fahrzeuge für Planung und Wartung sowie das Inventar als Grundlage für saubere Baustellen- und Rechnungsdaten.
         </div>
       </div>
 
