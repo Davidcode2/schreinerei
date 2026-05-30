@@ -306,6 +306,7 @@ describe("SiteDetailPage", () => {
     setAdminUser();
 
     let pdfRequested = false;
+    const user = userEvent.setup();
     const createObjectUrl = vi
       .spyOn(URL, "createObjectURL")
       .mockReturnValue("blob:invoice-pdf");
@@ -370,6 +371,22 @@ describe("SiteDetailPage", () => {
             created_at: "2026-05-10T08:00:00.000Z",
             updated_at: "2026-05-10T08:01:00.000Z",
           },
+          {
+            id: "inv-older",
+            site_id: "site-1",
+            invoice_number: 0,
+            invoice_number_display: "2026-00000",
+            status: "draft",
+            sender_name: null,
+            sender_address: null,
+            issued_at: "2026-04-20T08:00:00.000Z",
+            due_on: null,
+            voided_at: null,
+            pdf_artifact: null,
+            created_by: "user-1",
+            created_at: "2026-04-20T08:00:00.000Z",
+            updated_at: "2026-04-20T08:00:00.000Z",
+          },
         ]),
       ),
       http.get("*/api/v1/billing/invoices/inv-1/pdf", () => {
@@ -401,8 +418,25 @@ describe("SiteDetailPage", () => {
     expect(await screen.findByText("2026-00001")).toBeInTheDocument();
     expect(screen.getByText("Erstellt")).toBeInTheDocument();
     expect(screen.getByText(/PDF verfügbar/i)).toBeInTheDocument();
+    expect(screen.queryByText("2026-00000")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: /Ältere Rechnungen anzeigen \(1\)/i,
+      }),
+    ).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: /pdf/i }));
+    await user.click(
+      screen.getByRole("button", {
+        name: /Ältere Rechnungen anzeigen \(1\)/i,
+      }),
+    );
+
+    expect(await screen.findByText("2026-00000")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Weniger Rechnungen anzeigen/i }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /pdf/i }));
 
     await waitFor(() => expect(pdfRequested).toBe(true));
     expect(createObjectUrl).toHaveBeenCalled();

@@ -133,6 +133,7 @@ export default function SiteDetailPage() {
   const [showCameraFlow, setShowCameraFlow] = useState(false);
   const [showPlanningSheet, setShowPlanningSheet] = useState(false);
   const [showCreateInvoiceDialog, setShowCreateInvoiceDialog] = useState(false);
+  const [showAllInvoices, setShowAllInvoices] = useState(false);
   const [selectedTimeEntry, setSelectedTimeEntry] = useState<TimeEntry | null>(
     null,
   );
@@ -185,6 +186,13 @@ export default function SiteDetailPage() {
 
   const totalHours = siteSummary?.labor.total_hours ?? 0;
   const materialSummary = siteSummary?.materials;
+  const visibleInvoiceRows = showAllInvoices
+    ? invoiceRows
+    : invoiceRows.slice(0, 1);
+  const hiddenInvoiceCount = Math.max(
+    invoiceRows.length - visibleInvoiceRows.length,
+    0,
+  );
 
   async function handleCreateInvoice(
     invoiceRequest: import("@/types/sites").CreateProjectInvoiceRequest,
@@ -658,7 +666,7 @@ export default function SiteDetailPage() {
                       </div>
                     )}
 
-                  {invoiceRows.map((invoice) => {
+                  {visibleInvoiceRows.map((invoice) => {
                     const date = invoice.issued_at ?? invoice.created_at;
                     const hasPdf = invoice.pdf_artifact != null;
                     const isDownloading = downloadingInvoiceId === invoice.id;
@@ -711,6 +719,20 @@ export default function SiteDetailPage() {
                       </div>
                     );
                   })}
+
+                  {invoiceRows.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 self-start px-2 text-xs"
+                      onClick={() => setShowAllInvoices((current) => !current)}
+                    >
+                      {showAllInvoices
+                        ? "Weniger Rechnungen anzeigen"
+                        : `Ältere Rechnungen anzeigen (${hiddenInvoiceCount})`}
+                    </Button>
+                  )}
                 </div>
               </div>
             </>

@@ -34,7 +34,7 @@ impl AppConfig {
             .expect("Failed to set default port")
             .set_default("run_migrations", true)
             .expect("Failed to set default run_migrations")
-            .set_default("mollie_api_base_url", "https://api.mollie.com/v2")
+            .set_default("mollie_api_base_url", "https://api.mollie.com")
             .expect("Failed to set default Mollie API base URL")
             .set_default("mollie_onboarding_amount_value", "29.00")
             .expect("Failed to set default Mollie onboarding amount")
