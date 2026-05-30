@@ -40,6 +40,7 @@ jobs:
               - 'nginx.conf'
             backend:
               - 'src/**'
+              - 'tests/**'
               - 'migrations/**'
               - 'Cargo.toml'
               - 'Cargo.lock'

@@ -75,9 +75,13 @@ async fn update_material_persists_billing_fields(pool: PgPool) {
 
     use sqlx::Row;
 
-    assert_eq!(row.try_get::<Option<i64>, _>("base_price_cents").unwrap(), Some(12_500));
     assert_eq!(
-        row.try_get::<Option<i32>, _>("price_markup_percentage").unwrap(),
+        row.try_get::<Option<i64>, _>("base_price_cents").unwrap(),
+        Some(12_500)
+    );
+    assert_eq!(
+        row.try_get::<Option<i32>, _>("price_markup_percentage")
+            .unwrap(),
         Some(18)
     );
 }

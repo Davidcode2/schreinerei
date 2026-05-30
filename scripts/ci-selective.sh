@@ -172,7 +172,7 @@ else
       frontend/*|dockerfile.frontend|nginx.conf)
         run_frontend=true
         ;;
-      src/*|migrations/*|Cargo.toml|Cargo.lock|clippy.toml|dockerfile.backend|scripts/ci-selective.sh|.githooks/*)
+      src/*|tests/*|migrations/*|Cargo.toml|Cargo.lock|clippy.toml|dockerfile.backend|scripts/ci-selective.sh|.githooks/*)
         run_backend=true
         ;;
       .github/workflows/*|.dockerignore)
