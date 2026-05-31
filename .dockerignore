@@ -1,6 +1,7 @@
 .git
 .github
 .planning
+.worktrees
 backup
 target
 frontend/node_modules
