@@ -2,6 +2,8 @@
 
 A guide for future agent sessions to efficiently validate features, run tests, and navigate the codebase without repeated exploration.
 
+For the current isolated database setup, complete route/dialog inventory, stable seed IDs, screenshot capture suite, and fast reservation-edit path, use [FRONTEND-TESTING-PLAYBOOK.md](./FRONTEND-TESTING-PLAYBOOK.md). This older phase guide contains historical references.
+
 ## 1. Running Tests
 
 ### Backend Unit Tests
@@ -19,7 +21,7 @@ cd frontend
 npm run test:e2e
 ```
 - Playwright tests in `frontend/tests/`
-- Requires backend running on port 3000
+- Requires the backend port configured by the worktree-local `frontend/.env` (the UI audit worktree uses port 3009)
 - Requires frontend running on port 5175 (Vite dev server)
 - Requires Keycloak accessible
 - Test user: `schreiner@admin.test` (see `frontend/tests/helpers/auth.ts`)

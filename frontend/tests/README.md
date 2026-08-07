@@ -124,7 +124,7 @@ The helper handles Keycloak's multi-step authentication flow.
 
 - Frontend runs on port **5175** (enforced in vite.config.ts)
 - Keycloak redirect URIs configured for `http://localhost:5175/*`
-- Backend runs on port **3000**
+- Backend uses the worktree-specific `VITE_API_URL` from `frontend/.env` (the UI audit worktree uses **3009**)
 
 ## Troubleshooting
 
