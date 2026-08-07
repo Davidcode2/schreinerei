@@ -233,12 +233,12 @@ describe("CalendarView", () => {
     expect(rerenderedReservationChip).toHaveAttribute("data-resource-color", expectedColor)
   })
 
-  it("uses the compact seven-day mobile grid without horizontal overflow classes", () => {
+  it("uses a readable horizontally scrollable seven-day mobile grid", () => {
     render(<CalendarView embedded />)
 
     expect(screen.getByTestId("calendar")).toHaveClass("-mx-4")
     expect(screen.getByText("Ressource").parentElement).toHaveClass(
-      "grid-cols-[88px_repeat(7,minmax(0,1fr))]"
+      "grid-cols-[180px_repeat(7,minmax(110px,1fr))]"
     )
   })
 

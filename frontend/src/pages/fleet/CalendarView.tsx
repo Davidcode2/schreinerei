@@ -49,7 +49,7 @@ function formatWeekHeader(startDate: Date): string {
 }
 
 const dayNames = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
-const mobileCalendarGridColumns = "grid-cols-[88px_repeat(7,minmax(0,1fr))]"
+const mobileCalendarGridColumns = "grid-cols-[180px_repeat(7,minmax(110px,1fr))]"
 const desktopCalendarGridColumns = "sm:grid-cols-[minmax(220px,1.25fr)_repeat(7,minmax(96px,1fr))]"
 
 const reservationStatusStyles = {
@@ -205,13 +205,13 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
         <div
           data-testid="calendar"
           className={cn(
-            "overflow-hidden bg-card/70 shadow-sm",
+            "overflow-x-auto bg-card/70 shadow-sm",
             embedded
               ? "-mx-4 border-y sm:mx-0 sm:rounded-2xl sm:border"
               : "rounded-2xl border"
           )}
         >
-          <div className="sm:min-w-[980px]">
+          <div className="min-w-[950px]">
             <div
               className={cn(
                 "grid gap-px border-b bg-border/60",
