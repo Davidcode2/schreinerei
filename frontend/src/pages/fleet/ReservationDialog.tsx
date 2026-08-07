@@ -224,7 +224,7 @@ export function ReservationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-md">
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden sm:max-h-[90vh] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
@@ -237,7 +237,7 @@ export function ReservationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 space-y-4 overflow-y-auto py-4 pr-1">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto py-4 pr-1">
           {isEditing && (
             <div className="space-y-4 rounded-xl border bg-muted/30 p-4">
               <div className="flex items-center justify-between gap-3">
@@ -430,13 +430,13 @@ export function ReservationDialog({
           </div>
         </div>
 
-        <DialogFooter className="flex-col-reverse gap-2 border-t border-border/70 pt-4 sm:flex-row sm:justify-between">
-          <div>
+        <DialogFooter className="shrink-0 flex-col gap-2 border-t border-border/70 bg-background pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="w-full sm:w-auto">
             {isEditing ? (
               <Button
                 type="button"
                 variant="outline"
-                className="gap-2 text-destructive hover:text-destructive"
+                className="w-full gap-2 text-destructive hover:text-destructive sm:w-auto"
                 disabled={deleteMutation.isPending}
                 onClick={handleDelete}
               >
@@ -445,7 +445,7 @@ export function ReservationDialog({
               </Button>
             ) : null}
           </div>
-          <div className="flex gap-2">
+          <div className="flex w-full justify-end gap-2 sm:w-auto">
             <Button variant="outline" onClick={() => onOpenChange(false)} className="shadow-sm">
               Abbrechen
             </Button>

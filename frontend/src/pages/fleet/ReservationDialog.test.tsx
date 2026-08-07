@@ -73,6 +73,7 @@ describe('ReservationDialog', () => {
     )
 
     const deleteButton = await screen.findByRole('button', { name: 'Löschen' })
+    expect(screen.getByRole('button', { name: 'Stornieren' })).toBeInTheDocument()
 
     expect(deleteButton).toHaveClass('text-destructive')
     expect(deleteButton).toHaveClass('gap-2')
