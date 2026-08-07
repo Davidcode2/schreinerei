@@ -4,3 +4,5 @@ dolt.auto-start: false
 gc.endpoint_origin: inherited_city
 gc.endpoint_status: verified
 types.custom: molecule,convoy,message,event,gate,merge-request,agent,role,rig,session,spec,convergence
+
+sync.remote: "git+ssh://git@github.com/Davidcode2/schreinerei.git"
