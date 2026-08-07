@@ -23,6 +23,7 @@ import {
   useVehicles,
 } from "@/lib/api/hooks"
 import { StatusTransitionButtons, statusLabels } from "@/components/fleet/StatusTransitionButtons"
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
 import { formatDateTimeLocalInput } from "@/lib/utils"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -96,6 +97,7 @@ export function ReservationDialog({
   )
   const [purpose, setPurpose] = useState(initialData?.purpose ?? "")
   const [notes, setNotes] = useState(initialData?.notes ?? "")
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   const { data: vehicles } = useVehicles()
   const { data: tools } = useTools()
@@ -205,6 +207,7 @@ export function ReservationDialog({
     try {
       await deleteMutation.mutateAsync(initialData.id)
       toast.success("Reservierung gelöscht")
+      setDeleteConfirmOpen(false)
       onOpenChange(false)
     } catch {
       toast.error("Löschen fehlgeschlagen")
@@ -223,7 +226,8 @@ export function ReservationDialog({
     initialData.status !== "completed"
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden sm:max-h-[90vh] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -438,7 +442,7 @@ export function ReservationDialog({
                 variant="outline"
                 className="w-full gap-2 text-destructive hover:text-destructive sm:w-auto"
                 disabled={deleteMutation.isPending}
-                onClick={handleDelete}
+                onClick={() => setDeleteConfirmOpen(true)}
               >
                 <Trash2 className="h-4 w-4" />
                 {deleteMutation.isPending ? "Wird gelöscht..." : "Löschen"}
@@ -469,6 +473,18 @@ export function ReservationDialog({
           </div>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+      {isEditing && initialData ? (
+        <DeleteConfirmDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          onConfirm={handleDelete}
+          itemName={`Reservierung für ${initialData.resource_name}`}
+          isPending={deleteMutation.isPending}
+          actionLabel="Stornieren"
+          title="Reservierung stornieren?"
+        />
+      ) : null}
+    </>
   )
 }

@@ -96,6 +96,10 @@ test.describe('UI audit screenshots', () => {
     await reservationEntry.click();
     await expect(page.getByRole('dialog', { name: 'Reservierung bearbeiten' })).toBeVisible();
     await capture(page, '21-dialog-edit-tool-reservation-priority', false);
+    await page.getByRole('button', { name: 'Löschen' }).click();
+    await expect(page.getByRole('alertdialog', { name: 'Reservierung stornieren?' })).toBeVisible();
+    await capture(page, '35-dialog-confirm-reservation-cancellation', false);
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Abbrechen' }).click();
     await closeOverlay(page);
 
     const emptyToolSlots = page.locator('button[data-selection-state="idle"]');

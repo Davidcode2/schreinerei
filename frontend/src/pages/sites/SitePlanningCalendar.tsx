@@ -3,6 +3,7 @@ import { CalendarClock, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-r
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -191,6 +192,7 @@ export function SitePlanningCalendar({
   })
   const [draft, setDraft] = useState<PlannerDraft>(defaultDraft())
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   const { start, end } = buildWeekBounds(currentWeek)
   const { data: appointments, isLoading, error } = useSiteAppointments(siteId, {
@@ -311,6 +313,7 @@ export function SitePlanningCalendar({
       {
         onSuccess: () => {
           toast.success("Termin entfernt")
+          setDeleteConfirmOpen(false)
           setDialogOpen(false)
         },
         onError: () => toast.error("Termin konnte nicht gelöscht werden"),
@@ -643,7 +646,7 @@ export function SitePlanningCalendar({
                     variant="outline"
                     className="gap-2 text-destructive hover:text-destructive"
                     disabled={deleteAppointment.isPending}
-                    onClick={handleDelete}
+                    onClick={() => setDeleteConfirmOpen(true)}
                   >
                     <Trash2 className="h-4 w-4" />
                     Löschen
@@ -662,6 +665,15 @@ export function SitePlanningCalendar({
           </div>
         </DialogContent>
       </Dialog>
+      <DeleteConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        onConfirm={handleDelete}
+        itemName={draft.title || "Termin"}
+        isPending={deleteAppointment.isPending}
+        actionLabel="Termin löschen"
+        title="Termin löschen?"
+      />
     </div>
   )
 }
