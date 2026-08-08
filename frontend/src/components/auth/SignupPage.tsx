@@ -118,7 +118,7 @@ export function SignupPage() {
                 Organisation erstellen
               </CardTitle>
               <CardDescription className="mt-2">
-                Der erste Schritt fuer neue Kunden wird hier angebunden.
+                Der erste Schritt für neue Kunden wird hier angebunden.
               </CardDescription>
             </div>
           </CardHeader>

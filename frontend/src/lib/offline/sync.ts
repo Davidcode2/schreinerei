@@ -18,7 +18,7 @@ export function getLastSyncTime(): Date | null {
 }
 
 // Sync all data from server to cache
-export async function syncFromServer(): Promise<void> {
+export async function syncFromServer(notify = true): Promise<void> {
   if (!isOnline()) return
 
   try {
@@ -37,7 +37,9 @@ export async function syncFromServer(): Promise<void> {
     ])
 
     lastSyncTime = new Date()
-    toast.success('Daten synchronisiert')
+    if (notify) {
+      toast.success('Daten synchronisiert')
+    }
   } catch (error) {
     console.error('Sync from server failed:', error)
     toast.error('Synchronisierung fehlgeschlagen', {
@@ -81,15 +83,17 @@ export async function syncPendingActions(): Promise<{ success: number; failed: n
 }
 
 // Full sync: both directions
-export async function fullSync(): Promise<void> {
+export async function fullSync(notify = true): Promise<void> {
   if (isSyncing || !isOnline()) return
 
   isSyncing = true
-  toast.info('Synchronisierung gestartet...')
+  if (notify) {
+    toast.info('Synchronisierung gestartet...')
+  }
 
   try {
     await syncPendingActions()
-    await syncFromServer()
+    await syncFromServer(notify)
   } catch {
     // Error already toasted in syncFromServer
   } finally {
@@ -109,7 +113,7 @@ export function initSync(): () => void {
 
   // Initial sync if online
   if (isOnline()) {
-    fullSync()
+    fullSync(false)
   }
 
   // Cleanup

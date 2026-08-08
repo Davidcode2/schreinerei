@@ -121,7 +121,7 @@ export function ReservationConfirmationSheet({
     const selectedSite = sites?.find((site) => site.id === defaultSiteId)
 
     setSiteId(defaultSiteId)
-    setPurpose(selectedSite ? `Reservierung fuer ${selectedSite.name}` : "")
+    setPurpose(selectedSite ? `Reservierung für ${selectedSite.name}` : "")
     setUseCustomTimes(false)
     setStartTime(defaultTimes.start)
     setEndTime(defaultTimes.end)
@@ -165,10 +165,10 @@ export function ReservationConfirmationSheet({
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
               <Calendar className="h-4 w-4" />
             </div>
-            Reservierung bestaetigen
+            Reservierung bestätigen
           </SheetTitle>
           <SheetDescription>
-            {resourceName} fuer {formatDateRange(startDate, endDate)} reservieren.
+            {resourceName} für {formatDateRange(startDate, endDate)} reservieren.
           </SheetDescription>
         </SheetHeader>
 
@@ -251,7 +251,7 @@ export function ReservationConfirmationSheet({
             Abbrechen
           </Button>
           <Button onClick={handleConfirm} disabled={createReservation.isPending} className="shadow-sm">
-            Reservierung bestaetigen
+              Reservierung bestätigen
           </Button>
         </SheetFooter>
       </SheetContent>

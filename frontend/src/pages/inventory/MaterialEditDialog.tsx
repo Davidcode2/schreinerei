@@ -191,7 +191,7 @@ export function MaterialEditDialog({
               onChange={(event) => setPriceMarkupPercentage(event.target.value)}
             />
             <p className="text-sm text-muted-foreground">
-              Wird standardmaessig fuer Kundenrechnungen dieses Materials verwendet.
+              Wird standardmäßig für Kundenrechnungen dieses Materials verwendet.
             </p>
           </div>
         </div>

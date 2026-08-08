@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -160,7 +161,7 @@ export function CreateInvoiceDialog({
             Rechnung erstellen
           </DialogTitle>
           <DialogDescription>
-            Abrechnungsdaten fuer diese Rechnung pruefen oder einmalig ueberschreiben.
+            Abrechnungsdaten für diese Rechnung prüfen oder einmalig überschreiben.
           </DialogDescription>
         </DialogHeader>
 
@@ -181,7 +182,7 @@ export function CreateInvoiceDialog({
 
           <div className="space-y-2">
             <Label htmlFor="invoice-sender-address">Absenderadresse</Label>
-            <Input id="invoice-sender-address" value={senderAddress} onChange={(event) => setSenderAddress(event.target.value)} placeholder="Optional, z.B. Werkstrasse 1" className="h-10" />
+            <Textarea id="invoice-sender-address" value={senderAddress} onChange={(event) => setSenderAddress(event.target.value)} placeholder="Optional, z.B. Werkstrasse 1" rows={3} />
           </div>
 
           <div className="space-y-4 rounded-lg border border-border/70 bg-card/70 p-4 shadow-sm">
@@ -224,7 +225,7 @@ export function CreateInvoiceDialog({
               <div className="space-y-1">
                 <p className="text-sm font-medium">Materialabrechnung</p>
                 <p className="text-sm text-muted-foreground">
-                  Basispreise kommen aus dem Inventar. Der Aufschlag kann fuer diese Rechnung je Material angepasst werden.
+                  Basispreise kommen aus dem Inventar. Der Aufschlag kann für diese Rechnung je Material angepasst werden.
                 </p>
               </div>
 

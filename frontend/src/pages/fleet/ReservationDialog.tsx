@@ -127,7 +127,7 @@ export function ReservationDialog({
         setStartTime(initialStartTime ?? "")
         setEndTime(initialEndTime ?? "")
         const activeSite = sites?.find((site) => site.id === preferences?.active_site_id)
-        setPurpose(activeSite ? `Reservierung fuer ${activeSite.name}` : "")
+        setPurpose(activeSite ? `Reservierung für ${activeSite.name}` : "")
         setNotes("")
       }
     }
@@ -426,7 +426,7 @@ export function ReservationDialog({
           <div className="space-y-2 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
             <Label>Notiz (optional)</Label>
             <Input
-              placeholder="z.B. Fuer Projekt Mueller"
+              placeholder="z.B. Für Projekt Müller"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="h-11"

@@ -391,7 +391,7 @@ export default function InventoryDetailPage() {
                 <div className="flex flex-wrap gap-2">
                   {activeSignal.status === "pending" && (
                     <Button variant="outline" size="sm" onClick={handleApproveSignal} disabled={approveOrderMutation.isPending}>
-                      Bestatigen
+                      Bestätigen
                     </Button>
                   )}
                   {activeSignal.status === "approved" && (
