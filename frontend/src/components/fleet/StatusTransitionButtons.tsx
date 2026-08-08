@@ -31,7 +31,7 @@ const transitionLabels: Record<ReservationStatus, string> = {
   confirmed: "Starten",
   in_use: "Abschließen",
   completed: "",
-  cancelled: "",
+  cancelled: "Stornieren",
 }
 
 export function StatusTransitionButtons({

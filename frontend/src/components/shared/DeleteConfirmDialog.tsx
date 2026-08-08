@@ -15,6 +15,8 @@ interface DeleteConfirmDialogProps {
   onConfirm: () => void
   itemName: string
   isPending?: boolean
+  actionLabel?: string
+  title?: string
 }
 
 export function DeleteConfirmDialog({
@@ -23,14 +25,16 @@ export function DeleteConfirmDialog({
   onConfirm,
   itemName,
   isPending = false,
+  actionLabel = "Löschen",
+  title = "Wirklich löschen?",
 }: DeleteConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Wirklich löschen?</AlertDialogTitle>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>
-            Möchten Sie "{itemName}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+            Möchten Sie "{itemName}" wirklich {actionLabel.toLowerCase()}? Diese Aktion kann nicht rückgängig gemacht werden.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -40,7 +44,7 @@ export function DeleteConfirmDialog({
             disabled={isPending}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isPending ? "Lösche..." : "Löschen"}
+            {isPending ? "Wird verarbeitet..." : actionLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

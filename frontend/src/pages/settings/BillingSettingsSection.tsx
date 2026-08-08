@@ -95,7 +95,7 @@ export function BillingSettingsSection({ isAdmin }: BillingSettingsSectionProps)
           Abrechnung
         </CardTitle>
         <CardDescription>
-          Standard-Stundensatz fuer neue Projekte. Bereits bestehende Projekte behalten ihren eigenen Wert.
+          Standard-Stundensatz für neue Projekte. Bereits bestehende Projekte behalten ihren eigenen Wert.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

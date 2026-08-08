@@ -418,7 +418,7 @@ describe("InventoryDetailPage interactions", () => {
     expect(await screen.findByText(/nachbestell-signal aktiv/i)).toBeInTheDocument()
     expect(screen.getByText(/automatisch: letzte packung entnommen/i)).toBeInTheDocument()
 
-    await user.click(screen.getByRole("button", { name: /bestatigen/i }))
+    await user.click(screen.getByRole("button", { name: /bestätigen/i }))
 
     await waitFor(() => {
       expect(approveCalled).toBe(true)

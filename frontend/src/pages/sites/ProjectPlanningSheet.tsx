@@ -180,7 +180,7 @@ export function ProjectPlanningSheet({ open, onOpenChange, site }: ProjectPlanni
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-5">
+        <div className="mx-auto w-full max-w-5xl space-y-5">
           <div className="space-y-2">
             <Label htmlFor="project-type">Projektart</Label>
             <Select value={projectType} onValueChange={(value) => setProjectType(value as ProjectType)}>
@@ -308,7 +308,7 @@ export function ProjectPlanningSheet({ open, onOpenChange, site }: ProjectPlanni
 
             <div className="space-y-2">
               <Label htmlFor="project-billing-notes">Abrechnungshinweise</Label>
-              <Textarea id="project-billing-notes" rows={3} value={billingNotes} onChange={(e) => setBillingNotes(e.target.value)} placeholder="Hinweise fur Teilrechnung, Abnahme oder Rechnungsstellung" />
+              <Textarea id="project-billing-notes" rows={3} value={billingNotes} onChange={(e) => setBillingNotes(e.target.value)} placeholder="Hinweise für Teilrechnung, Abnahme oder Rechnungsstellung" />
             </div>
           </div>
 

@@ -304,7 +304,7 @@ export function AddMaterialDialog({
                       onChange={(event) => setPriceMarkupPercentage(event.target.value)}
                     />
                     <p className="text-sm text-muted-foreground">
-                      Wird als Standardaufschlag fuer die Kundenrechnung verwendet.
+                      Wird als Standardaufschlag für die Kundenrechnung verwendet.
                     </p>
                   </div>
 

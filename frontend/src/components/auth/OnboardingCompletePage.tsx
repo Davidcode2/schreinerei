@@ -53,7 +53,7 @@ export function OnboardingCompletePage() {
               </CardTitle>
               <CardDescription className="mt-2">
                 {sessionId
-                  ? "Wir pruefen den Status Ihrer neuen Organisation."
+                  ? "Wir prüfen den Status Ihrer neuen Organisation."
                   : "Die Rueckkehr aus dem Checkout enthaelt keine Session-ID."}
               </CardDescription>
             </div>
@@ -101,7 +101,7 @@ export function OnboardingCompletePage() {
                   <div className="flex items-start gap-3 rounded-lg border bg-muted/20 p-4 text-sm text-muted-foreground">
                     <Mail className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>
-                      Falls die E-Mail nicht innerhalb weniger Minuten ankommt, pruefen Sie bitte
+                      Falls die E-Mail nicht innerhalb weniger Minuten ankommt, prüfen Sie bitte
                       auch Ihren Spam-Ordner.
                     </span>
                   </div>
