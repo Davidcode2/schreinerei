@@ -95,7 +95,7 @@ export function InviteUserDialog({
                 Keycloak versendet die Einladung direkt an <span className="font-medium text-foreground">{generatedInvite.email}</span>.
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Gueltig bis {new Date(generatedInvite.expires_at).toLocaleString("de-DE")}
+                Gültig bis {new Date(generatedInvite.expires_at).toLocaleString("de-DE")}
               </p>
             </div>
           )}

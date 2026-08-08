@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useOnboardingSession } from "@/lib/api/hooks"
 
 const STATUS_COPY: Record<string, string> = {
-  pending_payment: "Zahlung wird bestaetigt.",
-  payment_confirmed: "Zahlung bestaetigt, Organisation wird vorbereitet.",
+  pending_payment: "Zahlung wird bestätigt.",
+  payment_confirmed: "Zahlung bestätigt, Organisation wird vorbereitet.",
   provisioning: "Organisation und Einladung werden erstellt.",
   completed: "Ihre Organisation ist bereit.",
-  payment_failed: "Die Zahlung wurde nicht bestaetigt.",
+  payment_failed: "Die Zahlung wurde nicht bestätigt.",
   keycloak_failed: "Die Organisation konnte nicht erstellt werden.",
 }
 
@@ -49,12 +49,12 @@ export function OnboardingCompletePage() {
             </span>
             <div>
               <CardTitle className="font-display text-2xl" role="heading" aria-level={1}>
-                Onboarding abschliessen
+                Onboarding abschließen
               </CardTitle>
               <CardDescription className="mt-2">
                 {sessionId
                   ? "Wir prüfen den Status Ihrer neuen Organisation."
-                  : "Die Rueckkehr aus dem Checkout enthaelt keine Session-ID."}
+                  : "Die Rückkehr aus dem Checkout enthält keine Session-ID."}
               </CardDescription>
             </div>
           </CardHeader>
@@ -87,8 +87,8 @@ export function OnboardingCompletePage() {
                   </div>
                   {isCompleted && (
                     <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-                      Sie erhalten in Kuerze eine Einladung per E-Mail. Oeffnen Sie den Link in
-                      dieser Nachricht, um Ihre Registrierung abzuschliessen und Ihr Passwort zu
+                      Sie erhalten in Kürze eine Einladung per E-Mail. Öffnen Sie den Link in
+                      dieser Nachricht, um Ihre Registrierung abzuschließen und Ihr Passwort zu
                       setzen.
                     </div>
                   )}

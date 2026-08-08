@@ -58,7 +58,7 @@ function getSignalStatusLabel(status: string): string {
     case "pending":
       return "Offen"
     case "approved":
-      return "Bestatigt"
+      return "Bestätigt"
     case "ordered":
       return "Bestellt"
     case "fulfilled":

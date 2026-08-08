@@ -33,7 +33,7 @@ describe("OnboardingCompletePage", () => {
 
     expect(screen.getByText(/ihre organisation ist bereit/i)).toBeInTheDocument()
     expect(
-      screen.getByText(/sie erhalten in kuerze eine einladung per e-mail/i)
+      screen.getByText(/sie erhalten in kürze eine einladung per e-mail/i)
     ).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: /weiter zur anmeldung/i })).not.toBeInTheDocument()
   })

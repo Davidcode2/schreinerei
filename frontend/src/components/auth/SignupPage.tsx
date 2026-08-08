@@ -78,7 +78,7 @@ export function SignupPage() {
                     <Input value={invite.email} readOnly className="h-10 bg-background" />
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Gueltig bis {new Date(invite.expires_at).toLocaleString("de-DE")}
+                    Gültig bis {new Date(invite.expires_at).toLocaleString("de-DE")}
                   </div>
                   <Button
                     className="w-full gap-2"
