@@ -182,7 +182,7 @@ export function CreateInvoiceDialog({
 
           <div className="space-y-2">
             <Label htmlFor="invoice-sender-address">Absenderadresse</Label>
-            <Textarea id="invoice-sender-address" value={senderAddress} onChange={(event) => setSenderAddress(event.target.value)} placeholder="Optional, z.B. Werkstrasse 1" rows={3} />
+            <Textarea id="invoice-sender-address" value={senderAddress} onChange={(event) => setSenderAddress(event.target.value)} placeholder="Optional, z. B. Werkstraße 1" rows={3} />
           </div>
 
           <div className="space-y-4 rounded-lg border border-border/70 bg-card/70 p-4 shadow-sm">
