@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import userEvent from '@testing-library/user-event'
 import { screen, waitFor } from '@testing-library/react'
 import { render } from '@/test/utils'
 import { mockData } from '@/test/mocks/handlers'
@@ -73,6 +74,13 @@ describe('ReservationDialog', () => {
     )
 
     const deleteButton = await screen.findByRole('button', { name: 'Löschen' })
+    expect(screen.getByRole('button', { name: 'Stornieren' })).toBeInTheDocument()
+
+    await userEvent.click(deleteButton)
+    expect(await screen.findByRole('heading', { name: 'Reservierung stornieren?' })).toBeInTheDocument()
+    expect(screen.getByText(/Reservierung für Akkuschrauber/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Abbrechen' }))
+    expect(screen.queryByRole('heading', { name: 'Reservierung stornieren?' })).not.toBeInTheDocument()
 
     expect(deleteButton).toHaveClass('text-destructive')
     expect(deleteButton).toHaveClass('gap-2')

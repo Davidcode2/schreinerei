@@ -23,6 +23,7 @@ import {
   useVehicles,
 } from "@/lib/api/hooks"
 import { StatusTransitionButtons, statusLabels } from "@/components/fleet/StatusTransitionButtons"
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
 import { formatDateTimeLocalInput } from "@/lib/utils"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -96,6 +97,7 @@ export function ReservationDialog({
   )
   const [purpose, setPurpose] = useState(initialData?.purpose ?? "")
   const [notes, setNotes] = useState(initialData?.notes ?? "")
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   const { data: vehicles } = useVehicles()
   const { data: tools } = useTools()
@@ -125,7 +127,7 @@ export function ReservationDialog({
         setStartTime(initialStartTime ?? "")
         setEndTime(initialEndTime ?? "")
         const activeSite = sites?.find((site) => site.id === preferences?.active_site_id)
-        setPurpose(activeSite ? `Reservierung fuer ${activeSite.name}` : "")
+        setPurpose(activeSite ? `Reservierung für ${activeSite.name}` : "")
         setNotes("")
       }
     }
@@ -205,6 +207,7 @@ export function ReservationDialog({
     try {
       await deleteMutation.mutateAsync(initialData.id)
       toast.success("Reservierung gelöscht")
+      setDeleteConfirmOpen(false)
       onOpenChange(false)
     } catch {
       toast.error("Löschen fehlgeschlagen")
@@ -223,8 +226,9 @@ export function ReservationDialog({
     initialData.status !== "completed"
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-md">
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden sm:max-h-[90vh] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
@@ -237,7 +241,7 @@ export function ReservationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 space-y-4 overflow-y-auto py-4 pr-1">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto py-4 pr-1">
           {isEditing && (
             <div className="space-y-4 rounded-xl border bg-muted/30 p-4">
               <div className="flex items-center justify-between gap-3">
@@ -422,7 +426,7 @@ export function ReservationDialog({
           <div className="space-y-2 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
             <Label>Notiz (optional)</Label>
             <Input
-              placeholder="z.B. Fuer Projekt Mueller"
+              placeholder="z.B. Für Projekt Müller"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="h-11"
@@ -430,22 +434,22 @@ export function ReservationDialog({
           </div>
         </div>
 
-        <DialogFooter className="flex-col-reverse gap-2 border-t border-border/70 pt-4 sm:flex-row sm:justify-between">
-          <div>
+        <DialogFooter className="shrink-0 flex-col gap-2 border-t border-border/70 bg-background pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="w-full sm:w-auto">
             {isEditing ? (
               <Button
                 type="button"
                 variant="outline"
-                className="gap-2 text-destructive hover:text-destructive"
+                className="w-full gap-2 text-destructive hover:text-destructive sm:w-auto"
                 disabled={deleteMutation.isPending}
-                onClick={handleDelete}
+                onClick={() => setDeleteConfirmOpen(true)}
               >
                 <Trash2 className="h-4 w-4" />
                 {deleteMutation.isPending ? "Wird gelöscht..." : "Löschen"}
               </Button>
             ) : null}
           </div>
-          <div className="flex gap-2">
+          <div className="flex w-full justify-end gap-2 sm:w-auto">
             <Button variant="outline" onClick={() => onOpenChange(false)} className="shadow-sm">
               Abbrechen
             </Button>
@@ -469,6 +473,18 @@ export function ReservationDialog({
           </div>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+      {isEditing && initialData ? (
+        <DeleteConfirmDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          onConfirm={handleDelete}
+          itemName={`Reservierung für ${initialData.resource_name}`}
+          isPending={deleteMutation.isPending}
+          actionLabel="Stornieren"
+          title="Reservierung stornieren?"
+        />
+      ) : null}
+    </>
   )
 }
