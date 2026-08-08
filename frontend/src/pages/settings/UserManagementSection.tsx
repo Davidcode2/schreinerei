@@ -66,7 +66,7 @@ function PendingInviteRow({ invite }: { invite: PendingInviteResponse }) {
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <Clock3 className="h-3.5 w-3.5" />
-              Gueltig bis {formatInviteExpiry(invite.expires_at)}
+              Gültig bis {formatInviteExpiry(invite.expires_at)}
             </span>
           </div>
         </div>
