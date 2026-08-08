@@ -370,7 +370,7 @@ describe("CalendarView", () => {
 
     await user.click(requireElement(laterButton))
     await user.click(requireElement(earlierButton))
-    await user.click(screen.getByRole("button", { name: /reservierung bestaetigen/i }))
+    await user.click(screen.getByRole("button", { name: /reservierung bestätigen/i }))
 
     await waitFor(() => {
       const payload = mutateAsyncMock.mock.calls[0]?.[0]
@@ -387,7 +387,7 @@ describe("CalendarView", () => {
         project_id: "site-1",
         start_time: payload.start_time,
         end_time: payload.end_time,
-        purpose: "Reservierung fuer Baustelle Nord",
+        purpose: "Reservierung für Baustelle Nord",
       })
       expect(new Date(payload.start_time).getTime()).toBeLessThan(new Date(payload.end_time).getTime())
     })
