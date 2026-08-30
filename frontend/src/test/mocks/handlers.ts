@@ -18,6 +18,9 @@ export const mockData = {
     sender_address: null as string | null,
   },
   testDataInstalled: false,
+  testDataState: 'absent' as 'complete' | 'partial' | 'absent',
+  testDataRetainedRecords: 0,
+  testDataRetainedOnRemoval: 0,
   vehicles: [] as MockRecord[],
   tools: [] as MockRecord[],
   machines: [] as MockRecord[],
@@ -140,17 +143,32 @@ export const handlers = [
   }),
 
   http.get(apiRoute('/settings/test-data'), async () => {
-    return HttpResponse.json({ installed: mockData.testDataInstalled });
+    return HttpResponse.json({
+      installed: mockData.testDataInstalled,
+      state: mockData.testDataState,
+      removed_records: 0,
+      retained_records: mockData.testDataRetainedRecords,
+    });
   }),
 
   http.post(apiRoute('/settings/test-data'), async () => {
     mockData.testDataInstalled = true;
-    return HttpResponse.json({ installed: true });
+    mockData.testDataState = 'complete';
+    mockData.testDataRetainedRecords = 39;
+    return HttpResponse.json({ installed: true, state: 'complete', removed_records: 0, retained_records: 39 });
   }),
 
   http.delete(apiRoute('/settings/test-data'), async () => {
-    mockData.testDataInstalled = false;
-    return HttpResponse.json({ installed: false });
+    const retainedRecords = mockData.testDataRetainedOnRemoval;
+    mockData.testDataInstalled = retainedRecords > 0;
+    mockData.testDataState = retainedRecords > 0 ? 'partial' : 'absent';
+    mockData.testDataRetainedRecords = retainedRecords;
+    return HttpResponse.json({
+      installed: mockData.testDataInstalled,
+      state: mockData.testDataState,
+      removed_records: 39 - retainedRecords,
+      retained_records: retainedRecords,
+    });
   }),
 
   http.patch(apiRoute('/preferences'), async ({ request }) => {

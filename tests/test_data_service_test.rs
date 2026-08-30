@@ -1,5 +1,5 @@
 use schreinerei::common::types::{Role, TenantId, UserId};
-use schreinerei::modules::iam::application::test_data_service::TestDataService;
+use schreinerei::modules::iam::application::test_data_service::{TestDataService, TestDataState};
 use schreinerei::modules::iam::application::user_service::{TenantContext, UserService};
 use schreinerei::modules::iam::infrastructure::{
     test_data_repository::TestDataRepository, user_repository::UserRepository,
@@ -15,8 +15,10 @@ async fn admin_imports_test_data_with_current_domain_values(pool: PgPool) {
     let status = service.install(&context).await.expect("install test data");
 
     assert!(status.installed);
+    assert_eq!(status.state, TestDataState::Complete);
+    assert_eq!(status.retained_records, 39);
     let assignment_user_id: Uuid = sqlx::query_scalar(
-        "SELECT user_id FROM site_assignments WHERE tenant_id = $1 AND role = 'lead'",
+        "SELECT user_id FROM site_assignments WHERE tenant_id = $1 AND id = uuid_generate_v5($1, 'onboarding-demo-assignment-admin-active')",
     )
     .bind(context.tenant_id.0)
     .fetch_one(&pool)
@@ -25,7 +27,7 @@ async fn admin_imports_test_data_with_current_domain_values(pool: PgPool) {
     assert_eq!(assignment_user_id, local_user_id(&pool, &context).await.0);
 
     let project_type: String = sqlx::query_scalar(
-        "SELECT project_type FROM sites WHERE tenant_id = $1 AND name = 'Demo Werkstattauftrag'",
+        "SELECT project_type FROM sites WHERE tenant_id = $1 AND name = 'Ausstellungsküche Werkstatt'",
     )
     .bind(context.tenant_id.0)
     .fetch_one(&pool)
@@ -38,7 +40,7 @@ async fn admin_imports_test_data_with_current_domain_values(pool: PgPool) {
         SELECT m.unit, m.quantity, COALESCE(SUM(b.remaining_quantity), 0) AS batch_quantity
         FROM materials m
         LEFT JOIN material_batches b ON b.material_id = m.id AND b.tenant_id = m.tenant_id
-        WHERE m.tenant_id = $1 AND m.name = 'D4 Leim 500 g'
+        WHERE m.tenant_id = $1 AND m.name = 'D4-Leim 500 g'
         GROUP BY m.id
         "#,
     )
@@ -55,7 +57,7 @@ async fn admin_imports_test_data_with_current_domain_values(pool: PgPool) {
         SELECT c.display_color
         FROM assets a
         JOIN vehicle_display_colors c ON c.asset_id = a.id AND c.tenant_id = a.tenant_id
-        WHERE a.tenant_id = $1 AND a.name = 'Demo Montagebus'
+        WHERE a.tenant_id = $1 AND a.name = 'Montagebus Nord'
         "#,
     )
     .bind(context.tenant_id.0)
@@ -63,6 +65,63 @@ async fn admin_imports_test_data_with_current_domain_values(pool: PgPool) {
     .await
     .expect("visible demo vehicle");
     assert_eq!(vehicle_color, "#2563eb");
+
+    let fixture_counts: (i64, i64, i64, i64, i64) = sqlx::query_as(
+        r#"
+        SELECT
+          (SELECT COUNT(*) FROM users WHERE tenant_id = $1 AND email LIKE '%@example.invalid'),
+          (SELECT COUNT(*) FROM sites WHERE tenant_id = $1),
+          (SELECT COUNT(*) FROM time_entries WHERE tenant_id = $1),
+          (SELECT COUNT(*) FROM site_activities WHERE tenant_id = $1),
+          (SELECT COUNT(*) FROM site_activity_attachments WHERE tenant_id = $1)
+        "#,
+    )
+    .bind(context.tenant_id.0)
+    .fetch_one(&pool)
+    .await
+    .expect("fixture counts");
+    assert_eq!(fixture_counts, (5, 6, 20, 12, 3));
+
+    let warning_counts: (i64, i64) = sqlx::query_as(
+        r#"
+        SELECT
+          (SELECT COUNT(*) FROM materials WHERE tenant_id = $1 AND quantity < min_quantity),
+          (SELECT COUNT(*) FROM material_batches WHERE tenant_id = $1 AND expires_on < CURRENT_DATE AND remaining_quantity > 0)
+        "#,
+    )
+    .bind(context.tenant_id.0)
+    .fetch_one(&pool)
+    .await
+    .expect("warning counts");
+    assert!(warning_counts.0 >= 1);
+    assert!(warning_counts.1 >= 1);
+
+    let attachment_header: Vec<u8> = sqlx::query_scalar(
+        "SELECT substring(original_bytes FROM 1 FOR 8) FROM site_activity_attachments WHERE tenant_id = $1 LIMIT 1",
+    )
+    .bind(context.tenant_id.0)
+    .fetch_one(&pool)
+    .await
+    .expect("image attachment");
+    assert_eq!(attachment_header, b"\x89PNG\r\n\x1a\n");
+}
+
+#[sqlx::test]
+async fn reinstalling_test_data_is_idempotent(pool: PgPool) {
+    let context = insert_admin(&pool).await;
+    let service = test_data_service(&pool);
+    service.install(&context).await.expect("first install");
+
+    let status = service.install(&context).await.expect("second install");
+
+    assert_eq!(status.state, TestDataState::Complete);
+    assert_eq!(status.retained_records, 39);
+    let site_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sites WHERE tenant_id = $1")
+        .bind(context.tenant_id.0)
+        .fetch_one(&pool)
+        .await
+        .expect("site count");
+    assert_eq!(site_count, 6);
 }
 
 #[sqlx::test]
@@ -83,13 +142,14 @@ async fn removing_test_data_preserves_custom_tenant_data(pool: PgPool) {
     let status = service.remove(&context).await.expect("remove test data");
 
     assert!(!status.installed);
-    let seeded_count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM sites WHERE tenant_id = $1 AND name LIKE 'Demo %'",
-    )
-    .bind(context.tenant_id.0)
-    .fetch_one(&pool)
-    .await
-    .expect("seeded site count");
+    assert_eq!(status.state, TestDataState::Absent);
+    assert_eq!(status.removed_records, 39);
+    assert_eq!(status.retained_records, 0);
+    let seeded_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sites WHERE tenant_id = $1")
+        .bind(context.tenant_id.0)
+        .fetch_one(&pool)
+        .await
+        .expect("seeded site count");
     assert_eq!(seeded_count, 0);
     let custom_exists: bool = sqlx::query_scalar(
         "SELECT EXISTS(SELECT 1 FROM categories WHERE id = $1 AND tenant_id = $2)",
@@ -134,7 +194,7 @@ async fn regular_user_cannot_install_or_remove_test_data(pool: PgPool) {
 }
 
 #[sqlx::test]
-async fn removal_refuses_to_delete_custom_data_linked_to_test_data(pool: PgPool) {
+async fn removal_keeps_only_test_data_referenced_by_custom_data(pool: PgPool) {
     let context = insert_admin(&pool).await;
     let service = test_data_service(&pool);
     service.install(&context).await.expect("install test data");
@@ -153,15 +213,12 @@ async fn removal_refuses_to_delete_custom_data_linked_to_test_data(pool: PgPool)
     .await
     .expect("custom activity");
 
-    let error = service
-        .remove(&context)
-        .await
-        .expect_err("linked custom data must be preserved");
+    let status = service.remove(&context).await.expect("partial removal");
 
-    assert!(matches!(
-        error,
-        schreinerei::common::error::AppError::Conflict(_)
-    ));
+    assert!(status.installed);
+    assert_eq!(status.state, TestDataState::Partial);
+    assert_eq!(status.removed_records, 38);
+    assert_eq!(status.retained_records, 1);
     let activity_exists: bool =
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM site_activities WHERE id = $1)")
             .bind(activity_id)
@@ -169,6 +226,21 @@ async fn removal_refuses_to_delete_custom_data_linked_to_test_data(pool: PgPool)
             .await
             .expect("activity remains");
     assert!(activity_exists);
+    let remaining_sites: Vec<String> =
+        sqlx::query_scalar("SELECT name FROM sites WHERE tenant_id = $1 ORDER BY name")
+            .bind(context.tenant_id.0)
+            .fetch_all(&pool)
+            .await
+            .expect("remaining sites");
+    assert_eq!(remaining_sites, vec!["Küche Familie Winter"]);
+    let unrelated_seed_count: i64 = sqlx::query_scalar(
+        "SELECT (SELECT COUNT(*) FROM materials WHERE tenant_id = $1) + (SELECT COUNT(*) FROM assets WHERE tenant_id = $1)",
+    )
+    .bind(context.tenant_id.0)
+    .fetch_one(&pool)
+    .await
+    .expect("unrelated seed count");
+    assert_eq!(unrelated_seed_count, 0);
 }
 
 fn test_data_service(pool: &PgPool) -> TestDataService {

@@ -16,7 +16,7 @@ export function TestDataSettingsSection() {
   const install = useInstallTestData()
   const remove = useRemoveTestData()
   const isPending = install.isPending || remove.isPending
-  const isInstalled = status.data?.installed ?? false
+  const testDataState = status.data?.state ?? "absent"
 
   function installTestData() {
     install.mutate(undefined, {
@@ -27,9 +27,15 @@ export function TestDataSettingsSection() {
 
   function removeTestData() {
     remove.mutate(undefined, {
-      onSuccess: () => {
+      onSuccess: (result) => {
         setConfirmRemoval(false)
-        toast.success("Testdaten wurden entfernt")
+        if (result.state === "partial") {
+          toast.warning(
+            `${result.removed_records} Testdatensätze entfernt, ${result.retained_records} wegen eigener Verknüpfungen beibehalten`,
+          )
+          return
+        }
+        toast.success(`${result.removed_records} Testdatensätze wurden entfernt`)
       },
       onError: () => toast.error("Testdaten konnten nicht entfernt werden"),
     })
@@ -52,12 +58,18 @@ export function TestDataSettingsSection() {
         <p className="text-sm text-muted-foreground">
           Beim Entfernen bleiben alle unabhängig angelegten Daten erhalten.
         </p>
+        {testDataState === "partial" && (
+          <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+            {status.data?.retained_records} Testdatensätze bleiben wegen Verknüpfungen mit eigenen
+            Daten erhalten. Ein erneuter Import ergänzt fehlende Testdaten.
+          </p>
+        )}
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
           <Button
             variant="outline"
             className="gap-2"
             onClick={installTestData}
-            disabled={status.isLoading || isInstalled || isPending}
+            disabled={status.isLoading || testDataState === "complete" || isPending}
           >
             <Download className="h-4 w-4" />
             {install.isPending ? "Wird importiert..." : "Testdaten importieren"}
@@ -66,7 +78,7 @@ export function TestDataSettingsSection() {
             variant="destructive"
             className="gap-2"
             onClick={() => setConfirmRemoval(true)}
-            disabled={status.isLoading || !isInstalled || isPending}
+            disabled={status.isLoading || testDataState === "absent" || isPending}
           >
             <Trash2 className="h-4 w-4" />
             Testdaten entfernen

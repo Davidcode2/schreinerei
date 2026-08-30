@@ -27,6 +27,9 @@ describe("SettingsPage", () => {
       sender_address: 'Werkstrasse 1\n12345 Musterstadt',
     }
     mockData.testDataInstalled = false
+    mockData.testDataState = "absent"
+    mockData.testDataRetainedRecords = 0
+    mockData.testDataRetainedOnRemoval = 0
   })
 
   it("renders the default hourly rate section for admins", async () => {
@@ -71,6 +74,8 @@ describe("SettingsPage", () => {
 
   it("confirms before removing test data", async () => {
     mockData.testDataInstalled = true
+    mockData.testDataState = "complete"
+    mockData.testDataRetainedRecords = 39
     const user = userEvent.setup()
     render(<SettingsPage />)
     const removeButton = await screen.findByRole("button", { name: /testdaten entfernen/i })
@@ -81,7 +86,27 @@ describe("SettingsPage", () => {
     await user.click(screen.getByRole("button", { name: "Entfernen" }))
 
     await waitFor(() => expect(mockData.testDataInstalled).toBe(false))
-    expect(await screen.findByText("Testdaten wurden entfernt")).toBeInTheDocument()
+    expect(await screen.findByText("39 Testdatensätze wurden entfernt")).toBeInTheDocument()
+  })
+
+  it("reports test data retained by custom links", async () => {
+    mockData.testDataInstalled = true
+    mockData.testDataState = "complete"
+    mockData.testDataRetainedRecords = 39
+    mockData.testDataRetainedOnRemoval = 2
+    const user = userEvent.setup()
+    render(<SettingsPage />)
+
+    await user.click(await screen.findByRole("button", { name: /testdaten entfernen/i }))
+    await user.click(screen.getByRole("button", { name: "Entfernen" }))
+
+    expect(
+      await screen.findByText(
+        "37 Testdatensätze entfernt, 2 wegen eigener Verknüpfungen beibehalten",
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/2 Testdatensätze bleiben wegen Verknüpfungen/)).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /testdaten importieren/i })).toBeEnabled()
   })
 
   it("updates the billing settings", async () => {

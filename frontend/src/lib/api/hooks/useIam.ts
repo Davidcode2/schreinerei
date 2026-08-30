@@ -58,6 +58,9 @@ export interface UpdateBillingSettingsRequest {
 
 export interface TestDataStatus {
   installed: boolean
+  state: "complete" | "partial" | "absent"
+  removed_records: number
+  retained_records: number
 }
 
 export function useUsers() {

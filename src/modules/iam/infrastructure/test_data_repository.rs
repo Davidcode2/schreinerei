@@ -3,6 +3,68 @@ use sqlx::{PgPool, Postgres, Transaction};
 use crate::common::error::AppError;
 use crate::common::types::{TenantId, UserId};
 
+const CATEGORY_SEEDS: &[&str] = &[
+    "onboarding-demo-category-plates",
+    "onboarding-demo-category-hardware",
+    "onboarding-demo-category-consumables",
+    "onboarding-demo-category-timber",
+    "onboarding-demo-category-edges",
+    "onboarding-demo-category-finishes",
+];
+const MATERIAL_SEEDS: &[&str] = &[
+    "onboarding-demo-material-multiplex",
+    "onboarding-demo-material-hinge",
+    "onboarding-demo-material-glue",
+    "onboarding-demo-material-oak",
+    "onboarding-demo-material-mdf",
+    "onboarding-demo-material-edge-oak",
+    "onboarding-demo-material-screws",
+    "onboarding-demo-material-drawers",
+    "onboarding-demo-material-oil",
+    "onboarding-demo-material-silicone",
+];
+const SITE_SEEDS: &[&str] = &[
+    "onboarding-demo-project-active",
+    "onboarding-demo-project-planned",
+    "onboarding-demo-project-library",
+    "onboarding-demo-project-kindergarten",
+    "onboarding-demo-project-farmshop",
+    "onboarding-demo-project-showroom",
+];
+const USER_SEEDS: &[&str] = &[
+    "onboarding-demo-user-lena",
+    "onboarding-demo-user-moritz",
+    "onboarding-demo-user-aylin",
+    "onboarding-demo-user-felix",
+    "onboarding-demo-user-mara",
+];
+const ASSET_SEEDS: &[&str] = &[
+    "onboarding-demo-asset-vehicle",
+    "onboarding-demo-asset-tool",
+    "onboarding-demo-asset-vehicle-south",
+    "onboarding-demo-asset-vehicle-pickup",
+    "onboarding-demo-asset-vehicle-trailer",
+    "onboarding-demo-asset-tool-lamello",
+    "onboarding-demo-asset-tool-saw",
+    "onboarding-demo-asset-tool-drill",
+    "onboarding-demo-asset-tool-vacuum",
+    "onboarding-demo-asset-tool-multitool",
+    "onboarding-demo-asset-tool-router",
+    "onboarding-demo-asset-tool-laser",
+];
+
+pub const COMPLETE_TEST_DATA_RECORD_COUNT: i64 = (CATEGORY_SEEDS.len()
+    + MATERIAL_SEEDS.len()
+    + SITE_SEEDS.len()
+    + USER_SEEDS.len()
+    + ASSET_SEEDS.len()) as i64;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TestDataRemoval {
+    pub removed_records: i64,
+    pub retained_records: i64,
+}
+
 pub struct TestDataRepository {
     pool: PgPool,
 }
@@ -13,13 +75,21 @@ impl TestDataRepository {
     }
 
     pub async fn is_installed(&self, tenant_id: TenantId) -> Result<bool, AppError> {
-        sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM sites WHERE id = uuid_generate_v5($1, 'onboarding-demo-project-active') AND tenant_id = $1)",
-        )
-        .bind(tenant_id.0)
-        .fetch_one(&self.pool)
-        .await
-        .map_err(database_error)
+        Ok(self.seeded_record_count(tenant_id).await? > 0)
+    }
+
+    pub async fn seeded_record_count(&self, tenant_id: TenantId) -> Result<i64, AppError> {
+        let mut count = 0;
+        for (table, names) in [
+            ("categories", CATEGORY_SEEDS),
+            ("materials", MATERIAL_SEEDS),
+            ("sites", SITE_SEEDS),
+            ("users", USER_SEEDS),
+            ("assets", ASSET_SEEDS),
+        ] {
+            count += count_seeded_records(&self.pool, tenant_id, table, names).await?;
+        }
+        Ok(count)
     }
 
     pub async fn install(&self, tenant_id: TenantId, admin_id: UserId) -> Result<(), AppError> {
@@ -31,71 +101,76 @@ impl TestDataRepository {
         insert_assignment(&mut transaction, tenant_id, admin_id).await?;
         insert_assets(&mut transaction, tenant_id).await?;
         insert_asset_details(&mut transaction, tenant_id).await?;
+        insert_rich_fixture(&mut transaction, tenant_id, admin_id).await?;
         transaction.commit().await.map_err(database_error)
     }
 
-    pub async fn remove(&self, tenant_id: TenantId) -> Result<(), AppError> {
+    pub async fn remove(&self, tenant_id: TenantId) -> Result<TestDataRemoval, AppError> {
+        let before = self.seeded_record_count(tenant_id).await?;
         let mut transaction = self.pool.begin().await.map_err(database_error)?;
-        if has_linked_custom_data(&mut transaction, tenant_id).await? {
-            return Err(AppError::Conflict(
-                "Test data is still referenced by custom organization data".to_string(),
-            ));
-        }
         delete_seeded_children(&mut transaction, tenant_id).await?;
         delete_seeded_assets(&mut transaction, tenant_id).await?;
         delete_seeded_inventory(&mut transaction, tenant_id).await?;
         delete_seeded_sites(&mut transaction, tenant_id).await?;
-        transaction.commit().await.map_err(database_error)
+        delete_seeded_users(&mut transaction, tenant_id).await?;
+        transaction.commit().await.map_err(database_error)?;
+        let retained_records = self.seeded_record_count(tenant_id).await?;
+        Ok(TestDataRemoval {
+            removed_records: before - retained_records,
+            retained_records,
+        })
     }
 }
 
-async fn has_linked_custom_data(
+async fn insert_rich_fixture(
     transaction: &mut Transaction<'_, Postgres>,
     tenant_id: TenantId,
-) -> Result<bool, AppError> {
-    sqlx::query_scalar(
-        r#"
-        WITH seeded AS (
-            SELECT
-                ARRAY[
-                    uuid_generate_v5($1, 'onboarding-demo-project-active'),
-                    uuid_generate_v5($1, 'onboarding-demo-project-planned')
-                ] AS site_ids,
-                ARRAY[
-                    uuid_generate_v5($1, 'onboarding-demo-material-multiplex'),
-                    uuid_generate_v5($1, 'onboarding-demo-material-hinge'),
-                    uuid_generate_v5($1, 'onboarding-demo-material-glue')
-                ] AS material_ids,
-                ARRAY[
-                    uuid_generate_v5($1, 'onboarding-demo-asset-vehicle'),
-                    uuid_generate_v5($1, 'onboarding-demo-asset-tool')
-                ] AS asset_ids
+    admin_id: UserId,
+) -> Result<(), AppError> {
+    let statement = include_str!("test_data_repository/rich_seed.sql")
+        .replace("{{tenant_id}}", &tenant_id.to_string())
+        .replace("{{admin_id}}", &admin_id.to_string())
+        .replace(
+            "{{kitchen_image}}",
+            &hex::encode(include_bytes!(
+                "test_data_repository/kitchen_measurement.png"
+            )),
         )
-        SELECT EXISTS (
-            SELECT 1 FROM site_assignments, seeded
-            WHERE tenant_id = $1 AND site_id = ANY(seeded.site_ids)
-              AND id <> uuid_generate_v5($1, 'onboarding-demo-assignment-admin-active')
-            UNION ALL SELECT 1 FROM site_activities, seeded WHERE tenant_id = $1 AND site_id = ANY(seeded.site_ids)
-            UNION ALL SELECT 1 FROM site_activity_attachments, seeded WHERE tenant_id = $1 AND site_id = ANY(seeded.site_ids)
-            UNION ALL SELECT 1 FROM site_appointments, seeded WHERE tenant_id = $1 AND site_id = ANY(seeded.site_ids)
-            UNION ALL SELECT 1 FROM time_entries, seeded WHERE tenant_id = $1 AND site_id = ANY(seeded.site_ids)
-            UNION ALL SELECT 1 FROM invoices, seeded WHERE tenant_id = $1 AND site_id = ANY(seeded.site_ids)
-            UNION ALL SELECT 1 FROM stock_entries, seeded WHERE tenant_id = $1 AND (site_id = ANY(seeded.site_ids) OR material_id = ANY(seeded.material_ids))
-            UNION ALL SELECT 1 FROM order_requests, seeded WHERE tenant_id = $1 AND material_id = ANY(seeded.material_ids)
-            UNION ALL SELECT 1 FROM goods_receipt_lines, seeded WHERE tenant_id = $1 AND material_id = ANY(seeded.material_ids)
-            UNION ALL SELECT 1 FROM material_batches, seeded
-                WHERE tenant_id = $1 AND material_id = ANY(seeded.material_ids)
-                  AND id <> uuid_generate_v5($1, 'onboarding-demo-material-glue-batch')
-            UNION ALL SELECT 1 FROM reservations, seeded
-                WHERE tenant_id = $1 AND (site_id = ANY(seeded.site_ids) OR project_id = ANY(seeded.site_ids) OR asset_id = ANY(seeded.asset_ids))
-            UNION ALL SELECT 1 FROM maintenance_schedules, seeded WHERE tenant_id = $1 AND asset_id = ANY(seeded.asset_ids)
+        .replace(
+            "{{kitchen_thumb}}",
+            &hex::encode(include_bytes!(
+                "test_data_repository/kitchen_measurement-thumb.png"
+            )),
         )
-        "#,
-    )
-    .bind(tenant_id.0)
-    .fetch_one(&mut **transaction)
-    .await
-    .map_err(database_error)
+        .replace(
+            "{{workshop_image}}",
+            &hex::encode(include_bytes!("test_data_repository/workshop_progress.png")),
+        )
+        .replace(
+            "{{workshop_thumb}}",
+            &hex::encode(include_bytes!(
+                "test_data_repository/workshop_progress-thumb.png"
+            )),
+        )
+        .replace(
+            "{{reception_image}}",
+            &hex::encode(include_bytes!(
+                "test_data_repository/reception_installation.png"
+            )),
+        )
+        .replace(
+            "{{reception_thumb}}",
+            &hex::encode(include_bytes!(
+                "test_data_repository/reception_installation-thumb.png"
+            )),
+        );
+    for seed_statement in statement.split(';').filter(|part| !part.trim().is_empty()) {
+        sqlx::query(seed_statement)
+            .execute(&mut **transaction)
+            .await
+            .map_err(database_error)?;
+    }
+    Ok(())
 }
 
 async fn insert_categories(
@@ -262,44 +337,210 @@ async fn delete_seeded_children(
     transaction: &mut Transaction<'_, Postgres>,
     tenant_id: TenantId,
 ) -> Result<(), AppError> {
-    delete_seeded_child(
+    delete_seeded_records(
         transaction,
         tenant_id,
-        "material_batches",
+        "site_activity_attachments",
         "id",
-        "onboarding-demo-material-glue-batch",
+        &[
+            "onboarding-demo-attachment-kitchen",
+            "onboarding-demo-attachment-workshop",
+            "onboarding-demo-attachment-reception",
+        ],
     )
     .await?;
-    delete_seeded_child(
+    delete_seeded_records(
+        transaction,
+        tenant_id,
+        "site_activities",
+        "id",
+        &[
+            "onboarding-demo-activity-winter-start",
+            "onboarding-demo-activity-winter-measure",
+            "onboarding-demo-activity-winter-progress",
+            "onboarding-demo-activity-library-start",
+            "onboarding-demo-activity-library-note",
+            "onboarding-demo-activity-practice-measure",
+            "onboarding-demo-activity-kita-complete",
+            "onboarding-demo-activity-kita-note",
+            "onboarding-demo-activity-showroom-progress",
+            "onboarding-demo-activity-farmshop-complete",
+            "onboarding-demo-activity-farmshop-note",
+            "onboarding-demo-activity-practice-visual",
+        ],
+    )
+    .await?;
+    delete_seeded_records(
+        transaction,
+        tenant_id,
+        "site_appointments",
+        "id",
+        &[
+            "onboarding-demo-appointment-winter",
+            "onboarding-demo-appointment-library",
+            "onboarding-demo-appointment-practice",
+            "onboarding-demo-appointment-showroom",
+        ],
+    )
+    .await?;
+    delete_seeded_records(
+        transaction,
+        tenant_id,
+        "stock_entries",
+        "id",
+        &[
+            "onboarding-demo-stock-multiplex-in",
+            "onboarding-demo-stock-multiplex-out",
+            "onboarding-demo-stock-hinge-in",
+            "onboarding-demo-stock-hinge-out",
+            "onboarding-demo-stock-oak-out",
+            "onboarding-demo-stock-mdf-out",
+            "onboarding-demo-stock-edge-out",
+            "onboarding-demo-stock-screws-out",
+            "onboarding-demo-stock-drawers-out",
+            "onboarding-demo-stock-oil-out",
+            "onboarding-demo-stock-silicone-out",
+            "onboarding-demo-stock-mdf-location",
+        ],
+    )
+    .await?;
+    delete_seeded_records(
+        transaction,
+        tenant_id,
+        "order_requests",
+        "id",
+        &["onboarding-demo-order-hinges"],
+    )
+    .await?;
+    delete_seeded_records(
+        transaction,
+        tenant_id,
+        "reservations",
+        "id",
+        &[
+            "onboarding-demo-reservation-lamello",
+            "onboarding-demo-reservation-bus-south",
+            "onboarding-demo-reservation-drill",
+            "onboarding-demo-reservation-pickup",
+            "onboarding-demo-reservation-router",
+            "onboarding-demo-reservation-vacuum",
+            "onboarding-demo-reservation-laser",
+            "onboarding-demo-reservation-multitool",
+        ],
+    )
+    .await?;
+    delete_seeded_records(
+        transaction,
+        tenant_id,
+        "maintenance_due",
+        "id",
+        &[
+            "onboarding-demo-maintenance-due-saw",
+            "onboarding-demo-maintenance-due-bus-resolved",
+            "onboarding-demo-maintenance-due-bus-open",
+            "onboarding-demo-maintenance-due-vacuum",
+            "onboarding-demo-maintenance-due-trailer",
+            "onboarding-demo-maintenance-due-router-resolved",
+            "onboarding-demo-maintenance-due-router-open",
+        ],
+    )
+    .await?;
+    delete_seeded_records(
+        transaction,
+        tenant_id,
+        "maintenance_schedules",
+        "id",
+        &[
+            "onboarding-demo-maintenance-saw",
+            "onboarding-demo-maintenance-bus",
+            "onboarding-demo-maintenance-vacuum",
+            "onboarding-demo-maintenance-trailer",
+            "onboarding-demo-maintenance-router",
+        ],
+    )
+    .await?;
+    delete_seeded_records(
+        transaction,
+        tenant_id,
+        "time_entries",
+        "id",
+        &[
+            "onboarding-demo-time-01",
+            "onboarding-demo-time-02",
+            "onboarding-demo-time-03",
+            "onboarding-demo-time-04",
+            "onboarding-demo-time-05",
+            "onboarding-demo-time-06",
+            "onboarding-demo-time-07",
+            "onboarding-demo-time-08",
+            "onboarding-demo-time-09",
+            "onboarding-demo-time-10",
+            "onboarding-demo-time-11",
+            "onboarding-demo-time-12",
+            "onboarding-demo-time-13",
+            "onboarding-demo-time-14",
+            "onboarding-demo-time-15",
+            "onboarding-demo-time-16",
+            "onboarding-demo-time-17",
+            "onboarding-demo-time-18",
+            "onboarding-demo-time-19",
+            "onboarding-demo-time-20",
+        ],
+    )
+    .await?;
+    delete_seeded_records(
         transaction,
         tenant_id,
         "site_assignments",
         "id",
-        "onboarding-demo-assignment-admin-active",
+        &[
+            "onboarding-demo-assignment-admin-active",
+            "onboarding-demo-assignment-winter-lena",
+            "onboarding-demo-assignment-winter-moritz",
+            "onboarding-demo-assignment-library-aylin",
+            "onboarding-demo-assignment-library-felix",
+            "onboarding-demo-assignment-practice-mara",
+            "onboarding-demo-assignment-kita-moritz",
+            "onboarding-demo-assignment-farmshop-felix",
+            "onboarding-demo-assignment-showroom-aylin",
+            "onboarding-demo-assignment-showroom-mara",
+        ],
     )
     .await?;
-    delete_seeded_child(
+    delete_seeded_records(
+        transaction,
+        tenant_id,
+        "material_batches",
+        "id",
+        &[
+            "onboarding-demo-material-glue-batch",
+            "onboarding-demo-material-oil-batch",
+            "onboarding-demo-material-silicone-batch",
+        ],
+    )
+    .await?;
+    delete_seeded_records(
         transaction,
         tenant_id,
         "vehicle_display_colors",
         "asset_id",
-        "onboarding-demo-asset-vehicle",
+        ASSET_SEEDS,
     )
     .await?;
-    delete_seeded_child(
+    delete_seeded_records(
         transaction,
         tenant_id,
         "vehicle_details",
         "asset_id",
-        "onboarding-demo-asset-vehicle",
+        ASSET_SEEDS,
     )
     .await?;
-    delete_seeded_child(
+    delete_seeded_records(
         transaction,
         tenant_id,
         "tool_details",
         "asset_id",
-        "onboarding-demo-asset-tool",
+        ASSET_SEEDS,
     )
     .await
 }
@@ -317,19 +558,19 @@ async fn execute_seed_statement(
         .map_err(database_error)
 }
 
-async fn delete_seeded_child(
+async fn delete_seeded_records(
     transaction: &mut Transaction<'_, Postgres>,
     tenant_id: TenantId,
     table: &str,
     id_column: &str,
-    name: &str,
+    names: &[&str],
 ) -> Result<(), AppError> {
     let statement = format!(
-        "DELETE FROM {table} WHERE tenant_id = $1 AND {id_column} = uuid_generate_v5($1, $2)"
+        "DELETE FROM {table} WHERE tenant_id = $1 AND {id_column} IN (SELECT uuid_generate_v5($1, seed_name) FROM unnest($2::text[]) AS seeds(seed_name))"
     );
     sqlx::query(&statement)
         .bind(tenant_id.0)
-        .bind(name)
+        .bind(names)
         .execute(&mut **transaction)
         .await
         .map(|_| ())
@@ -340,79 +581,128 @@ async fn delete_seeded_assets(
     transaction: &mut Transaction<'_, Postgres>,
     tenant_id: TenantId,
 ) -> Result<(), AppError> {
-    delete_ids(
-        transaction,
-        tenant_id,
-        "assets",
-        &[
-            "onboarding-demo-asset-vehicle",
-            "onboarding-demo-asset-tool",
-        ],
+    sqlx::query(
+        r#"
+        DELETE FROM assets
+        WHERE tenant_id = $1
+          AND id IN (SELECT uuid_generate_v5($1, seed_name) FROM unnest($2::text[]) AS seeds(seed_name))
+          AND NOT EXISTS (SELECT 1 FROM reservations WHERE asset_id = assets.id)
+          AND NOT EXISTS (SELECT 1 FROM maintenance_schedules WHERE asset_id = assets.id)
+          AND NOT EXISTS (SELECT 1 FROM maintenance_due WHERE asset_id = assets.id)
+        "#,
     )
+    .bind(tenant_id.0)
+    .bind(ASSET_SEEDS)
+    .execute(&mut **transaction)
     .await
+    .map(|_| ())
+    .map_err(database_error)
 }
 
 async fn delete_seeded_inventory(
     transaction: &mut Transaction<'_, Postgres>,
     tenant_id: TenantId,
 ) -> Result<(), AppError> {
-    delete_ids(
-        transaction,
-        tenant_id,
-        "materials",
-        &[
-            "onboarding-demo-material-multiplex",
-            "onboarding-demo-material-hinge",
-            "onboarding-demo-material-glue",
-        ],
+    sqlx::query(
+        r#"
+        DELETE FROM materials
+        WHERE tenant_id = $1
+          AND id IN (SELECT uuid_generate_v5($1, seed_name) FROM unnest($2::text[]) AS seeds(seed_name))
+          AND NOT EXISTS (SELECT 1 FROM stock_entries WHERE material_id = materials.id)
+          AND NOT EXISTS (SELECT 1 FROM order_requests WHERE material_id = materials.id)
+          AND NOT EXISTS (SELECT 1 FROM goods_receipt_lines WHERE material_id = materials.id)
+          AND NOT EXISTS (SELECT 1 FROM material_batches WHERE material_id = materials.id)
+        "#,
     )
-    .await?;
-    delete_ids(
-        transaction,
-        tenant_id,
-        "categories",
-        &[
-            "onboarding-demo-category-plates",
-            "onboarding-demo-category-hardware",
-            "onboarding-demo-category-consumables",
-        ],
-    )
+    .bind(tenant_id.0)
+    .bind(MATERIAL_SEEDS)
+    .execute(&mut **transaction)
     .await
+    .map_err(database_error)?;
+    sqlx::query(
+        r#"
+        DELETE FROM categories
+        WHERE tenant_id = $1
+          AND id IN (SELECT uuid_generate_v5($1, seed_name) FROM unnest($2::text[]) AS seeds(seed_name))
+          AND NOT EXISTS (SELECT 1 FROM materials WHERE category_id = categories.id)
+        "#,
+    )
+    .bind(tenant_id.0)
+    .bind(CATEGORY_SEEDS)
+    .execute(&mut **transaction)
+    .await
+    .map(|_| ())
+    .map_err(database_error)
 }
 
 async fn delete_seeded_sites(
     transaction: &mut Transaction<'_, Postgres>,
     tenant_id: TenantId,
 ) -> Result<(), AppError> {
-    delete_ids(
-        transaction,
-        tenant_id,
-        "sites",
-        &[
-            "onboarding-demo-project-active",
-            "onboarding-demo-project-planned",
-        ],
+    sqlx::query(
+        r#"
+        DELETE FROM sites
+        WHERE tenant_id = $1
+          AND id IN (SELECT uuid_generate_v5($1, seed_name) FROM unnest($2::text[]) AS seeds(seed_name))
+          AND NOT EXISTS (SELECT 1 FROM site_assignments WHERE site_id = sites.id)
+          AND NOT EXISTS (SELECT 1 FROM site_activities WHERE site_id = sites.id)
+          AND NOT EXISTS (SELECT 1 FROM site_activity_attachments WHERE site_id = sites.id)
+          AND NOT EXISTS (SELECT 1 FROM site_appointments WHERE site_id = sites.id)
+          AND NOT EXISTS (SELECT 1 FROM time_entries WHERE site_id = sites.id)
+          AND NOT EXISTS (SELECT 1 FROM invoices WHERE site_id = sites.id)
+          AND NOT EXISTS (SELECT 1 FROM stock_entries WHERE site_id = sites.id)
+          AND NOT EXISTS (SELECT 1 FROM reservations WHERE site_id = sites.id OR project_id = sites.id)
+        "#,
     )
+    .bind(tenant_id.0)
+    .bind(SITE_SEEDS)
+    .execute(&mut **transaction)
     .await
+    .map(|_| ())
+    .map_err(database_error)
 }
 
-async fn delete_ids(
+async fn delete_seeded_users(
     transaction: &mut Transaction<'_, Postgres>,
+    tenant_id: TenantId,
+) -> Result<(), AppError> {
+    sqlx::query(
+        r#"
+        DELETE FROM users
+        WHERE tenant_id = $1
+          AND id IN (SELECT uuid_generate_v5($1, seed_name) FROM unnest($2::text[]) AS seeds(seed_name))
+          AND NOT EXISTS (SELECT 1 FROM site_assignments WHERE user_id = users.id)
+          AND NOT EXISTS (SELECT 1 FROM site_activities WHERE user_id = users.id)
+          AND NOT EXISTS (SELECT 1 FROM time_entries WHERE user_id = users.id)
+          AND NOT EXISTS (SELECT 1 FROM stock_entries WHERE user_id = users.id)
+          AND NOT EXISTS (SELECT 1 FROM order_requests WHERE requested_by = users.id OR approved_by = users.id)
+          AND NOT EXISTS (SELECT 1 FROM reservations WHERE user_id = users.id)
+          AND NOT EXISTS (SELECT 1 FROM maintenance_due WHERE resolved_by = users.id)
+        "#,
+    )
+    .bind(tenant_id.0)
+    .bind(USER_SEEDS)
+    .execute(&mut **transaction)
+    .await
+    .map(|_| ())
+    .map_err(database_error)
+}
+
+async fn count_seeded_records(
+    pool: &PgPool,
     tenant_id: TenantId,
     table: &str,
     names: &[&str],
-) -> Result<(), AppError> {
-    for name in names {
-        let statement =
-            format!("DELETE FROM {table} WHERE tenant_id = $1 AND id = uuid_generate_v5($1, $2)");
-        sqlx::query(&statement)
-            .bind(tenant_id.0)
-            .bind(name)
-            .execute(&mut **transaction)
-            .await
-            .map_err(database_error)?;
-    }
-    Ok(())
+) -> Result<i64, AppError> {
+    let statement = format!(
+        "SELECT COUNT(*) FROM {table} WHERE tenant_id = $1 AND id IN (SELECT uuid_generate_v5($1, seed_name) FROM unnest($2::text[]) AS seeds(seed_name))"
+    );
+    sqlx::query_scalar(&statement)
+        .bind(tenant_id.0)
+        .bind(names)
+        .fetch_one(pool)
+        .await
+        .map_err(database_error)
 }
 
 fn database_error(error: sqlx::Error) -> AppError {

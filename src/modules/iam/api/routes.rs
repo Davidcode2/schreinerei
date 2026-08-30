@@ -175,12 +175,18 @@ pub struct UpdateBillingSettingsRequest {
 #[ts(export, export_to = "generated.ts")]
 pub struct TestDataStatusResponse {
     pub installed: bool,
+    pub state: String,
+    pub removed_records: i64,
+    pub retained_records: i64,
 }
 
 impl From<TestDataStatus> for TestDataStatusResponse {
     fn from(status: TestDataStatus) -> Self {
         Self {
             installed: status.installed,
+            state: status.state.as_str().to_string(),
+            removed_records: status.removed_records,
+            retained_records: status.retained_records,
         }
     }
 }
