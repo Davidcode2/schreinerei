@@ -491,7 +491,10 @@ pub async fn remove_test_data(
 }
 
 fn test_data_service(state: &AppState) -> TestDataService {
-    TestDataService::new(TestDataRepository::new(state.pool.clone()))
+    TestDataService::new(
+        TestDataRepository::new(state.pool.clone()),
+        user_service(state),
+    )
 }
 
 fn normalize_optional_text(value: Option<&str>) -> Option<String> {

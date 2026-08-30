@@ -1,18 +1,29 @@
 use schreinerei::common::types::{Role, TenantId, UserId};
 use schreinerei::modules::iam::application::test_data_service::TestDataService;
-use schreinerei::modules::iam::application::user_service::TenantContext;
-use schreinerei::modules::iam::infrastructure::test_data_repository::TestDataRepository;
+use schreinerei::modules::iam::application::user_service::{TenantContext, UserService};
+use schreinerei::modules::iam::infrastructure::{
+    test_data_repository::TestDataRepository, user_repository::UserRepository,
+};
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
 #[sqlx::test]
 async fn admin_imports_test_data_with_current_domain_values(pool: PgPool) {
     let context = insert_admin(&pool).await;
-    let service = TestDataService::new(TestDataRepository::new(pool.clone()));
+    let service = test_data_service(&pool);
 
     let status = service.install(&context).await.expect("install test data");
 
     assert!(status.installed);
+    let assignment_user_id: Uuid = sqlx::query_scalar(
+        "SELECT user_id FROM site_assignments WHERE tenant_id = $1 AND role = 'lead'",
+    )
+    .bind(context.tenant_id.0)
+    .fetch_one(&pool)
+    .await
+    .expect("demo assignment user");
+    assert_eq!(assignment_user_id, local_user_id(&pool, &context).await.0);
+
     let project_type: String = sqlx::query_scalar(
         "SELECT project_type FROM sites WHERE tenant_id = $1 AND name = 'Demo Werkstattauftrag'",
     )
@@ -57,7 +68,7 @@ async fn admin_imports_test_data_with_current_domain_values(pool: PgPool) {
 #[sqlx::test]
 async fn removing_test_data_preserves_custom_tenant_data(pool: PgPool) {
     let context = insert_admin(&pool).await;
-    let service = TestDataService::new(TestDataRepository::new(pool.clone()));
+    let service = test_data_service(&pool);
     service.install(&context).await.expect("install test data");
     let custom_category_id = Uuid::new_v4();
     sqlx::query(
@@ -95,7 +106,7 @@ async fn removing_test_data_preserves_custom_tenant_data(pool: PgPool) {
 async fn regular_user_cannot_install_or_remove_test_data(pool: PgPool) {
     let mut context = insert_admin(&pool).await;
     context.roles = vec![Role::Employee];
-    let service = TestDataService::new(TestDataRepository::new(pool.clone()));
+    let service = test_data_service(&pool);
 
     let install_error = service
         .install(&context)
@@ -125,8 +136,9 @@ async fn regular_user_cannot_install_or_remove_test_data(pool: PgPool) {
 #[sqlx::test]
 async fn removal_refuses_to_delete_custom_data_linked_to_test_data(pool: PgPool) {
     let context = insert_admin(&pool).await;
-    let service = TestDataService::new(TestDataRepository::new(pool.clone()));
+    let service = test_data_service(&pool);
     service.install(&context).await.expect("install test data");
+    let local_user_id = local_user_id(&pool, &context).await;
     let activity_id = Uuid::new_v4();
     sqlx::query(
         r#"
@@ -136,7 +148,7 @@ async fn removal_refuses_to_delete_custom_data_linked_to_test_data(pool: PgPool)
     )
     .bind(activity_id)
     .bind(context.tenant_id.0)
-    .bind(context.user_id.0)
+    .bind(local_user_id.0)
     .execute(&pool)
     .await
     .expect("custom activity");
@@ -159,9 +171,28 @@ async fn removal_refuses_to_delete_custom_data_linked_to_test_data(pool: PgPool)
     assert!(activity_exists);
 }
 
+fn test_data_service(pool: &PgPool) -> TestDataService {
+    TestDataService::new(
+        TestDataRepository::new(pool.clone()),
+        UserService::new(UserRepository::new(pool.clone())),
+    )
+}
+
+async fn local_user_id(pool: &PgPool, context: &TenantContext) -> UserId {
+    UserId(
+        sqlx::query_scalar("SELECT id FROM users WHERE tenant_id = $1 AND keycloak_user_id = $2")
+            .bind(context.tenant_id.0)
+            .bind(context.user_id.to_string())
+            .fetch_one(pool)
+            .await
+            .expect("local user"),
+    )
+}
+
 async fn insert_admin(pool: &PgPool) -> TenantContext {
     let tenant_id = TenantId::new();
-    let user_id = UserId::new();
+    let local_user_id = UserId::new();
+    let authenticated_user_id = UserId::new();
     sqlx::query(
         r#"
         INSERT INTO tenants (id, keycloak_realm, name, slug, keycloak_organization_alias)
@@ -179,16 +210,16 @@ async fn insert_admin(pool: &PgPool) -> TenantContext {
         VALUES ($1, $2, $3, 'admin@example.com', 'Admin', 'admin')
         "#,
     )
-    .bind(user_id.0)
+    .bind(local_user_id.0)
     .bind(tenant_id.0)
-    .bind(Uuid::new_v4().to_string())
+    .bind(authenticated_user_id.to_string())
     .execute(pool)
     .await
     .expect("admin");
 
     TenantContext {
         tenant_id,
-        user_id,
+        user_id: authenticated_user_id,
         email: "admin@example.com".to_string(),
         roles: vec![Role::Admin],
     }

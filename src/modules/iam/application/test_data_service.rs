@@ -1,5 +1,5 @@
 use crate::common::error::AppError;
-use crate::modules::iam::application::user_service::TenantContext;
+use crate::modules::iam::application::user_service::{TenantContext, UserService};
 use crate::modules::iam::infrastructure::test_data_repository::TestDataRepository;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -9,11 +9,15 @@ pub struct TestDataStatus {
 
 pub struct TestDataService {
     repository: TestDataRepository,
+    user_service: UserService,
 }
 
 impl TestDataService {
-    pub fn new(repository: TestDataRepository) -> Self {
-        Self { repository }
+    pub fn new(repository: TestDataRepository, user_service: UserService) -> Self {
+        Self {
+            repository,
+            user_service,
+        }
     }
 
     pub async fn status(&self, context: &TenantContext) -> Result<TestDataStatus, AppError> {
@@ -24,9 +28,11 @@ impl TestDataService {
 
     pub async fn install(&self, context: &TenantContext) -> Result<TestDataStatus, AppError> {
         require_admin(context)?;
-        self.repository
-            .install(context.tenant_id, context.user_id)
+        let admin_id = self
+            .user_service
+            .get_or_create_user_id_from_ctx(context)
             .await?;
+        self.repository.install(context.tenant_id, admin_id).await?;
         Ok(TestDataStatus { installed: true })
     }
 
