@@ -78,7 +78,7 @@ export default function SitesListPage() {
       />
 
       <div className="space-y-4 mb-6">
-        <div className="flex gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-none">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {statusTabs.map((tab) => (
             <button
               key={tab.label}
