@@ -17,7 +17,7 @@ export function CategoryFilter({
   return (
     <div
       className={cn(
-        "w-full overflow-x-auto pb-1 -mb-1 scrollbar-none",
+        "w-full overflow-x-auto pb-1 scrollbar-none",
         className
       )}
     >
