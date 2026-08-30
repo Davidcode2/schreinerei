@@ -599,8 +599,8 @@ impl InventoryService {
         // Generate QR code identifier
         let qr_identifier = format!(
             "MAT-{}-{}",
-            &ctx.tenant_id.to_string()[..8].to_uppercase(),
-            &material_id.to_string()[..8].to_uppercase()
+            ctx.tenant_id.to_string()[..8].to_uppercase(),
+            material_id.to_string()[..8].to_uppercase()
         );
 
         // Update material with QR code

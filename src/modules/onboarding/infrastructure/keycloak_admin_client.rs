@@ -86,6 +86,7 @@ impl KeycloakAdminClient {
         &self,
         name: &str,
         alias: &str,
+        redirect_url: &str,
     ) -> Result<KeycloakOrganization, AppError> {
         let token = self.admin_access_token().await?;
         let url = format!(
@@ -96,6 +97,7 @@ impl KeycloakAdminClient {
             name,
             alias,
             enabled: true,
+            redirect_url,
         };
 
         let response = self
@@ -293,6 +295,7 @@ struct KeycloakOrganizationRequest<'a> {
     name: &'a str,
     alias: &'a str,
     enabled: bool,
+    redirect_url: &'a str,
 }
 
 #[derive(Debug, Deserialize)]

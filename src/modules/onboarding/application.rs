@@ -73,6 +73,7 @@ pub trait OrganizationProvisioner: Send + Sync {
         &self,
         name: &str,
         alias: &str,
+        redirect_url: &str,
     ) -> Result<KeycloakOrganization, AppError>;
 
     async fn invite_user_to_organization(
@@ -88,8 +89,9 @@ impl OrganizationProvisioner for KeycloakAdminClient {
         &self,
         name: &str,
         alias: &str,
+        redirect_url: &str,
     ) -> Result<KeycloakOrganization, AppError> {
-        self.create_organization(name, alias).await
+        self.create_organization(name, alias, redirect_url).await
     }
 
     async fn invite_user_to_organization(
@@ -141,17 +143,24 @@ pub struct TenantProvisioningService<K> {
     repository: OnboardingRepository,
     keycloak: K,
     keycloak_realm: String,
+    frontend_public_url: String,
 }
 
 impl<K> TenantProvisioningService<K>
 where
     K: OrganizationProvisioner,
 {
-    pub fn new(repository: OnboardingRepository, keycloak: K, keycloak_realm: String) -> Self {
+    pub fn new(
+        repository: OnboardingRepository,
+        keycloak: K,
+        keycloak_realm: String,
+        frontend_public_url: String,
+    ) -> Self {
         Self {
             repository,
             keycloak,
             keycloak_realm,
+            frontend_public_url,
         }
     }
 
@@ -214,7 +223,11 @@ where
             _ => {
                 let organization = self
                     .keycloak
-                    .create_organization(&session.organization_name, &session.organization_slug)
+                    .create_organization(
+                        &session.organization_name,
+                        &session.organization_slug,
+                        &self.frontend_public_url,
+                    )
                     .await?;
                 self.repository
                     .save_keycloak_organization(

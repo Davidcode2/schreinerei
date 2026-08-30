@@ -15,7 +15,7 @@ use schreinerei::modules::onboarding::infrastructure::onboarding_repository::Onb
 use sqlx::{PgPool, Row};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    Arc,
+    Arc, Mutex,
 };
 use uuid::Uuid;
 
@@ -78,6 +78,24 @@ async fn provisions_paid_session_once(pool: PgPool) {
     .await
     .expect("pending onboarding admin should be created");
     assert_eq!(admin_role, "admin");
+}
+
+#[sqlx::test]
+async fn passes_frontend_url_as_organization_redirect_url(pool: PgPool) {
+    let _session_id = insert_confirmed_session(&pool, PAYMENT_ID).await;
+    let organization_id = Uuid::new_v4().to_string();
+    let keycloak = FakeKeycloak::succeeding(&organization_id, "schreinerei-beispiel");
+    let service = provisioning_service(pool.clone(), keycloak.clone());
+
+    service
+        .provision_for_payment(PAYMENT_PROVIDER, PAYMENT_ID)
+        .await
+        .expect("provisioning should succeed");
+
+    assert_eq!(
+        keycloak.captured_redirect_url.lock().unwrap().as_deref(),
+        Some(FRONTEND_PUBLIC_URL)
+    );
 }
 
 #[sqlx::test]
@@ -236,8 +254,11 @@ fn provisioning_service(
         OnboardingRepository::new(pool),
         keycloak,
         "schreinerei".to_string(),
+        FRONTEND_PUBLIC_URL.to_string(),
     )
 }
+
+const FRONTEND_PUBLIC_URL: &str = "https://schreinerei.jakob-lingel.dev";
 
 async fn insert_confirmed_session(pool: &PgPool, payment_id: &str) -> Uuid {
     sqlx::query_scalar(
@@ -277,6 +298,7 @@ struct FakeKeycloak {
     organization_id: String,
     organization_alias: String,
     fail_create: Arc<AtomicBool>,
+    captured_redirect_url: Arc<Mutex<Option<String>>>,
 }
 
 #[derive(Default)]
@@ -299,6 +321,7 @@ impl FakeKeycloak {
             organization_id: organization_id.to_string(),
             organization_alias: organization_alias.to_string(),
             fail_create: Arc::new(AtomicBool::new(false)),
+            captured_redirect_url: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -307,6 +330,7 @@ impl FakeKeycloak {
             organization_id: Uuid::new_v4().to_string(),
             organization_alias: "schreinerei-beispiel".to_string(),
             fail_create: Arc::new(AtomicBool::new(true)),
+            captured_redirect_url: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -317,10 +341,13 @@ impl OrganizationProvisioner for FakeKeycloak {
         &self,
         _name: &str,
         _alias: &str,
+        redirect_url: &str,
     ) -> Result<KeycloakOrganization, AppError> {
         if self.fail_create.swap(false, Ordering::SeqCst) {
             return Err(AppError::Internal("temporary keycloak failure".to_string()));
         }
+
+        *self.captured_redirect_url.lock().unwrap() = Some(redirect_url.to_string());
 
         Ok(KeycloakOrganization {
             id: self.organization_id.clone(),

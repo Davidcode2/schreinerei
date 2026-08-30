@@ -158,6 +158,7 @@ async fn mollie_webhook(
             OnboardingRepository::new(state.pool.clone()),
             keycloak,
             state.config.keycloak_realm.clone(),
+            state.config.frontend_public_url.clone(),
         );
 
         provisioning
@@ -240,6 +241,7 @@ async fn refresh_onboarding_session(
             repository.clone(),
             keycloak,
             state.config.keycloak_realm.clone(),
+            state.config.frontend_public_url.clone(),
         );
 
         provisioning
