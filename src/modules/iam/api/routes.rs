@@ -13,10 +13,12 @@ use uuid::Uuid;
 
 use crate::common::error::AppError;
 use crate::common::types::{Role, SiteId, UserId};
+use crate::modules::iam::application::test_data_service::{TestDataService, TestDataStatus};
 use crate::modules::iam::application::user_preferences_service::UserPreferencesService;
 use crate::modules::iam::application::user_service::{TenantContext, UserService};
 use crate::modules::iam::domain::user::UpdateProfile;
 use crate::modules::iam::domain::user_preferences::UserPreferenceRecord;
+use crate::modules::iam::infrastructure::test_data_repository::TestDataRepository;
 use crate::modules::iam::infrastructure::user_repository::UserRepository;
 use crate::modules::onboarding::application::OrganizationInviteService;
 use crate::modules::onboarding::infrastructure::keycloak_admin_client::KeycloakAdminClient;
@@ -32,6 +34,12 @@ pub fn create_router() -> Router<AppState> {
         .route(
             "/api/v1/settings/billing",
             get(get_billing_settings).patch(update_billing_settings),
+        )
+        .route(
+            "/api/v1/settings/test-data",
+            get(get_test_data_status)
+                .post(install_test_data)
+                .delete(remove_test_data),
         )
         // Preferences endpoints
         .route(
@@ -161,6 +169,20 @@ pub struct UpdateBillingSettingsRequest {
     pub billing_tax_mode: Option<String>,
     pub sender_name: Option<String>,
     pub sender_address: Option<String>,
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, export_to = "generated.ts")]
+pub struct TestDataStatusResponse {
+    pub installed: bool,
+}
+
+impl From<TestDataStatus> for TestDataStatusResponse {
+    fn from(status: TestDataStatus) -> Self {
+        Self {
+            installed: status.installed,
+        }
+    }
 }
 
 /// GET /api/v1/auth/me - Get current user profile
@@ -436,6 +458,40 @@ pub async fn update_billing_settings(
         sender_name: response_sender_name,
         sender_address: response_sender_address,
     }))
+}
+
+pub async fn get_test_data_status(
+    State(state): State<AppState>,
+    context: TenantContext,
+) -> Result<impl IntoResponse, AppError> {
+    let service = test_data_service(&state);
+    Ok(Json(TestDataStatusResponse::from(
+        service.status(&context).await?,
+    )))
+}
+
+pub async fn install_test_data(
+    State(state): State<AppState>,
+    context: TenantContext,
+) -> Result<impl IntoResponse, AppError> {
+    let service = test_data_service(&state);
+    Ok(Json(TestDataStatusResponse::from(
+        service.install(&context).await?,
+    )))
+}
+
+pub async fn remove_test_data(
+    State(state): State<AppState>,
+    context: TenantContext,
+) -> Result<impl IntoResponse, AppError> {
+    let service = test_data_service(&state);
+    Ok(Json(TestDataStatusResponse::from(
+        service.remove(&context).await?,
+    )))
+}
+
+fn test_data_service(state: &AppState) -> TestDataService {
+    TestDataService::new(TestDataRepository::new(state.pool.clone()))
 }
 
 fn normalize_optional_text(value: Option<&str>) -> Option<String> {

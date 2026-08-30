@@ -26,6 +26,7 @@ describe("SettingsPage", () => {
       sender_name: 'Schreinerei Mustermann',
       sender_address: 'Werkstrasse 1\n12345 Musterstadt',
     }
+    mockData.testDataInstalled = false
   })
 
   it("renders the default hourly rate section for admins", async () => {
@@ -38,6 +39,49 @@ describe("SettingsPage", () => {
     await waitFor(() => {
       expect(input).toHaveValue(85)
     })
+  })
+
+  it("shows test data controls to administrators", async () => {
+    render(<SettingsPage />)
+
+    expect(await screen.findByText("Testdaten")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /testdaten importieren/i })).toBeInTheDocument()
+  })
+
+  it("hides test data controls from regular users", () => {
+    useAuthStore.setState((state) => ({
+      ...state,
+      user: state.user ? { ...state.user, role: "mitarbeiter" } : null,
+    }))
+
+    render(<SettingsPage />)
+
+    expect(screen.queryByText("Testdaten")).not.toBeInTheDocument()
+  })
+
+  it("imports test data", async () => {
+    const user = userEvent.setup()
+    render(<SettingsPage />)
+
+    await user.click(await screen.findByRole("button", { name: /testdaten importieren/i }))
+
+    await waitFor(() => expect(mockData.testDataInstalled).toBe(true))
+    expect(await screen.findByText("Testdaten wurden importiert")).toBeInTheDocument()
+  })
+
+  it("confirms before removing test data", async () => {
+    mockData.testDataInstalled = true
+    const user = userEvent.setup()
+    render(<SettingsPage />)
+    const removeButton = await screen.findByRole("button", { name: /testdaten entfernen/i })
+    await waitFor(() => expect(removeButton).toBeEnabled())
+
+    await user.click(removeButton)
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Entfernen" }))
+
+    await waitFor(() => expect(mockData.testDataInstalled).toBe(false))
+    expect(await screen.findByText("Testdaten wurden entfernt")).toBeInTheDocument()
   })
 
   it("updates the billing settings", async () => {

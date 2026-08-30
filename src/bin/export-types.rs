@@ -109,6 +109,7 @@ fn collect_bindings(cfg: &Config, bindings: &mut Vec<Binding>) -> Result<()> {
     add_binding::<iam_api::UpdateProfileRequest>(cfg, bindings)?;
     add_binding::<iam_api::BillingSettingsResponse>(cfg, bindings)?;
     add_binding::<iam_api::UpdateBillingSettingsRequest>(cfg, bindings)?;
+    add_binding::<iam_api::TestDataStatusResponse>(cfg, bindings)?;
     add_binding::<iam_api::PreferencesResponse>(cfg, bindings)?;
     add_binding::<iam_api::UpdatePreferencesRequest>(cfg, bindings)?;
     add_binding::<iam_preferences::UserPreferences>(cfg, bindings)?;
