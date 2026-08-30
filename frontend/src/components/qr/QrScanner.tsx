@@ -58,6 +58,12 @@ export default function QrScanner({ onScan, onClose }: QrScannerProps) {
     }
   }
 
+  const openManualEntry = () => {
+    setError(null)
+    setScanning(false)
+    setShowManualEntry(true)
+  }
+
   return (
     <div className="fixed inset-0 bg-black z-50">
       <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 to-transparent p-4 pb-8 z-10">
@@ -94,7 +100,7 @@ export default function QrScanner({ onScan, onClose }: QrScannerProps) {
           </Button>
           <Button
             variant="outline"
-            onClick={() => setShowManualEntry(true)}
+            onClick={openManualEntry}
             className="w-full h-12 rounded-lg text-base bg-white text-black active:scale-[0.97] transition-transform"
           >
             Code manuell eingeben

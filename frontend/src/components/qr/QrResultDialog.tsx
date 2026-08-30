@@ -27,6 +27,15 @@ interface FleetQrResponse {
   location: string | null
 }
 
+function resourceDetailPath(type: 'material' | 'vehicle' | 'tool', id: string) {
+  const basePath = {
+    material: '/inventory',
+    vehicle: '/fleet',
+    tool: '/tools',
+  }[type]
+  return `${basePath}/${id}`
+}
+
 export default function QrResultDialog({ qrCode, onClose }: QrResultDialogProps) {
   const navigate = useNavigate()
 
@@ -46,11 +55,7 @@ export default function QrResultDialog({ qrCode, onClose }: QrResultDialogProps)
 
   const handleNavigate = (type: 'material' | 'vehicle' | 'tool', id: string) => {
     onClose()
-    if (type === 'material') {
-      navigate(`/inventory/${id}`)
-    } else {
-      navigate(`/fleet`)
-    }
+    navigate(resourceDetailPath(type, id))
   }
 
   return (
