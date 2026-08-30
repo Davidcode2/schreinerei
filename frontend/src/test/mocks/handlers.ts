@@ -17,6 +17,7 @@ export const mockData = {
     sender_name: 'Schreinerei' as string,
     sender_address: null as string | null,
   },
+  testDataInstalled: false,
   vehicles: [] as MockRecord[],
   tools: [] as MockRecord[],
   machines: [] as MockRecord[],
@@ -113,6 +114,10 @@ export const handlers = [
     return HttpResponse.json(mockData.users);
   }),
 
+  http.get(apiRoute('/users/invites'), async () => {
+    return HttpResponse.json([]);
+  }),
+
   http.get(apiRoute('/preferences'), async () => {
     await delay(10);
     return HttpResponse.json(mockData.preferences);
@@ -132,6 +137,20 @@ export const handlers = [
       sender_address: (body.sender_address as string | null | undefined) ?? null,
     };
     return HttpResponse.json(mockData.billingSettings);
+  }),
+
+  http.get(apiRoute('/settings/test-data'), async () => {
+    return HttpResponse.json({ installed: mockData.testDataInstalled });
+  }),
+
+  http.post(apiRoute('/settings/test-data'), async () => {
+    mockData.testDataInstalled = true;
+    return HttpResponse.json({ installed: true });
+  }),
+
+  http.delete(apiRoute('/settings/test-data'), async () => {
+    mockData.testDataInstalled = false;
+    return HttpResponse.json({ installed: false });
   }),
 
   http.patch(apiRoute('/preferences'), async ({ request }) => {

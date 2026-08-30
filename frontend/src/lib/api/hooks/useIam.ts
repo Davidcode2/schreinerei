@@ -56,6 +56,10 @@ export interface UpdateBillingSettingsRequest {
   sender_address?: string | null
 }
 
+export interface TestDataStatus {
+  installed: boolean
+}
+
 export function useUsers() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   return useQuery({
@@ -85,6 +89,38 @@ export function useUpdateBillingSettings() {
       apiClient.patch<BillingSettings>("/api/v1/settings/billing", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["billing-settings"] })
+    },
+  })
+}
+
+export function useTestDataStatus() {
+  return useQuery({
+    queryKey: ["test-data-status"],
+    queryFn: () => apiClient.get<TestDataStatus>("/api/v1/settings/test-data"),
+  })
+}
+
+export function useInstallTestData() {
+  return useTestDataMutation(() =>
+    apiClient.post<TestDataStatus>("/api/v1/settings/test-data")
+  )
+}
+
+export function useRemoveTestData() {
+  return useTestDataMutation(() =>
+    apiClient.delete<TestDataStatus>("/api/v1/settings/test-data")
+  )
+}
+
+function useTestDataMutation(mutationFn: () => Promise<TestDataStatus>) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn,
+    onSuccess: (status) => {
+      queryClient.setQueryData(["test-data-status"], status)
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] !== "test-data-status",
+      })
     },
   })
 }

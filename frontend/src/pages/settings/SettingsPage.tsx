@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/shared"
 import { BillingSettingsSection } from "./BillingSettingsSection"
 import { ProfileSection } from "./ProfileSection"
 import { UserManagementSection } from "./UserManagementSection"
+import { TestDataSettingsSection } from "./TestDataSettingsSection"
 
 const APP_VERSION = "1.0.0"
 
@@ -32,6 +33,8 @@ export default function SettingsPage() {
       <BillingSettingsSection isAdmin={isAdmin} />
 
       <UserManagementSection isAdmin={isAdmin} />
+
+      {isAdmin ? <TestDataSettingsSection /> : null}
 
       <Card>
         <CardHeader>

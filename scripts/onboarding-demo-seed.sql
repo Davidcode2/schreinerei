@@ -14,7 +14,7 @@ VALUES
     (uuid_generate_v5(:'tenant_id'::uuid, 'onboarding-demo-category-consumables'), :'tenant_id'::uuid, 'Verbrauchsmaterial', 'Leim, Schrauben und Montagekleinteile.', TRUE, NOW(), NOW())
 ON CONFLICT (tenant_id, name) DO NOTHING;
 
-INSERT INTO materials (id, tenant_id, category_id, name, description, unit, quantity, min_quantity, location, qr_code, created_at, updated_at)
+INSERT INTO materials (id, tenant_id, category_id, name, description, unit, quantity, legacy_quantity, min_quantity, location, qr_code, created_at, updated_at)
 VALUES
     (
         uuid_generate_v5(:'tenant_id'::uuid, 'onboarding-demo-material-multiplex'),
@@ -22,11 +22,12 @@ VALUES
         uuid_generate_v5(:'tenant_id'::uuid, 'onboarding-demo-category-plates'),
         'Birke Multiplex 18 mm',
         'Demo-Material fuer erste Entnahmen und Bestandswarnungen.',
-        'Stueck',
+        'Stück',
+        12,
         12,
         5,
         'Plattenlager A',
-        'DEMO-MAT-001',
+        'DEMO-MAT-001-' || :'tenant_id',
         NOW(),
         NOW()
     ),
@@ -36,11 +37,12 @@ VALUES
         uuid_generate_v5(:'tenant_id'::uuid, 'onboarding-demo-category-hardware'),
         'Topfscharnier 110 Grad',
         'Demo-Beschlag fuer Montage- und Projektbeispiele.',
-        'Stueck',
+        'Stück',
+        80,
         80,
         20,
         'Beschlagschrank 1',
-        'DEMO-MAT-002',
+        'DEMO-MAT-002-' || :'tenant_id',
         NOW(),
         NOW()
     ),
@@ -50,15 +52,29 @@ VALUES
         uuid_generate_v5(:'tenant_id'::uuid, 'onboarding-demo-category-consumables'),
         'D4 Leim 500 g',
         'Demo-Verbrauchsmaterial mit Ablaufwarnung.',
-        'Stueck',
+        'Stück',
         8,
+        0,
         4,
         'Chemieschrank',
-        'DEMO-MAT-003',
+        'DEMO-MAT-003-' || :'tenant_id',
         NOW(),
         NOW()
     )
 ON CONFLICT (tenant_id, name) DO NOTHING;
+
+INSERT INTO material_batches (id, tenant_id, material_id, expires_on, initial_quantity, remaining_quantity, batch_code, created_at)
+VALUES (
+    uuid_generate_v5(:'tenant_id'::uuid, 'onboarding-demo-material-glue-batch'),
+    :'tenant_id'::uuid,
+    uuid_generate_v5(:'tenant_id'::uuid, 'onboarding-demo-material-glue'),
+    CURRENT_DATE + 90,
+    8,
+    8,
+    'DEMO-LEIM-' || LEFT(:'tenant_id', 8),
+    NOW()
+)
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO sites (id, tenant_id, project_type, name, customer_name, location, description, status, start_date, end_date, estimated_days, budget_amount_cents, billing_reference, billing_notes, quote_reference, created_at, updated_at)
 VALUES
@@ -84,7 +100,7 @@ VALUES
     (
         uuid_generate_v5(:'tenant_id'::uuid, 'onboarding-demo-project-planned'),
         :'tenant_id'::uuid,
-        'workshop',
+        'internal_workshop',
         'Demo Werkstattauftrag',
         'Intern',
         'Werkstatt',
@@ -124,7 +140,7 @@ VALUES
         'Reservierbares Demo-Fahrzeug fuer die Fuhrparkansicht.',
         'available',
         'Hof',
-        'DEMO-FLT-001',
+        'DEMO-FLT-001-' || :'tenant_id',
         NOW(),
         NOW()
     ),
@@ -136,7 +152,7 @@ VALUES
         'Reservierbares Demo-Werkzeug fuer die Werkzeugansicht.',
         'available',
         'Werkzeugausgabe',
-        'DEMO-TL-001',
+        'DEMO-TL-001-' || :'tenant_id',
         NOW(),
         NOW()
     )
@@ -145,6 +161,11 @@ ON CONFLICT (tenant_id, asset_kind, name) DO NOTHING;
 INSERT INTO vehicle_details (asset_id, tenant_id, license_plate, vehicle_type, created_at, updated_at)
 VALUES
     (uuid_generate_v5(:'tenant_id'::uuid, 'onboarding-demo-asset-vehicle'), :'tenant_id'::uuid, 'DE MO 1', 'van', NOW(), NOW())
+ON CONFLICT (asset_id) DO NOTHING;
+
+INSERT INTO vehicle_display_colors (asset_id, tenant_id, display_color, created_at, updated_at)
+VALUES
+    (uuid_generate_v5(:'tenant_id'::uuid, 'onboarding-demo-asset-vehicle'), :'tenant_id'::uuid, '#2563eb', NOW(), NOW())
 ON CONFLICT (asset_id) DO NOTHING;
 
 INSERT INTO tool_details (asset_id, tenant_id, category, created_at, updated_at)
