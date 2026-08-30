@@ -226,7 +226,7 @@ where
                     .create_organization(
                         &session.organization_name,
                         &session.organization_slug,
-                        &self.frontend_public_url,
+                        &onboarding_success_url(&self.frontend_public_url),
                     )
                     .await?;
                 self.repository
@@ -492,6 +492,13 @@ fn onboarding_complete_url(frontend_public_url: &str, session_id: uuid::Uuid) ->
     )
 }
 
+fn onboarding_success_url(frontend_public_url: &str) -> String {
+    format!(
+        "{}/onboarding/success",
+        frontend_public_url.trim_end_matches('/')
+    )
+}
+
 fn mollie_webhook_url(app_public_url: &str) -> String {
     format!(
         "{}/api/v1/onboarding/webhooks/mollie",
@@ -538,7 +545,7 @@ fn validate_mollie_payment_id(payment_id: &str) -> Result<(), AppError> {
 mod tests {
     use super::{
         invite_url, mollie_webhook_url, normalize_invite_email, onboarding_complete_url,
-        validate_mollie_payment_id,
+        onboarding_success_url, validate_mollie_payment_id,
     };
     use uuid::Uuid;
 
@@ -565,6 +572,18 @@ mod tests {
         assert_eq!(
             mollie_webhook_url("https://api.example.test/"),
             "https://api.example.test/api/v1/onboarding/webhooks/mollie"
+        );
+    }
+
+    #[test]
+    fn onboarding_success_url_strips_trailing_slash() {
+        assert_eq!(
+            onboarding_success_url("https://app.example.test/"),
+            "https://app.example.test/onboarding/success"
+        );
+        assert_eq!(
+            onboarding_success_url("https://app.example.test"),
+            "https://app.example.test/onboarding/success"
         );
     }
 

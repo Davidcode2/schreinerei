@@ -81,7 +81,7 @@ async fn provisions_paid_session_once(pool: PgPool) {
 }
 
 #[sqlx::test]
-async fn passes_frontend_url_as_organization_redirect_url(pool: PgPool) {
+async fn passes_success_url_as_organization_redirect_url(pool: PgPool) {
     let _session_id = insert_confirmed_session(&pool, PAYMENT_ID).await;
     let organization_id = Uuid::new_v4().to_string();
     let keycloak = FakeKeycloak::succeeding(&organization_id, "schreinerei-beispiel");
@@ -94,7 +94,7 @@ async fn passes_frontend_url_as_organization_redirect_url(pool: PgPool) {
 
     assert_eq!(
         keycloak.captured_redirect_url.lock().unwrap().as_deref(),
-        Some(FRONTEND_PUBLIC_URL)
+        Some(ONBOARDING_SUCCESS_URL)
     );
 }
 
@@ -259,6 +259,7 @@ fn provisioning_service(
 }
 
 const FRONTEND_PUBLIC_URL: &str = "https://schreinerei.jakob-lingel.dev";
+const ONBOARDING_SUCCESS_URL: &str = "https://schreinerei.jakob-lingel.dev/onboarding/success";
 
 async fn insert_confirmed_session(pool: &PgPool, payment_id: &str) -> Uuid {
     sqlx::query_scalar(

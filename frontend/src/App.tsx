@@ -6,6 +6,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { LoginPage } from "@/components/auth/LoginPage";
 import { OnboardingCompletePage } from "@/components/auth/OnboardingCompletePage";
+import { OnboardingSuccessPage } from "@/components/auth/OnboardingSuccessPage";
 import { SignupPage } from "@/components/auth/SignupPage";
 import { AuthCallback } from "@/components/auth/AuthCallback";
 import { useAuth } from "@/hooks/useAuth";
@@ -63,6 +64,7 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/onboarding/complete" element={<OnboardingCompletePage />} />
+      <Route path="/onboarding/success" element={<OnboardingSuccessPage />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
 
       {/* Protected routes */}
