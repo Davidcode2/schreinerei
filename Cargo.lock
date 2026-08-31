@@ -3168,7 +3168,7 @@ dependencies = [
 
 [[package]]
 name = "schreinerei"
-version = "0.1.46"
+version = "0.1.47"
 dependencies = [
  "async-trait",
  "axum",
