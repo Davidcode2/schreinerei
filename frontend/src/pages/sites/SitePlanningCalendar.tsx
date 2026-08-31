@@ -7,15 +7,9 @@ import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
-import { LoadingSpinner } from "@/components/shared"
 import { cn, formatDateTimeLocalInput, formatLocalDateKey, startOfLocalWeek } from "@/lib/utils"
 import {
   useCreateSiteAppointment,
@@ -180,6 +174,75 @@ function formatSlotLabel(day: Date, hour: number) {
   })} um ${String(hour).padStart(2, "0")}:00`
 }
 
+function SitePlanningCalendarSkeleton() {
+  const gridHeight = totalVisibleHours * hourSlotHeight
+
+  return (
+    <div
+      data-testid="site-planning-calendar-skeleton"
+      aria-hidden="true"
+      className="-mx-6 overflow-hidden border-y bg-card/70 shadow-sm sm:mx-0 sm:rounded-2xl sm:border"
+    >
+      <div className="sm:min-w-[880px]">
+        <div
+          className={cn("grid border-b bg-muted/30", mobilePlannerGridColumns, desktopPlannerGridColumns)}
+        >
+          <div className="px-1 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground sm:px-3 sm:py-3 sm:text-xs">
+            Zeit
+          </div>
+          {Array.from({ length: 7 }).map((_, index) => (
+            <div
+              key={index}
+              className="space-y-1.5 border-l px-1 py-2 sm:px-3 sm:py-3"
+            >
+              <Skeleton className="h-2.5 w-3/4 sm:h-3" />
+              <Skeleton className="h-3 w-1/2 sm:h-3.5" />
+            </div>
+          ))}
+        </div>
+
+        <div className={cn("grid", mobilePlannerGridColumns, desktopPlannerGridColumns)}>
+          <div className="border-r">
+            {Array.from({ length: totalVisibleHours }).map((_, index) => (
+              <div
+                key={index}
+                className="border-b px-1 sm:px-3"
+                style={{ height: hourSlotHeight }}
+              >
+                <Skeleton className="h-2.5 w-7 sm:h-3 sm:w-9" />
+              </div>
+            ))}
+          </div>
+
+          {Array.from({ length: 7 }).map((_, dayIndex) => (
+            <div
+              key={dayIndex}
+              className="relative border-l"
+              style={{ height: gridHeight }}
+            >
+              {Array.from({ length: totalVisibleHours }).map((_, hourIndex) => (
+                <div
+                  key={hourIndex}
+                  className="border-b"
+                  style={{ height: hourSlotHeight }}
+                />
+              ))}
+              <Skeleton
+                className="absolute left-1 right-1 rounded-md"
+                style={{ top: hourSlotHeight * 1.25, height: 48 }}
+              />
+              <Skeleton
+                className="absolute left-1 right-1 rounded-md"
+                style={{ top: hourSlotHeight * 5.5, height: 72 }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function SitePlanningCalendar({
   siteId,
   assignments,
@@ -195,7 +258,7 @@ export function SitePlanningCalendar({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   const { start, end } = buildWeekBounds(currentWeek)
-  const { data: appointments, isLoading, error } = useSiteAppointments(siteId, {
+  const { data: appointments, isLoading, isFetching, error } = useSiteAppointments(siteId, {
     start_date: start.toISOString(),
     end_date: end.toISOString(),
   })
@@ -378,7 +441,7 @@ export function SitePlanningCalendar({
       </div>
 
       {isLoading ? (
-        <LoadingSpinner className="py-10" />
+        <SitePlanningCalendarSkeleton />
       ) : error ? (
         <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
           Projektplanung konnte nicht geladen werden.
@@ -386,7 +449,11 @@ export function SitePlanningCalendar({
       ) : (
         <div
           data-testid="site-planning-calendar"
-          className="-mx-6 overflow-hidden border-y bg-card/70 shadow-sm sm:mx-0 sm:rounded-2xl sm:border"
+          aria-busy={isFetching}
+          className={cn(
+            "-mx-6 overflow-hidden border-y bg-card/70 shadow-sm transition-opacity sm:mx-0 sm:rounded-2xl sm:border",
+            isFetching && "opacity-60"
+          )}
         >
           <div className="sm:min-w-[880px]">
             <div className={cn("grid border-b bg-muted/30", mobilePlannerGridColumns, desktopPlannerGridColumns)}>

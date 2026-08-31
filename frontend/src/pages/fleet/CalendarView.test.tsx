@@ -392,4 +392,18 @@ describe("CalendarView", () => {
       expect(new Date(payload.start_time).getTime()).toBeLessThan(new Date(payload.end_time).getTime())
     })
   })
+
+  it("shows a grid-sized skeleton instead of the calendar while loading", () => {
+    vi.mocked(useCalendar).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isFetching: true,
+      error: null,
+    } as never)
+
+    render(<CalendarView embedded />)
+
+    expect(screen.getByTestId("calendar-skeleton")).toBeInTheDocument()
+    expect(screen.queryByTestId("calendar")).not.toBeInTheDocument()
+  })
 })
