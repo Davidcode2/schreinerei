@@ -25,9 +25,10 @@ impl UserRepository {
     ) -> Result<Option<User>, AppError> {
         let user = sqlx::query_as::<_, UserRow>(
             r#"
-            SELECT id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at
+            SELECT id, tenant_id, keycloak_user_id, email, name, role,
+                   is_original_admin, deleted_at, created_at, updated_at
             FROM users
-            WHERE id = $1 AND tenant_id = $2
+            WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
             "#,
         )
         .bind(id.0)
@@ -47,7 +48,8 @@ impl UserRepository {
     ) -> Result<Option<User>, AppError> {
         let user = sqlx::query_as::<_, UserRow>(
             r#"
-            SELECT id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at
+            SELECT id, tenant_id, keycloak_user_id, email, name, role,
+                   is_original_admin, deleted_at, created_at, updated_at
             FROM users
             WHERE keycloak_user_id = $1 AND tenant_id = $2
             "#,
@@ -79,6 +81,7 @@ impl UserRepository {
                 WHERE tenant_id = $1
                   AND lower(email) = lower($2)
                   AND keycloak_user_id LIKE 'pending-%'
+                  AND deleted_at IS NULL
                 ORDER BY
                     CASE
                         WHEN keycloak_user_id LIKE 'pending-onboarding-admin-%' THEN 0
@@ -87,7 +90,8 @@ impl UserRepository {
                     created_at ASC
                 LIMIT 1
             )
-            RETURNING id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at
+            RETURNING id, tenant_id, keycloak_user_id, email, name, role,
+                      is_original_admin, deleted_at, created_at, updated_at
             "#,
         )
         .bind(tenant_id.0)
@@ -156,9 +160,10 @@ impl UserRepository {
     pub async fn list(&self, tenant_id: TenantId) -> Result<Vec<User>, AppError> {
         let users = sqlx::query_as::<_, UserRow>(
             r#"
-            SELECT id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at
+            SELECT id, tenant_id, keycloak_user_id, email, name, role,
+                   is_original_admin, deleted_at, created_at, updated_at
             FROM users
-            WHERE tenant_id = $1
+            WHERE tenant_id = $1 AND deleted_at IS NULL
             ORDER BY created_at DESC
             "#,
         )
@@ -183,7 +188,8 @@ impl UserRepository {
             r#"
             INSERT INTO users (id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at
+            RETURNING id, tenant_id, keycloak_user_id, email, name, role,
+                      is_original_admin, deleted_at, created_at, updated_at
             "#
         )
         .bind(id)
@@ -218,8 +224,9 @@ impl UserRepository {
             r#"
             UPDATE users
             SET role = $1, updated_at = NOW()
-            WHERE id = $2 AND tenant_id = $3
-            RETURNING id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at
+            WHERE id = $2 AND tenant_id = $3 AND deleted_at IS NULL
+            RETURNING id, tenant_id, keycloak_user_id, email, name, role,
+                      is_original_admin, deleted_at, created_at, updated_at
             "#,
         )
         .bind(role.to_string())
@@ -231,6 +238,35 @@ impl UserRepository {
         .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
 
         Ok(user.into_user())
+    }
+
+    pub async fn soft_delete(&self, id: UserId, tenant_id: TenantId) -> Result<(), AppError> {
+        let result = sqlx::query(
+            "UPDATE users SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL",
+        )
+        .bind(id.0)
+        .bind(tenant_id.0)
+        .execute(&self.pool)
+        .await
+        .map_err(|error| AppError::Database(error.to_string()))?;
+
+        if result.rows_affected() == 0 {
+            return Err(AppError::NotFound("User not found".to_string()));
+        }
+        Ok(())
+    }
+
+    pub async fn tenant_organization_id(&self, tenant_id: TenantId) -> Result<String, AppError> {
+        sqlx::query_scalar::<_, Option<Uuid>>(
+            "SELECT keycloak_organization_id FROM tenants WHERE id = $1",
+        )
+        .bind(tenant_id.0)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|error| AppError::Database(error.to_string()))?
+        .flatten()
+        .map(|id| id.to_string())
+        .ok_or_else(|| AppError::Validation("Tenant has no Keycloak organization".to_string()))
     }
 
     /// Find or create user by Keycloak ID
@@ -283,8 +319,9 @@ impl UserRepository {
             r#"
             UPDATE users
             SET name = $1, updated_at = NOW()
-            WHERE id = $2 AND tenant_id = $3
-            RETURNING id, tenant_id, keycloak_user_id, email, name, role, created_at, updated_at
+            WHERE id = $2 AND tenant_id = $3 AND deleted_at IS NULL
+            RETURNING id, tenant_id, keycloak_user_id, email, name, role,
+                      is_original_admin, deleted_at, created_at, updated_at
             "#,
         )
         .bind(&name)
@@ -308,6 +345,8 @@ struct UserRow {
     email: String,
     name: Option<String>,
     role: String,
+    is_original_admin: bool,
+    deleted_at: Option<DateTime<Utc>>,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
 }
@@ -321,6 +360,8 @@ impl UserRow {
             email: self.email,
             name: self.name,
             role: self.role.parse().unwrap_or(Role::Employee),
+            is_original_admin: self.is_original_admin,
+            deleted_at: self.deleted_at,
             created_at: self.created_at,
             updated_at: self.updated_at,
         }

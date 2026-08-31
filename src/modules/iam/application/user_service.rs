@@ -16,6 +16,32 @@ pub trait RealmRoleAssigner: Send + Sync {
 }
 
 #[async_trait]
+pub trait KeycloakUserManager: Send + Sync {
+    async fn synchronize_realm_role(&self, user_id: &str, role: Role) -> Result<(), AppError>;
+    async fn remove_organization_member(
+        &self,
+        organization_id: &str,
+        user_id: &str,
+    ) -> Result<(), AppError>;
+}
+
+#[async_trait]
+impl KeycloakUserManager for KeycloakAdminClient {
+    async fn synchronize_realm_role(&self, user_id: &str, role: Role) -> Result<(), AppError> {
+        self.synchronize_realm_role(user_id, role).await
+    }
+
+    async fn remove_organization_member(
+        &self,
+        organization_id: &str,
+        user_id: &str,
+    ) -> Result<(), AppError> {
+        self.remove_organization_member(organization_id, user_id)
+            .await
+    }
+}
+
+#[async_trait]
 impl RealmRoleAssigner for KeycloakAdminClient {
     async fn assign_realm_role(&self, user_id: &str, role: Role) -> Result<(), AppError> {
         self.assign_realm_role(user_id, role).await
@@ -79,6 +105,7 @@ where
 pub struct UserService {
     user_repo: UserRepository,
     role_assigner: Option<Arc<dyn RealmRoleAssigner>>,
+    keycloak_manager: Option<Arc<dyn KeycloakUserManager>>,
 }
 
 impl UserService {
@@ -86,6 +113,7 @@ impl UserService {
         Self {
             user_repo,
             role_assigner: None,
+            keycloak_manager: None,
         }
     }
 
@@ -96,6 +124,29 @@ impl UserService {
         Self {
             user_repo,
             role_assigner: Some(role_assigner),
+            keycloak_manager: None,
+        }
+    }
+
+    pub fn new_with_keycloak_manager(
+        user_repo: UserRepository,
+        keycloak_manager: Arc<dyn KeycloakUserManager>,
+    ) -> Self {
+        Self {
+            user_repo,
+            role_assigner: None,
+            keycloak_manager: Some(keycloak_manager),
+        }
+    }
+
+    pub fn new_with_keycloak_client(
+        user_repo: UserRepository,
+        client: Arc<KeycloakAdminClient>,
+    ) -> Self {
+        Self {
+            user_repo,
+            role_assigner: Some(client.clone()),
+            keycloak_manager: Some(client),
         }
     }
 
@@ -273,20 +324,47 @@ impl UserService {
         new_role: Role,
         ctx: &TenantContext,
     ) -> Result<User, AppError> {
-        if !ctx.is_admin() {
-            return Err(AppError::Forbidden("Admin access required".to_string()));
+        let target = self.management_target(user_id, ctx).await?;
+        if target.role == new_role {
+            return Ok(target);
         }
 
-        // Prevent admin from demoting themselves
-        if user_id == ctx.user_id && new_role != Role::Admin {
-            return Err(AppError::Validation(
-                "Cannot demote yourself from admin".to_string(),
-            ));
-        }
-
+        let manager = self.keycloak_manager.as_ref().ok_or_else(|| {
+            AppError::Internal("Keycloak user management is not configured".to_string())
+        })?;
+        manager
+            .synchronize_realm_role(&target.keycloak_user_id, new_role)
+            .await?;
         self.user_repo
             .update_role(user_id, new_role, ctx.tenant_id)
             .await
+    }
+
+    pub async fn delete_user(&self, user_id: UserId, ctx: &TenantContext) -> Result<(), AppError> {
+        let target = self.management_target(user_id, ctx).await?;
+        let organization_id = self.user_repo.tenant_organization_id(ctx.tenant_id).await?;
+        let manager = self.keycloak_manager.as_ref().ok_or_else(|| {
+            AppError::Internal("Keycloak user management is not configured".to_string())
+        })?;
+        manager
+            .remove_organization_member(&organization_id, &target.keycloak_user_id)
+            .await?;
+        self.user_repo.soft_delete(user_id, ctx.tenant_id).await
+    }
+
+    async fn management_target(
+        &self,
+        user_id: UserId,
+        ctx: &TenantContext,
+    ) -> Result<User, AppError> {
+        if !ctx.is_admin() {
+            return Err(AppError::Forbidden("Admin access required".to_string()));
+        }
+        let target = self.get_user(user_id, ctx).await?;
+        if !target.can_be_managed_by(&ctx.user_id.to_string()) {
+            return Err(AppError::Conflict("User cannot be managed".to_string()));
+        }
+        Ok(target)
     }
 
     /// Update own profile

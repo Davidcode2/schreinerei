@@ -721,13 +721,14 @@ async fn ensure_pending_admin_user(
 
     sqlx::query(
         r#"
-        INSERT INTO users (tenant_id, keycloak_user_id, email, name, role)
-        VALUES ($1, $2, $3, $4, 'admin')
+        INSERT INTO users (tenant_id, keycloak_user_id, email, name, role, is_original_admin)
+        VALUES ($1, $2, $3, $4, 'admin', TRUE)
         ON CONFLICT (tenant_id, keycloak_user_id)
         DO UPDATE SET
             email = EXCLUDED.email,
             name = COALESCE(users.name, EXCLUDED.name),
             role = 'admin',
+            is_original_admin = TRUE,
             updated_at = NOW()
         "#,
     )
