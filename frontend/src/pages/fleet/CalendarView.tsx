@@ -4,6 +4,7 @@ import { Calendar, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { LoadingSpinner, EmptyState, PageHeader } from "@/components/shared"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useCalendar, useReservation } from "@/lib/api/hooks"
 import { cn, formatLocalDateKey, startOfLocalWeek } from "@/lib/utils"
 import type { CalendarEntry, ReservationSummary, ResourceType } from "@/types/fleet"
@@ -93,6 +94,82 @@ function formatDateLabel(date: string): string {
   })
 }
 
+function CalendarViewSkeleton({ embedded, rows = 5 }: { embedded: boolean; rows?: number }) {
+  return (
+    <div
+      data-testid="calendar-skeleton"
+      aria-hidden="true"
+      className={cn(
+        "overflow-x-auto bg-card/70 shadow-sm",
+        embedded
+          ? "-mx-4 border-y sm:mx-0 sm:rounded-2xl sm:border"
+          : "rounded-2xl border"
+      )}
+    >
+      <div className="min-w-[950px]">
+        <div
+          className={cn(
+            "grid gap-px border-b bg-border/60",
+            mobileCalendarGridColumns,
+            desktopCalendarGridColumns
+          )}
+        >
+          <div className="bg-muted/40 px-2 py-2 text-[11px] font-semibold text-muted-foreground sm:px-4 sm:py-3 sm:text-sm">
+            Ressource
+          </div>
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div
+              key={i}
+              className="space-y-1.5 bg-muted/30 px-1 py-2 text-center sm:px-3 sm:py-3"
+            >
+              <Skeleton className="mx-auto h-2.5 w-6 sm:h-3 sm:w-8" />
+              <Skeleton className="mx-auto h-3 w-4 sm:h-3.5 sm:w-5" />
+            </div>
+          ))}
+        </div>
+
+        {Array.from({ length: rows }).map((_, rowIndex) => (
+          <div
+            key={rowIndex}
+            className={cn(
+              "grid gap-px border-b bg-border/60 last:border-b-0",
+              mobileCalendarGridColumns,
+              desktopCalendarGridColumns
+            )}
+          >
+            <div className="flex min-h-[72px] items-center px-2 py-2 sm:min-h-[88px] sm:px-4 sm:py-3">
+              <div className="flex w-full items-center gap-2">
+                <Skeleton className="h-2.5 w-2.5 rounded-full sm:h-3 sm:w-3" />
+                <div className="w-full space-y-1.5">
+                  <Skeleton className="h-3 w-3/4 sm:h-3.5" />
+                  <Skeleton className="hidden h-2.5 w-1/2 sm:block" />
+                </div>
+              </div>
+            </div>
+
+            {Array.from({ length: 7 }).map((_, dayIndex) => (
+              <div
+                key={dayIndex}
+                className="min-h-[72px] space-y-2 bg-background p-1 sm:min-h-[88px] sm:p-2"
+              >
+                {dayIndex % 3 === 0 && (
+                  <Skeleton className="h-10 rounded-lg sm:rounded-xl" />
+                )}
+                {dayIndex % 3 === 1 && (
+                  <>
+                    <Skeleton className="h-7 rounded-lg sm:rounded-xl" />
+                    <Skeleton className="h-5 rounded-lg sm:rounded-xl" />
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function CalendarView({ embedded = false, resourceType, siteId }: CalendarViewProps) {
   const [currentWeek, setCurrentWeek] = useState(() => {
     const now = new Date()
@@ -107,7 +184,7 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
   const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null)
 
   const { start, end } = getWeekDates(currentWeek)
-  const { data: calendarData, isLoading, error } = useCalendar({
+  const { data: calendarData, isLoading, isFetching, error } = useCalendar({
     start_date: start,
     end_date: end,
     ...(resourceType ? { resource_type: resourceType } : {}),
@@ -188,7 +265,7 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
       </div>
 
       {isLoading ? (
-        <LoadingSpinner className="py-8" />
+        <CalendarViewSkeleton embedded={embedded} />
       ) : error ? (
         <EmptyState
           icon={Calendar}
@@ -204,11 +281,13 @@ export default function CalendarView({ embedded = false, resourceType, siteId }:
       ) : (
         <div
           data-testid="calendar"
+          aria-busy={isFetching}
           className={cn(
-            "overflow-x-auto bg-card/70 shadow-sm",
+            "overflow-x-auto bg-card/70 shadow-sm transition-opacity",
             embedded
               ? "-mx-4 border-y sm:mx-0 sm:rounded-2xl sm:border"
-              : "rounded-2xl border"
+              : "rounded-2xl border",
+            isFetching && "opacity-60"
           )}
         >
           <div className="min-w-[950px]">

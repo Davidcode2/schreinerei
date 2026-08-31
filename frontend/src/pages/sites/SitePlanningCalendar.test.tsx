@@ -85,4 +85,15 @@ describe('SitePlanningCalendar', () => {
     expect(dialog.className).toContain('overflow-hidden')
     expect(formBody?.className).toContain('overflow-y-auto')
   })
+
+  it('shows a grid-sized skeleton instead of the calendar while loading', () => {
+    server.use(
+      http.get('*/api/v1/sites/site-1/appointments*', () => new Promise(() => {}))
+    )
+
+    render(<SitePlanningCalendar siteId="site-1" assignments={[]} canEdit />)
+
+    expect(screen.getByTestId('site-planning-calendar-skeleton')).toBeInTheDocument()
+    expect(screen.queryByTestId('site-planning-calendar')).not.toBeInTheDocument()
+  })
 })
