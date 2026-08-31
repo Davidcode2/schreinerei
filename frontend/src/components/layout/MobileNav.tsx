@@ -9,12 +9,13 @@ import { ActiveSiteIndicator } from "./ActiveSiteIndicator"
 import PendingActionsBadge from "@/components/offline/PendingActionsBadge"
 import SyncButton from "@/components/offline/SyncButton"
 import { useAuthStore } from "@/lib/auth/authStore"
-import { getLogoutUrl } from "@/lib/auth/keycloak"
+import { useLogout } from "@/hooks/useLogout"
 import { getDisplayName, getRoleLabel } from "./userDisplay"
 
 export function MobileNav() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
+  const handleLogout = useLogout()
   const [isOpen, setIsOpen] = useState(false)
 
   const closeMenu = () => setIsOpen(false)
@@ -67,8 +68,7 @@ export function MobileNav() {
               className="w-full justify-start gap-3 h-11 text-muted-foreground hover:text-destructive"
               onClick={() => {
                 closeMenu()
-                useAuthStore.getState().logout()
-                window.location.href = getLogoutUrl()
+                handleLogout()
               }}
             >
               <LogOut className="h-4 w-4" />

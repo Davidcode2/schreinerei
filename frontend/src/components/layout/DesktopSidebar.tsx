@@ -8,18 +8,13 @@ import { ActiveSiteIndicator } from "./ActiveSiteIndicator"
 import PendingActionsBadge from "@/components/offline/PendingActionsBadge"
 import SyncButton from "@/components/offline/SyncButton"
 import { useAuthStore } from "@/lib/auth/authStore"
-import { getLogoutUrl } from "@/lib/auth/keycloak"
+import { useLogout } from "@/hooks/useLogout"
 import { getDisplayName, getRoleLabel } from "./userDisplay"
 
 export function DesktopSidebar() {
   const navigate = useNavigate()
-  const logout = useAuthStore((state) => state.logout)
+  const handleLogout = useLogout()
   const user = useAuthStore((state) => state.user)
-
-  const handleLogout = () => {
-    logout()
-    window.location.href = getLogoutUrl()
-  }
 
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r bg-card">
