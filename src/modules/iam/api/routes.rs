@@ -51,13 +51,13 @@ pub fn create_router() -> Router<AppState> {
         .route("/api/v1/users/invites", get(list_pending_invites))
         .route("/api/v1/users/invite", post(invite_user))
         .route("/api/v1/users/{id}/role", patch(update_user_role))
-        .route("/api/v1/users/{id}", get(get_user))
+        .route("/api/v1/users/{id}", get(get_user).delete(delete_user))
 }
 
 fn user_service(state: &AppState) -> UserService {
     let repository = UserRepository::new(state.pool.clone());
     match KeycloakAdminClient::from_config(&state.config) {
-        Ok(client) => UserService::new_with_role_assigner(repository, Arc::new(client)),
+        Ok(client) => UserService::new_with_keycloak_client(repository, Arc::new(client)),
         Err(_) => UserService::new(repository),
     }
 }
@@ -70,16 +70,21 @@ pub struct UserResponse {
     pub email: String,
     pub name: Option<String>,
     pub role: String,
+    pub is_original_admin: bool,
+    pub can_manage: bool,
     pub created_at: String,
 }
 
-impl From<crate::modules::iam::domain::user::User> for UserResponse {
-    fn from(user: crate::modules::iam::domain::user::User) -> Self {
+impl UserResponse {
+    pub fn from_user(user: crate::modules::iam::domain::user::User, actor_subject: &str) -> Self {
+        let can_manage = user.can_be_managed_by(actor_subject);
         Self {
             id: user.id.to_string(),
             email: user.email,
             name: user.name,
             role: user.role.to_string(),
+            is_original_admin: user.is_original_admin,
+            can_manage,
             created_at: user.created_at.to_rfc3339(),
         }
     }
@@ -199,7 +204,10 @@ pub async fn get_current_user(
     let service = user_service(&state);
     let user = service.get_or_create_from_ctx(&ctx).await?;
 
-    Ok(Json(UserResponse::from(user)))
+    Ok(Json(UserResponse::from_user(
+        user,
+        &ctx.user_id.to_string(),
+    )))
 }
 
 /// GET /api/v1/users - List all users in tenant (admin only)
@@ -210,7 +218,11 @@ pub async fn list_users(
     let service = user_service(&state);
 
     let users = service.list_users(&ctx).await?;
-    let response: Vec<UserResponse> = users.into_iter().map(UserResponse::from).collect();
+    let actor_subject = ctx.user_id.to_string();
+    let response: Vec<UserResponse> = users
+        .into_iter()
+        .map(|user| UserResponse::from_user(user, &actor_subject))
+        .collect();
 
     Ok(Json(response))
 }
@@ -257,7 +269,10 @@ pub async fn get_user(
 
     let user = service.get_user(user_id, &ctx).await?;
 
-    Ok(Json(UserResponse::from(user)))
+    Ok(Json(UserResponse::from_user(
+        user,
+        &ctx.user_id.to_string(),
+    )))
 }
 
 /// POST /api/v1/users/invite - Invite a new user (admin only)
@@ -317,7 +332,23 @@ pub async fn update_user_role(
 
     let user = service.update_role(user_id, new_role, &ctx).await?;
 
-    Ok(Json(UserResponse::from(user)))
+    Ok(Json(UserResponse::from_user(
+        user,
+        &ctx.user_id.to_string(),
+    )))
+}
+
+/// DELETE /api/v1/users/{id} - Remove a manageable user
+pub async fn delete_user(
+    State(state): State<AppState>,
+    ctx: TenantContext,
+    Path(id): Path<String>,
+) -> Result<StatusCode, AppError> {
+    let user_id = Uuid::parse_str(&id)
+        .map(UserId)
+        .map_err(|_| AppError::Validation("Invalid user ID".to_string()))?;
+    user_service(&state).delete_user(user_id, &ctx).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 /// PATCH /api/v1/users/me - Update own profile
@@ -332,7 +363,10 @@ pub async fn update_own_profile(
 
     let user = service.update_profile(update, &ctx).await?;
 
-    Ok(Json(UserResponse::from(user)))
+    Ok(Json(UserResponse::from_user(
+        user,
+        &ctx.user_id.to_string(),
+    )))
 }
 
 pub async fn get_billing_settings(

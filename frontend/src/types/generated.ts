@@ -236,7 +236,7 @@ export type UserPreferences = { active_site_id: string | null, };
 /**
  * Response DTO for user data
  */
-export type UserResponse = { id: string, email: string, name: string | null, role: string, created_at: string, };
+export type UserResponse = { id: string, email: string, name: string | null, role: string, is_original_admin: boolean, can_manage: boolean, created_at: string, };
 
 export type VehicleResponse = { id: string, name: string, license_plate: string | null, vehicle_type: string, description: string | null, status: string, location: string | null, qr_code: string | null, display_color: string, created_at: string, updated_at: string, };
 

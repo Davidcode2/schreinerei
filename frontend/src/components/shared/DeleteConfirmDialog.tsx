@@ -17,6 +17,7 @@ interface DeleteConfirmDialogProps {
   isPending?: boolean
   actionLabel?: string
   title?: string
+  closeOnConfirm?: boolean
 }
 
 export function DeleteConfirmDialog({
@@ -27,6 +28,7 @@ export function DeleteConfirmDialog({
   isPending = false,
   actionLabel = "Löschen",
   title = "Wirklich löschen?",
+  closeOnConfirm = true,
 }: DeleteConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -40,7 +42,10 @@ export function DeleteConfirmDialog({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>Abbrechen</AlertDialogCancel>
           <AlertDialogAction
-            onClick={onConfirm}
+            onClick={(event) => {
+              if (!closeOnConfirm) event.preventDefault()
+              onConfirm()
+            }}
             disabled={isPending}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >

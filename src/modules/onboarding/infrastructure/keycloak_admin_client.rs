@@ -140,6 +140,59 @@ impl KeycloakAdminClient {
 
     pub async fn assign_realm_role(&self, user_id: &str, role: Role) -> Result<(), AppError> {
         let token = self.admin_access_token().await?;
+        let role_representation = self.realm_role(&token, role).await?;
+        self.update_role_mapping(&token, user_id, &role_representation, false)
+            .await
+    }
+
+    pub async fn synchronize_realm_role(&self, user_id: &str, role: Role) -> Result<(), AppError> {
+        let token = self.admin_access_token().await?;
+        let opposite = if role == Role::Admin {
+            Role::Employee
+        } else {
+            Role::Admin
+        };
+        let new_role = self.realm_role(&token, role).await?;
+        self.update_role_mapping(&token, user_id, &new_role, false)
+            .await?;
+        let old_role = self.realm_role(&token, opposite).await?;
+        self.update_role_mapping(&token, user_id, &old_role, true)
+            .await
+    }
+
+    pub async fn remove_organization_member(
+        &self,
+        organization_id: &str,
+        user_id: &str,
+    ) -> Result<(), AppError> {
+        let token = self.admin_access_token().await?;
+        let url = format!(
+            "{}/admin/realms/{}/organizations/{}/members/{}",
+            self.base_url, self.realm, organization_id, user_id
+        );
+        let response = self
+            .client
+            .delete(url)
+            .bearer_auth(token)
+            .send()
+            .await
+            .map_err(|error| {
+                AppError::Internal(format!("Keycloak member removal failed: {error}"))
+            })?;
+        if response.status().is_success() || response.status() == StatusCode::NOT_FOUND {
+            return Ok(());
+        }
+        Err(AppError::Validation(format!(
+            "Keycloak member removal failed with status {}",
+            response.status()
+        )))
+    }
+
+    async fn realm_role(
+        &self,
+        token: &str,
+        role: Role,
+    ) -> Result<KeycloakRoleRepresentation, AppError> {
         let role_name = role.to_string();
         let role_url = format!(
             "{}/admin/realms/{}/roles/{}",
@@ -149,7 +202,7 @@ impl KeycloakAdminClient {
         let role_response = self
             .client
             .get(role_url)
-            .bearer_auth(token.as_str())
+            .bearer_auth(token)
             .send()
             .await
             .map_err(|error| AppError::Internal(format!("Keycloak role lookup failed: {error}")))?;
@@ -161,23 +214,32 @@ impl KeycloakAdminClient {
             )));
         }
 
-        let role_representation = role_response
+        role_response
             .json::<KeycloakRoleRepresentation>()
             .await
-            .map_err(|error| {
-                AppError::Internal(format!("Failed to parse Keycloak role: {error}"))
-            })?;
+            .map_err(|error| AppError::Internal(format!("Failed to parse Keycloak role: {error}")))
+    }
 
+    async fn update_role_mapping(
+        &self,
+        token: &str,
+        user_id: &str,
+        role: &KeycloakRoleRepresentation,
+        remove: bool,
+    ) -> Result<(), AppError> {
         let mapping_url = format!(
             "{}/admin/realms/{}/users/{}/role-mappings/realm",
             self.base_url, self.realm, user_id
         );
 
-        let mapping_response = self
-            .client
-            .post(mapping_url)
+        let request = if remove {
+            self.client.delete(mapping_url)
+        } else {
+            self.client.post(mapping_url)
+        };
+        let mapping_response = request
             .bearer_auth(token)
-            .json(&vec![role_representation])
+            .json(&vec![role])
             .send()
             .await
             .map_err(|error| {

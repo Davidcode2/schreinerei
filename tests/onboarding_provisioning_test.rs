@@ -70,14 +70,15 @@ async fn provisions_paid_session_once(pool: PgPool) {
         "schreinerei-beispiel"
     );
 
-    let admin_role: String = sqlx::query_scalar(
-        "SELECT role FROM users WHERE tenant_id = $1 AND email = 'admin@example.com'",
+    let (admin_role, is_original_admin): (String, bool) = sqlx::query_as(
+        "SELECT role, is_original_admin FROM users WHERE tenant_id = $1 AND email = 'admin@example.com'",
     )
     .bind(row.get::<Uuid, _>("tenant_id"))
     .fetch_one(&pool)
     .await
     .expect("pending onboarding admin should be created");
     assert_eq!(admin_role, "admin");
+    assert!(is_original_admin);
 }
 
 #[sqlx::test]

@@ -12,6 +12,8 @@ pub struct User {
     pub email: String,
     pub name: Option<String>,
     pub role: Role,
+    pub is_original_admin: bool,
+    pub deleted_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -25,6 +27,12 @@ impl User {
     /// Check if user has employee role
     pub fn is_employee(&self) -> bool {
         self.role.is_employee()
+    }
+
+    pub fn can_be_managed_by(&self, actor_keycloak_user_id: &str) -> bool {
+        !self.is_original_admin
+            && self.deleted_at.is_none()
+            && self.keycloak_user_id != actor_keycloak_user_id
     }
 }
 
@@ -100,6 +108,8 @@ mod tests {
             email: "test@example.com".to_string(),
             name: Some("Test User".to_string()),
             role,
+            is_original_admin: false,
+            deleted_at: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         }
@@ -127,6 +137,14 @@ mod tests {
     fn user_is_employee_returns_false_for_admin_role() {
         let user = test_user(Role::Admin);
         assert!(!user.is_employee());
+    }
+
+    #[test]
+    fn original_admin_cannot_be_managed() {
+        let mut user = test_user(Role::Admin);
+        user.is_original_admin = true;
+
+        assert!(!user.can_be_managed_by("another-admin"));
     }
 
     #[test]

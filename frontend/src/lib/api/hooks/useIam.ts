@@ -7,8 +7,12 @@ export interface User {
   email: string
   name: string | null
   role: string
+  is_original_admin: boolean
+  can_manage: boolean
   created_at: string
 }
+
+export type UserRole = "admin" | "employee"
 
 export interface InviteUserRequest {
   email: string
@@ -70,6 +74,23 @@ export function useUsers() {
     queryFn: () => apiClient.get<User[]>("/api/v1/users"),
     staleTime: 30000,
     enabled: isAuthenticated,
+  })
+}
+
+export function useUpdateUserRole() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, role }: { id: string; role: UserRole }) =>
+      apiClient.patch<User>(`/api/v1/users/${id}/role`, { role }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
+  })
+}
+
+export function useDeleteUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => apiClient.delete<void>(`/api/v1/users/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
   })
 }
 

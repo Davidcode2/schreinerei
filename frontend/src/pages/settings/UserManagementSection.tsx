@@ -1,6 +1,7 @@
 import { useState } from "react"
-import { Mail, Clock3, Loader2, Shield, UserPlus, Users } from "lucide-react"
+import { Mail, Clock3, Loader2, Pencil, Shield, UserPlus, Users } from "lucide-react"
 
+import { EditUserDialog } from "@/components/settings/EditUserDialog"
 import { InviteUserDialog } from "@/components/settings/InviteUserDialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -9,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator"
 import {
   type PendingInviteResponse,
+  type User,
   usePendingInvites,
   useUsers,
 } from "@/lib/api/hooks"
@@ -93,6 +95,7 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
   } = usePendingInvites()
   const { isAuthenticated } = useAuthStore((state) => state)
   const [showInviteDialog, setShowInviteDialog] = useState(false)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
 
   if (!isAdmin) {
     return null
@@ -187,13 +190,31 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
                       <p className="truncate text-sm text-muted-foreground">{apiUser.email}</p>
                     </div>
                   </div>
-                  <Badge
-                    variant={apiUser.role === "admin" ? "default" : "outline"}
-                    className="gap-1 sm:flex-shrink-0"
-                  >
-                    {apiUser.role === "admin" ? <Shield className="h-3 w-3" /> : null}
-                    {getRoleLabel(apiUser.role)}
-                  </Badge>
+                  <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+                    <Badge
+                      variant={apiUser.role === "admin" ? "default" : "outline"}
+                      className="gap-1 sm:flex-shrink-0"
+                    >
+                      {apiUser.role === "admin" ? <Shield className="h-3 w-3" /> : null}
+                      {getRoleLabel(apiUser.role)}
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="min-h-10 gap-1.5 shadow-sm transition-transform active:scale-[0.97]"
+                      onClick={() => setEditingUser(apiUser)}
+                      disabled={!apiUser.can_manage}
+                      aria-label={
+                        apiUser.can_manage
+                          ? `${getDisplayName(apiUser)} bearbeiten`
+                          : `${getDisplayName(apiUser)} kann nicht bearbeitet werden`
+                      }
+                      title={apiUser.can_manage ? "Benutzer bearbeiten" : "Dieser Benutzer ist geschützt"}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Bearbeiten</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -201,6 +222,16 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
         )}
 
         <InviteUserDialog open={showInviteDialog} onOpenChange={setShowInviteDialog} />
+        {editingUser ? (
+          <EditUserDialog
+            key={editingUser.id}
+            user={editingUser}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setEditingUser(null)
+            }}
+          />
+        ) : null}
       </CardContent>
     </Card>
   )
