@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Info, LogOut } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
-import { useAuthStore } from "@/lib/auth/authStore"
+import { useLogout } from "@/hooks/useLogout"
 import { PageHeader } from "@/components/shared"
 import { BillingSettingsSection } from "./BillingSettingsSection"
 import { ProfileSection } from "./ProfileSection"
@@ -13,11 +13,7 @@ const APP_VERSION = "1.0.0"
 
 export default function SettingsPage() {
   const { user } = useAuth()
-  const logout = useAuthStore((state) => state.logout)
-
-  const handleLogout = () => {
-    logout()
-  }
+  const handleLogout = useLogout()
 
   const isAdmin = user?.role === "admin"
 
