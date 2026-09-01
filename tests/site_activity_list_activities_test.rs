@@ -168,6 +168,7 @@ fn tenant_context(tenant_id: Uuid, user_id: Uuid) -> TenantContext {
         user_id: UserId(user_id),
         email: "viewer@test.invalid".to_string(),
         roles: vec![Role::Employee],
+        token_roles: vec![Role::Employee],
     }
 }
 

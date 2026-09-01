@@ -294,5 +294,6 @@ async fn insert_admin(pool: &PgPool) -> TenantContext {
         user_id: authenticated_user_id,
         email: "admin@example.com".to_string(),
         roles: vec![Role::Admin],
+        token_roles: vec![Role::Admin],
     }
 }

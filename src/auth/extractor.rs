@@ -11,6 +11,10 @@ pub struct AuthenticatedUser {
     pub tenant_id: TenantId,
     pub email: String,
     pub roles: Vec<Role>,
+    /// Realm roles exactly as they appear in the presented JWT, before any
+    /// database-side role resolution. Used to detect stale Keycloak role
+    /// assignments that still need to be synchronized.
+    pub token_roles: Vec<Role>,
 }
 
 impl AuthenticatedUser {

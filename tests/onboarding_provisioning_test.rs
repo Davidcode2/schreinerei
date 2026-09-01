@@ -180,6 +180,7 @@ async fn first_login_claims_pending_onboarding_admin(pool: PgPool) {
         user_id: keycloak_user_id,
         email: "ADMIN@example.com".to_string(),
         roles: vec![Role::Employee],
+        token_roles: vec![Role::Employee],
     };
 
     let user = user_service
@@ -235,7 +236,8 @@ async fn first_login_assigns_keycloak_admin_role_for_claimed_onboarding_admin(po
         tenant_id: TenantId(tenant_id),
         user_id: keycloak_user_id,
         email: "admin@example.com".to_string(),
-        roles: vec![Role::Employee],
+        roles: vec![Role::Admin],
+        token_roles: vec![],
     };
 
     let user = user_service
@@ -245,6 +247,45 @@ async fn first_login_assigns_keycloak_admin_role_for_claimed_onboarding_admin(po
 
     assert_eq!(user.role, Role::Admin);
     assert!(assigner.called.load(Ordering::SeqCst));
+}
+
+#[sqlx::test]
+async fn first_login_skips_keycloak_role_sync_when_token_already_admin(pool: PgPool) {
+    let session_id = insert_confirmed_session(&pool, "tr_admin_role_synced").await;
+    let organization_id = Uuid::new_v4().to_string();
+    let keycloak = FakeKeycloak::succeeding(&organization_id, "schreinerei-beispiel");
+    let service = provisioning_service(pool.clone(), keycloak);
+    service
+        .provision_for_payment(PAYMENT_PROVIDER, "tr_admin_role_synced")
+        .await
+        .expect("provisioning should succeed");
+
+    let tenant_id: Uuid =
+        sqlx::query_scalar("SELECT tenant_id FROM onboarding_sessions WHERE id = $1")
+            .bind(session_id)
+            .fetch_one(&pool)
+            .await
+            .expect("tenant should be attached");
+
+    let keycloak_user_id = UserId(Uuid::new_v4());
+    let assigner = Arc::new(FakeRealmRoleAssigner::default());
+    let user_service =
+        UserService::new_with_role_assigner(UserRepository::new(pool.clone()), assigner.clone());
+    let ctx = TenantContext {
+        tenant_id: TenantId(tenant_id),
+        user_id: keycloak_user_id,
+        email: "admin@example.com".to_string(),
+        roles: vec![Role::Admin],
+        token_roles: vec![Role::Admin],
+    };
+
+    let user = user_service
+        .get_or_create_from_ctx(&ctx)
+        .await
+        .expect("pending admin should be claimed");
+
+    assert_eq!(user.role, Role::Admin);
+    assert!(!assigner.called.load(Ordering::SeqCst));
 }
 
 fn provisioning_service(

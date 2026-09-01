@@ -307,6 +307,7 @@ fn admin_context(tenant_id: Uuid, subject: Uuid) -> TenantContext {
         user_id: UserId(subject),
         email: "admin@example.com".to_string(),
         roles: vec![Role::Admin],
+        token_roles: vec![Role::Admin],
     }
 }
 

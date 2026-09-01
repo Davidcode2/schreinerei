@@ -80,7 +80,7 @@ pub async fn auth_middleware(
         .map(UserId)
         .map_err(|e| AppError::Auth(format!("Invalid user ID in token: {}", e)))?;
 
-    let jwt_roles = claims
+    let jwt_roles: Vec<Role> = claims
         .realm_access
         .roles
         .iter()
@@ -91,7 +91,7 @@ pub async fn auth_middleware(
         TenantId(tenant_id),
         &claims.sub,
         &claims.email,
-        jwt_roles,
+        jwt_roles.clone(),
     )
     .await?;
 
@@ -101,6 +101,7 @@ pub async fn auth_middleware(
         tenant_id: TenantId(tenant_id),
         email: claims.email.clone(),
         roles,
+        token_roles: jwt_roles,
     };
 
     // Inject into request extensions
@@ -189,7 +190,7 @@ pub async fn optional_auth_middleware(
                             find_tenant_by_org_alias(&auth_state.pool, org_alias).await
                         {
                             if let Ok(user_id) = Uuid::parse_str(&claims.sub).map(UserId) {
-                                let jwt_roles = claims
+                                let jwt_roles: Vec<Role> = claims
                                     .realm_access
                                     .roles
                                     .iter()
@@ -200,7 +201,7 @@ pub async fn optional_auth_middleware(
                                     TenantId(tenant_id),
                                     &claims.sub,
                                     &claims.email,
-                                    jwt_roles,
+                                    jwt_roles.clone(),
                                 )
                                 .await
                                 {
@@ -209,6 +210,7 @@ pub async fn optional_auth_middleware(
                                         tenant_id: TenantId(tenant_id),
                                         email: claims.email.clone(),
                                         roles,
+                                        token_roles: jwt_roles,
                                     };
                                     request.extensions_mut().insert(auth_user);
                                 }

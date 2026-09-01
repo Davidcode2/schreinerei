@@ -55,6 +55,8 @@ pub struct TenantContext {
     pub user_id: UserId,
     pub email: String,
     pub roles: Vec<Role>,
+    /// Realm roles exactly as they appear in the presented JWT.
+    pub token_roles: Vec<Role>,
 }
 
 impl TenantContext {
@@ -65,12 +67,18 @@ impl TenantContext {
             user_id: auth.user_id,
             email: auth.email.clone(),
             roles: auth.roles.clone(),
+            token_roles: auth.token_roles.clone(),
         }
     }
 
     /// Check if user has admin role
     pub fn is_admin(&self) -> bool {
         self.roles.iter().any(|r| r.is_admin())
+    }
+
+    /// Check if the presented JWT carries the admin role
+    pub fn token_is_admin(&self) -> bool {
+        self.token_roles.iter().any(|r| r.is_admin())
     }
 
     /// Reconstruct authenticated user data from request-scoped context.
@@ -80,6 +88,7 @@ impl TenantContext {
             tenant_id: self.tenant_id,
             email: self.email.clone(),
             roles: self.roles.clone(),
+            token_roles: self.token_roles.clone(),
         }
     }
 }
@@ -243,7 +252,10 @@ impl UserService {
         user: &User,
         ctx: &TenantContext,
     ) -> Result<(), AppError> {
-        if !user.is_admin() || ctx.is_admin() || user.keycloak_user_id != ctx.user_id.to_string() {
+        if !user.is_admin()
+            || ctx.token_is_admin()
+            || user.keycloak_user_id != ctx.user_id.to_string()
+        {
             return Ok(());
         }
 

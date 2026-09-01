@@ -1380,6 +1380,7 @@ mod tests {
             user_id,
             email: email.to_string(),
             roles: vec![role],
+            token_roles: vec![role],
         }
     }
 

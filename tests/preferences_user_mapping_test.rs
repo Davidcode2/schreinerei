@@ -49,6 +49,7 @@ fn auth_user(keycloak_subject: Uuid, tenant_id: Uuid, email: &str) -> Authentica
         tenant_id: TenantId(tenant_id),
         email: email.to_string(),
         roles: vec![Role::Employee],
+        token_roles: vec![Role::Employee],
     }
 }
 
