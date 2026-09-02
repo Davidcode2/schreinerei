@@ -262,7 +262,7 @@ export function SitePlanningCalendar({
     start_date: start.toISOString(),
     end_date: end.toISOString(),
   })
-  const { data: users } = useUsers()
+  const { data: users } = useUsers(canEdit)
   const createAppointment = useCreateSiteAppointment()
   const updateAppointment = useUpdateSiteAppointment()
   const deleteAppointment = useDeleteSiteAppointment()
@@ -279,7 +279,7 @@ export function SitePlanningCalendar({
     () =>
       assignments.map((assignment) => ({
         id: assignment.user_id,
-        label: userLabels.get(assignment.user_id) ?? assignment.user_id,
+        label: userLabels.get(assignment.user_id) ?? assignment.user_name ?? assignment.user_id,
       })),
     [assignments, userLabels]
   )

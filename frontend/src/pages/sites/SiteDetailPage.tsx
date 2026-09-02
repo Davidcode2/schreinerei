@@ -832,14 +832,16 @@ export default function SiteDetailPage() {
         backTo="/sites"
         action={
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowPlanningSheet(true)}
-              className="gap-2 h-10"
-            >
-              <PencilRuler className="h-4 w-4" />
-              Planen
-            </Button>
+            {isAdmin && (
+              <Button
+                variant="outline"
+                onClick={() => setShowPlanningSheet(true)}
+                className="gap-2 h-10"
+              >
+                <PencilRuler className="h-4 w-4" />
+                Planen
+              </Button>
+            )}
             <Button
               onClick={() => setShowTimeDialog(true)}
               className="gap-2 h-10 shadow-sm"
@@ -855,12 +857,16 @@ export default function SiteDetailPage() {
         <CardContent className="p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-wrap">
-              <div
-                className="cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => setShowStatusModal(true)}
-              >
+              {isAdmin ? (
+                <div
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => setShowStatusModal(true)}
+                >
+                  <StatusBadge status={site.status} />
+                </div>
+              ) : (
                 <StatusBadge status={site.status} />
-              </div>
+              )}
               <Badge variant="outline" className="text-xs font-normal">
                 {site.project_type === "internal_workshop"
                   ? "Werkstattprojekt"

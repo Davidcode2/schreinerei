@@ -67,13 +67,13 @@ export interface TestDataStatus {
   retained_records: number
 }
 
-export function useUsers() {
+export function useUsers(enabled = true) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   return useQuery({
     queryKey: ["users"],
     queryFn: () => apiClient.get<User[]>("/api/v1/users"),
     staleTime: 30000,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && enabled,
   })
 }
 
@@ -94,14 +94,14 @@ export function useDeleteUser() {
   })
 }
 
-export function useBillingSettings() {
+export function useBillingSettings(enabled = true) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
   return useQuery({
     queryKey: ["billing-settings"],
     queryFn: () => apiClient.get<BillingSettings>("/api/v1/settings/billing"),
     staleTime: 30000,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && enabled,
   })
 }
 

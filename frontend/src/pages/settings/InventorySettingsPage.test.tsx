@@ -7,6 +7,7 @@ import { render } from "@/test/utils"
 import { server } from "@/test/mocks/server"
 import { mockData } from "@/test/mocks/handlers"
 import { createCategory } from "@/test/factories/category"
+import { useAuthStore } from "@/lib/auth/authStore"
 import InventorySettingsPage from "./InventorySettingsPage"
 
 vi.mock("sonner", async () => {
@@ -37,6 +38,19 @@ describe("InventorySettingsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockData.categories = structuredClone(categories)
+    useAuthStore.setState({
+      user: {
+        id: "user-1",
+        email: "admin@example.com",
+        name: "Admin",
+        role: "admin",
+        tenant_id: "tenant-1",
+        created_at: new Date().toISOString(),
+      },
+      tokens: null,
+      isAuthenticated: true,
+      isLoading: false,
+    })
   })
 
   it("renders the settings title, category rows, and the empty state copy", async () => {

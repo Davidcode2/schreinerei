@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select"
 import { useAssignUser, useRemoveAssignment } from "@/lib/api/hooks"
 import { useUsers } from "@/lib/api/hooks/useIam"
+import { useIsAdmin } from "@/hooks/useIsAdmin"
 import type { SiteAssignment } from "@/types/sites"
 
 interface ProjectAssignmentsSectionProps {
@@ -20,13 +21,19 @@ interface ProjectAssignmentsSectionProps {
 }
 
 export function ProjectAssignmentsSection({ siteId, assignments }: ProjectAssignmentsSectionProps) {
-  const { data: users } = useUsers()
+  const isAdmin = useIsAdmin()
+  const { data: users } = useUsers(isAdmin)
   const assignUser = useAssignUser()
   const removeAssignment = useRemoveAssignment()
   const [selectedUserId, setSelectedUserId] = useState("")
 
   const assignedIds = useMemo(() => new Set(assignments.map((assignment) => assignment.user_id)), [assignments])
   const availableUsers = (users ?? []).filter((user) => !assignedIds.has(user.id))
+
+  function assignmentLabel(assignment: SiteAssignment): string {
+    const user = users?.find((entry) => entry.id === assignment.user_id)
+    return user?.name || user?.email || assignment.user_name || assignment.user_id
+  }
 
   function handleAssign() {
     if (!selectedUserId) return
@@ -59,38 +66,39 @@ export function ProjectAssignmentsSection({ siteId, assignments }: ProjectAssign
         <p className="text-sm font-medium">Projektteam</p>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-          <SelectTrigger className="h-10 flex-1">
-            <SelectValue placeholder="Mitarbeiter auswählen" />
-          </SelectTrigger>
-          <SelectContent>
-            {availableUsers.length === 0 ? (
-              <SelectItem value="__none" disabled>
-                Keine weiteren Mitarbeiter verfügbar
-              </SelectItem>
-            ) : (
-              availableUsers.map((user) => (
-                <SelectItem key={user.id} value={user.id}>
-                  {user.name || user.email}
+      {isAdmin && (
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+            <SelectTrigger className="h-10 flex-1">
+              <SelectValue placeholder="Mitarbeiter auswählen" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableUsers.length === 0 ? (
+                <SelectItem value="__none" disabled>
+                  Keine weiteren Mitarbeiter verfügbar
                 </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
-        <Button className="h-10 gap-2" disabled={!selectedUserId || assignUser.isPending} onClick={handleAssign}>
-          <UserPlus className="h-4 w-4" />
-          Hinzufügen
-        </Button>
-      </div>
+              ) : (
+                availableUsers.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.name || user.email}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+          <Button className="h-10 gap-2" disabled={!selectedUserId || assignUser.isPending} onClick={handleAssign}>
+            <UserPlus className="h-4 w-4" />
+            Hinzufügen
+          </Button>
+        </div>
+      )}
 
       <div className="space-y-2">
         {assignments.length === 0 ? (
           <p className="text-sm text-muted-foreground">Noch keine Mitarbeiter zugewiesen.</p>
         ) : (
           assignments.map((assignment) => {
-            const user = users?.find((entry) => entry.id === assignment.user_id)
-            const label = user?.name || user?.email || assignment.user_id
+            const label = assignmentLabel(assignment)
 
             return (
               <div key={assignment.id} className="flex items-center justify-between rounded-xl border bg-card px-3 py-2">
@@ -100,15 +108,17 @@ export function ProjectAssignmentsSection({ siteId, assignments }: ProjectAssign
                     {assignment.role === "lead" ? "Leitung" : "Mitarbeiter"}
                   </Badge>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                  disabled={removeAssignment.isPending}
-                  onClick={() => handleRemove(assignment.user_id)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    disabled={removeAssignment.isPending}
+                    onClick={() => handleRemove(assignment.user_id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             )
           })
