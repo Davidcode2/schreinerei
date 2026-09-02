@@ -3,6 +3,7 @@ import { Plus } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import { PageHeader } from "@/components/shared"
 import { Button } from "@/components/ui/button"
+import { useIsAdmin } from "@/hooks/useIsAdmin"
 import { AddToolDialog } from "./AddToolDialog"
 import { AddVehicleDialog } from "./AddVehicleDialog"
 import CalendarView from "./CalendarView"
@@ -33,6 +34,7 @@ export function ResourceOverviewPage({
     type: "vehicle" | "tool"
   } | null>(null)
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const isAdmin = useIsAdmin()
 
   const handleReserve = (id: string, type: "vehicle" | "tool") => {
     setReserveResource({ id, type })
@@ -50,11 +52,13 @@ export function ResourceOverviewPage({
         title={title}
         description={description}
         action={
-          <Button className="gap-2 h-10 shadow-sm" onClick={() => setShowAddDialog(true)}>
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">{resourceLabel} hinzufügen</span>
-            <span className="sm:hidden">Neu</span>
-          </Button>
+          isAdmin && (
+            <Button className="gap-2 h-10 shadow-sm" onClick={() => setShowAddDialog(true)}>
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">{resourceLabel} hinzufügen</span>
+              <span className="sm:hidden">Neu</span>
+            </Button>
+          )
         }
       />
 
