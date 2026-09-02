@@ -30,6 +30,7 @@ interface ResourceDetailPageProps {
   onReserve: () => void
   onEdit: () => void
   reserveDisabled?: boolean
+  canEdit?: boolean
   editDialog: ReactNode
   reservationDialog: ReactNode
   maintenanceSection?: ReactNode
@@ -51,6 +52,7 @@ export function ResourceDetailPage({
   onReserve,
   onEdit,
   reserveDisabled = false,
+  canEdit = true,
   editDialog,
   reservationDialog,
   maintenanceSection,
@@ -91,15 +93,17 @@ export function ResourceDetailPage({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-base font-semibold">Details</CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-              onClick={onEdit}
-              aria-label={editLabel}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
+            {canEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={onEdit}
+                aria-label={editLabel}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -140,14 +144,16 @@ export function ResourceDetailPage({
               <Calendar className="h-4 w-4" />
               {reserveDisabled ? "Nicht verfügbar" : reserveLabel}
             </Button>
-            <Button
-              variant="outline"
-              onClick={onEdit}
-              className="w-full justify-start gap-2 h-10 active:scale-[0.97] transition-transform"
-            >
-              <Pencil className="h-4 w-4" />
-              {editLabel}
-            </Button>
+            {canEdit && (
+              <Button
+                variant="outline"
+                onClick={onEdit}
+                className="w-full justify-start gap-2 h-10 active:scale-[0.97] transition-transform"
+              >
+                <Pencil className="h-4 w-4" />
+                {editLabel}
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>

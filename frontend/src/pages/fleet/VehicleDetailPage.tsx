@@ -84,6 +84,7 @@ export default function VehicleDetailPage() {
       onReserve={() => setShowReservationDialog(true)}
       onEdit={() => setShowEditDialog(true)}
       reserveDisabled={!isAvailable}
+      canEdit={isAdmin}
       maintenanceSection={
         <MaintenancePanel
           dueRecords={maintenanceDue}

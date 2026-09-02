@@ -7,6 +7,7 @@ import { Link } from "react-router-dom"
 import { StatusBadge } from "@/components/shared"
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
 import { useDeleteMaterial } from "@/lib/api/hooks"
+import { useIsAdmin } from "@/hooks/useIsAdmin"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import type { Material } from "@/types/inventory"
@@ -23,6 +24,7 @@ function getDisplayUnit(unit: string): string {
 export function MaterialCard({ material, categoryName }: MaterialCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const deleteMutation = useDeleteMaterial()
+  const isAdmin = useIsAdmin()
   const displayUnit = getDisplayUnit(material.unit)
 
   const handleDelete = () => {
@@ -105,18 +107,20 @@ export function MaterialCard({ material, categoryName }: MaterialCardProps) {
               {!material.is_low_stock && material.qr_code && (
                 <QrCode className="h-4 w-4 text-muted-foreground" />
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 text-muted-foreground hover:text-destructive"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  setDeleteDialogOpen(true)
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setDeleteDialogOpen(true)
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>

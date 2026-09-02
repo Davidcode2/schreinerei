@@ -6,6 +6,7 @@ import { Link } from "react-router-dom"
 import { StatusBadge } from "@/components/shared"
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
 import { useDeleteVehicle, useDeleteTool } from "@/lib/api/hooks"
+import { useIsAdmin } from "@/hooks/useIsAdmin"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import type { Vehicle, Tool } from "@/types/fleet"
@@ -34,6 +35,7 @@ export function ResourceCard({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const deleteVehicleMutation = useDeleteVehicle()
   const deleteToolMutation = useDeleteTool()
+  const isAdmin = useIsAdmin()
 
   const isAvailable = resource.status === "available"
   const deleteMutation = type === "vehicle" ? deleteVehicleMutation : deleteToolMutation
@@ -131,18 +133,20 @@ export function ResourceCard({
                   <span className="truncate font-mono">{truncateQrCode(resource.qr_code)}</span>
                 </div>
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  setDeleteDialogOpen(true)
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setDeleteDialogOpen(true)
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             <Button
               size="sm"

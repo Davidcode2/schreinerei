@@ -283,15 +283,17 @@ export default function InventoryDetailPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-base font-semibold">Details</CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => setShowEditDialog(true)}
-              aria-label="Material bearbeiten"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => setShowEditDialog(true)}
+                aria-label="Material bearbeiten"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -541,11 +543,13 @@ export default function InventoryDetailPage() {
         isLoading={stockInMutation.isPending}
       />
 
-      <MaterialEditDialog
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
-        material={material}
-      />
+      {isAdmin && (
+        <MaterialEditDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          material={material}
+        />
+      )}
     </div>
   )
 }
