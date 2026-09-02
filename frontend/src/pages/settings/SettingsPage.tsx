@@ -26,9 +26,9 @@ export default function SettingsPage() {
 
       <ProfileSection />
 
-      <BillingSettingsSection isAdmin={isAdmin} />
+      {isAdmin ? <BillingSettingsSection isAdmin={isAdmin} /> : null}
 
-      <UserManagementSection isAdmin={isAdmin} />
+      {isAdmin ? <UserManagementSection isAdmin={isAdmin} /> : null}
 
       {isAdmin ? <TestDataSettingsSection /> : null}
 

@@ -1145,11 +1145,153 @@ mod tests {
         normalize_optional_text, EnrichedStockHistoryResponse, StockInRequest,
         UpdateCategoryRequest, UpdateMaterialRequest,
     };
-    use crate::common::types::{MaterialId, SiteId, TenantId, UserId};
+    use crate::common::types::{MaterialId, Role, SiteId, TenantId, UserId};
+    use crate::modules::iam::application::user_service::TenantContext;
+    use crate::modules::inventory::application::InventoryService;
     use crate::modules::inventory::domain::{
         EnrichedStockEntry, EntryType, StockIn, UpdateCategory, UpdateMaterial,
     };
+    use crate::modules::inventory::infrastructure::MaterialRepository;
     use chrono::{NaiveDate, Utc};
+    use sqlx::PgPool;
+    use uuid::Uuid;
+
+    #[sqlx::test]
+    async fn list_low_stock_allows_employee_users(pool: PgPool) {
+        let tenant_id = create_tenant(&pool).await;
+        let user = create_user(&pool, tenant_id).await;
+        let category_id = create_category(&pool, tenant_id).await;
+        create_material(&pool, tenant_id, category_id, "Schrauben", 2, 10).await;
+        create_material(&pool, tenant_id, category_id, "Leim", 50, 10).await;
+
+        let service = InventoryService::new(MaterialRepository::new(pool));
+        let materials = service
+            .list_low_stock(&tenant_context(tenant_id, user, Role::Employee))
+            .await
+            .expect("employee should list low stock materials");
+
+        assert_eq!(materials.len(), 1);
+        assert_eq!(materials[0].name, "Schrauben");
+    }
+
+    #[sqlx::test]
+    async fn list_low_stock_is_tenant_scoped(pool: PgPool) {
+        let tenant_id = create_tenant(&pool).await;
+        let user = create_user(&pool, tenant_id).await;
+        let category_id = create_category(&pool, tenant_id).await;
+        create_material(&pool, tenant_id, category_id, "Schrauben", 2, 10).await;
+
+        let other_tenant_id = create_tenant(&pool).await;
+        let other_category_id = create_category(&pool, other_tenant_id).await;
+        create_material(
+            &pool,
+            other_tenant_id,
+            other_category_id,
+            "Fremde Schrauben",
+            1,
+            5,
+        )
+        .await;
+
+        let service = InventoryService::new(MaterialRepository::new(pool));
+        let materials = service
+            .list_low_stock(&tenant_context(tenant_id, user, Role::Employee))
+            .await
+            .expect("employee should list only own tenant materials");
+
+        assert_eq!(materials.len(), 1);
+        assert_eq!(materials[0].name, "Schrauben");
+    }
+
+    async fn create_tenant(pool: &PgPool) -> TenantId {
+        let id = Uuid::new_v4();
+        sqlx::query(
+            r#"
+            INSERT INTO tenants (id, keycloak_realm, name, slug, keycloak_organization_alias)
+            VALUES ($1, $2, $3, $4, $5)
+            "#,
+        )
+        .bind(id)
+        .bind(format!("realm-{id}"))
+        .bind("Tenant")
+        .bind(format!("slug-{id}"))
+        .bind(format!("alias-{id}"))
+        .execute(pool)
+        .await
+        .expect("tenant should be inserted");
+
+        TenantId(id)
+    }
+
+    async fn create_user(pool: &PgPool, tenant_id: TenantId) -> UserId {
+        let id = Uuid::new_v4();
+        sqlx::query(
+            r#"
+            INSERT INTO users (id, tenant_id, keycloak_user_id, email, role)
+            VALUES ($1, $2, $3, $4, 'employee')
+            "#,
+        )
+        .bind(id)
+        .bind(tenant_id.0)
+        .bind(Uuid::new_v4().to_string())
+        .bind(format!("{id}@example.test"))
+        .execute(pool)
+        .await
+        .expect("user should be inserted");
+
+        UserId(id)
+    }
+
+    async fn create_category(pool: &PgPool, tenant_id: TenantId) -> Uuid {
+        let id = Uuid::new_v4();
+        sqlx::query("INSERT INTO categories (id, tenant_id, name) VALUES ($1, $2, $3)")
+            .bind(id)
+            .bind(tenant_id.0)
+            .bind(format!("Kategorie-{id}"))
+            .execute(pool)
+            .await
+            .expect("category should be inserted");
+
+        id
+    }
+
+    async fn create_material(
+        pool: &PgPool,
+        tenant_id: TenantId,
+        category_id: Uuid,
+        name: &str,
+        quantity: i32,
+        min_quantity: i32,
+    ) -> MaterialId {
+        let id = Uuid::new_v4();
+        sqlx::query(
+            r#"
+            INSERT INTO materials (id, tenant_id, category_id, name, unit, quantity, min_quantity)
+            VALUES ($1, $2, $3, $4, 'Stück', $5, $6)
+            "#,
+        )
+        .bind(id)
+        .bind(tenant_id.0)
+        .bind(category_id)
+        .bind(name)
+        .bind(quantity)
+        .bind(min_quantity)
+        .execute(pool)
+        .await
+        .expect("material should be inserted");
+
+        MaterialId(id)
+    }
+
+    fn tenant_context(tenant_id: TenantId, user_id: UserId, role: Role) -> TenantContext {
+        TenantContext {
+            tenant_id,
+            user_id,
+            email: format!("{user_id}@example.test"),
+            roles: vec![role],
+            token_roles: vec![role],
+        }
+    }
 
     #[test]
     fn update_category_request_preserves_patch_semantics() {

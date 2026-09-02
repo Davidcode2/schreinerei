@@ -97,6 +97,7 @@ export interface SiteAssignment {
   id: string
   site_id: string
   user_id: string
+  user_name: string
   role: AssignmentRole
   created_at: string
 }

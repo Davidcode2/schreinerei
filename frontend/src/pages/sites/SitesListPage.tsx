@@ -10,6 +10,7 @@ import {
 } from "@/components/shared"
 import { SiteCard, SiteCardSkeleton } from "@/components/sites/SiteCard"
 import { usePreferences, useSites, useUpdatePreferences } from "@/lib/api/hooks"
+import { useIsAdmin } from "@/hooks/useIsAdmin"
 import { AddSiteDialog } from "./AddSiteDialog"
 import type { Site, SiteStatus } from "@/types/sites"
 import { toast } from "sonner"
@@ -26,6 +27,7 @@ export default function SitesListPage() {
   const [selectedStatus, setSelectedStatus] = useState<SiteStatus | undefined>()
   const [searchQuery, setSearchQuery] = useState("")
   const [addSiteOpen, setAddSiteOpen] = useState(false)
+  const isAdmin = useIsAdmin()
 
   const {
     data: sites,
@@ -61,19 +63,21 @@ export default function SitesListPage() {
         title="Projekte"
         description="Externe Baustellen und interne Werkstattprojekte im Überblick"
         action={
-          <div className="flex gap-2">
-            <Link to="/sites/history">
-              <Button variant="outline" className="gap-2 h-10">
-                <ArrowRight className="h-4 w-4" />
-                Historische Auswertung
+          isAdmin && (
+            <div className="flex gap-2">
+              <Link to="/sites/history">
+                <Button variant="outline" className="gap-2 h-10">
+                  <ArrowRight className="h-4 w-4" />
+                  Historische Auswertung
+                </Button>
+              </Link>
+              <Button className="gap-2 h-10 shadow-sm" onClick={() => setAddSiteOpen(true)}>
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Projekt anlegen</span>
+                <span className="sm:hidden">Anlegen</span>
               </Button>
-            </Link>
-            <Button className="gap-2 h-10 shadow-sm" onClick={() => setAddSiteOpen(true)}>
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Projekt anlegen</span>
-              <span className="sm:hidden">Anlegen</span>
-            </Button>
-          </div>
+            </div>
+          )
         }
       />
 
@@ -122,10 +126,12 @@ export default function SitesListPage() {
           description={
             searchQuery
               ? "Keine Projekte entsprechen Ihrer Suche."
-              : "Legen Sie Ihr erstes Projekt an."
+              : isAdmin
+                ? "Legen Sie Ihr erstes Projekt an."
+                : "Es wurden noch keine Projekte angelegt."
           }
           action={
-            !searchQuery && (
+            !searchQuery && isAdmin && (
               <Button className="gap-2 h-10" onClick={() => setAddSiteOpen(true)}>
                 <Plus className="h-4 w-4" />
                 Projekt anlegen

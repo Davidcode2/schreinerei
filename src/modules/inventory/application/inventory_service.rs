@@ -530,9 +530,6 @@ impl InventoryService {
     }
 
     pub async fn list_low_stock(&self, ctx: &TenantContext) -> Result<Vec<Material>, AppError> {
-        if !ctx.is_admin() {
-            return Err(AppError::Forbidden("Admin access required".to_string()));
-        }
         self.material_repo
             .list_low_stock_materials(ctx.tenant_id)
             .await

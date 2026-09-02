@@ -12,6 +12,7 @@ import {
 import { MaterialCard, MaterialCardSkeleton } from "@/components/inventory/MaterialCard"
 import { CategoryFilter } from "@/components/inventory/CategoryFilter"
 import { useCategories, useInventoryAlerts, useMaterials } from "@/lib/api/hooks"
+import { useIsAdmin } from "@/hooks/useIsAdmin"
 import { AddMaterialDialog } from "./AddMaterialDialog"
 import type { Material } from "@/types/inventory"
 
@@ -20,6 +21,7 @@ export default function InventoryListPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>()
   const [searchQuery, setSearchQuery] = useState("")
   const [addMaterialOpen, setAddMaterialOpen] = useState(false)
+  const isAdmin = useIsAdmin()
 
   const { data: categories, isLoading: categoriesLoading } = useCategories()
   const {
@@ -55,11 +57,13 @@ export default function InventoryListPage() {
             >
               <Settings className="h-4 w-4" />
             </Button>
-            <Button className="gap-2 h-10 shadow-sm" onClick={() => setAddMaterialOpen(true)}>
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Material hinzufügen</span>
-              <span className="sm:hidden">Hinzufügen</span>
-            </Button>
+            {isAdmin && (
+              <Button className="gap-2 h-10 shadow-sm" onClick={() => setAddMaterialOpen(true)}>
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Material hinzufügen</span>
+                <span className="sm:hidden">Hinzufügen</span>
+              </Button>
+            )}
           </div>
         }
       />
@@ -144,10 +148,12 @@ export default function InventoryListPage() {
           description={
             searchQuery
               ? "Keine Materialien entsprechen Ihrer Suche."
-              : "Fügen Sie Ihr erstes Material hinzu."
+              : isAdmin
+                ? "Fügen Sie Ihr erstes Material hinzu."
+                : "Es wurde noch kein Material angelegt."
           }
           action={
-            !searchQuery && (
+            !searchQuery && isAdmin && (
               <Button className="gap-2 h-10 shadow-sm" onClick={() => setAddMaterialOpen(true)}>
                 <Plus className="h-4 w-4" />
                 Material hinzufügen

@@ -416,10 +416,12 @@ impl SiteRepository {
     ) -> Result<Vec<SiteAssignment>, AppError> {
         let assignments = sqlx::query_as::<_, AssignmentRow>(
             r#"
-            SELECT id, tenant_id, site_id, user_id, role, created_at
-            FROM site_assignments
-            WHERE tenant_id = $1 AND site_id = $2
-            ORDER BY created_at
+            SELECT sa.id, sa.tenant_id, sa.site_id, sa.user_id, sa.role, sa.created_at,
+                   COALESCE(NULLIF(u.name, ''), u.email, sa.user_id::text) AS user_name
+            FROM site_assignments sa
+            LEFT JOIN users u ON u.id = sa.user_id AND u.tenant_id = sa.tenant_id
+            WHERE sa.tenant_id = $1 AND sa.site_id = $2
+            ORDER BY sa.created_at
             "#,
         )
         .bind(tenant_id.0)
@@ -1405,6 +1407,7 @@ struct AssignmentRow {
     tenant_id: Uuid,
     site_id: Uuid,
     user_id: Uuid,
+    user_name: String,
     role: String,
     created_at: DateTime<Utc>,
 }
@@ -1416,6 +1419,7 @@ impl AssignmentRow {
             tenant_id: TenantId(self.tenant_id),
             site_id: SiteId(self.site_id),
             user_id: UserId(self.user_id),
+            user_name: self.user_name,
             role: self.role.parse().unwrap_or(AssignmentRole::Worker),
             created_at: self.created_at,
         }
@@ -1646,5 +1650,148 @@ impl ProjectLaborSummaryRow {
             workshop_hours: self.workshop_hours,
             last_work_date: self.last_work_date,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sqlx::PgPool;
+    use uuid::Uuid;
+
+    #[sqlx::test]
+    async fn list_assignments_resolves_user_display_names(pool: PgPool) {
+        let tenant_id = TenantId(Uuid::new_v4());
+        let user_id = Uuid::new_v4();
+        sqlx::query(
+            r#"
+            INSERT INTO tenants (id, keycloak_realm, name, slug, keycloak_organization_alias)
+            VALUES ($1, $2, 'Tenant', 'slug', 'alias')
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(Uuid::new_v4().to_string())
+        .execute(&pool)
+        .await
+        .expect("tenant should be inserted");
+
+        sqlx::query(
+            r#"
+            INSERT INTO users (id, tenant_id, keycloak_user_id, email, name, role)
+            VALUES ($1, $2, $3, $4, $5, 'employee')
+            "#,
+        )
+        .bind(user_id)
+        .bind(tenant_id.0)
+        .bind(Uuid::new_v4().to_string())
+        .bind("named@example.test")
+        .bind("Martin Brenner")
+        .execute(&pool)
+        .await
+        .expect("user should be inserted");
+
+        let site_id = SiteId(Uuid::new_v4());
+        sqlx::query(
+            r#"
+            INSERT INTO sites (id, tenant_id, project_type, name, customer_name)
+            VALUES ($1, $2, 'external_site', 'Baustelle A', 'Kunde A')
+            "#,
+        )
+        .bind(site_id.0)
+        .bind(tenant_id.0)
+        .execute(&pool)
+        .await
+        .expect("site should be inserted");
+
+        sqlx::query(
+            r#"
+            INSERT INTO site_assignments (id, tenant_id, site_id, user_id, role)
+            VALUES ($1, $2, $3, $4, 'worker')
+            "#,
+        )
+        .bind(Uuid::new_v4())
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .bind(user_id)
+        .execute(&pool)
+        .await
+        .expect("assignment should be inserted");
+
+        let repo = SiteRepository::new(pool);
+        let assignments = repo
+            .list_assignments(tenant_id, site_id)
+            .await
+            .expect("assignments should be listed");
+
+        assert_eq!(assignments.len(), 1);
+        assert_eq!(assignments[0].user_id, UserId(user_id));
+        assert_eq!(assignments[0].user_name, "Martin Brenner");
+    }
+
+    #[sqlx::test]
+    async fn list_assignments_falls_back_to_email_without_user_name(pool: PgPool) {
+        let tenant_id = TenantId(Uuid::new_v4());
+        let user_id = Uuid::new_v4();
+        sqlx::query(
+            r#"
+            INSERT INTO tenants (id, keycloak_realm, name, slug, keycloak_organization_alias)
+            VALUES ($1, $2, 'Tenant', 'slug', 'alias')
+            "#,
+        )
+        .bind(tenant_id.0)
+        .bind(Uuid::new_v4().to_string())
+        .execute(&pool)
+        .await
+        .expect("tenant should be inserted");
+
+        sqlx::query(
+            r#"
+            INSERT INTO users (id, tenant_id, keycloak_user_id, email, name, role)
+            VALUES ($1, $2, $3, $4, '', 'employee')
+            "#,
+        )
+        .bind(user_id)
+        .bind(tenant_id.0)
+        .bind(Uuid::new_v4().to_string())
+        .bind("noname@example.test")
+        .execute(&pool)
+        .await
+        .expect("user should be inserted");
+
+        let site_id = SiteId(Uuid::new_v4());
+        sqlx::query(
+            r#"
+            INSERT INTO sites (id, tenant_id, project_type, name, customer_name)
+            VALUES ($1, $2, 'external_site', 'Baustelle B', 'Kunde B')
+            "#,
+        )
+        .bind(site_id.0)
+        .bind(tenant_id.0)
+        .execute(&pool)
+        .await
+        .expect("site should be inserted");
+
+        sqlx::query(
+            r#"
+            INSERT INTO site_assignments (id, tenant_id, site_id, user_id, role)
+            VALUES ($1, $2, $3, $4, 'lead')
+            "#,
+        )
+        .bind(Uuid::new_v4())
+        .bind(tenant_id.0)
+        .bind(site_id.0)
+        .bind(user_id)
+        .execute(&pool)
+        .await
+        .expect("assignment should be inserted");
+
+        let repo = SiteRepository::new(pool);
+        let assignments = repo
+            .list_assignments(tenant_id, site_id)
+            .await
+            .expect("assignments should be listed");
+
+        assert_eq!(assignments.len(), 1);
+        assert_eq!(assignments[0].user_name, "noname@example.test");
     }
 }

@@ -7,6 +7,7 @@ import { Link } from "react-router-dom"
 import { StatusBadge } from "@/components/shared"
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog"
 import { useDeleteSite } from "@/lib/api/hooks"
+import { useIsAdmin } from "@/hooks/useIsAdmin"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import type { Site } from "@/types/sites"
@@ -35,6 +36,7 @@ export function SiteCard({
 }: SiteCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const deleteMutation = useDeleteSite()
+  const isAdmin = useIsAdmin()
 
   const handleDelete = () => {
     deleteMutation.mutate(site.id, {
@@ -136,18 +138,20 @@ export function SiteCard({
               <Star className={cn("h-3.5 w-3.5", isActive && "fill-current")} />
               {isActive ? "Aktiv" : "Auswählen"}
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 text-muted-foreground hover:text-destructive"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                setDeleteDialogOpen(true)
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setDeleteDialogOpen(true)
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

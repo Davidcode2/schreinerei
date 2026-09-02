@@ -23,10 +23,9 @@ import {
 } from "@/lib/api/hooks"
 import type { Category } from "@/types/inventory"
 import { CategoryDialog } from "@/pages/inventory/CategoryDialog"
+import { useIsAdmin } from "@/hooks/useIsAdmin"
 
 const EMPTY_STATE_TITLE = "Noch keine Kategorien"
-const EMPTY_STATE_BODY =
-  "Legen Sie die erste Kategorie an, damit Materialien sauber zugeordnet werden können."
 const DELETE_CONFIRMATION =
   "Möchten Sie diese Kategorie wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
 const BLOCKED_DELETE_MESSAGE =
@@ -71,6 +70,7 @@ export default function InventorySettingsPage() {
   const createCategory = useCreateCategory()
   const updateCategory = useUpdateCategory()
   const deleteCategory = useDeleteCategory()
+  const isAdmin = useIsAdmin()
 
   const categoriesById = useMemo(
     () => new Map((categories ?? []).map((category) => [category.id, category])),
@@ -173,13 +173,15 @@ export default function InventorySettingsPage() {
         title="Inventar-Einstellungen"
         description="Kategorien und Materialpflege zentral verwalten"
         action={
-          <Button
-            className="gap-2 shadow-sm active:scale-[0.97] transition-transform"
-            onClick={() => setIsCreateOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Kategorie anlegen
-          </Button>
+          isAdmin && (
+            <Button
+              className="gap-2 shadow-sm active:scale-[0.97] transition-transform"
+              onClick={() => setIsCreateOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Kategorie anlegen
+            </Button>
+          )
         }
       />
 
@@ -220,26 +222,30 @@ export default function InventorySettingsPage() {
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 shadow-sm active:scale-[0.97] transition-transform"
-                      onClick={() => handleEditOpen(category)}
-                      aria-label={`${category.name} bearbeiten`}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Bearbeiten</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 shadow-sm active:scale-[0.97] transition-transform"
-                      onClick={() => setDeleteCategoryId(category.id)}
-                      aria-label={`${category.name} löschen`}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Löschen</span>
-                    </Button>
+                    {isAdmin && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 shadow-sm active:scale-[0.97] transition-transform"
+                          onClick={() => handleEditOpen(category)}
+                          aria-label={`${category.name} bearbeiten`}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Bearbeiten</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 shadow-sm active:scale-[0.97] transition-transform"
+                          onClick={() => setDeleteCategoryId(category.id)}
+                          aria-label={`${category.name} löschen`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Löschen</span>
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -259,7 +265,11 @@ export default function InventorySettingsPage() {
                 </span>
               </div>
               <p className="font-medium">{EMPTY_STATE_TITLE}</p>
-              <p className="mt-1.5 text-sm text-muted-foreground">{EMPTY_STATE_BODY}</p>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                {isAdmin
+                  ? "Legen Sie die erste Kategorie an, damit Materialien sauber zugeordnet werden können."
+                  : "Es wurden noch keine Kategorien angelegt."}
+              </p>
             </div>
           )}
         </CardContent>

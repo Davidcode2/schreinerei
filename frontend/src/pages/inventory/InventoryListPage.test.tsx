@@ -4,6 +4,7 @@ import { render } from "@/test/utils"
 import { mockData } from "@/test/mocks/handlers"
 import { createCategory } from "@/test/factories/category"
 import { createMaterial } from "@/test/factories/material"
+import { setAuthRole } from "@/test/auth"
 import InventoryListPage from "./InventoryListPage"
 
 describe("InventoryListPage", () => {
@@ -78,5 +79,29 @@ describe("InventoryListPage", () => {
 
     expect(await screen.findByText("12 m²")).toBeInTheDocument()
     expect(screen.getByText("Min: 4 m²")).toBeInTheDocument()
+  })
+
+  it("hides the material create action from mitarbeiter users but keeps the gear", async () => {
+    setAuthRole("mitarbeiter")
+
+    render(<InventoryListPage />)
+
+    expect(await screen.findByText("Multiplexplatte")).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /material hinzufügen/i })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /inventar-einstellungen öffnen/i })
+    ).toBeInTheDocument()
+  })
+
+  it("shows the material create action to admins", async () => {
+    setAuthRole("admin")
+
+    render(<InventoryListPage />)
+
+    expect(
+      await screen.findByRole("button", { name: /material hinzufügen/i })
+    ).toBeInTheDocument()
   })
 })

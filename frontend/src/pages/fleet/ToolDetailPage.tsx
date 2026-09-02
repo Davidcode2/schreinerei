@@ -70,6 +70,7 @@ export default function ToolDetailPage() {
       onReserve={() => setShowReservationDialog(true)}
       onEdit={() => setShowEditDialog(true)}
       reserveDisabled={!isAvailable}
+      canEdit={isAdmin}
       maintenanceSection={
         <MaintenancePanel
           dueRecords={maintenanceDue}
