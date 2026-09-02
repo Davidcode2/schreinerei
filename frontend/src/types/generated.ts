@@ -10,7 +10,7 @@ export type ApproveOrderRequestDto = { notes: string | null, };
 
 export type AssignUserRequest = { user_id: string, role: string | null, };
 
-export type AssignmentResponse = { id: string, site_id: string, user_id: string, role: string, created_at: string, };
+export type AssignmentResponse = { id: string, site_id: string, user_id: string, user_name: string, role: string, created_at: string, };
 
 export type AvailabilityQuery = { resource_type: string, resource_id: string, start_time: string, end_time: string, };
 

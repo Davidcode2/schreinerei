@@ -88,6 +88,8 @@ pub struct SiteAssignment {
     pub tenant_id: TenantId,
     pub site_id: SiteId,
     pub user_id: UserId,
+    /// Display name resolved from the users table (name, falling back to email).
+    pub user_name: String,
     pub role: AssignmentRole,
     pub created_at: DateTime<Utc>,
 }

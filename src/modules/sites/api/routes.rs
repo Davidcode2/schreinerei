@@ -466,6 +466,7 @@ pub struct AssignmentResponse {
     pub id: String,
     pub site_id: String,
     pub user_id: String,
+    pub user_name: String,
     pub role: String,
     pub created_at: String,
 }
@@ -476,6 +477,7 @@ impl From<crate::modules::sites::domain::SiteAssignment> for AssignmentResponse 
             id: assignment.id.to_string(),
             site_id: assignment.site_id.to_string(),
             user_id: assignment.user_id.to_string(),
+            user_name: assignment.user_name,
             role: assignment.role.to_string(),
             created_at: assignment.created_at.to_rfc3339(),
         }

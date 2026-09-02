@@ -416,10 +416,12 @@ impl SiteRepository {
     ) -> Result<Vec<SiteAssignment>, AppError> {
         let assignments = sqlx::query_as::<_, AssignmentRow>(
             r#"
-            SELECT id, tenant_id, site_id, user_id, role, created_at
-            FROM site_assignments
-            WHERE tenant_id = $1 AND site_id = $2
-            ORDER BY created_at
+            SELECT sa.id, sa.tenant_id, sa.site_id, sa.user_id, sa.role, sa.created_at,
+                   COALESCE(NULLIF(u.name, ''), u.email, sa.user_id::text) AS user_name
+            FROM site_assignments sa
+            LEFT JOIN users u ON u.id = sa.user_id AND u.tenant_id = sa.tenant_id
+            WHERE sa.tenant_id = $1 AND sa.site_id = $2
+            ORDER BY sa.created_at
             "#,
         )
         .bind(tenant_id.0)
@@ -1405,6 +1407,7 @@ struct AssignmentRow {
     tenant_id: Uuid,
     site_id: Uuid,
     user_id: Uuid,
+    user_name: String,
     role: String,
     created_at: DateTime<Utc>,
 }
@@ -1416,6 +1419,7 @@ impl AssignmentRow {
             tenant_id: TenantId(self.tenant_id),
             site_id: SiteId(self.site_id),
             user_id: UserId(self.user_id),
+            user_name: self.user_name,
             role: self.role.parse().unwrap_or(AssignmentRole::Worker),
             created_at: self.created_at,
         }
