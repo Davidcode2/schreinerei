@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 import userEvent from "@testing-library/user-event"
 import { render, screen } from "@/test/utils"
+import { setAuthRole } from "@/test/auth"
 import FleetPage from "./FleetPage"
 
 const reservationDialogMock = vi.fn<(props: unknown) => void>()
@@ -79,5 +80,25 @@ describe("FleetPage", () => {
         resourceType: "vehicle",
       })
     )
+  })
+
+  it("shows the vehicle create action to admins", () => {
+    setAuthRole("admin")
+
+    render(<FleetPage />)
+
+    expect(
+      screen.getByRole("button", { name: /fahrzeug hinzufügen/i })
+    ).toBeInTheDocument()
+  })
+
+  it("hides the vehicle create action from mitarbeiter users", () => {
+    setAuthRole("mitarbeiter")
+
+    render(<FleetPage />)
+
+    expect(
+      screen.queryByRole("button", { name: /fahrzeug hinzufügen/i })
+    ).not.toBeInTheDocument()
   })
 })

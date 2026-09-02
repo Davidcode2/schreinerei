@@ -155,6 +155,36 @@ describe("InventoryDetailPage history", () => {
 })
 
 describe("InventoryDetailPage interactions", () => {
+  it("hides the edit action from mitarbeiter users and keeps stock actions", async () => {
+    useAuthStore.setState({
+      user: {
+        id: "user-1",
+        email: "worker@example.com",
+        name: "Mitarbeiter",
+        role: "mitarbeiter",
+        tenant_id: "tenant-1",
+        created_at: new Date().toISOString(),
+      },
+      tokens: null,
+      isAuthenticated: true,
+      isLoading: false,
+    })
+
+    render(<InventoryDetailPage />)
+
+    await screen.findByText("Betonschraube")
+
+    expect(
+      screen.queryByRole("button", { name: /material bearbeiten/i })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /material einlagern/i })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /material entnehmen/i })
+    ).toBeInTheDocument()
+  })
+
   it("renders stock-in, withdraw, and edit actions in the expected order", async () => {
     useAuthStore.setState({
       user: {

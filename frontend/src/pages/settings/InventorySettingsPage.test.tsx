@@ -8,6 +8,7 @@ import { server } from "@/test/mocks/server"
 import { mockData } from "@/test/mocks/handlers"
 import { createCategory } from "@/test/factories/category"
 import { useAuthStore } from "@/lib/auth/authStore"
+import { setAuthRole } from "@/test/auth"
 import InventorySettingsPage from "./InventorySettingsPage"
 
 vi.mock("sonner", async () => {
@@ -187,5 +188,35 @@ describe("InventorySettingsPage", () => {
       )
     ).toBeInTheDocument()
     expect(screen.getByText("Holz")).toBeInTheDocument()
+  })
+
+  it("renders a read-only category list for mitarbeiter users", async () => {
+    setAuthRole("mitarbeiter")
+
+    render(<InventorySettingsPage />)
+
+    expect(await screen.findByText("Holz")).toBeInTheDocument()
+    expect(screen.getByText("Beschläge")).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /kategorie anlegen/i })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /holz bearbeiten/i })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /holz löschen/i })
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows neutral empty-state copy for mitarbeiter users", async () => {
+    setAuthRole("mitarbeiter")
+    mockData.categories = []
+
+    render(<InventorySettingsPage />)
+
+    expect(await screen.findByText("Noch keine Kategorien")).toBeInTheDocument()
+    expect(
+      screen.getByText("Es wurden noch keine Kategorien angelegt.")
+    ).toBeInTheDocument()
   })
 })
