@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import type { Vehicle, Tool } from "@/types/fleet"
 import { getResourceCalendarColor } from "@/pages/fleet/resourceCalendarColor"
+import { truncateQrCode } from "./truncateQrCode"
 
 interface ResourceCardProps {
   resource: Vehicle | Tool
@@ -119,14 +120,15 @@ export function ResourceCard({
             <div className="flex items-center gap-2">
               {resource.qr_code && (
                 <div
-                  className={cn("flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs", resourceColor.borderClassName, resourceColor.tintClassName)}
+                  data-testid="qr-code-label"
+                  className={cn("flex min-w-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs", resourceColor.borderClassName, resourceColor.tintClassName)}
                   style={{
                     ...resourceColor.borderStyle,
                     ...resourceColor.tintStyle,
                   }}
                 >
-                  <QrCode className="h-3 w-3" />
-                  <span className="font-mono">{resource.qr_code}</span>
+                  <QrCode className="h-3 w-3 shrink-0" />
+                  <span className="truncate font-mono">{truncateQrCode(resource.qr_code)}</span>
                 </div>
               )}
               <Button

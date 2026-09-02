@@ -199,9 +199,9 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
                       {getRoleLabel(apiUser.role)}
                     </Badge>
                     <Button
-                      variant="outline"
-                      size="sm"
-                      className="min-h-10 gap-1.5 shadow-sm transition-transform active:scale-[0.97]"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
                       onClick={() => setEditingUser(apiUser)}
                       disabled={!apiUser.can_manage}
                       aria-label={
@@ -211,8 +211,7 @@ export function UserManagementSection({ isAdmin }: UserManagementSectionProps) {
                       }
                       title={apiUser.can_manage ? "Benutzer bearbeiten" : "Dieser Benutzer ist geschützt"}
                     >
-                      <Pencil className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Bearbeiten</span>
+                      <Pencil className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
