@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://schreinerei-app.jakob-lingel.dev/sitemap.xml

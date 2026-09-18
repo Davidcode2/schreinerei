@@ -7,6 +7,18 @@ interface Props {
 }
 
 const { title, description } = Astro.props
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site)
+const siteUrl = "https://schreinerei-app.jakob-lingel.dev"
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Schreinerei-App",
+  url: siteUrl,
+  description: "Die einfache Betriebssoftware für kleine Schreinereien und Tischlereien.",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  inLanguage: "de-DE",
+}
 ---
 
 <!doctype html>
@@ -16,7 +28,18 @@ const { title, description } = Astro.props
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#6a2dcc" />
+    <link rel="canonical" href={canonicalUrl} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="de_DE" />
+    <meta property="og:site_name" content="Schreinerei-App" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
     <script defer src="https://analytics.jakob-lingel.dev/script.js" data-website-id="3f172a20-3b4c-475c-8888-90c4109458d1"></script>
     <title>{title}</title>
   </head>
