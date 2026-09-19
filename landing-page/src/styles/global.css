@@ -1,111 +1,184 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Serif+Display:ital@0;1&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap");
 @import "tailwindcss";
-
 @theme {
   --color-background: hsl(240 20% 98%);
   --color-foreground: hsl(240 10% 10%);
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(240 10% 10%);
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(240 10% 10%);
   --color-primary: hsl(252 56% 40%);
   --color-primary-foreground: hsl(0 0% 100%);
-  --color-secondary: hsl(240 10% 94%);
-  --color-secondary-foreground: hsl(240 10% 15%);
-  --color-muted: hsl(240 10% 94%);
-  --color-muted-foreground: hsl(240 5% 46%);
-  --color-accent: hsl(250 30% 93%);
-  --color-accent-foreground: hsl(240 10% 15%);
-  --color-border: hsl(240 8% 89%);
-  --color-success: hsl(142 64% 34%);
-  --radius: 0.875rem;
+  --color-muted-foreground: hsl(240 5% 42%);
+  --color-border: hsl(240 8% 87%);
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "DM Serif Display", ui-serif, Georgia, serif;
-  --shadow-soft: 0 20px 60px hsl(252 56% 40% / 0.12);
-  --shadow-card: 0 18px 50px hsl(240 20% 18% / 0.08);
 }
-
 @layer base {
   * {
     border-color: var(--color-border);
   }
-
   html {
     scroll-behavior: smooth;
   }
-
   body {
     min-height: 100vh;
     background:
-      radial-gradient(circle at top, hsl(250 100% 98%), transparent 38%),
-      linear-gradient(180deg, hsl(240 20% 99%), hsl(240 20% 97%));
+      radial-gradient(circle at 78% 0%, hsl(257 100% 97%) 0, transparent 27rem),
+      hsl(240 20% 98%);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
-
   h1,
   h2,
-  h3,
-  h4 {
+  h3 {
     font-family: var(--font-display);
-    letter-spacing: -0.03em;
+    letter-spacing: -0.035em;
   }
-
+  h1 em {
+    color: var(--color-primary);
+    font-style: italic;
+  }
   a,
-  button {
+  summary {
     transition:
-      transform 180ms ease,
-      background-color 180ms ease,
       color 180ms ease,
+      background-color 180ms ease,
       border-color 180ms ease,
-      box-shadow 180ms ease,
-      opacity 180ms ease;
+      transform 180ms ease,
+      box-shadow 180ms ease;
+  }
+  a:focus-visible,
+  summary:focus-visible {
+    outline: 3px solid hsl(252 56% 40% / 0.32);
+    outline-offset: 4px;
   }
 }
-
 @layer components {
   .shell {
-    @apply mx-auto w-full max-w-7xl px-6 lg:px-10;
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-7 lg:px-10;
   }
-
-  .eyebrow {
-    @apply inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-primary shadow-sm;
+  .site-nav {
+    @apply mx-auto flex items-center justify-between gap-3 rounded-2xl border border-white/75 bg-white/70 px-3 py-3 shadow-[0_10px_30px_rgba(45,30,76,0.06)] backdrop-blur-xl sm:px-5;
   }
-
+  .brand-mark {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary font-display text-xl text-primary-foreground shadow-md shadow-primary/20;
+  }
+  .kicker {
+    @apply text-[0.68rem] font-bold uppercase tracking-[0.18em] text-primary;
+  }
   .section-copy {
     @apply max-w-2xl text-base leading-7 text-muted-foreground md:text-lg;
   }
-
-  .glass-card {
-    @apply rounded-[1.75rem] border border-white/70 bg-white/85 backdrop-blur;
-    box-shadow: var(--shadow-card);
-  }
-
   .primary-button {
-    @apply inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:-translate-y-0.5 hover:bg-primary/90;
+    @apply inline-flex min-h-12 items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_12px_24px_hsl(252_56%_40%_/_0.2)] hover:-translate-y-0.5 hover:bg-primary/90;
   }
-
+  .primary-button--compact {
+    @apply min-h-10 px-4 py-2 sm:px-5;
+  }
   .secondary-button {
-    @apply inline-flex items-center justify-center rounded-full border border-border bg-white px-6 py-3 text-sm font-semibold text-foreground hover:-translate-y-0.5 hover:border-primary/30 hover:bg-accent/60;
+    @apply inline-flex min-h-12 items-center justify-center rounded-full border border-border bg-white/80 px-6 py-3 text-sm font-semibold text-foreground hover:-translate-y-0.5 hover:border-primary/30;
   }
-
-  .noise {
-    position: relative;
+  .text-button {
+    @apply inline-flex items-center rounded-full px-3 py-2 text-sm font-semibold text-foreground hover:text-primary;
   }
-
-  .noise::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-image:
-      radial-gradient(hsl(252 56% 40% / 0.08) 0.7px, transparent 0.7px),
-      radial-gradient(hsl(240 10% 10% / 0.04) 0.7px, transparent 0.7px);
-    background-position: 0 0, 14px 14px;
-    background-size: 28px 28px;
-    mask-image: linear-gradient(180deg, black, transparent 88%);
+  .hero-section {
+    @apply relative py-16 md:py-24 lg:py-28;
+  }
+  .hero-glow {
+    @apply absolute -right-24 top-0 -z-10 h-[32rem] w-[32rem] rounded-full bg-primary/10 blur-3xl;
+  }
+  .product-window {
+    @apply overflow-hidden rounded-[1.6rem] border border-white/85 bg-white/75 p-2 shadow-[0_28px_80px_rgba(48,29,84,0.16)] backdrop-blur-xl sm:p-3;
+  }
+  .product-window__bar {
+    @apply flex items-center justify-between gap-3 px-3 py-2.5 text-xs font-medium text-muted-foreground;
+  }
+  .product-window__bar i {
+    @apply block h-2 w-2 rounded-full bg-primary/30;
+  }
+  .hero-note {
+    @apply absolute -bottom-4 left-4 rounded-2xl border border-white/80 bg-white/80 px-4 py-3 text-sm leading-5 text-foreground shadow-lg backdrop-blur-xl sm:-left-5 sm:bottom-5;
+  }
+  .hero-note__dot {
+    @apply mr-2 inline-block h-2 w-2 rounded-full bg-primary;
+  }
+  .proof-row {
+    @apply grid max-w-xl grid-cols-3 gap-2 border-t border-border/70 pt-5 sm:gap-5;
+  }
+  .proof-row p,
+  .quiet-strip p {
+    @apply flex flex-col gap-1;
+  }
+  .proof-row strong {
+    @apply text-sm font-bold text-foreground;
+  }
+  .proof-row span,
+  .quiet-strip span {
+    @apply text-xs leading-5 text-muted-foreground;
+  }
+  .quiet-strip {
+    @apply rounded-[1.4rem] border border-white/75 bg-white/55 px-5 py-5 shadow-[0_12px_40px_rgba(45,30,76,0.05)] backdrop-blur-xl sm:px-7;
+  }
+  .quiet-strip strong {
+    @apply text-sm font-semibold text-foreground;
+  }
+  .glass-card {
+    @apply rounded-[1.5rem] border border-white/80 bg-white/72 shadow-[0_16px_45px_rgba(45,30,76,0.08)] backdrop-blur-xl;
+  }
+  .section-space {
+    @apply py-16 md:py-24;
+  }
+  .outcome-row {
+    @apply grid gap-3 py-7 sm:grid-cols-[3.5rem_1fr] sm:gap-x-6 lg:grid-cols-[4rem_1.05fr_0.95fr] lg:items-start lg:py-9;
+  }
+  .outcome-number {
+    @apply text-xs font-bold tracking-[0.16em] text-primary;
+  }
+  .outcome-row h3 {
+    @apply text-2xl leading-tight text-foreground sm:text-3xl;
+  }
+  .outcome-row > p:last-child {
+    @apply max-w-md text-sm leading-7 text-muted-foreground sm:col-start-2 lg:col-start-auto;
+  }
+  .price-panel {
+    @apply grid gap-8 overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,hsl(252_56%_40%),hsl(264_53%_31%))] px-6 py-8 shadow-[0_24px_70px_hsl(252_56%_40%_/_0.24)] sm:px-9 sm:py-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:px-12;
+  }
+  .price-card {
+    @apply rounded-[1.5rem] border border-white/60 bg-white/90 p-6 shadow-xl backdrop-blur-md sm:p-7;
+  }
+  .faq-item {
+    @apply py-5;
+  }
+  .faq-item summary {
+    @apply cursor-pointer list-none pr-8 text-lg font-semibold text-foreground;
+  }
+  .faq-item summary::after {
+    content: "+";
+    @apply float-right font-normal text-primary;
+  }
+  .faq-item[open] summary::after {
+    content: "−";
+  }
+  .faq-item p {
+    @apply mt-3 max-w-2xl text-sm leading-7 text-muted-foreground;
+  }
+  .closing-panel {
+    @apply rounded-[2rem] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.78),rgba(238,231,255,0.84))] px-6 py-9 shadow-[0_16px_45px_rgba(45,30,76,0.08)] backdrop-blur-xl sm:px-10 sm:py-12;
+  }
+}
+@media (max-width: 639px) {
+  .hero-note {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
   }
 }
